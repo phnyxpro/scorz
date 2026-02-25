@@ -10,6 +10,8 @@ import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Competitions from "./pages/Competitions";
+import CompetitionDetail from "./pages/CompetitionDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Competitions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CompetitionDetail />
                     </AppLayout>
                   </ProtectedRoute>
                 }
