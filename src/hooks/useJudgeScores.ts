@@ -1,0 +1,112 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+
+export interface JudgeScore {
+  id: string;
+  sub_event_id: string;
+  judge_id: string;
+  contestant_registration_id: string;
+  criterion_scores: Record<string, number>;
+  raw_total: number;
+  performance_duration_seconds: number | null;
+  time_penalty: number;
+  final_score: number;
+  comments: string | null;
+  judge_signature: string | null;
+  signed_at: string | null;
+  is_certified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useMyScores(subEventId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_scores", subEventId, user?.id],
+    enabled: !!subEventId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("judge_scores")
+        .select("*")
+        .eq("sub_event_id", subEventId!)
+        .eq("judge_id", user!.id)
+        .order("created_at");
+      if (error) throw error;
+      return data as JudgeScore[];
+    },
+  });
+}
+
+export function useMyScoreForContestant(subEventId: string | undefined, contestantRegId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_score", subEventId, contestantRegId, user?.id],
+    enabled: !!subEventId && !!contestantRegId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("judge_scores")
+        .select("*")
+        .eq("sub_event_id", subEventId!)
+        .eq("judge_id", user!.id)
+        .eq("contestant_registration_id", contestantRegId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as JudgeScore | null;
+    },
+  });
+}
+
+export function useUpsertScore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Partial<JudgeScore> & { sub_event_id: string; judge_id: string; contestant_registration_id: string }) => {
+      // Try update first, then insert
+      if (values.id) {
+        const { error } = await supabase
+          .from("judge_scores")
+          .update(values)
+          .eq("id", values.id);
+        if (error) throw error;
+        return values;
+      } else {
+        const { data, error } = await supabase
+          .from("judge_scores")
+          .insert(values)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["my_scores", v.sub_event_id] });
+      qc.invalidateQueries({ queryKey: ["my_score", v.sub_event_id, v.contestant_registration_id] });
+    },
+    onError: (e: any) => toast({ title: "Error saving score", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useCertifyScore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, judge_signature, sub_event_id, contestant_registration_id }: { id: string; judge_signature: string; sub_event_id: string; contestant_registration_id: string }) => {
+      const { error } = await supabase
+        .from("judge_scores")
+        .update({
+          judge_signature,
+          signed_at: new Date().toISOString(),
+          is_certified: true,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["my_scores", v.sub_event_id] });
+      qc.invalidateQueries({ queryKey: ["my_score", v.sub_event_id, v.contestant_registration_id] });
+      toast({ title: "Score certified and locked" });
+    },
+    onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
+  });
+}

@@ -184,6 +184,75 @@ export type Database = {
           },
         ]
       }
+      judge_scores: {
+        Row: {
+          comments: string | null
+          contestant_registration_id: string
+          created_at: string
+          criterion_scores: Json
+          final_score: number
+          id: string
+          is_certified: boolean
+          judge_id: string
+          judge_signature: string | null
+          performance_duration_seconds: number | null
+          raw_total: number
+          signed_at: string | null
+          sub_event_id: string
+          time_penalty: number
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          contestant_registration_id: string
+          created_at?: string
+          criterion_scores?: Json
+          final_score?: number
+          id?: string
+          is_certified?: boolean
+          judge_id: string
+          judge_signature?: string | null
+          performance_duration_seconds?: number | null
+          raw_total?: number
+          signed_at?: string | null
+          sub_event_id: string
+          time_penalty?: number
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          contestant_registration_id?: string
+          created_at?: string
+          criterion_scores?: Json
+          final_score?: number
+          id?: string
+          is_certified?: boolean
+          judge_id?: string
+          judge_signature?: string | null
+          performance_duration_seconds?: number | null
+          raw_total?: number
+          signed_at?: string | null
+          sub_event_id?: string
+          time_penalty?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "judge_scores_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "judge_scores_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       penalty_rules: {
         Row: {
           competition_id: string
