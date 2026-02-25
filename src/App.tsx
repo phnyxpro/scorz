@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Competitions from "./pages/Competitions";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import ContestantRegistration from "./pages/ContestantRegistration";
+import JudgeScoring from "./pages/JudgeScoring";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ContestantRegistration />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/score"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <JudgeScoring />
                     </AppLayout>
                   </ProtectedRoute>
                 }
