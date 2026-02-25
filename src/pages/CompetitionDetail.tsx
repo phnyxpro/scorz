@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
+import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -60,6 +61,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="levels">Levels & Events</TabsTrigger>
           <TabsTrigger value="rubric">Rubric</TabsTrigger>
           <TabsTrigger value="penalties">Penalties</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -107,6 +109,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="penalties">
           <PenaltyConfig competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="assignments">
+          <SubEventAssignments competitionId={id!} />
         </TabsContent>
       </Tabs>
     </div>
