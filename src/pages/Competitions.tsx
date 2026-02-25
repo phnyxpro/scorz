@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Settings, Trophy, ClipboardList } from "lucide-react";
+import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -28,6 +28,7 @@ export default function Competitions() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole("admin") || hasRole("organizer");
   const isJudge = hasRole("judge") || hasRole("chief_judge");
+  const isChiefJudge = hasRole("chief_judge");
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -125,6 +126,11 @@ export default function Competitions() {
                     {c.status === "active" && isJudge && (
                       <Button asChild variant="secondary" size="sm" className="flex-1">
                         <Link to={`/competitions/${c.id}/score`}><ClipboardList className="h-3 w-3 mr-1" /> Score</Link>
+                      </Button>
+                    )}
+                    {c.status === "active" && isChiefJudge && (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
                       </Button>
                     )}
                   </div>
