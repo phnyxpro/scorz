@@ -19,6 +19,7 @@ import TabulatorDashboard from "./pages/TabulatorDashboard";
 import WitnessDashboard from "./pages/WitnessDashboard";
 import Results from "./pages/Results";
 import AudienceVoting from "./pages/AudienceVoting";
+import ContestantProfile from "./pages/ContestantProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -130,6 +131,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <AudienceVoting />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantProfile />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/:userId"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantProfile />
                     </AppLayout>
                   </ProtectedRoute>
                 }
