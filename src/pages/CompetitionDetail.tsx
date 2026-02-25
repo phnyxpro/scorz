@@ -46,22 +46,22 @@ export default function CompetitionDetail() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon">
+        <Button asChild variant="ghost" size="icon" className="shrink-0">
           <Link to="/competitions"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{comp.name}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{comp.name}</h1>
           <p className="text-muted-foreground text-sm">Configure competition settings</p>
         </div>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="levels">Levels & Events</TabsTrigger>
-          <TabsTrigger value="rubric">Rubric</TabsTrigger>
-          <TabsTrigger value="penalties">Penalties</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+        <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+          <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
+          <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
+          <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
+          <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+          <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">

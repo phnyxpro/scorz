@@ -50,9 +50,9 @@ export default function Competitions() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Competitions</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Competitions</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage events, stages & configuration</p>
         </div>
         {isAdmin && (
@@ -114,44 +114,44 @@ export default function Competitions() {
                       {c.start_date} {c.end_date ? `→ ${c.end_date}` : ""}
                     </p>
                   )}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {isAdmin && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
                       </Button>
                     )}
                     {c.status === "active" && (
-                      <Button asChild variant="default" size="sm" className="flex-1">
+                      <Button asChild variant="default" size="sm">
                         <Link to={`/competitions/${c.id}/register`}>Register</Link>
                       </Button>
                     )}
                     {c.status === "active" && isJudge && (
-                      <Button asChild variant="secondary" size="sm" className="flex-1">
+                      <Button asChild variant="secondary" size="sm">
                         <Link to={`/competitions/${c.id}/score`}><ClipboardList className="h-3 w-3 mr-1" /> Score</Link>
                       </Button>
                     )}
                     {c.status === "active" && isChiefJudge && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
                       </Button>
                     )}
                     {c.status === "active" && isTabulator && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/tabulator`}><Calculator className="h-3 w-3 mr-1" /> Tabulate</Link>
                       </Button>
                     )}
                     {c.status === "active" && isWitness && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/witness`}><Eye className="h-3 w-3 mr-1" /> Witness</Link>
                       </Button>
                     )}
                     {(c.status === "active" || c.status === "completed") && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/results`}><BarChart3 className="h-3 w-3 mr-1" /> Results</Link>
                       </Button>
                     )}
                     {c.status === "active" && (
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/vote`}><Heart className="h-3 w-3 mr-1" /> Vote</Link>
                       </Button>
                     )}

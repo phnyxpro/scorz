@@ -79,7 +79,7 @@ export function SubEventAssignments({ competitionId }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Selectors */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground">Level</label>
               <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
@@ -103,8 +103,8 @@ export function SubEventAssignments({ competitionId }: Props) {
           {selectedSubEventId && (
             <>
               {/* Add assignment */}
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                <div>
                   <label className="text-xs text-muted-foreground">Role</label>
                   <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); }}>
                     <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
@@ -115,7 +115,7 @@ export function SubEventAssignments({ competitionId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex-1">
+                <div>
                   <label className="text-xs text-muted-foreground">User</label>
                   <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={!selectedRole}>
                     <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
@@ -137,6 +137,7 @@ export function SubEventAssignments({ competitionId }: Props) {
                   size="sm"
                   onClick={handleAdd}
                   disabled={!selectedUserId || !selectedRole || addAssignment.isPending}
+                  className="w-full sm:w-auto"
                 >
                   <UserPlus className="h-3.5 w-3.5 mr-1" /> Assign
                 </Button>
