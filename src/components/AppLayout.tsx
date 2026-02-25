@@ -35,7 +35,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <AuditoriumControls />
-            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut}>
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/profile")} title="My Profile">
+              <User className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
