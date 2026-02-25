@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      audience_votes: {
+        Row: {
+          contestant_registration_id: string
+          created_at: string
+          id: string
+          sub_event_id: string
+          ticket_number: string | null
+          voter_email: string
+          voter_name: string
+          voter_phone: string | null
+        }
+        Insert: {
+          contestant_registration_id: string
+          created_at?: string
+          id?: string
+          sub_event_id: string
+          ticket_number?: string | null
+          voter_email: string
+          voter_name: string
+          voter_phone?: string | null
+        }
+        Update: {
+          contestant_registration_id?: string
+          created_at?: string
+          id?: string
+          sub_event_id?: string
+          ticket_number?: string | null
+          voter_email?: string
+          voter_name?: string
+          voter_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audience_votes_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audience_votes_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chief_judge_certifications: {
         Row: {
           chief_judge_id: string
