@@ -85,6 +85,105 @@ export type Database = {
         }
         Relationships: []
       }
+      contestant_registrations: {
+        Row: {
+          age_category: string
+          bio: string | null
+          competition_id: string
+          contestant_signature: string | null
+          contestant_signed_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          guardian_signature: string | null
+          guardian_signed_at: string | null
+          id: string
+          location: string | null
+          performance_video_url: string | null
+          phone: string | null
+          profile_photo_url: string | null
+          rules_acknowledged: boolean
+          rules_acknowledged_at: string | null
+          social_handles: Json | null
+          status: string
+          sub_event_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_category?: string
+          bio?: string | null
+          competition_id: string
+          contestant_signature?: string | null
+          contestant_signed_at?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_signature?: string | null
+          guardian_signed_at?: string | null
+          id?: string
+          location?: string | null
+          performance_video_url?: string | null
+          phone?: string | null
+          profile_photo_url?: string | null
+          rules_acknowledged?: boolean
+          rules_acknowledged_at?: string | null
+          social_handles?: Json | null
+          status?: string
+          sub_event_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_category?: string
+          bio?: string | null
+          competition_id?: string
+          contestant_signature?: string | null
+          contestant_signed_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_signature?: string | null
+          guardian_signed_at?: string | null
+          id?: string
+          location?: string | null
+          performance_video_url?: string | null
+          phone?: string | null
+          profile_photo_url?: string | null
+          rules_acknowledged?: boolean
+          rules_acknowledged_at?: string | null
+          social_handles?: Json | null
+          status?: string
+          sub_event_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contestant_registrations_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contestant_registrations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       penalty_rules: {
         Row: {
           competition_id: string

@@ -110,11 +110,18 @@ export default function Competitions() {
                       {c.start_date} {c.end_date ? `→ ${c.end_date}` : ""}
                     </p>
                   )}
-                  {isAdmin && (
-                    <Button asChild variant="outline" size="sm" className="mt-3 w-full">
-                      <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
-                    </Button>
-                  )}
+                  <div className="flex gap-2 mt-3">
+                    {isAdmin && (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
+                      </Button>
+                    )}
+                    {c.status === "active" && (
+                      <Button asChild variant="default" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}/register`}>Register</Link>
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Competitions from "./pages/Competitions";
 import CompetitionDetail from "./pages/CompetitionDetail";
+import ContestantRegistration from "./pages/ContestantRegistration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <CompetitionDetail />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/register"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantRegistration />
                     </AppLayout>
                   </ProtectedRoute>
                 }
