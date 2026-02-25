@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      chief_judge_certifications: {
+        Row: {
+          chief_judge_id: string
+          chief_judge_signature: string | null
+          created_at: string
+          id: string
+          is_certified: boolean
+          penalty_adjustments: Json
+          signed_at: string | null
+          sub_event_id: string
+          tie_break_criterion_id: string | null
+          tie_break_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          chief_judge_id: string
+          chief_judge_signature?: string | null
+          created_at?: string
+          id?: string
+          is_certified?: boolean
+          penalty_adjustments?: Json
+          signed_at?: string | null
+          sub_event_id: string
+          tie_break_criterion_id?: string | null
+          tie_break_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chief_judge_id?: string
+          chief_judge_signature?: string | null
+          created_at?: string
+          id?: string
+          is_certified?: boolean
+          penalty_adjustments?: Json
+          signed_at?: string | null
+          sub_event_id?: string
+          tie_break_criterion_id?: string | null
+          tie_break_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chief_judge_certifications_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: true
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chief_judge_certifications_tie_break_criterion_id_fkey"
+            columns: ["tie_break_criterion_id"]
+            isOneToOne: false
+            referencedRelation: "rubric_criteria"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_levels: {
         Row: {
           competition_id: string

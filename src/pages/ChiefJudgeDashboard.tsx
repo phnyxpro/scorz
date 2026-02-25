@@ -1,0 +1,303 @@
+import { useState, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useRegistrations } from "@/hooks/useRegistrations";
+import {
+  useAllScoresForSubEvent,
+  useCertification,
+  useUpsertCertification,
+  useCertifySubEvent,
+  useAdjustPenalty,
+} from "@/hooks/useChiefJudge";
+import { SignaturePad } from "@/components/registration/SignaturePad";
+import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
+import { TieBreaker } from "@/components/chief-judge/TieBreaker";
+import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function ChiefJudgeDashboard() {
+  const { id: competitionId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const { data: comp } = useCompetition(competitionId);
+  const { data: levels } = useLevels(competitionId);
+  const { data: rubric } = useRubricCriteria(competitionId);
+  const { data: penalties } = usePenaltyRules(competitionId);
+  const { data: registrations } = useRegistrations(competitionId);
+
+  const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [selectedSubEventId, setSelectedSubEventId] = useState("");
+  const [showCertifyDialog, setShowCertifyDialog] = useState(false);
+  const [signature, setSignature] = useState("");
+
+  // Auto-select first level
+  if (levels?.length && !selectedLevelId) {
+    setSelectedLevelId(levels[0].id);
+  }
+
+  const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+  const { data: allScores, isLoading: scoresLoading } = useAllScoresForSubEvent(selectedSubEventId || undefined);
+  const { data: certification } = useCertification(selectedSubEventId || undefined);
+
+  const upsertCert = useUpsertCertification();
+  const certifySubEvent = useCertifySubEvent();
+  const adjustPenalty = useAdjustPenalty();
+
+  const isCertified = certification?.is_certified ?? false;
+
+  // Group scores by contestant
+  const scoresByContestant = useMemo(() => {
+    if (!allScores) return {};
+    const map: Record<string, typeof allScores> = {};
+    for (const s of allScores) {
+      if (!map[s.contestant_registration_id]) map[s.contestant_registration_id] = [];
+      map[s.contestant_registration_id].push(s);
+    }
+    return map;
+  }, [allScores]);
+
+  // Get unique judge IDs
+  const judgeIds = useMemo(() => {
+    if (!allScores) return [];
+    return [...new Set(allScores.map(s => s.judge_id))];
+  }, [allScores]);
+
+  // Contestant name lookup
+  const contestantName = (regId: string) =>
+    registrations?.find(r => r.id === regId)?.full_name ?? "Unknown";
+
+  // Calculate averages for tie detection
+  const contestantAverages = useMemo(() => {
+    const avgs: { regId: string; avg: number; scores: typeof allScores }[] = [];
+    for (const [regId, scores] of Object.entries(scoresByContestant)) {
+      const certified = scores!.filter(s => s.is_certified);
+      if (certified.length === 0) continue;
+      const avg = certified.reduce((a, s) => a + s.final_score, 0) / certified.length;
+      avgs.push({ regId, avg, scores: scores! });
+    }
+    return avgs.sort((a, b) => b.avg - a.avg);
+  }, [scoresByContestant]);
+
+  // Detect ties
+  const ties = useMemo(() => {
+    const tieGroups: typeof contestantAverages[] = [];
+    let i = 0;
+    while (i < contestantAverages.length) {
+      let j = i + 1;
+      while (j < contestantAverages.length && Math.abs(contestantAverages[j].avg - contestantAverages[i].avg) < 0.001) {
+        j++;
+      }
+      if (j - i > 1) {
+        tieGroups.push(contestantAverages.slice(i, j));
+      }
+      i = j;
+    }
+    return tieGroups;
+  }, [contestantAverages]);
+
+  // All judges certified for all contestants?
+  const allJudgesCertified = allScores?.length
+    ? allScores.every(s => s.is_certified)
+    : false;
+
+  const handleInitCertification = async () => {
+    if (!user || !selectedSubEventId) return;
+    if (!certification) {
+      await upsertCert.mutateAsync({
+        sub_event_id: selectedSubEventId,
+        chief_judge_id: user.id,
+      } as any);
+    }
+    setShowCertifyDialog(true);
+  };
+
+  const handleCertify = async () => {
+    if (!certification?.id || !signature) return;
+    await certifySubEvent.mutateAsync({
+      id: certification.id,
+      chief_judge_signature: signature,
+      sub_event_id: selectedSubEventId,
+    });
+    setShowCertifyDialog(false);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">Chief Judge Dashboard</h1>
+          </div>
+          <p className="text-muted-foreground text-xs">{comp?.name}</p>
+        </div>
+        {isCertified && (
+          <Badge className="bg-secondary/20 text-secondary">
+            <CheckCircle className="h-3 w-3 mr-1" /> Certified
+          </Badge>
+        )}
+      </div>
+
+      {/* Sub-event selector */}
+      <Card className="border-border/50 bg-card/80 mb-4">
+        <CardContent className="pt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Level</label>
+              <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
+                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                <SelectContent>
+                  {levels?.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Sub-Event</label>
+              <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
+                <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
+                <SelectContent>
+                  {subEvents?.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedSubEventId && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Tabs defaultValue="panel" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
+              <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
+              <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="panel">
+              <PanelMonitor
+                scoresByContestant={scoresByContestant}
+                judgeIds={judgeIds}
+                contestantName={contestantName}
+                isCertified={isCertified}
+                contestantAverages={contestantAverages}
+              />
+            </TabsContent>
+
+            <TabsContent value="penalties">
+              <PenaltyReview
+                allScores={allScores || []}
+                contestantName={contestantName}
+                isCertified={isCertified}
+                onAdjust={(scoreId, newPenalty) =>
+                  adjustPenalty.mutate({ scoreId, newPenalty, subEventId: selectedSubEventId })
+                }
+                isAdjusting={adjustPenalty.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="ties">
+              <TieBreaker
+                ties={ties}
+                contestantName={contestantName}
+                rubric={rubric || []}
+                isCertified={isCertified}
+                certification={certification}
+                onSaveTieBreak={async (criterionId, notes) => {
+                  if (!user || !selectedSubEventId) return;
+                  await upsertCert.mutateAsync({
+                    id: certification?.id,
+                    sub_event_id: selectedSubEventId,
+                    chief_judge_id: user.id,
+                    tie_break_criterion_id: criterionId,
+                    tie_break_notes: notes,
+                  } as any);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* Final certification */}
+          {!isCertified && (
+            <Card className="border-border/50 bg-card/80 mt-4">
+              <CardContent className="pt-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Final Certification</p>
+                  <p className="text-xs text-muted-foreground">
+                    {allJudgesCertified
+                      ? "All judge scorecards are certified. You may certify this sub-event."
+                      : "Waiting for all judges to certify their scorecards."}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleInitCertification}
+                  disabled={!allJudgesCertified || upsertCert.isPending}
+                >
+                  <Lock className="h-4 w-4 mr-1" /> Certify Sub-Event
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
+      )}
+
+      {/* Certify Dialog */}
+      <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Certify Sub-Event Results</DialogTitle>
+            <DialogDescription>
+              Sign below to certify all results for this sub-event. This action is final.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground">
+                By signing, you certify that all scores have been reviewed, penalties are accurate,
+                and any ties have been properly resolved. Results will be published.
+              </p>
+            </div>
+
+            <div className="text-sm space-y-1 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Contestants scored</span>
+                <span className="font-mono">{Object.keys(scoresByContestant).length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total scorecards</span>
+                <span className="font-mono">{allScores?.length ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Ties detected</span>
+                <span className="font-mono">{ties.length}</span>
+              </div>
+            </div>
+
+            <SignaturePad label="Chief Judge Signature" onSignature={setSignature} />
+
+            <Button
+              onClick={handleCertify}
+              disabled={!signature || certifySubEvent.isPending}
+              className="w-full"
+            >
+              <Lock className="h-4 w-4 mr-1" />
+              {certifySubEvent.isPending ? "Certifying…" : "Certify & Publish Results"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
