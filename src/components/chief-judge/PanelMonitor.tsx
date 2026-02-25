@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,6 +9,7 @@ interface PanelMonitorProps {
   scoresByContestant: Record<string, JudgeScore[]>;
   judgeIds: string[];
   contestantName: (regId: string) => string;
+  contestantUserId?: (regId: string) => string | undefined;
   isCertified: boolean;
   contestantAverages: { regId: string; avg: number }[];
 }
@@ -22,7 +24,7 @@ function ScoreStatusBadge({ score }: { score: JudgeScore | undefined }) {
   return <Badge className="bg-primary/20 text-primary border-primary/30"><Edit className="h-3 w-3 mr-1" /> Submitted</Badge>;
 }
 
-export function PanelMonitor({ scoresByContestant, judgeIds, contestantName, isCertified, contestantAverages }: PanelMonitorProps) {
+export function PanelMonitor({ scoresByContestant, judgeIds, contestantName, contestantUserId, isCertified, contestantAverages }: PanelMonitorProps) {
   const contestantIds = Object.keys(scoresByContestant);
 
   if (contestantIds.length === 0) {
@@ -61,7 +63,13 @@ export function PanelMonitor({ scoresByContestant, judgeIds, contestantName, isC
                 const avg = contestantAverages.find(c => c.regId === regId)?.avg;
                 return (
                   <TableRow key={regId}>
-                    <TableCell className="text-sm font-medium">{contestantName(regId)}</TableCell>
+                    <TableCell className="text-sm font-medium">
+                      {contestantUserId?.(regId) ? (
+                        <Link to={`/profile/${contestantUserId(regId)}`} className="hover:text-primary hover:underline transition-colors">
+                          {contestantName(regId)}
+                        </Link>
+                      ) : contestantName(regId)}
+                    </TableCell>
                     {judgeIds.map(jid => {
                       const score = scores.find(s => s.judge_id === jid);
                       return (

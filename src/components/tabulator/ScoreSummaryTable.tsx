@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock } from "lucide-react";
@@ -7,10 +8,11 @@ import type { JudgeScore } from "@/hooks/useJudgeScores";
 interface Props {
   scoresByContestant: Record<string, JudgeScore[]>;
   contestantName: (id: string) => string;
+  contestantUserId?: (id: string) => string | undefined;
   rubricNames: string[];
 }
 
-export function ScoreSummaryTable({ scoresByContestant, contestantName, rubricNames }: Props) {
+export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames }: Props) {
   const rows = useMemo(() => {
     return Object.entries(scoresByContestant)
       .map(([regId, scores]) => {
@@ -84,7 +86,13 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, rubricNa
           {rows.map((r, i) => (
             <TableRow key={r.regId}>
               <TableCell className="font-mono text-muted-foreground">{i + 1}</TableCell>
-              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="font-medium">
+                {contestantUserId ? (
+                  <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                    {r.name}
+                  </Link>
+                ) : r.name}
+              </TableCell>
               <TableCell className="text-center font-mono text-xs">
                 {r.certifiedCount}/{r.judgeCount}
               </TableCell>

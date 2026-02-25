@@ -76,6 +76,9 @@ export default function TabulatorDashboard() {
   const contestantName = (regId: string) =>
     registrations?.find((r) => r.id === regId)?.full_name ?? "Unknown";
 
+  const contestantUserId = (regId: string) =>
+    registrations?.find((r) => r.id === regId)?.user_id;
+
   const handleInitCertify = async () => {
     if (!user || !selectedSubEventId) return;
     if (!tabCert) {
@@ -180,6 +183,7 @@ export default function TabulatorDashboard() {
                   <ScoreSummaryTable
                     scoresByContestant={scoresByContestant}
                     contestantName={contestantName}
+                    contestantUserId={contestantUserId}
                     rubricNames={rubricNames}
                   />
                 </CardContent>
@@ -195,6 +199,7 @@ export default function TabulatorDashboard() {
                         scores={scores}
                         rubricNames={rubricNames}
                         contestantName={contestantName(regId)}
+                        contestantUserId={contestantUserId(regId)}
                       />
                     </CardContent>
                   </Card>

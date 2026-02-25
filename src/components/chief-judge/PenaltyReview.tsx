@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,13 @@ import type { JudgeScore } from "@/hooks/useJudgeScores";
 interface PenaltyReviewProps {
   allScores: JudgeScore[];
   contestantName: (regId: string) => string;
+  contestantUserId?: (regId: string) => string | undefined;
   isCertified: boolean;
   onAdjust: (scoreId: string, newPenalty: number) => void;
   isAdjusting: boolean;
 }
 
-export function PenaltyReview({ allScores, contestantName, isCertified, onAdjust, isAdjusting }: PenaltyReviewProps) {
+export function PenaltyReview({ allScores, contestantName, contestantUserId, isCertified, onAdjust, isAdjusting }: PenaltyReviewProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
@@ -60,7 +62,13 @@ export function PenaltyReview({ allScores, contestantName, isCertified, onAdjust
             <TableBody>
               {scoresWithPenalties.map(score => (
                 <TableRow key={score.id}>
-                  <TableCell className="text-sm">{contestantName(score.contestant_registration_id)}</TableCell>
+                  <TableCell className="text-sm">
+                    {contestantUserId?.(score.contestant_registration_id) ? (
+                      <Link to={`/profile/${contestantUserId(score.contestant_registration_id)}`} className="hover:text-primary hover:underline transition-colors">
+                        {contestantName(score.contestant_registration_id)}
+                      </Link>
+                    ) : contestantName(score.contestant_registration_id)}
+                  </TableCell>
                   <TableCell className="text-center font-mono text-sm">
                     {formatDuration(score.performance_duration_seconds)}
                   </TableCell>
