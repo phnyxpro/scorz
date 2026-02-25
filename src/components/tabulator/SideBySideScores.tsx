@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock } from "lucide-react";
@@ -7,14 +8,21 @@ interface Props {
   scores: JudgeScore[];
   rubricNames: string[];
   contestantName: string;
+  contestantUserId?: string;
 }
 
-export function SideBySideScores({ scores, rubricNames, contestantName }: Props) {
+export function SideBySideScores({ scores, rubricNames, contestantName, contestantUserId }: Props) {
   if (scores.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-foreground">{contestantName}</h4>
+      <h4 className="text-sm font-medium text-foreground">
+        {contestantUserId ? (
+          <Link to={`/profile/${contestantUserId}`} className="hover:text-primary hover:underline transition-colors">
+            {contestantName}
+          </Link>
+        ) : contestantName}
+      </h4>
       <div className="overflow-x-auto border border-border rounded-md">
         <Table>
           <TableHeader>

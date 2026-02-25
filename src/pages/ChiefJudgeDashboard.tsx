@@ -89,6 +89,9 @@ export default function ChiefJudgeDashboard() {
   const contestantName = (regId: string) =>
     registrations?.find(r => r.id === regId)?.full_name ?? "Unknown";
 
+  const contestantUserId = (regId: string) =>
+    registrations?.find(r => r.id === regId)?.user_id;
+
   // Calculate averages for tie detection
   const contestantAverages = useMemo(() => {
     const avgs: { regId: string; avg: number; scores: typeof allScores }[] = [];
@@ -207,6 +210,7 @@ export default function ChiefJudgeDashboard() {
                 scoresByContestant={scoresByContestant}
                 judgeIds={judgeIds}
                 contestantName={contestantName}
+                contestantUserId={contestantUserId}
                 isCertified={isCertified}
                 contestantAverages={contestantAverages}
               />
@@ -216,6 +220,7 @@ export default function ChiefJudgeDashboard() {
               <PenaltyReview
                 allScores={allScores || []}
                 contestantName={contestantName}
+                contestantUserId={contestantUserId}
                 isCertified={isCertified}
                 onAdjust={(scoreId, newPenalty) =>
                   adjustPenalty.mutate({ scoreId, newPenalty, subEventId: selectedSubEventId })

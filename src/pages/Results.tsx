@@ -48,6 +48,9 @@ export default function Results() {
   const contestantName = (regId: string) =>
     registrations?.find((r) => r.id === regId)?.full_name ?? "Unknown";
 
+  const contestantUserId = (regId: string) =>
+    registrations?.find((r) => r.id === regId)?.user_id;
+
   // Compute leaderboard
   const leaderboard = useMemo(() => {
     if (!allScores || !allCertified) return [];
@@ -203,7 +206,11 @@ export default function Results() {
                               i + 1
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">{r.name}</TableCell>
+                          <TableCell className="font-medium">
+                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                              {r.name}
+                            </Link>
+                          </TableCell>
                           {rubricNames.map((n) => (
                             <TableCell key={n} className="text-center font-mono text-xs">
                               {r.criterionAvgs[n] != null ? r.criterionAvgs[n].toFixed(2) : "—"}
@@ -242,7 +249,9 @@ export default function Results() {
                         <div key={regId} className="flex items-center gap-3">
                           <span className="font-mono text-xs text-muted-foreground w-6">{i + 1}.</span>
                           <span className="text-sm font-medium text-foreground w-32 truncate">
-                            {contestantName(regId)}
+                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                              {contestantName(regId)}
+                            </Link>
                           </span>
                           <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
                             <div
