@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
-import { Zap, LogOut, User } from "lucide-react";
+import { Zap, LogOut, User, Shield } from "lucide-react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles } = useAuth();
@@ -35,6 +35,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <AuditoriumControls />
+            {roles.includes("admin") && (
+              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
+                <Shield className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/profile")} title="My Profile">
               <User className="h-4 w-4" />
             </Button>

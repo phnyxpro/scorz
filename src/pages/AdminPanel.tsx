@@ -1,0 +1,267 @@
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Constants } from "@/integrations/supabase/types";
+import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert } from "lucide-react";
+import { motion } from "framer-motion";
+
+const ALL_ROLES = Constants.public.Enums.app_role;
+
+const roleBadgeColor: Record<string, string> = {
+  admin: "bg-destructive/15 text-destructive border-destructive/30",
+  organizer: "bg-primary/15 text-primary border-primary/30",
+  chief_judge: "bg-secondary/15 text-secondary border-secondary/30",
+  judge: "bg-secondary/15 text-secondary border-secondary/30",
+  tabulator: "bg-muted text-muted-foreground border-border",
+  witness: "bg-muted text-muted-foreground border-border",
+  contestant: "bg-primary/10 text-primary border-primary/20",
+  audience: "bg-muted text-muted-foreground border-border",
+};
+
+function RoleManager({ user, assignRole, revokeRole }: {
+  user: AdminUser;
+  assignRole: (userId: string, role: string) => Promise<boolean>;
+  revokeRole: (userId: string, role: string) => Promise<boolean>;
+}) {
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const availableRoles = ALL_ROLES.filter((r) => !user.roles.includes(r as any));
+
+  const handleAssign = async () => {
+    if (!selectedRole) return;
+    setBusy(true);
+    await assignRole(user.user_id, selectedRole as any);
+    setSelectedRole("");
+    setBusy(false);
+  };
+
+  const handleRevoke = async (role: string) => {
+    setBusy(true);
+    await revokeRole(user.user_id, role as any);
+    setBusy(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-medium text-foreground mb-1">
+          {user.full_name || "Unnamed"}
+        </p>
+        <p className="text-xs text-muted-foreground">{user.email}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-mono text-muted-foreground mb-2">Current Roles</p>
+        <div className="flex flex-wrap gap-1.5">
+          {user.roles.length === 0 && (
+            <span className="text-xs text-muted-foreground italic">No roles assigned</span>
+          )}
+          {user.roles.map((role) => (
+            <Badge key={role} variant="outline" className={`${roleBadgeColor[role] || ""} text-xs gap-1`}>
+              {role.replace("_", " ")}
+              <button
+                onClick={() => handleRevoke(role)}
+                disabled={busy}
+                className="ml-0.5 hover:text-destructive transition-colors"
+                title={`Revoke ${role}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {availableRoles.length > 0 && (
+        <div className="flex gap-2">
+          <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <SelectTrigger className="flex-1 h-9 text-xs">
+              <SelectValue placeholder="Select role to add..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableRoles.map((r) => (
+                <SelectItem key={r} value={r} className="text-xs">
+                  {r.replace("_", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={handleAssign} disabled={!selectedRole || busy} className="h-9">
+            <UserPlus className="h-3.5 w-3.5 mr-1" />
+            Add
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminPanel() {
+  const { hasRole } = useAuth();
+  const { users, loading, refetch, assignRole, revokeRole } = useAdminUsers();
+  const [search, setSearch] = useState("");
+  const [manageUser, setManageUser] = useState<AdminUser | null>(null);
+
+  if (!hasRole("admin")) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <ShieldAlert className="h-12 w-12" />
+        <p className="font-mono text-sm">Access denied. Admin role required.</p>
+      </div>
+    );
+  }
+
+  const filtered = users.filter((u) => {
+    const q = search.toLowerCase();
+    return (
+      !q ||
+      u.email?.toLowerCase().includes(q) ||
+      u.full_name?.toLowerCase().includes(q) ||
+      u.roles.some((r) => r.includes(q))
+    );
+  });
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            Admin Panel
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage users and role assignments
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      <Card className="border-border/50 bg-card/80">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="text-base font-mono">
+              All Users ({filtered.length})
+            </CardTitle>
+            <div className="relative max-w-xs flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or role..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-mono">
+              Loading users…
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs">Name</TableHead>
+                  <TableHead className="font-mono text-xs">Email</TableHead>
+                  <TableHead className="font-mono text-xs">Roles</TableHead>
+                  <TableHead className="font-mono text-xs w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                      No users found.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filtered.map((u) => (
+                  <motion.tr
+                    key={u.user_id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="border-b transition-colors hover:bg-muted/50"
+                  >
+                    <TableCell className="text-sm font-medium">
+                      {u.full_name || <span className="text-muted-foreground italic">Unnamed</span>}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground font-mono">
+                      {u.email}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {u.roles.length === 0 && (
+                          <span className="text-xs text-muted-foreground italic">none</span>
+                        )}
+                        {u.roles.map((r) => (
+                          <Badge key={r} variant="outline" className={`${roleBadgeColor[r] || ""} text-[10px]`}>
+                            {r.replace("_", " ")}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Dialog open={manageUser?.user_id === u.user_id} onOpenChange={(open) => setManageUser(open ? u : null)}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-xs h-8">
+                            Manage
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="font-mono text-base">Manage Roles</DialogTitle>
+                          </DialogHeader>
+                          {manageUser && (
+                            <RoleManager
+                              user={manageUser}
+                              assignRole={async (uid, role) => {
+                                const ok = await assignRole(uid, role as any);
+                                if (ok) {
+                                  // Update local state to reflect new role
+                                  setManageUser((prev) =>
+                                    prev ? { ...prev, roles: [...prev.roles, role as any] } : null
+                                  );
+                                }
+                                return ok;
+                              }}
+                              revokeRole={async (uid, role) => {
+                                const ok = await revokeRole(uid, role as any);
+                                if (ok) {
+                                  setManageUser((prev) =>
+                                    prev ? { ...prev, roles: prev.roles.filter((r) => r !== role) } : null
+                                  );
+                                }
+                                return ok;
+                              }}
+                            />
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -20,6 +20,7 @@ import WitnessDashboard from "./pages/WitnessDashboard";
 import Results from "./pages/Results";
 import AudienceVoting from "./pages/AudienceVoting";
 import ContestantProfile from "./pages/ContestantProfile";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -151,6 +152,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ContestantProfile />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AdminPanel />
                     </AppLayout>
                   </ProtectedRoute>
                 }
