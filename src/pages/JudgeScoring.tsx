@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetition, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { useMyScoreForContestant, useUpsertScore, useCertifyScore } from "@/hooks/useJudgeScores";
+import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
 import { SpeechComments } from "@/components/scoring/SpeechComments";
@@ -20,14 +21,31 @@ import { toast } from "@/hooks/use-toast";
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const subEventId = searchParams.get("sub_event") || "";
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const { data: comp } = useCompetition(competitionId);
+  const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  const { data: myAssignments } = useMyAssignedSubEvents("judge");
+
+  const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
+
+  if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
+
+  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
+
+  // Filter sub-events to only those the judge is assigned to
+  const subEvents = useMemo(() => {
+    if (!allSubEvents || !myAssignments) return [];
+    const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
+    return allSubEvents.filter((se) => assignedIds.has(se.id));
+  }, [allSubEvents, myAssignments]);
+
+  const subEventId = selectedSubEventId;
 
   const [selectedContestant, setSelectedContestant] = useState("");
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
@@ -122,18 +140,45 @@ export default function JudgeScoring() {
         </div>
       </div>
 
-      {/* Contestant selector */}
+      {/* Sub-event & contestant selector */}
       <Card className="border-border/50 bg-card/80 mb-4">
-        <CardContent className="pt-4">
-          <label className="text-xs text-muted-foreground mb-1 block">Select Contestant</label>
-          <Select value={selectedContestant} onValueChange={setSelectedContestant}>
-            <SelectTrigger><SelectValue placeholder="Choose a contestant…" /></SelectTrigger>
-            <SelectContent>
-              {registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)).map(r => (
-                <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <CardContent className="pt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Level</label>
+              <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
+                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                <SelectContent>
+                  {levels?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Sub-Event</label>
+              <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
+                <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
+                <SelectContent>
+                  {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEvents.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {selectedSubEventId && (
+            <div>
+              <label className="text-xs text-muted-foreground">Contestant</label>
+              <Select value={selectedContestant} onValueChange={setSelectedContestant}>
+                <SelectTrigger><SelectValue placeholder="Choose a contestant…" /></SelectTrigger>
+                <SelectContent>
+                  {registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)).map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 

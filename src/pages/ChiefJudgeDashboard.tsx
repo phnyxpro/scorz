@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import {
   useAllScoresForSubEvent,
@@ -44,7 +45,16 @@ export default function ChiefJudgeDashboard() {
     setSelectedLevelId(levels[0].id);
   }
 
-  const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
+  const { data: myAssignments } = useMyAssignedSubEvents("chief_judge");
+
+  // Filter sub-events to assigned ones
+  const subEvents = useMemo(() => {
+    if (!allSubEvents || !myAssignments) return [];
+    const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
+    return allSubEvents.filter((se) => assignedIds.has(se.id));
+  }, [allSubEvents, myAssignments]);
+
   const { data: allScores, isLoading: scoresLoading } = useAllScoresForSubEvent(selectedSubEventId || undefined);
   const { data: certification } = useCertification(selectedSubEventId || undefined);
 
@@ -168,7 +178,10 @@ export default function ChiefJudgeDashboard() {
               <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
                 <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
                 <SelectContent>
-                  {subEvents?.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEvents.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEvents.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
