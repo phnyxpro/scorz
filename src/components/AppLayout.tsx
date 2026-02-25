@@ -17,7 +17,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="auditorium-filter min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCORE</span>
@@ -49,7 +49,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container py-6">
+      <main className="container py-4 sm:py-6 px-3 sm:px-6">
         {children}
       </main>
     </div>

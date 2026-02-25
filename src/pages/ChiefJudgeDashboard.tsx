@@ -253,7 +253,7 @@ export default function ChiefJudgeDashboard() {
           {/* Final certification */}
           {!isCertified && (
             <Card className="border-border/50 bg-card/80 mt-4">
-              <CardContent className="pt-4 flex items-center justify-between">
+              <CardContent className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">Final Certification</p>
                   <p className="text-xs text-muted-foreground">
@@ -265,6 +265,7 @@ export default function ChiefJudgeDashboard() {
                 <Button
                   onClick={handleInitCertification}
                   disabled={!allJudgesCertified || upsertCert.isPending}
+                  className="w-full sm:w-auto"
                 >
                   <Lock className="h-4 w-4 mr-1" /> Certify Sub-Event
                 </Button>

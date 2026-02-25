@@ -136,17 +136,17 @@ export default function AdminPanel() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Admin Panel
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Manage users and role assignments
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={refetch} disabled={loading} className="self-start sm:self-auto">
           <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
@@ -154,11 +154,11 @@ export default function AdminPanel() {
 
       <Card className="border-border/50 bg-card/80">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-base font-mono">
               All Users ({filtered.length})
             </CardTitle>
-            <div className="relative max-w-xs flex-1">
+            <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or role..."
@@ -169,7 +169,7 @@ export default function AdminPanel() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {loading ? (
             <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-mono">
               Loading users…

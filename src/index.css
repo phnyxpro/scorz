@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar for horizontal tab scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
