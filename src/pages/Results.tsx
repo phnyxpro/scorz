@@ -5,12 +5,14 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
 import { useTabulatorCertification } from "@/hooks/useTabulator";
 import { useWitnessCertification } from "@/hooks/useWitness";
+import { useVoteCounts } from "@/hooks/useAudienceVoting";
+import { PrintableResults } from "@/components/results/PrintableResults";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
-import { ArrowLeft, Trophy, CheckCircle, Lock, Medal } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, Lock, Medal, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
@@ -32,6 +34,9 @@ export default function Results() {
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
+  const { data: voteCounts } = useVoteCounts(selectedSubEventId || undefined);
+
+  const selectedSubEvent = subEvents?.find((se) => se.id === selectedSubEventId);
 
   const allCertified =
     (chiefCert?.is_certified ?? false) &&
@@ -95,6 +100,19 @@ export default function Results() {
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
+        {allCertified && leaderboard.length > 0 && (
+          <PrintableResults
+            competitionName={comp?.name || ""}
+            subEventName={selectedSubEvent?.name || ""}
+            leaderboard={leaderboard}
+            rubricNames={rubricNames}
+            certificationDates={{
+              chiefJudge: chiefCert?.signed_at || undefined,
+              tabulator: tabCert?.signed_at || undefined,
+              witness: witnessCert?.signed_at || undefined,
+            }}
+          />
+        )}
       </div>
 
       {/* Sub-event selector */}
@@ -199,6 +217,45 @@ export default function Results() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* People's Choice */}
+          {voteCounts && Object.keys(voteCounts).length > 0 && (
+            <Card className="border-border/50 bg-card/80 mt-4">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-primary" /> People's Choice
+                </CardTitle>
+                <CardDescription>Audience voting results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(voteCounts)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([regId, count], i) => {
+                      const total = Object.values(voteCounts).reduce((a, b) => a + b, 0);
+                      const pct = total > 0 ? (count / total) * 100 : 0;
+                      return (
+                        <div key={regId} className="flex items-center gap-3">
+                          <span className="font-mono text-xs text-muted-foreground w-6">{i + 1}.</span>
+                          <span className="text-sm font-medium text-foreground w-32 truncate">
+                            {contestantName(regId)}
+                          </span>
+                          <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary/60 rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-mono text-muted-foreground w-16 text-right">
+                            {count} ({pct.toFixed(0)}%)
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
