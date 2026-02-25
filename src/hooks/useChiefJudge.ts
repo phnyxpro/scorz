@@ -1,7 +1,27 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+
+/** Subscribe to realtime changes on chief_judge_certifications */
+export function useCertificationRealtime(subEventId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`certifications_${subEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chief_judge_certifications", filter: `sub_event_id=eq.${subEventId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["certification", subEventId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, qc]);
+}
 
 export interface ChiefJudgeCertification {
   id: string;
@@ -22,7 +42,6 @@ export function useAllScoresForSubEvent(subEventId: string | undefined) {
   return useQuery({
     queryKey: ["all_scores", subEventId],
     enabled: !!subEventId,
-    refetchInterval: 10_000, // real-time polling every 10s
     queryFn: async () => {
       const { data, error } = await supabase
         .from("judge_scores")

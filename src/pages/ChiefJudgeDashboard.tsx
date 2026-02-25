@@ -10,7 +10,9 @@ import {
   useUpsertCertification,
   useCertifySubEvent,
   useAdjustPenalty,
+  useCertificationRealtime,
 } from "@/hooks/useChiefJudge";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
@@ -57,6 +59,8 @@ export default function ChiefJudgeDashboard() {
 
   const { data: allScores, isLoading: scoresLoading } = useAllScoresForSubEvent(selectedSubEventId || undefined);
   const { data: certification } = useCertification(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
 
   const upsertCert = useUpsertCertification();
   const certifySubEvent = useCertifySubEvent();

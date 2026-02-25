@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useMyScoreForContestant, useUpsertScore, useCertifyScore } from "@/hooks/useJudgeScores";
+import { useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
@@ -46,6 +46,7 @@ export default function JudgeScoring() {
   }, [allSubEvents, myAssignments]);
 
   const subEventId = selectedSubEventId;
+  useJudgeScoresRealtime(subEventId || undefined);
 
   const [selectedContestant, setSelectedContestant] = useState("");
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
