@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
+import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator } from "@/hooks/useTabulator";
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
@@ -51,6 +52,8 @@ export default function TabulatorDashboard() {
   const { data: allScores } = useAllScoresForSubEvent(selectedSubEventId || undefined);
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
 
   const upsertTab = useUpsertTabulatorCert();
   const certifyTab = useCertifyTabulator();

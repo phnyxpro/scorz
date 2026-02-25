@@ -1,7 +1,29 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+
+/** Subscribe to realtime changes on judge_scores for a sub-event and auto-invalidate queries */
+export function useJudgeScoresRealtime(subEventId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`judge_scores_${subEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "judge_scores", filter: `sub_event_id=eq.${subEventId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["my_scores", subEventId] });
+          qc.invalidateQueries({ queryKey: ["my_score", subEventId] });
+          qc.invalidateQueries({ queryKey: ["all_scores", subEventId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, qc]);
+}
 
 export interface JudgeScore {
   id: string;
