@@ -487,6 +487,53 @@ export type Database = {
           },
         ]
       }
+      tabulator_certifications: {
+        Row: {
+          created_at: string
+          digital_vs_physical_match: boolean
+          discrepancy_notes: string | null
+          id: string
+          is_certified: boolean
+          signed_at: string | null
+          sub_event_id: string
+          tabulator_id: string
+          tabulator_signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          digital_vs_physical_match?: boolean
+          discrepancy_notes?: string | null
+          id?: string
+          is_certified?: boolean
+          signed_at?: string | null
+          sub_event_id: string
+          tabulator_id: string
+          tabulator_signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          digital_vs_physical_match?: boolean
+          discrepancy_notes?: string | null
+          id?: string
+          is_certified?: boolean
+          signed_at?: string | null
+          sub_event_id?: string
+          tabulator_id?: string
+          tabulator_signature?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tabulator_certifications_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: true
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -507,6 +554,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      witness_certifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_certified: boolean
+          observations: string | null
+          signed_at: string | null
+          sub_event_id: string
+          updated_at: string
+          witness_id: string
+          witness_signature: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_certified?: boolean
+          observations?: string | null
+          signed_at?: string | null
+          sub_event_id: string
+          updated_at?: string
+          witness_id: string
+          witness_signature?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_certified?: boolean
+          observations?: string | null
+          signed_at?: string | null
+          sub_event_id?: string
+          updated_at?: string
+          witness_id?: string
+          witness_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "witness_certifications_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: true
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

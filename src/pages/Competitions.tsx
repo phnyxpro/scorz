@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield } from "lucide-react";
+import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -29,6 +29,8 @@ export default function Competitions() {
   const isAdmin = hasRole("admin") || hasRole("organizer");
   const isJudge = hasRole("judge") || hasRole("chief_judge");
   const isChiefJudge = hasRole("chief_judge");
+  const isTabulator = hasRole("tabulator");
+  const isWitness = hasRole("witness");
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -131,6 +133,16 @@ export default function Competitions() {
                     {c.status === "active" && isChiefJudge && (
                       <Button asChild variant="outline" size="sm" className="flex-1">
                         <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
+                      </Button>
+                    )}
+                    {c.status === "active" && isTabulator && (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}/tabulator`}><Calculator className="h-3 w-3 mr-1" /> Tabulate</Link>
+                      </Button>
+                    )}
+                    {c.status === "active" && isWitness && (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}/witness`}><Eye className="h-3 w-3 mr-1" /> Witness</Link>
                       </Button>
                     )}
                   </div>
