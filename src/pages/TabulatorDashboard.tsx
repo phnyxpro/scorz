@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
+import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator } from "@/hooks/useTabulator";
@@ -38,7 +39,15 @@ export default function TabulatorDashboard() {
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
-  const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
+  const { data: myAssignments } = useMyAssignedSubEvents("tabulator");
+
+  const subEvents = useMemo(() => {
+    if (!allSubEvents || !myAssignments) return [];
+    const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
+    return allSubEvents.filter((se) => assignedIds.has(se.id));
+  }, [allSubEvents, myAssignments]);
+
   const { data: allScores } = useAllScoresForSubEvent(selectedSubEventId || undefined);
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);

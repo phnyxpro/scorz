@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye } from "lucide-react";
+import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -143,6 +143,11 @@ export default function Competitions() {
                     {c.status === "active" && isWitness && (
                       <Button asChild variant="outline" size="sm" className="flex-1">
                         <Link to={`/competitions/${c.id}/witness`}><Eye className="h-3 w-3 mr-1" /> Witness</Link>
+                      </Button>
+                    )}
+                    {(c.status === "active" || c.status === "completed") && (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link to={`/competitions/${c.id}/results`}><BarChart3 className="h-3 w-3 mr-1" /> Results</Link>
                       </Button>
                     )}
                   </div>
