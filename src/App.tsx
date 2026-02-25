@@ -18,6 +18,7 @@ import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
 import TabulatorDashboard from "./pages/TabulatorDashboard";
 import WitnessDashboard from "./pages/WitnessDashboard";
 import Results from "./pages/Results";
+import AudienceVoting from "./pages/AudienceVoting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -119,6 +120,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Results />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/vote"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AudienceVoting />
                     </AppLayout>
                   </ProtectedRoute>
                 }
