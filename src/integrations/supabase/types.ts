@@ -14,6 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
+      competition_levels: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_levels_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      penalty_rules: {
+        Row: {
+          competition_id: string
+          created_at: string
+          from_seconds: number
+          grace_period_seconds: number
+          id: string
+          penalty_points: number
+          sort_order: number
+          time_limit_seconds: number
+          to_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          from_seconds: number
+          grace_period_seconds?: number
+          id?: string
+          penalty_points: number
+          sort_order?: number
+          time_limit_seconds?: number
+          to_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          from_seconds?: number
+          grace_period_seconds?: number
+          id?: string
+          penalty_points?: number
+          sort_order?: number
+          time_limit_seconds?: number
+          to_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penalty_rules_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -46,6 +164,103 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      rubric_criteria: {
+        Row: {
+          competition_id: string
+          created_at: string
+          description_1: string
+          description_2: string
+          description_3: string
+          description_4: string
+          description_5: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          description_1?: string
+          description_2?: string
+          description_3?: string
+          description_4?: string
+          description_5?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          description_1?: string
+          description_2?: string
+          description_3?: string
+          description_4?: string
+          description_5?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubric_criteria_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_events: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          event_date: string | null
+          id: string
+          level_id: string
+          location: string | null
+          name: string
+          start_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          event_date?: string | null
+          id?: string
+          level_id: string
+          location?: string | null
+          name: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          event_date?: string | null
+          id?: string
+          level_id?: string
+          location?: string | null
+          name?: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_events_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "competition_levels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
