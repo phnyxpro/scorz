@@ -108,3 +108,13 @@
 .auditorium-filter {
   filter: var(--auditorium-brightness, brightness(1)) var(--auditorium-contrast, contrast(1));
 }
+
+/* Print styles for score sheets */
+@media print {
+  body { background: white !important; color: black !important; }
+  nav, header, aside, footer { display: none !important; }
+  table { font-size: 10px !important; }
+  th, td { padding: 4px 6px !important; border: 1px solid #ccc !important; }
+  [class*="max-w-"] { max-width: 100% !important; }
+  @page { margin: 1cm; size: landscape; }
+}
