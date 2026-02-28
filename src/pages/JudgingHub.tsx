@@ -5,10 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Users, ChevronRight, Trophy } from "lucide-react";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { ClipboardList, ChevronRight, ChevronDown, Trophy, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
@@ -21,7 +23,6 @@ function useJudgingOverview(competitionId: string | undefined) {
     queryKey: ["judging_overview", competitionId],
     enabled: !!competitionId,
     queryFn: async () => {
-      // Levels
       const { data: levels, error: le } = await supabase
         .from("competition_levels")
         .select("*")
@@ -30,9 +31,8 @@ function useJudgingOverview(competitionId: string | undefined) {
       if (le) throw le;
 
       const levelIds = (levels || []).map((l) => l.id);
-      if (!levelIds.length) return { levels: [], subEvents: [], assignments: [], profiles: [], registrations: [] };
+      if (!levelIds.length) return { levels: [], subEvents: [], assignments: [], profiles: [], registrations: [], scores: [] as JudgeScore[], rubric: [] };
 
-      // Sub-events for all levels
       const { data: subEvents, error: se } = await supabase
         .from("sub_events")
         .select("*")
@@ -42,7 +42,6 @@ function useJudgingOverview(competitionId: string | undefined) {
 
       const subEventIds = (subEvents || []).map((s) => s.id);
 
-      // Assignments (judges) for all sub-events
       const { data: assignments, error: ae } = subEventIds.length
         ? await supabase
             .from("sub_event_assignments")
@@ -52,7 +51,6 @@ function useJudgingOverview(competitionId: string | undefined) {
         : { data: [] as any[], error: null };
       if (ae) throw ae;
 
-      // Registrations (contestants)
       const { data: registrations, error: re } = subEventIds.length
         ? await supabase
             .from("contestant_registrations")
@@ -62,23 +60,17 @@ function useJudgingOverview(competitionId: string | undefined) {
         : { data: [] as any[], error: null };
       if (re) throw re;
 
-      // Get unique user_ids from assignments to fetch profile names
       const userIds = [...new Set((assignments || []).map((a: any) => a.user_id))];
       const { data: profiles, error: pe } = userIds.length
         ? await supabase.from("profiles").select("user_id, full_name, email").in("user_id", userIds)
         : { data: [] as any[], error: null };
       if (pe) throw pe;
 
-      // Judge scores for all sub-events
       const { data: scores, error: sce } = subEventIds.length
-        ? await supabase
-            .from("judge_scores")
-            .select("*")
-            .in("sub_event_id", subEventIds)
+        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds)
         : { data: [] as any[], error: null };
       if (sce) throw sce;
 
-      // Rubric criteria for the competition
       const { data: rubric, error: rce } = await supabase
         .from("rubric_criteria")
         .select("*")
@@ -106,7 +98,16 @@ export default function JudgingHub() {
     [competitions]
   );
   const [selectedCompId, setSelectedCompId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
+
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
+
+  const filteredComps = useMemo(() => {
+    if (!searchQuery.trim()) return activeComps;
+    const q = searchQuery.toLowerCase();
+    return activeComps.filter((c) => c.name.toLowerCase().includes(q));
+  }, [activeComps, searchQuery]);
 
   const profileMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -134,12 +135,20 @@ export default function JudgingHub() {
         </p>
       </div>
 
-      {/* Competition table selector */}
+      {/* Competition table with search */}
       <Card className="border-border/50 bg-card/80 mb-6">
-        <CardContent className="pt-4">
-          <label className="text-xs text-muted-foreground font-medium mb-2 block">Select a Competition</label>
-          {activeComps.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active competitions</p>
+        <CardContent className="pt-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search competitions…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {filteredComps.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No competitions found</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -147,15 +156,15 @@ export default function JudgingHub() {
                   <TableRow>
                     <TableHead>Competition</TableHead>
                     <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Start Date</TableHead>
-                    <TableHead className="text-center">End Date</TableHead>
+                    <TableHead className="text-center">Start</TableHead>
+                    <TableHead className="text-center">End</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeComps.map((c) => (
+                  {filteredComps.map((c) => (
                     <TableRow
                       key={c.id}
-                      className={`cursor-pointer ${selectedCompId === c.id ? "bg-primary/10" : ""}`}
+                      className={`cursor-pointer transition-colors ${selectedCompId === c.id ? "bg-primary/10" : ""}`}
                       onClick={() => setSelectedCompId(c.id)}
                     >
                       <TableCell className="font-medium">{c.name}</TableCell>
@@ -173,13 +182,13 @@ export default function JudgingHub() {
         </CardContent>
       </Card>
 
-      {/* Overview */}
+      {/* Overview with tabbed levels */}
       {selectedCompId && overviewLoading && (
         <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading levels…</div>
       )}
 
       {selectedCompId && overview && (
-        <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+        <>
           {overview.levels.length === 0 ? (
             <Card className="border-border/50 bg-card/80">
               <CardContent className="py-8 text-center text-muted-foreground text-sm">
@@ -188,150 +197,182 @@ export default function JudgingHub() {
               </CardContent>
             </Card>
           ) : (
-            overview.levels.map((level) => {
-              const levelSubEvents = overview.subEvents.filter((se) => se.level_id === level.id);
-              return (
-                <motion.div key={level.id} variants={item}>
-                  <Card className="border-border/50 bg-card/80">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{level.name}</CardTitle>
-                      <CardDescription>
-                        {levelSubEvents.length} sub-event{levelSubEvents.length !== 1 ? "s" : ""}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+            <Tabs defaultValue={overview.levels[0]?.id} className="w-full">
+              <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+                {overview.levels.map((level) => (
+                  <TabsTrigger key={level.id} value={level.id} className="text-xs sm:text-sm flex-1 min-w-[80px]">
+                    {level.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {overview.levels.map((level) => {
+                const levelSubEvents = overview.subEvents.filter((se) => se.level_id === level.id);
+                return (
+                  <TabsContent key={level.id} value={level.id}>
+                    <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 mt-4">
                       {levelSubEvents.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No sub-events yet.</p>
+                        <p className="text-xs text-muted-foreground text-center py-4">No sub-events yet.</p>
                       ) : (
                         levelSubEvents.map((se) => {
-                          const judges = overview.assignments.filter(
-                            (a: any) => a.sub_event_id === se.id
-                          );
-                          const contestants = overview.registrations.filter(
-                            (r: any) => r.sub_event_id === se.id
-                          );
+                          const judges = overview.assignments.filter((a: any) => a.sub_event_id === se.id);
+                          const contestants = overview.registrations.filter((r: any) => r.sub_event_id === se.id);
+                          const seScores = (overview.scores || []).filter((s) => s.sub_event_id === se.id);
+
                           return (
-                            <div
-                              key={se.id}
-                              className="rounded-lg border border-border/40 bg-muted/30 p-4 space-y-3"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium text-sm text-foreground">{se.name}</p>
-                                  <p className="text-xs text-muted-foreground font-mono">
-                                    {se.event_date || "No date"}{" "}
-                                    {se.start_time ? `• ${se.start_time}` : ""}
-                                  </p>
-                                </div>
-                                <Badge
-                                  className={
-                                    se.status === "in_progress"
-                                      ? "bg-primary/20 text-primary"
-                                      : se.status === "completed"
-                                      ? "bg-secondary/20 text-secondary"
-                                      : "bg-muted text-muted-foreground"
-                                  }
-                                >
-                                  {se.status}
-                                </Badge>
-                              </div>
-
-                              {/* Judges */}
-                              <div>
-                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                                  Judges ({judges.length})
-                                </p>
-                                {judges.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground italic">No judges assigned</p>
-                                ) : (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {judges.map((j: any) => (
-                                      <span
-                                        key={j.id}
-                                        className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
-                                      >
-                                        {profileMap.get(j.user_id) || "Unknown"}
-                                      </span>
-                                    ))}
+                            <motion.div key={se.id} variants={item}>
+                              <Card className="border-border/40 bg-card/80">
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <CardTitle className="text-sm">{se.name}</CardTitle>
+                                      <CardDescription className="font-mono text-xs">
+                                        {se.event_date || "No date"} {se.start_time ? `• ${se.start_time}` : ""}
+                                      </CardDescription>
+                                    </div>
+                                    <Badge
+                                      className={
+                                        se.status === "in_progress"
+                                          ? "bg-primary/20 text-primary"
+                                          : se.status === "completed"
+                                          ? "bg-secondary/20 text-secondary"
+                                          : "bg-muted text-muted-foreground"
+                                      }
+                                    >
+                                      {se.status}
+                                    </Badge>
                                   </div>
-                                )}
-                              </div>
-
-                              {/* Contestants */}
-                              <div>
-                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                                  Contestants ({contestants.length})
-                                </p>
-                                {contestants.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground italic">No contestants registered</p>
-                                ) : (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {contestants.map((c: any) => (
-                                      <span
-                                        key={c.id}
-                                        className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20"
-                                      >
-                                        {c.full_name}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Per-contestant scorecards */}
-                              {contestants.length > 0 && rubricNames.length > 0 && (() => {
-                                const seScores = (overview?.scores || []).filter(
-                                  (s) => s.sub_event_id === se.id
-                                );
-                                if (seScores.length === 0) return null;
-                                return (
-                                  <div className="space-y-3 pt-1">
-                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                      Scorecards by Judge
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  {/* Judges */}
+                                  <div>
+                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                                      Judges ({judges.length})
                                     </p>
-                                    {contestants.map((c: any) => {
-                                      const contestantScores = seScores.filter(
-                                        (s) => s.contestant_registration_id === c.id
-                                      );
-                                      if (contestantScores.length === 0) return null;
-                                      // Replace judge_id with judge name for display
-                                      const enriched = contestantScores.map((s) => ({
-                                        ...s,
-                                        judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…",
-                                      }));
-                                      return (
-                                        <SideBySideScores
-                                          key={c.id}
-                                          scores={enriched as any}
-                                          rubricNames={rubricNames}
-                                          contestantName={c.full_name}
-                                          contestantUserId={c.user_id}
-                                        />
-                                      );
-                                    })}
+                                    {judges.length === 0 ? (
+                                      <p className="text-xs text-muted-foreground italic">No judges assigned</p>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {judges.map((j: any) => (
+                                          <span
+                                            key={j.id}
+                                            className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
+                                          >
+                                            {profileMap.get(j.user_id) || "Unknown"}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                );
-                              })()}
 
-                              {/* Score sheet link */}
-                              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                                <Link to={`/competitions/${selectedCompId}/score?sub_event=${se.id}`}>
-                                  <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                                  Open Score Sheet
-                                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                </Link>
-                              </Button>
-                            </div>
+                                  {/* Contestants table – click to expand scorecard */}
+                                  <div>
+                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                                      Contestants ({contestants.length})
+                                    </p>
+                                    {contestants.length === 0 ? (
+                                      <p className="text-xs text-muted-foreground italic">No contestants registered</p>
+                                    ) : (
+                                      <div className="border border-border/40 rounded-md overflow-hidden">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead className="w-8">#</TableHead>
+                                              <TableHead>Name</TableHead>
+                                              <TableHead className="text-center">Scores</TableHead>
+                                              <TableHead className="w-8"></TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {contestants.map((c: any, idx: number) => {
+                                              const cScores = seScores.filter(
+                                                (s) => s.contestant_registration_id === c.id
+                                              );
+                                              const isExpanded = expandedContestant === `${se.id}-${c.id}`;
+                                              const toggleKey = `${se.id}-${c.id}`;
+                                              return (
+                                                <>
+                                                  <TableRow
+                                                    key={c.id}
+                                                    className="cursor-pointer hover:bg-muted/50"
+                                                    onClick={() =>
+                                                      setExpandedContestant(isExpanded ? null : toggleKey)
+                                                    }
+                                                  >
+                                                    <TableCell className="font-mono text-muted-foreground text-xs">
+                                                      {idx + 1}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium text-sm">{c.full_name}</TableCell>
+                                                    <TableCell className="text-center">
+                                                      <Badge variant="outline" className="text-xs">
+                                                        {cScores.length} judge{cScores.length !== 1 ? "s" : ""}
+                                                      </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                      <ChevronDown
+                                                        className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                                          isExpanded ? "rotate-180" : ""
+                                                        }`}
+                                                      />
+                                                    </TableCell>
+                                                  </TableRow>
+                                                  {isExpanded && cScores.length > 0 && rubricNames.length > 0 && (
+                                                    <TableRow key={`${c.id}-scores`}>
+                                                      <TableCell colSpan={4} className="p-0 border-0">
+                                                        <AnimatePresence>
+                                                          <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="overflow-hidden bg-muted/20 p-3"
+                                                          >
+                                                            <SideBySideScores
+                                                              scores={cScores.map((s) => ({
+                                                                ...s,
+                                                                judge_id:
+                                                                  profileMap.get(s.judge_id) ||
+                                                                  s.judge_id.slice(0, 8) + "…",
+                                                              })) as any}
+                                                              rubricNames={rubricNames}
+                                                              contestantName={c.full_name}
+                                                              contestantUserId={c.user_id}
+                                                            />
+                                                          </motion.div>
+                                                        </AnimatePresence>
+                                                      </TableCell>
+                                                    </TableRow>
+                                                  )}
+                                                </>
+                                              );
+                                            })}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Score sheet link */}
+                                  <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                                    <Link to={`/competitions/${selectedCompId}/score?sub_event=${se.id}`}>
+                                      <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                                      Open Score Sheet
+                                      <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                    </Link>
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
                           );
                         })
                       )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })
+                    </motion.div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           )}
-        </motion.div>
+        </>
       )}
     </div>
   );
