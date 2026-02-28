@@ -121,6 +121,7 @@ export type Database = {
       }
       competition_levels: {
         Row: {
+          banner_url: string | null
           competition_id: string
           created_at: string
           id: string
@@ -129,6 +130,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           competition_id: string
           created_at?: string
           id?: string
@@ -137,6 +139,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           competition_id?: string
           created_at?: string
           id?: string
@@ -156,6 +159,7 @@ export type Database = {
       }
       competitions: {
         Row: {
+          banner_url: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -167,6 +171,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -178,6 +183,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -282,6 +288,59 @@ export type Database = {
           },
           {
             foreignKeyName: "contestant_registrations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_tickets: {
+        Row: {
+          checked_in_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_checked_in: boolean
+          phone: string | null
+          sub_event_id: string
+          ticket_number: string
+          ticket_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          checked_in_at?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_checked_in?: boolean
+          phone?: string | null
+          sub_event_id: string
+          ticket_number: string
+          ticket_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          checked_in_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_checked_in?: boolean
+          phone?: string | null
+          sub_event_id?: string
+          ticket_number?: string
+          ticket_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_tickets_sub_event_id_fkey"
             columns: ["sub_event_id"]
             isOneToOne: false
             referencedRelation: "sub_events"
@@ -522,39 +581,51 @@ export type Database = {
       }
       sub_events: {
         Row: {
+          banner_url: string | null
           created_at: string
           end_time: string | null
           event_date: string | null
           id: string
           level_id: string
           location: string | null
+          max_tickets: number | null
           name: string
           start_time: string | null
           status: string
+          ticket_price: number | null
+          ticketing_type: string
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string
           end_time?: string | null
           event_date?: string | null
           id?: string
           level_id: string
           location?: string | null
+          max_tickets?: number | null
           name: string
           start_time?: string | null
           status?: string
+          ticket_price?: number | null
+          ticketing_type?: string
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string
           end_time?: string | null
           event_date?: string | null
           id?: string
           level_id?: string
           location?: string | null
+          max_tickets?: number | null
           name?: string
           start_time?: string | null
           status?: string
+          ticket_price?: number | null
+          ticketing_type?: string
           updated_at?: string
         }
         Relationships: [

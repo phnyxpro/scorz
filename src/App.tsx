@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
+import PublicEventDetail from "./pages/PublicEventDetail";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Competitions from "./pages/Competitions";
@@ -35,6 +36,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route
                 path="/dashboard"
