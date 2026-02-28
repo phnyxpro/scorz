@@ -4,7 +4,7 @@ import { useCompetitions } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Users, ChevronRight, Trophy } from "lucide-react";
@@ -134,25 +134,42 @@ export default function JudgingHub() {
         </p>
       </div>
 
-      {/* Competition selector */}
+      {/* Competition table selector */}
       <Card className="border-border/50 bg-card/80 mb-6">
         <CardContent className="pt-4">
-          <label className="text-xs text-muted-foreground font-medium">Competition</label>
-          <Select value={selectedCompId} onValueChange={setSelectedCompId}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Choose a competition…" />
-            </SelectTrigger>
-            <SelectContent>
-              {activeComps.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-              {activeComps.length === 0 && (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">No active competitions</div>
-              )}
-            </SelectContent>
-          </Select>
+          <label className="text-xs text-muted-foreground font-medium mb-2 block">Select a Competition</label>
+          {activeComps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No active competitions</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Competition</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Start Date</TableHead>
+                    <TableHead className="text-center">End Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeComps.map((c) => (
+                    <TableRow
+                      key={c.id}
+                      className={`cursor-pointer ${selectedCompId === c.id ? "bg-primary/10" : ""}`}
+                      onClick={() => setSelectedCompId(c.id)}
+                    >
+                      <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={c.status === "active" ? "default" : "secondary"}>{c.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-xs">{c.start_date || "—"}</TableCell>
+                      <TableCell className="text-center font-mono text-xs">{c.end_date || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
