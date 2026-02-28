@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Users, ChevronRight, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
+import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
+import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
@@ -54,7 +56,7 @@ function useJudgingOverview(competitionId: string | undefined) {
       const { data: registrations, error: re } = subEventIds.length
         ? await supabase
             .from("contestant_registrations")
-            .select("id, full_name, sub_event_id, status, competition_id")
+            .select("id, full_name, sub_event_id, status, competition_id, user_id")
             .eq("competition_id", competitionId!)
             .neq("status", "rejected")
         : { data: [] as any[], error: null };
@@ -67,12 +69,31 @@ function useJudgingOverview(competitionId: string | undefined) {
         : { data: [] as any[], error: null };
       if (pe) throw pe;
 
+      // Judge scores for all sub-events
+      const { data: scores, error: sce } = subEventIds.length
+        ? await supabase
+            .from("judge_scores")
+            .select("*")
+            .in("sub_event_id", subEventIds)
+        : { data: [] as any[], error: null };
+      if (sce) throw sce;
+
+      // Rubric criteria for the competition
+      const { data: rubric, error: rce } = await supabase
+        .from("rubric_criteria")
+        .select("*")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (rce) throw rce;
+
       return {
         levels: levels || [],
         subEvents: subEvents || [],
         assignments: assignments || [],
         profiles: profiles || [],
         registrations: registrations || [],
+        scores: (scores || []) as JudgeScore[],
+        rubric: rubric || [],
       };
     },
   });
@@ -94,6 +115,11 @@ export default function JudgingHub() {
     }
     return m;
   }, [overview?.profiles]);
+
+  const rubricNames = useMemo(
+    () => (overview?.rubric || []).map((r: any) => r.name),
+    [overview?.rubric]
+  );
 
   if (compsLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
 
@@ -234,6 +260,41 @@ export default function JudgingHub() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Per-contestant scorecards */}
+                              {contestants.length > 0 && rubricNames.length > 0 && (() => {
+                                const seScores = (overview?.scores || []).filter(
+                                  (s) => s.sub_event_id === se.id
+                                );
+                                if (seScores.length === 0) return null;
+                                return (
+                                  <div className="space-y-3 pt-1">
+                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                      Scorecards by Judge
+                                    </p>
+                                    {contestants.map((c: any) => {
+                                      const contestantScores = seScores.filter(
+                                        (s) => s.contestant_registration_id === c.id
+                                      );
+                                      if (contestantScores.length === 0) return null;
+                                      // Replace judge_id with judge name for display
+                                      const enriched = contestantScores.map((s) => ({
+                                        ...s,
+                                        judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…",
+                                      }));
+                                      return (
+                                        <SideBySideScores
+                                          key={c.id}
+                                          scores={enriched as any}
+                                          rubricNames={rubricNames}
+                                          contestantName={c.full_name}
+                                          contestantUserId={c.user_id}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
 
                               {/* Score sheet link */}
                               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
