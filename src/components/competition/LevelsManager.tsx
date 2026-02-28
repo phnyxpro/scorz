@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Plus, Trash2, ChevronDown, MapPin, Clock } from "lucide-react";
+import { BannerUpload } from "@/components/shared/BannerUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 function SubEventsPanel({ levelId }: { levelId: string }) {
   const { data: events } = useSubEvents(levelId);
   const create = useCreateSubEvent();
   const remove = useDeleteSubEvent();
+  const qc = useQueryClient();
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -24,18 +28,32 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     );
   };
 
+  const updateBanner = async (id: string, url: string | null) => {
+    await supabase.from("sub_events").update({ banner_url: url } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["sub_events", levelId] });
+  };
+
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
       {events?.map((e) => (
-        <div key={e.id} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
-          <div>
-            <span className="font-medium text-foreground">{e.name}</span>
-            {e.location && <span className="text-muted-foreground ml-2 text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
-            {e.event_date && <span className="text-muted-foreground ml-2 text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
+        <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-medium text-foreground">{e.name}</span>
+              {e.location && <span className="text-muted-foreground ml-2 text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
+              {e.event_date && <span className="text-muted-foreground ml-2 text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
+            </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
+          <BannerUpload
+            currentUrl={(e as any).banner_url}
+            folder={`sub-events/${e.id}`}
+            aspectLabel="Sub-Event Banner"
+            onUploaded={(url) => updateBanner(e.id, url)}
+            onRemoved={() => updateBanner(e.id, null)}
+          />
         </div>
       ))}
       <div className="space-y-2">
@@ -60,6 +78,7 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const { data: levels } = useLevels(competitionId);
   const create = useCreateLevel();
   const remove = useDeleteLevel();
+  const qc = useQueryClient();
   const [newName, setNewName] = useState("");
 
   const handleAdd = () => {
@@ -68,6 +87,11 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
       { competition_id: competitionId, name: newName, sort_order: (levels?.length || 0) },
       { onSuccess: () => setNewName("") }
     );
+  };
+
+  const updateLevelBanner = async (id: string, url: string | null) => {
+    await supabase.from("competition_levels").update({ banner_url: url } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
   };
 
   return (
@@ -88,6 +112,15 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
               </Button>
             </div>
             <CollapsibleContent>
+              <div className="pl-4 mt-2">
+                <BannerUpload
+                  currentUrl={(l as any).banner_url}
+                  folder={`levels/${l.id}`}
+                  aspectLabel="Level Banner"
+                  onUploaded={(url) => updateLevelBanner(l.id, url)}
+                  onRemoved={() => updateLevelBanner(l.id, null)}
+                />
+              </div>
               <SubEventsPanel levelId={l.id} />
             </CollapsibleContent>
           </Collapsible>

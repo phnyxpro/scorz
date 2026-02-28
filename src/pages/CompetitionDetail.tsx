@@ -10,14 +10,18 @@ import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
+import { BannerUpload } from "@/components/shared/BannerUpload";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: comp, isLoading } = useCompetition(id);
   const update = useUpdateCompetition();
+  const qc = useQueryClient();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -68,6 +72,19 @@ export default function CompetitionDetail() {
           <Card className="border-border/50 bg-card/80">
             <CardHeader><CardTitle className="text-base">Competition Details</CardTitle></CardHeader>
             <CardContent className="space-y-3">
+              <BannerUpload
+                currentUrl={(comp as any).banner_url}
+                folder={`competitions/${id}`}
+                aspectLabel="Main Event Banner"
+                onUploaded={async (url) => {
+                  await supabase.from("competitions").update({ banner_url: url } as any).eq("id", id!);
+                  qc.invalidateQueries({ queryKey: ["competition", id] });
+                }}
+                onRemoved={async () => {
+                  await supabase.from("competitions").update({ banner_url: null } as any).eq("id", id!);
+                  qc.invalidateQueries({ queryKey: ["competition", id] });
+                }}
+              />
               <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
               <Textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
               <div className="grid grid-cols-2 gap-3">
