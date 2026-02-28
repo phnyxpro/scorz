@@ -15,6 +15,7 @@ import Competitions from "./pages/Competitions";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import ContestantRegistration from "./pages/ContestantRegistration";
 import JudgeScoring from "./pages/JudgeScoring";
+import JudgingHub from "./pages/JudgingHub";
 import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
 import TabulatorDashboard from "./pages/TabulatorDashboard";
 import WitnessDashboard from "./pages/WitnessDashboard";
@@ -44,6 +45,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/judging"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <JudgingHub />
                     </AppLayout>
                   </ProtectedRoute>
                 }
