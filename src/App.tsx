@@ -24,6 +24,7 @@ import AudienceVoting from "./pages/AudienceVoting";
 import ContestantProfile from "./pages/ContestantProfile";
 import AdminPanel from "./pages/AdminPanel";
 import MasterScoreSheet from "./pages/MasterScoreSheet";
+import LevelMasterSheet from "./pages/LevelMasterSheet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -186,6 +187,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <MasterScoreSheet />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/level-sheet"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <LevelMasterSheet />
                     </AppLayout>
                   </ProtectedRoute>
                 }

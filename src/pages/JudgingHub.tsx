@@ -211,6 +211,15 @@ export default function JudgingHub() {
                 return (
                   <TabsContent key={level.id} value={level.id}>
                     <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 mt-4">
+                      <div className="flex justify-end">
+                        <Button asChild variant="default" size="sm">
+                          <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
+                            <Trophy className="h-3.5 w-3.5 mr-1.5" />
+                            Level Master Sheet
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
                       {levelSubEvents.length === 0 ? (
                         <p className="text-xs text-muted-foreground text-center py-4">No sub-events yet.</p>
                       ) : (
