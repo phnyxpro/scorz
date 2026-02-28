@@ -42,7 +42,7 @@ export function SideBySideScores({ scores, rubricNames, contestantName, contesta
               const cs = s.criterion_scores as Record<string, number>;
               return (
                 <TableRow key={s.id}>
-                  <TableCell className="font-mono text-xs">{s.judge_id.slice(0, 8)}…</TableCell>
+                  <TableCell className="font-mono text-xs">{s.judge_id}</TableCell>
                   {rubricNames.map((n) => (
                     <TableCell key={n} className="text-center font-mono text-xs">
                       {cs[n] != null ? cs[n] : "—"}
