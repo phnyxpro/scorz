@@ -10,6 +10,8 @@ import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
+import { SponsorsManager } from "@/components/competition/SponsorsManager";
+import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -28,6 +30,8 @@ export default function CompetitionDetail() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("draft");
+  const [rulesUrl, setRulesUrl] = useState("");
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (comp) {
@@ -36,12 +40,22 @@ export default function CompetitionDetail() {
       setStartDate(comp.start_date || "");
       setEndDate(comp.end_date || "");
       setStatus(comp.status);
+      setRulesUrl((comp as any).rules_url || "");
+      setSocialLinks((comp as any).social_links || {});
     }
   }, [comp]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!id) return;
+    // Update standard fields via hook
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
+    // Update new fields directly (not in typed hook)
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["competition", id] });
+  };
+
+  const updateSocial = (key: string, val: string) => {
+    setSocialLinks(prev => ({ ...prev, [key]: val }));
   };
 
   if (isLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
@@ -66,6 +80,8 @@ export default function CompetitionDetail() {
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
+          <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
+          <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -109,6 +125,26 @@ export default function CompetitionDetail() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Rules URL */}
+              <div>
+                <label className="text-xs text-muted-foreground">Competition Rules URL</label>
+                <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
+              </div>
+
+              {/* Social Links */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">Social Media Links</label>
+                {["facebook", "instagram", "x", "youtube", "tiktok"].map(platform => (
+                  <Input
+                    key={platform}
+                    placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
+                    value={socialLinks[platform] || ""}
+                    onChange={e => updateSocial(platform, e.target.value)}
+                  />
+                ))}
+              </div>
+
               <Button onClick={handleSave} disabled={update.isPending}>
                 {update.isPending ? "Saving…" : "Save Changes"}
               </Button>
@@ -130,6 +166,14 @@ export default function CompetitionDetail() {
 
         <TabsContent value="assignments">
           <SubEventAssignments competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="sponsors">
+          <SponsorsManager competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="updates">
+          <UpdatesManager competitionId={id!} />
         </TabsContent>
       </Tabs>
     </div>
