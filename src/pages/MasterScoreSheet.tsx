@@ -103,23 +103,22 @@ export default function MasterScoreSheet() {
           judgeScores[s.judge_id] = { final: s.final_score, certified: s.is_certified };
         }
         const certifiedScores = regScores.filter((s) => s.is_certified);
-        const avgFinal =
-          certifiedScores.length > 0
-            ? certifiedScores.reduce((a, s) => a + s.final_score, 0) / certifiedScores.length
-            : 0;
+        const total = certifiedScores.reduce((a, s) => a + s.final_score, 0);
+        const avgFinal = certifiedScores.length > 0 ? total / certifiedScores.length : 0;
         const allCertified = regScores.length > 0 && regScores.every((s) => s.is_certified);
         return {
           regId: reg.id,
           name: reg.full_name,
           userId: reg.user_id,
           judgeScores,
+          total,
           avgFinal,
           allCertified,
           totalJudges: regScores.length,
           certifiedCount: certifiedScores.length,
         };
       })
-      .sort((a, b) => b.avgFinal - a.avgFinal);
+      .sort((a, b) => b.avgFinal - a.avgFinal || b.total - a.total);
   }, [data]);
 
   if (isLoading) {
@@ -176,9 +175,10 @@ export default function MasterScoreSheet() {
                       <TableHead key={jId} className="text-center text-xs whitespace-nowrap">
                         {profileMap.get(jId) || "Judge"}
                       </TableHead>
-                    ))}
-                    <TableHead className="text-center font-bold">Avg Final</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold">Total</TableHead>
+                      <TableHead className="text-center font-bold">Avg Final</TableHead>
+                      <TableHead className="text-center">Rank</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -208,17 +208,12 @@ export default function MasterScoreSheet() {
                           </TableCell>
                         );
                       })}
+                      <TableCell className="text-center font-mono font-bold">{r.total.toFixed(2)}</TableCell>
                       <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
                       <TableCell className="text-center">
-                        {r.allCertified ? (
-                          <Badge variant="secondary" className="gap-1 text-xs">
-                            <CheckCircle className="h-3 w-3" /> Done
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="gap-1 text-xs">
-                            <Clock className="h-3 w-3" /> {r.certifiedCount}/{r.totalJudges}
-                          </Badge>
-                        )}
+                        <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
+                          {i + 1}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
