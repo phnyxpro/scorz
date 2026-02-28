@@ -19,7 +19,7 @@ export default function Dashboard() {
 
   const cards = [
     { title: "Competitions", desc: "Manage events & stages", icon: Trophy, color: "text-primary", to: "/competitions" },
-    { title: "Judging", desc: "Score performances", icon: ClipboardList, color: "text-secondary", to: "/competitions" },
+    { title: "Judging", desc: "Score performances", icon: ClipboardList, color: "text-secondary", to: "/judging" },
     { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/profile" },
     { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-secondary", to: "/competitions" },
   ];
