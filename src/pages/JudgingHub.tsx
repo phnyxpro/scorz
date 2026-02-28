@@ -354,9 +354,9 @@ export default function JudgingHub() {
 
                                   {/* Score sheet link */}
                                   <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                                    <Link to={`/competitions/${selectedCompId}/score?sub_event=${se.id}`}>
+                                    <Link to={`/competitions/${selectedCompId}/master-sheet?sub_event=${se.id}`}>
                                       <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                                      Open Score Sheet
+                                      Master Score Sheet
                                       <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                     </Link>
                                   </Button>
