@@ -7,7 +7,9 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy } from "lucide-react";
+import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+import type { SheetRow } from "@/lib/export-utils";
 
 function useLevelMasterSheet(competitionId: string | undefined, levelId: string | null) {
   return useQuery({
@@ -128,6 +130,22 @@ export default function LevelMasterSheet() {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.total - a.total);
   }, [data]);
 
+  // Build exportable rows
+  const exportRows = useMemo((): SheetRow[] => {
+    return rows.map((r, i) => {
+      const row: SheetRow = { Rank: i + 1, Contestant: r.name, "Sub-Event": subEventMap.get(r.subEventId || "") || "—" };
+      for (const jId of judgeUserIds) {
+        const js = r.judgeScores[jId];
+        row[profileMap.get(jId) || "Judge"] = js ? Number(js.final.toFixed(2)) : 0;
+      }
+      row["Total"] = Number(r.total.toFixed(2));
+      row["Avg Final"] = Number(r.avgFinal.toFixed(2));
+      return row;
+    });
+  }, [rows, judgeUserIds, profileMap, subEventMap]);
+
+  const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
+
   if (isLoading) {
     return <div className="text-muted-foreground font-mono text-sm animate-pulse p-8">Loading level master sheet…</div>;
   }
@@ -147,21 +165,24 @@ export default function LevelMasterSheet() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-4 flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon" className="shrink-0">
-          <Link to="/judging">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            Level Master Sheet
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {data.level.name} • {data.subEvents.length} sub-event{data.subEvents.length !== 1 ? "s" : ""} combined
-          </p>
+      <div className="mb-4 flex items-center justify-between print:mb-2">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon" className="shrink-0 print:hidden">
+            <Link to="/judging">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Level Master Sheet
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {data.level.name} • {data.subEvents.length} sub-event{data.subEvents.length !== 1 ? "s" : ""} combined
+            </p>
+          </div>
         </div>
+        <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />
       </div>
 
       <Card className="border-border/50 bg-card/80">
