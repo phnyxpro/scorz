@@ -157,6 +157,91 @@ export type Database = {
           },
         ]
       }
+      competition_sponsors: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          logo_url: string
+          name: string
+          sort_order: number
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          logo_url: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          logo_url?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_sponsors_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_updates: {
+        Row: {
+          competition_id: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_updates_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitions: {
         Row: {
           banner_url: string | null
@@ -166,6 +251,8 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          rules_url: string | null
+          social_links: Json
           start_date: string | null
           status: string
           updated_at: string
@@ -178,6 +265,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          rules_url?: string | null
+          social_links?: Json
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -190,6 +279,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          rules_url?: string | null
+          social_links?: Json
           start_date?: string | null
           status?: string
           updated_at?: string
