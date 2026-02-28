@@ -50,7 +50,10 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
         .eq("role", "judge" as any);
 
       // Judge profiles
-      const judgeIds = [...new Set((assignments || []).map((a: any) => a.user_id))];
+      const judgeIds = [...new Set([
+        ...(assignments || []).map((a: any) => a.user_id),
+        ...(scores || []).map((s: any) => s.judge_id),
+      ])];
       const { data: profiles } = judgeIds.length
         ? await supabase.from("profiles").select("user_id, full_name, email").in("user_id", judgeIds)
         : { data: [] as any[] };
@@ -84,8 +87,10 @@ export default function MasterScoreSheet() {
 
   // Ordered list of judge user_ids
   const judgeUserIds = useMemo(() => {
-    return [...new Set((data?.assignments || []).map((a: any) => a.user_id as string))];
-  }, [data?.assignments]);
+    const fromAssignments = (data?.assignments || []).map((a: any) => a.user_id as string);
+    const fromScores = (data?.scores || []).map((s) => s.judge_id as string);
+    return [...new Set([...fromAssignments, ...fromScores])];
+  }, [data?.assignments, data?.scores]);
 
   const rubricNames = useMemo(
     () => (data?.rubric || []).map((r: any) => r.name as string),
