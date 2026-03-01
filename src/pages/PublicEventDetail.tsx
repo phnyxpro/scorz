@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { SocialLinks } from "@/components/public/SocialLinks";
 import { AudienceTicketForm } from "@/components/public/AudienceTicketForm";
 import { LevelParticipants } from "@/components/public/LevelParticipants";
+import { PublicRoleList } from "@/components/public/PublicRoleList";
 import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 
@@ -161,9 +162,27 @@ export default function PublicEventDetail() {
           )}
         </div>
 
+        {/* Quick nav */}
+        {levels && levels.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => document.getElementById("section-schedule")?.scrollIntoView({ behavior: "smooth" })}>
+              <Calendar className="h-3.5 w-3.5 mr-1" /> Schedule
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => document.getElementById("section-contestants")?.scrollIntoView({ behavior: "smooth" })}>
+              <Users className="h-3.5 w-3.5 mr-1" /> Contestants
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => document.getElementById("section-judges")?.scrollIntoView({ behavior: "smooth" })}>
+              <Award className="h-3.5 w-3.5 mr-1" /> Judges
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/competitions/${id}/vote`)}>
+              <Ticket className="h-3.5 w-3.5 mr-1" /> People's Choice
+            </Button>
+          </div>
+        )}
+
         {/* Schedule with judges & contestants */}
         {levels && levels.length > 0 && (
-          <section>
+          <section id="section-schedule">
             <h2 className="text-lg font-bold text-foreground mb-4 font-mono">Schedule</h2>
             <div className="space-y-4">
               {levels.map(level => (
@@ -212,6 +231,22 @@ export default function PublicEventDetail() {
                 </Card>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Judges Section */}
+        {levels && levels.length > 0 && (
+          <section id="section-judges">
+            <h2 className="text-lg font-bold text-foreground mb-4 font-mono">Judges</h2>
+            <PublicRoleList subEventIds={allSubEventIds} role="judges" />
+          </section>
+        )}
+
+        {/* Contestants Section */}
+        {levels && levels.length > 0 && (
+          <section id="section-contestants">
+            <h2 className="text-lg font-bold text-foreground mb-4 font-mono">Contestants</h2>
+            <PublicRoleList subEventIds={allSubEventIds} role="contestants" />
           </section>
         )}
 
