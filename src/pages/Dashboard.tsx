@@ -19,7 +19,8 @@ export default function Dashboard() {
 
   const cards = [
     { title: "Competitions", desc: "Manage events & stages", icon: Trophy, color: "text-primary", to: "/competitions" },
-    { title: "Judging", desc: "Score performances", icon: ClipboardList, color: "text-secondary", to: "/judging" },
+    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ title: "My Assignments", desc: "View and score your sessions", icon: ClipboardList, color: "text-secondary", to: "/judge-dashboard" }] : []),
+    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging" },
     { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/profile" },
     { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-secondary", to: "/competitions" },
   ];
@@ -39,7 +40,7 @@ export default function Dashboard() {
         animate="show"
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-          {cards.map((c) => (
+        {cards.map((c) => (
           <motion.div key={c.title} variants={item}>
             <Link to={c.to}>
               <Card className="border-border/50 bg-card/80 hover:bg-card transition-colors cursor-pointer group">

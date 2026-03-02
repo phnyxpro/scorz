@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
-import { Zap, LogOut, User, Shield, LayoutDashboard, Trophy } from "lucide-react";
+import { Zap, LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles } = useAuth();
@@ -17,6 +17,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const bottomNavItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ path: "/judge-dashboard", label: "Judging", icon: ClipboardList }] : []),
     { path: "/competitions", label: "Events", icon: Trophy },
     { path: "/profile", label: "Profile", icon: User },
   ];
@@ -69,11 +70,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-                  isActive
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${isActive
                     ? "text-primary"
                     : "text-muted-foreground"
-                }`}
+                  }`}
               >
                 <item.icon className={`h-5 w-5 ${isActive ? "text-primary" : ""}`} />
                 {item.label}

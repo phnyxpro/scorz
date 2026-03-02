@@ -48,7 +48,7 @@ export default function JudgeScoring() {
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
 
-  const [selectedContestant, setSelectedContestant] = useState("");
+  const [selectedContestant, setSelectedContestant] = useState(searchParams.get("contestant") || "");
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
 
   const upsert = useUpsertScore();

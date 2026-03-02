@@ -25,6 +25,7 @@ import ContestantProfile from "./pages/ContestantProfile";
 import AdminPanel from "./pages/AdminPanel";
 import MasterScoreSheet from "./pages/MasterScoreSheet";
 import LevelMasterSheet from "./pages/LevelMasterSheet";
+import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <JudgingHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/judge-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <JudgeDashboard />
                     </AppLayout>
                   </ProtectedRoute>
                 }
