@@ -1,67 +1,44 @@
 
 
-# Enrich Public Event Page
+## Fix: Public Schedule Not Showing on Event Page
 
-## Overview
-Add judges/contestants per level, competition rules link, sponsor logos, a news feed, and social media links to the public event detail page. This requires new database tables and new columns, plus significant updates to the `PublicEventDetail.tsx` page.
+### Problem
+The `/events/:id` page shows "No levels defined" because the database security policies on `competition_levels` and `sub_events` tables only allow **logged-in users** to read data. Visitors who aren't signed in get empty results.
 
-## Database Changes (1 migration)
+The `competitions` table already has a public-access policy, but the child tables (`competition_levels`, `sub_events`) do not.
 
-1. **Add columns to `competitions`:**
-   - `rules_url` (text, nullable) -- link to competition rules document
-   - `social_links` (jsonb, default `{}`) -- e.g. `{ facebook: "...", instagram: "...", twitter: "...", youtube: "...", tiktok: "..." }`
+### Solution
+Add public SELECT policies to both tables so unauthenticated visitors can view the competition schedule.
 
-2. **New table: `competition_sponsors`**
-   - `id` (uuid, PK)
-   - `competition_id` (uuid, FK to competitions)
-   - `name` (text)
-   - `logo_url` (text)
-   - `website_url` (text, nullable)
-   - `sort_order` (int, default 0)
-   - `created_at`, `updated_at`
-   - RLS: public SELECT, admin/organizer ALL
+### Database Changes
 
-3. **New table: `competition_updates`** (news feed)
-   - `id` (uuid, PK)
-   - `competition_id` (uuid, FK to competitions)
-   - `title` (text)
-   - `content` (text)
-   - `image_url` (text, nullable)
-   - `published_at` (timestamptz, default now())
-   - `created_by` (uuid)
-   - `created_at`, `updated_at`
-   - RLS: public SELECT, admin/organizer ALL
+**1. Add public SELECT policy on `competition_levels`:**
+- Allow anyone (including anonymous visitors) to read levels
+- Policy: `USING (true)` for SELECT, applied to the `anon` role
 
-## Frontend Changes
+**2. Add public SELECT policy on `sub_events`:**
+- Same approach -- allow anyone to read sub-events so the schedule renders
 
-### Admin Side (CompetitionDetail.tsx)
-- Add fields to the "General" tab for `rules_url` and social media links (facebook, instagram, twitter/X, youtube, tiktok)
-- Add a new "Sponsors" tab with CRUD for sponsor logos (name, logo upload, website URL, sort order)
-- Add a new "Updates" tab with CRUD for news posts (title, content, optional image)
+### Code Changes
 
-### Public Event Page (PublicEventDetail.tsx)
-- **Judges & Contestants per level:** For each level section, query `sub_event_assignments` (role = judge) and `contestant_registrations` to show assigned judges' names and registered contestants' names beneath each level card.
-- **Rules link:** Show a prominent "Competition Rules" button/link if `rules_url` is set.
-- **Sponsors section:** Display sponsor logos in a horizontal scrolling row or grid, each linking to their website.
-- **News feed section:** Show competition updates as a vertical timeline/card list, newest first.
-- **Social media links:** Display social media icons in the footer/header area linking to the competition's social profiles.
+**3. Update `PublicEventDetail.tsx` header branding:**
+- Replace leftover `Zap` icon and "SCORE" text with the Scorz logo (missed in the earlier rebrand)
+- Update footer to remove "PHNYX.DEV" reference
 
-### New Hooks
-- `useCompetitionSponsors(compId)` -- fetch sponsors ordered by sort_order
-- `useCompetitionUpdates(compId)` -- fetch news posts ordered by published_at desc
+### Technical Details
 
-## Technical Details
+Two new RLS policies will be created:
 
-### Queries for Judges & Contestants
-The existing `sub_event_assignments` table already tracks judge assignments per sub-event. The page will:
-1. Collect all sub-event IDs per level (already available)
-2. Query `sub_event_assignments` filtered by those IDs where `role = 'judge'`
-3. Join with `profiles` to get judge names
-4. Query `contestant_registrations` filtered by `sub_event_id` in those IDs to show contestants
+```sql
+CREATE POLICY "Public can view levels"
+  ON public.competition_levels FOR SELECT
+  TO anon
+  USING (true);
 
-### Sponsor Logo Storage
-Reuse the existing `banners` storage bucket for sponsor logos, under a `sponsors/` folder prefix.
+CREATE POLICY "Public can view sub_events"
+  ON public.sub_events FOR SELECT
+  TO anon
+  USING (true);
+```
 
-### Social Links Schema
-Stored as JSONB on competitions: `{ facebook?: string, instagram?: string, x?: string, youtube?: string, tiktok?: string }`. Renders as icon buttons with external links.
-
+These are safe because levels and sub-events contain no sensitive data -- they only hold names, dates, times, and locations, which are intended to be publicly visible on the event page.
