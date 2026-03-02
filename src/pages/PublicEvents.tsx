@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Calendar, MapPin, Zap } from "lucide-react";
+import { ArrowRight, Calendar, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import scorzLogo from "@/assets/scorz-logo.svg";
@@ -100,7 +100,7 @@ export default function PublicEvents() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Zap className="h-12 w-12 text-primary/30" />
+                          <img src={scorzLogo} alt="" className="h-12 w-12 opacity-20" />
                         </div>
                       )}
                       <Badge
@@ -140,7 +140,7 @@ export default function PublicEvents() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <Zap className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <img src={scorzLogo} alt="" className="h-10 w-10 opacity-20 mx-auto mb-3" />
             <p className="text-muted-foreground">No events available at the moment.</p>
             <p className="text-muted-foreground text-sm">Check back soon!</p>
           </div>

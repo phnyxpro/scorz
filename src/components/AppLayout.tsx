@@ -29,7 +29,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
             <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCOR<span className="text-accent">Z</span></span>
+            <span className="font-mono text-sm font-bold tracking-tighter text-foreground">SCOR<span className="text-accent">Z</span></span>
           </Link>
 
           <div className="flex items-center gap-2">

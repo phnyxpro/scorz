@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 /* Hide scrollbar for horizontal tab scrolling */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -13,14 +19,18 @@
     --background: 220 20% 97%;
     --foreground: 220 25% 10%;
 
+    --brand-charcoal: 220 25% 10%;
+    --brand-white: 0 0% 100%;
+    --brand-orange: 38 92% 50%;
+
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
 
-    --primary: 38 92% 50%;
-    --primary-foreground: 0 0% 5%;
+    --primary: var(--brand-charcoal);
+    --primary-foreground: var(--brand-white);
 
     --secondary: 174 60% 40%;
     --secondary-foreground: 0 0% 98%;
@@ -28,15 +38,15 @@
     --muted: 220 15% 92%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 174 60% 40%;
-    --accent-foreground: 0 0% 98%;
+    --accent: var(--brand-orange);
+    --accent-foreground: var(--brand-white);
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 15% 88%;
     --input: 220 15% 88%;
-    --ring: 38 92% 50%;
+    --ring: var(--brand-orange);
 
     --radius: 0.5rem;
 
@@ -60,8 +70,8 @@
     --popover: 220 20% 9%;
     --popover-foreground: 220 15% 90%;
 
-    --primary: 38 92% 50%;
-    --primary-foreground: 0 0% 5%;
+    --primary: var(--brand-charcoal);
+    --primary-foreground: var(--brand-white);
 
     --secondary: 174 50% 35%;
     --secondary-foreground: 0 0% 95%;
@@ -69,15 +79,15 @@
     --muted: 220 15% 15%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 174 50% 35%;
-    --accent-foreground: 0 0% 95%;
+    --accent: var(--brand-orange);
+    --accent-foreground: var(--brand-white);
 
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 15% 16%;
     --input: 220 15% 16%;
-    --ring: 38 92% 50%;
+    --ring: var(--brand-orange);
 
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 220 15% 90%;
@@ -99,7 +109,12 @@
     @apply bg-background text-foreground font-sans;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'JetBrains Mono', monospace;
   }
 }
@@ -111,10 +126,34 @@
 
 /* Print styles for score sheets */
 @media print {
-  body { background: white !important; color: black !important; }
-  nav, header, aside, footer { display: none !important; }
-  table { font-size: 10px !important; }
-  th, td { padding: 4px 6px !important; border: 1px solid #ccc !important; }
-  [class*="max-w-"] { max-width: 100% !important; }
-  @page { margin: 1cm; size: landscape; }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  nav,
+  header,
+  aside,
+  footer {
+    display: none !important;
+  }
+
+  table {
+    font-size: 10px !important;
+  }
+
+  th,
+  td {
+    padding: 4px 6px !important;
+    border: 1px solid #ccc !important;
+  }
+
+  [class*="max-w-"] {
+    max-width: 100% !important;
+  }
+
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
 }
