@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Zap, ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
+  ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
   FileText, Users, Award, Info, Heart, ExternalLink, Newspaper
 } from "lucide-react";
+import scorzLogo from "@/assets/logo.png";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -101,8 +102,8 @@ export default function PublicEventDetail() {
       <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <span className="font-bold tracking-tighter text-foreground font-mono">SCORE</span>
+            <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+            <span className="font-bold tracking-tighter text-foreground font-mono">SCORZ</span>
           </Link>
           <div className="flex items-center gap-2">
             {socialLinks && <SocialLinks links={socialLinks} />}
@@ -121,7 +122,7 @@ export default function PublicEventDetail() {
           <img src={comp.banner_url} alt={comp.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Zap className="h-16 w-16 text-primary/20" />
+            <img src={scorzLogo} alt="Scorz" className="h-16 w-16 opacity-20" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
@@ -329,7 +330,7 @@ export default function PublicEventDetail() {
         )}
         <div className="space-y-1 font-mono uppercase tracking-widest text-[10px]">
           <p>© {new Date().getFullYear()} {comp.name}</p>
-          <p>Powered by <span className="font-bold text-foreground">PHNYX.DEV</span></p>
+          <p className="font-bold text-foreground">Scorz</p>
         </div>
       </footer>
     </div>
