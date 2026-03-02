@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, ArrowRight, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import scorzLogo from "@/assets/logo.png";
 import { format } from "date-fns";
 
 function usePublicCompetitions() {
@@ -34,8 +35,8 @@ export default function PublicEvents() {
       <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary" />
-            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCORE</span>
+            <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
+            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCORZ</span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
@@ -58,11 +59,10 @@ export default function PublicEvents() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Zap className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter text-foreground font-mono">SCORE</h1>
+          <div className="inline-flex items-center gap-3 mb-4">
+            <img src={scorzLogo} alt="Scorz" className="h-12 w-12 sm:h-14 sm:w-14" />
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter text-foreground font-mono">SCORZ</h1>
           </div>
-          <p className="text-muted-foreground font-mono text-xs mb-2">Powered by PHNYX.DEV</p>
           <p className="text-muted-foreground max-w-md mx-auto">
             Live competition management, real-time scoring, and audience engagement — all in one platform.
           </p>
@@ -149,7 +149,7 @@ export default function PublicEvents() {
 
       {/* Footer */}
       <footer className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
-        <p>Powered by <span className="font-mono font-medium text-foreground">PHNYX.DEV</span></p>
+        <p className="font-mono font-medium text-foreground">Scorz</p>
       </footer>
     </div>
   );

@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
-import { Zap, LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
+import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
+import scorzLogo from "@/assets/logo.png";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles } = useAuth();
@@ -27,9 +28,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCORE</span>
-            <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">PHNYX.DEV</span>
+            <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+            <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCORZ</span>
           </Link>
 
           <div className="flex items-center gap-2">
