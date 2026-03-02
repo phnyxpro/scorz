@@ -100,7 +100,7 @@ export default function Auth() {
             <Zap className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold tracking-tight text-foreground">SCORZ</h1>
           </div>
-          <p className="text-sm text-muted-foreground font-mono">Powered by PHNYX.DEV</p>
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">@ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev</p>
         </div>
 
         <Card className="border-border/50 bg-card/80 backdrop-blur">

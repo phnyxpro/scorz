@@ -5,13 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface Props {
   subEventIds: string[];
+  competitionId?: string;
   role: "judges" | "contestants";
 }
 
-export function PublicRoleList({ subEventIds, role }: Props) {
+export function PublicRoleList({ subEventIds, competitionId, role }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ["public-role-list", role, subEventIds],
-    enabled: subEventIds.length > 0,
+    queryKey: ["public-role-list", role, subEventIds, competitionId],
+    enabled: subEventIds.length > 0 || (role === "contestants" && !!competitionId),
     queryFn: async () => {
       if (role === "judges") {
         const { data: assignments } = await supabase
@@ -27,11 +28,19 @@ export function PublicRoleList({ subEventIds, role }: Props) {
           .in("user_id", ids);
         return profiles || [];
       } else {
-        const { data: regs } = await supabase
+        let query = supabase
           .from("contestant_registrations")
           .select("full_name, profile_photo_url, location")
-          .in("sub_event_id", subEventIds)
           .eq("status", "approved");
+
+        if (competitionId) {
+          query = query.eq("competition_id", competitionId);
+        } else {
+          query = query.in("sub_event_id", subEventIds);
+        }
+
+        const { data: regs } = await query;
+
         return (regs || []).map(r => ({
           full_name: r.full_name,
           avatar_url: r.profile_photo_url,

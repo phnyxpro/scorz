@@ -151,7 +151,7 @@ export function PrintableResults({
         </div>
 
         <div className="footer">
-          Generated on {new Date().toLocaleString()} • SCORE by PHNYX.DEV
+          Generated on {new Date().toLocaleString()} • @ 2026 SCORZ Powered by phnyx.dev
         </div>
       </div>
     </>

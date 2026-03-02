@@ -243,7 +243,11 @@ export default function PublicEventDetail() {
             {/* Contestants Tab */}
             <TabsContent value="contestants">
               <div className="max-w-4xl mx-auto">
-                <PublicRoleList subEventIds={allSubEventIds} role="contestants" />
+                <PublicRoleList
+                  subEventIds={allSubEventIds}
+                  competitionId={id}
+                  role="contestants"
+                />
               </div>
             </TabsContent>
 
@@ -322,16 +326,11 @@ export default function PublicEventDetail() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-12 text-center text-xs text-muted-foreground space-y-4">
-        {socialLinks && Object.keys(socialLinks).some(k => socialLinks[k]) && (
-          <div className="flex justify-center">
-            <SocialLinks links={socialLinks} />
-          </div>
-        )}
-        <div className="space-y-1 font-mono uppercase tracking-widest text-[10px]">
-          <p>© {new Date().getFullYear()} {comp.name}</p>
-          <p className="font-bold text-foreground">Scorz</p>
-        </div>
+      <footer className="border-t border-border/50 py-10 px-4 text-center space-y-6">
+        {socialLinks && <SocialLinks links={socialLinks} />}
+        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+        </p>
       </footer>
     </div>
   );

@@ -61,6 +61,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
+      <footer className="container py-6 px-3 sm:px-6 border-t border-border/10">
+        <p className="text-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+        </p>
+      </footer>
+
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
         <div className="flex items-stretch h-14">
@@ -71,8 +77,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 key={item.path}
                 to={item.path}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${isActive
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  ? "text-primary"
+                  : "text-muted-foreground"
                   }`}
               >
                 <item.icon className={`h-5 w-5 ${isActive ? "text-primary" : ""}`} />

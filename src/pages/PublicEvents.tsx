@@ -148,8 +148,10 @@ export default function PublicEvents() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
-        <p className="font-mono font-medium text-foreground">Scorz</p>
+      <footer className="border-t border-border/50 py-8 text-center">
+        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+        </p>
       </footer>
     </div>
   );
