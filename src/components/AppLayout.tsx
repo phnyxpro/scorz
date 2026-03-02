@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
-import scorzLogo from "@/assets/logo.png";
+import scorzLogo from "@/assets/scorz-logo.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles } = useAuth();
@@ -29,7 +29,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
             <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCORZ</span>
+            <span className="font-mono text-sm font-bold tracking-tight text-foreground">SCOR<span className="text-accent">Z</span></span>
           </Link>
 
           <div className="flex items-center gap-2">
