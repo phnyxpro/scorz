@@ -13,7 +13,7 @@ import {
   ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
   FileText, Users, Award, Info, Heart, ExternalLink, Newspaper
 } from "lucide-react";
-import scorzLogo from "@/assets/logo.png";
+import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -103,7 +103,7 @@ export default function PublicEventDetail() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-bold tracking-tighter text-foreground font-mono">SCORZ</span>
+            <span className="font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-2">
             {socialLinks && <SocialLinks links={socialLinks} />}

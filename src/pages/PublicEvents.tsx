@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Calendar, MapPin, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import scorzLogo from "@/assets/logo.png";
+import scorzLogo from "@/assets/scorz-logo.svg";
 import { format } from "date-fns";
 
 function usePublicCompetitions() {
@@ -36,7 +36,7 @@ export default function PublicEvents() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
-            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCORZ</span>
+            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
@@ -61,7 +61,7 @@ export default function PublicEvents() {
         >
           <div className="inline-flex items-center gap-3 mb-4">
             <img src={scorzLogo} alt="Scorz" className="h-12 w-12 sm:h-14 sm:w-14" />
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter text-foreground font-mono">SCORZ</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></h1>
           </div>
           <p className="text-muted-foreground max-w-md mx-auto">
             Live competition management, real-time scoring, and audience engagement — all in one platform.
