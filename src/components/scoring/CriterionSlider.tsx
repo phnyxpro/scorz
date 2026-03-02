@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
@@ -13,6 +14,8 @@ interface CriterionSliderProps {
 const scoreLabels = ["", "1 – Very Weak", "2 – Weak", "3 – Average", "4 – Strong", "5 – Excellent"];
 
 export function CriterionSlider({ criterion, value, onChange, disabled = false }: CriterionSliderProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
   const descriptions: Record<number, string> = {
     1: criterion.description_1,
     2: criterion.description_2,
@@ -21,8 +24,23 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
     5: criterion.description_5,
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    const key = e.key;
+    if (["1", "2", "3", "4", "5"].includes(key)) {
+      onChange(parseInt(key, 10));
+      e.preventDefault();
+    }
+  };
+
   return (
-    <div className="space-y-2">
+    <div
+      className={`space-y-2 p-2 rounded-lg transition-colors ${isFocused ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}
+      onKeyDown={handleKeyDown}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      tabIndex={disabled ? -1 : 0}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-foreground">{criterion.name}</span>
@@ -39,9 +57,16 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
             </TooltipContent>
           </Tooltip>
         </div>
-        <span className={`text-sm font-mono font-bold ${value > 0 ? "text-primary" : "text-muted-foreground"}`}>
-          {value > 0 ? value : "–"}
-        </span>
+        <div className="flex items-center gap-2">
+          {isFocused && (
+            <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded animate-pulse">
+              Press 1-5
+            </span>
+          )}
+          <span className={`text-sm font-mono font-bold ${value > 0 ? "text-primary" : "text-muted-foreground"}`}>
+            {value > 0 ? value : "–"}
+          </span>
+        </div>
       </div>
 
       <Slider
@@ -52,6 +77,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
         onValueChange={([v]) => onChange(v)}
         disabled={disabled}
         className="py-1"
+        tabIndex={-1} // Parent handles focus for shortcuts
       />
 
       {value > 0 && (

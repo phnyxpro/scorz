@@ -102,11 +102,38 @@ export function useUpsertScore() {
         return data;
       }
     },
-    onSuccess: (_, v) => {
-      qc.invalidateQueries({ queryKey: ["my_scores", v.sub_event_id] });
-      qc.invalidateQueries({ queryKey: ["my_score", v.sub_event_id, v.contestant_registration_id] });
+    onMutate: async (newScore) => {
+      // Cancel outgoing refetches
+      await qc.cancelQueries({ queryKey: ["my_score", newScore.sub_event_id, newScore.contestant_registration_id] });
+      await qc.cancelQueries({ queryKey: ["my_scores", newScore.sub_event_id] });
+
+      // Snapshot the previous value
+      const previousScore = qc.getQueryData(["my_score", newScore.sub_event_id, newScore.contestant_registration_id]);
+
+      // Optimistically update to the new value
+      qc.setQueryData(
+        ["my_score", newScore.sub_event_id, newScore.contestant_registration_id],
+        (old: any) => ({ ...old, ...newScore })
+      );
+
+      return { previousScore };
     },
-    onError: (e: any) => toast({ title: "Error saving score", description: e.message, variant: "destructive" }),
+    onError: (err: any, newScore, context) => {
+      // Rollback on error
+      if (context?.previousScore) {
+        qc.setQueryData(
+          ["my_score", newScore.sub_event_id, newScore.contestant_registration_id],
+          context.previousScore
+        );
+      }
+      toast({ title: "Error saving score", description: err.message, variant: "destructive" });
+    },
+    onSettled: (data, error, variables) => {
+      // Always refetch after error or success
+      qc.invalidateQueries({ queryKey: ["my_scores", variables.sub_event_id] });
+      qc.invalidateQueries({ queryKey: ["my_score", variables.sub_event_id, variables.contestant_registration_id] });
+      qc.invalidateQueries({ queryKey: ["all_scores", variables.sub_event_id] });
+    },
   });
 }
 

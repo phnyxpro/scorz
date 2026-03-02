@@ -51,7 +51,25 @@ export function PerformanceTimer({
     }
   }, [running, elapsed, onDurationChange]);
 
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (disabled) return;
+      if (e.code === "Space") {
+        const target = e.target as HTMLElement;
+        const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          if (running) stop();
+          else start();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [running, start, stop, disabled]);
 
   const graceStart = timeLimitSeconds;
   const penaltyStart = timeLimitSeconds + gracePeriodSeconds;

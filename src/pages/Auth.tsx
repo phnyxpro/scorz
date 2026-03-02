@@ -101,19 +101,18 @@ export default function Auth() {
             <img src={scorzLogo} alt="Scorz" className="h-8 w-8" />
             <h1 className="text-3xl font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></h1>
           </div>
-          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">@ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev</p>
         </div>
 
         <Card className="border-border/50 bg-card/80 backdrop-blur">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-card-foreground">Welcome</CardTitle>
-            <CardDescription>Sign in or create an account to continue</CardDescription>
+            <CardTitle className="text-lg text-card-foreground">Access Port</CardTitle>
+            <CardDescription>Sign in to manage your events or create an organiser account</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Organiser Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -225,14 +224,24 @@ export default function Auth() {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account…" : "Create Account"}
+                    {loading ? "Creating account…" : "Create Organiser Account"}
                   </Button>
                 </form>
+                <p className="text-[10px] text-muted-foreground mt-4 text-center leading-relaxed">
+                  By creating an organiser account, you can create, manage, and promote your own competitions.
+                  Judges and staff will be invited directly to the platform.
+                </p>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </motion.div>
+
+      <footer className="absolute bottom-6 w-full text-center px-4 pointer-events-none">
+        <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest pointer-events-auto">
+          @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+        </p>
+      </footer>
     </div>
   );
 }

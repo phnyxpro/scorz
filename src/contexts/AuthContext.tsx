@@ -25,27 +25,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
 
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (data) {
-      setRoles(data.map((r: any) => r.role as AppRole));
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      if (data) {
+        setRoles(data.map((r: any) => r.role as AppRole));
+      }
+    } catch (err) {
+      console.error("Error fetching roles:", err);
+      setRoles([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
-          setTimeout(() => fetchRoles(session.user.id), 0);
-        } else {
+          fetchRoles(session.user.id);
+        } else if (event === "SIGNED_OUT") {
           setRoles([]);
         }
-        setLoading(false);
+
+        if (event !== "INITIAL_SESSION") {
+          setLoading(false);
+        }
       }
     );
 
@@ -59,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchRoles]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({

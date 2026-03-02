@@ -37,12 +37,32 @@ export function SpeechComments({ value, onChange, disabled = false }: SpeechComm
 
       recognitionRef.current = recognition;
     }
-    return () => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (disabled || !supported) return;
+      if (e.key.toLowerCase() === "d") {
+        const target = e.target as HTMLElement;
+        const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          toggleListeningRef.current?.();
+        }
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch { }
+      }
+    };
+  }, [disabled, supported]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleListeningRef = useRef<() => void>();
+  useEffect(() => {
+    toggleListeningRef.current = toggleListening;
+  }, [listening]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;

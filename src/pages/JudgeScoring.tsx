@@ -129,6 +129,31 @@ export default function JudgeScoring() {
 
   const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isCertified) return;
+
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      if (isInput) return;
+
+      if (e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (allScored && !upsert.isPending) {
+          handleSave();
+        }
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (allScored && existingScore?.id) {
+          setShowCertifyDialog(true);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isCertified, allScored, upsert.isPending, existingScore, handleSave]);
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">

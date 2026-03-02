@@ -7,14 +7,16 @@ import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, User, FileText, PenTool, Calendar } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-const STEPS = [
+const BASE_STEPS = [
   { id: "info", label: "Personal Info", icon: User },
   { id: "rules", label: "Rules & Rubric", icon: FileText },
   { id: "signature", label: "Sign & Certify", icon: PenTool },
@@ -24,15 +26,25 @@ const STEPS = [
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signUp } = useAuth();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: existing, isLoading: regLoading } = useMyRegistration(competitionId);
   const createReg = useCreateRegistration();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(0);
+  const steps = user
+    ? BASE_STEPS
+    : [{ id: "account", label: "Account Setup", icon: UserPlus }, ...BASE_STEPS];
+
+  // Auth state
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Form state
   const [fullName, setFullName] = useState("");
@@ -80,17 +92,41 @@ export default function ContestantRegistration() {
   const isMinor = ageCategory === "minor";
 
   const canProceed = () => {
-    switch (step) {
-      case 0: return fullName.trim() && email.trim() && (!isMinor || guardianName.trim());
-      case 1: return allRulesChecked;
-      case 2: return !!contestantSig && (!isMinor || !!guardianSig);
-      case 3: return true;
+    const currentStepId = steps[step].id;
+    switch (currentStepId) {
+      case "account": return authEmail.trim() && authPassword.length >= 6 && authName.trim();
+      case "info": return fullName.trim() && email.trim() && (!isMinor || guardianName.trim());
+      case "rules": return allRulesChecked;
+      case "signature": return !!contestantSig && (!isMinor || !!guardianSig);
+      case "schedule": return true;
       default: return true;
     }
   };
 
-  const handleSubmit = () => {
+  const handleNext = async () => {
+    if (steps[step].id === "account") {
+      setAuthLoading(true);
+      const { error } = await signUp(authEmail, authPassword, authName);
+      setAuthLoading(false);
+      if (error) {
+        toast({ title: "Account setup failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Account created", description: "Please check your email to verify. You can continue with the details now." });
+      // We don't advance yet because user is still 'null' until session refresh? 
+      // Actually AuthContext might update 'user' if session is instant?
+      // In Lovable/Supabase, it usually doesn't update until verification unless auto-confirm is on.
+      // But we can let them fill the rest and use the email.
+    }
+    setStep(s => s + 1);
+  };
+
+  const handleSubmit = async () => {
     if (!user || !competitionId) return;
+
+    // Ensure user has contestant role
+    await supabase.from("user_roles").insert({ user_id: user.id, role: "contestant" as any });
+
     createReg.mutate({
       user_id: user.id,
       competition_id: competitionId,
@@ -112,7 +148,10 @@ export default function ContestantRegistration() {
       guardian_signed_at: isMinor ? new Date().toISOString() : undefined,
       sub_event_id: selectedSubEvent || undefined,
     } as any, {
-      onSuccess: () => navigate(`/competitions`),
+      onSuccess: () => {
+        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
+        navigate(`/competitions`);
+      },
     });
   };
 
@@ -153,15 +192,14 @@ export default function ContestantRegistration() {
 
       {/* Step indicator */}
       <div className="flex gap-1 mb-6">
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <button
             key={s.id}
             onClick={() => i < step && setStep(i)}
-            className={`flex-1 flex items-center gap-1.5 px-2 py-2 rounded text-xs font-medium transition-colors ${
-              i === step ? "bg-primary text-primary-foreground" :
+            className={`flex-1 flex items-center gap-1.5 px-2 py-2 rounded text-[10px] sm:text-xs font-medium transition-colors ${i === step ? "bg-primary text-primary-foreground" :
               i < step ? "bg-secondary/20 text-secondary cursor-pointer" :
-              "bg-muted text-muted-foreground"
-            }`}
+                "bg-muted text-muted-foreground"
+              }`}
           >
             <s.icon className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">{s.label}</span>
@@ -171,13 +209,45 @@ export default function ContestantRegistration() {
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={step}
+          key={steps[step].id}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
         >
-          {step === 0 && (
+          {steps[step].id === "account" && (
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader>
+                <CardTitle className="text-base text-primary">Setup Your Account</CardTitle>
+                <CardDescription>Create a secure account to manage your profile and view scores</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reg-name" className="text-xs">Full Name</Label>
+                  <Input id="reg-name" placeholder="John Doe" value={authName} onChange={e => {
+                    setAuthName(e.target.value);
+                    setFullName(e.target.value);
+                  }} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-email" className="text-xs">Email Address</Label>
+                  <Input id="reg-email" type="email" placeholder="john@example.com" value={authEmail} onChange={e => {
+                    setAuthEmail(e.target.value);
+                    setEmail(e.target.value);
+                  }} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-pass" className="text-xs">Password</Label>
+                  <Input id="reg-pass" type="password" placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} />
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  * By creating an account, you will be assigned the contestant role upon completion.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {steps[step].id === "info" && (
             <Card className="border-border/50 bg-card/80">
               <CardHeader>
                 <CardTitle className="text-base">Personal Information</CardTitle>
@@ -236,7 +306,9 @@ export default function ContestantRegistration() {
             </Card>
           )}
 
-          {step === 1 && (
+          {/* Personal Info Step handled above */}
+
+          {steps[step].id === "rules" && (
             <Card className="border-border/50 bg-card/80">
               <CardHeader>
                 <CardTitle className="text-base">Rules & Rubric Acknowledgment</CardTitle>
@@ -263,7 +335,7 @@ export default function ContestantRegistration() {
                   <div className="border border-border/50 rounded-md p-3 bg-muted/20">
                     <p className="text-xs font-medium text-foreground mb-2">Time Penalties</p>
                     <p className="text-xs text-muted-foreground mb-1">
-                      Time limit: {Math.floor(penalties[0].time_limit_seconds / 60)}:{String(penalties[0].time_limit_seconds % 60).padStart(2, "0")} 
+                      Time limit: {Math.floor(penalties[0].time_limit_seconds / 60)}:{String(penalties[0].time_limit_seconds % 60).padStart(2, "0")}
                       {" "}| Grace: {penalties[0].grace_period_seconds}s
                     </p>
                     {penalties.map(p => (
@@ -294,7 +366,7 @@ export default function ContestantRegistration() {
             </Card>
           )}
 
-          {step === 2 && (
+          {steps[step].id === "signature" && (
             <Card className="border-border/50 bg-card/80">
               <CardHeader>
                 <CardTitle className="text-base">Digital Signature</CardTitle>
@@ -311,7 +383,7 @@ export default function ContestantRegistration() {
             </Card>
           )}
 
-          {step === 3 && (
+          {steps[step].id === "schedule" && (
             <ScheduleStep
               levels={levels || []}
               selectedLevelId={selectedLevelId}
@@ -323,14 +395,13 @@ export default function ContestantRegistration() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation */}
       <div className="flex justify-between mt-4">
         <Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s - 1)}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
-        {step < STEPS.length - 1 ? (
-          <Button disabled={!canProceed()} onClick={() => setStep(s => s + 1)}>
-            Next <ArrowRight className="h-4 w-4 ml-1" />
+        {step < steps.length - 1 ? (
+          <Button disabled={!canProceed() || authLoading} onClick={handleNext}>
+            {authLoading ? "Initializing…" : "Next"} <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         ) : (
           <Button disabled={!canProceed() || createReg.isPending} onClick={handleSubmit}>
@@ -385,11 +456,10 @@ function ScheduleStep({
               <button
                 key={se.id}
                 onClick={() => setSelectedSubEvent(se.id === selectedSubEvent ? "" : se.id)}
-                className={`w-full text-left border rounded-md p-3 transition-colors ${
-                  se.id === selectedSubEvent
-                    ? "border-primary bg-primary/10"
-                    : "border-border/50 bg-muted/20 hover:bg-muted/40"
-                }`}
+                className={`w-full text-left border rounded-md p-3 transition-colors ${se.id === selectedSubEvent
+                  ? "border-primary bg-primary/10"
+                  : "border-border/50 bg-muted/20 hover:bg-muted/40"
+                  }`}
               >
                 <div className="font-medium text-sm text-foreground">{se.name}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">

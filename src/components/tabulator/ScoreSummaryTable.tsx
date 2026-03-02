@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, FileText } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 interface Props {
@@ -93,8 +93,21 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
                   </Link>
                 ) : r.name}
               </TableCell>
-              <TableCell className="text-center font-mono text-xs">
-                {r.certifiedCount}/{r.judgeCount}
+              <TableCell className="text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    {r.certifiedCount > 0 && (
+                      <Badge variant="secondary" className="px-1 py-0 h-5 gap-1 text-[10px]">
+                        <CheckCircle className="h-2.5 w-2.5" /> {r.certifiedCount}
+                      </Badge>
+                    )}
+                    {r.judgeCount - r.certifiedCount > 0 && (
+                      <Badge variant="outline" className="px-1 py-0 h-5 gap-1 text-[10px] border-amber-500/50 text-amber-500">
+                        <Clock className="h-2.5 w-2.5" /> {r.judgeCount - r.certifiedCount}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </TableCell>
               {rubricNames.map((n) => (
                 <TableCell key={n} className="text-center font-mono text-xs">
@@ -108,11 +121,15 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
               <TableCell className="text-center">
                 {r.allCertified ? (
                   <Badge variant="secondary" className="gap-1">
-                    <CheckCircle className="h-3 w-3" /> Certified
+                    <CheckCircle className="h-3 w-3" /> Ready
+                  </Badge>
+                ) : r.judgeCount > 0 ? (
+                  <Badge variant="outline" className="gap-1 animate-pulse border-amber-500/50 text-amber-500">
+                    <Clock className="h-3 w-3" /> In Progress
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="gap-1">
-                    <Clock className="h-3 w-3" /> Pending
+                  <Badge variant="outline" className="text-muted-foreground opacity-50 border-none">
+                    Pending
                   </Badge>
                 )}
               </TableCell>
