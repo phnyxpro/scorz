@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye, BarChart3, Heart } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye, BarChart3, Heart, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -25,8 +27,10 @@ export default function Competitions() {
   const { data: competitions, isLoading } = useCompetitions();
   const create = useCreateCompetition();
   const remove = useDeleteCompetition();
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole("admin") || hasRole("organizer");
+  const { hasRole, subscription } = useAuth();
+  const isAdmin = hasRole("admin");
+  const isOrganizer = hasRole("organizer");
+  const canManage = isAdmin || isOrganizer;
   const isJudge = hasRole("judge") || hasRole("chief_judge");
   const isChiefJudge = hasRole("chief_judge");
   const isTabulator = hasRole("tabulator");
@@ -38,8 +42,25 @@ export default function Competitions() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // Subscription enforcement for organizers (admins bypass)
+  const competitionCount = competitions?.length ?? 0;
+  const limit = isAdmin ? -1 : subscription.competitionLimit; // admins have no limit
+  const isAtLimit = limit !== -1 && competitionCount >= limit;
+  const needsSubscription = !isAdmin && !subscription.subscribed;
+
   const handleCreate = () => {
     if (!name.trim()) return;
+
+    if (needsSubscription) {
+      toast.error("You need an active subscription to create competitions. Visit the billing page to subscribe.");
+      return;
+    }
+
+    if (isAtLimit) {
+      toast.error(`You've reached your plan limit of ${limit} competitions. Upgrade your plan to create more.`);
+      return;
+    }
+
     create.mutate(
       { name, description: description || undefined, start_date: startDate || undefined, end_date: endDate || undefined },
       { onSuccess: () => { setOpen(false); setName(""); setDescription(""); setStartDate(""); setEndDate(""); } }
@@ -55,10 +76,13 @@ export default function Competitions() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Competitions</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage events, stages & configuration</p>
         </div>
-        {isAdmin && (
+        {canManage && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Competition</Button>
+              <Button size="sm" disabled={needsSubscription || isAtLimit}>
+                {needsSubscription || isAtLimit ? <Lock className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                New Competition
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Create Competition</DialogTitle></DialogHeader>
@@ -84,6 +108,32 @@ export default function Competitions() {
         )}
       </div>
 
+      {/* Subscription warnings for organizers */}
+      {canManage && !isAdmin && needsSubscription && (
+        <Alert className="mb-4 border-accent/30 bg-accent/5">
+          <Lock className="h-4 w-4 text-accent" />
+          <AlertDescription className="text-sm">
+            You need an active subscription to create competitions.{" "}
+            <Link to="/admin" className="text-accent underline font-medium">Subscribe now</Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {canManage && !isAdmin && subscription.subscribed && isAtLimit && (
+        <Alert className="mb-4 border-secondary/30 bg-secondary/5">
+          <AlertDescription className="text-sm">
+            You've used {competitionCount}/{limit} competitions on your <strong>{subscription.tier?.name}</strong> plan.{" "}
+            <Link to="/admin" className="text-secondary underline font-medium">Upgrade</Link> for more.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {canManage && !isAdmin && subscription.subscribed && !isAtLimit && limit !== -1 && (
+        <p className="text-xs text-muted-foreground mb-4 font-mono">
+          {competitionCount}/{limit} competitions used • {subscription.tier?.name}
+        </p>
+      )}
+
       {!competitions?.length ? (
         <Card className="border-border/50 bg-card/80">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -99,7 +149,7 @@ export default function Competitions() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <Badge className={statusColors[c.status]}>{c.status}</Badge>
-                    {isAdmin && (
+                    {canManage && (
                       <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive" onClick={() => remove.mutate(c.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -115,7 +165,7 @@ export default function Competitions() {
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {isAdmin && (
+                    {canManage && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
                       </Button>
