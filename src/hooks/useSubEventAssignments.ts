@@ -34,8 +34,8 @@ export function useSubEventAssignments(subEventId: string | undefined) {
   });
 }
 
-/** Fetch sub-events the current user is assigned to, optionally filtered by role */
-export function useMyAssignedSubEvents(role?: string) {
+/** Fetch sub-events the current user is assigned to, optionally filtered by role(s) */
+export function useMyAssignedSubEvents(role?: string | string[]) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my_assigned_sub_events", user?.id, role],
@@ -45,7 +45,13 @@ export function useMyAssignedSubEvents(role?: string) {
         .from("sub_event_assignments")
         .select("*")
         .eq("user_id", user!.id);
-      if (role) query = query.eq("role", role as any);
+      if (role) {
+        if (Array.isArray(role)) {
+          query = query.in("role", role as any);
+        } else {
+          query = query.eq("role", role as any);
+        }
+      }
       const { data, error } = await query.order("created_at");
       if (error) throw error;
       return data as SubEventAssignment[];
