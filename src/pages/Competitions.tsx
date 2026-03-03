@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye, BarChart3, Heart, Lock } from "lucide-react";
+import { Plus, Trash2, Settings, Trophy, ClipboardList, Shield, Calculator, Eye, BarChart3, Heart, Lock, AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -43,7 +44,9 @@ export default function Competitions() {
   const [endDate, setEndDate] = useState("");
 
   // Subscription enforcement for organizers (admins bypass)
-  const competitionCount = competitions?.length ?? 0;
+  const { user } = useAuth();
+  const myCompetitions = isAdmin ? competitions : competitions?.filter(c => c.created_by === user?.id);
+  const competitionCount = myCompetitions?.length ?? 0;
   const limit = isAdmin ? -1 : subscription.competitionLimit; // admins have no limit
   const isAtLimit = limit !== -1 && competitionCount >= limit;
   const needsSubscription = !isAdmin && !subscription.subscribed;
@@ -150,9 +153,27 @@ export default function Competitions() {
                   <div className="flex items-center justify-between">
                     <Badge className={statusColors[c.status]}>{c.status}</Badge>
                     {canManage && (
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive" onClick={() => remove.mutate(c.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete "{c.name}"?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the competition and all associated data (levels, sub-events, registrations, scores). This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                   <CardTitle className="text-base mt-2">{c.name}</CardTitle>

@@ -120,10 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check subscription after roles are loaded (need auth token)
   useEffect(() => {
-    if (session?.user && roles.length > 0) {
+    if (session?.user) {
       refreshSubscription();
     }
-  }, [session?.user?.id, roles, refreshSubscription]);
+  }, [session?.user?.id, refreshSubscription]);
 
   // Periodic refresh every 60s
   useEffect(() => {

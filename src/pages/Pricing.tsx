@@ -2,9 +2,10 @@ import { TIERS } from "@/lib/stripe-tiers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Trophy } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import scorzLogo from "@/assets/scorz-logo.svg";
 
 export default function Pricing() {
   return (
@@ -13,8 +14,8 @@ export default function Pricing() {
       <header className="border-b border-border/40 bg-card/60 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-secondary" />
-            <span className="font-bold font-mono text-foreground">SCORZ</span>
+            <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
+            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
