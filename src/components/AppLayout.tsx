@@ -3,11 +3,11 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
+import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, signOut, roles } = useAuth();
+  const { user, signOut, roles, masquerade, stopMasquerade, isMasquerading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,6 +25,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="auditorium-filter min-h-screen bg-background">
+      {/* Masquerade banner */}
+      {isMasquerading && masquerade && (
+        <div className="sticky top-0 z-[60] bg-destructive/90 text-destructive-foreground px-4 py-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            <span className="font-mono text-xs">
+              Viewing as <strong>{masquerade.fullName || masquerade.email}</strong>
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" className="h-7 text-destructive-foreground hover:bg-destructive-foreground/20" onClick={stopMasquerade}>
+            <X className="h-3 w-3 mr-1" /> Exit
+          </Button>
+        </div>
+      )}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">

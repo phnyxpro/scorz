@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Constants } from "@/integrations/supabase/types";
-import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Users, Trophy, BarChart3 } from "lucide-react";
+import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Users, Trophy, BarChart3, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ALL_ROLES = Constants.public.Enums.app_role;
@@ -112,7 +112,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
 }
 
 export default function AdminPanel() {
-  const { hasRole } = useAuth();
+  const { hasRole, startMasquerade, isMasquerading } = useAuth();
   const { users, loading, refetch, assignRole, revokeRole } = useAdminUsers();
   const [search, setSearch] = useState("");
   const [manageUser, setManageUser] = useState<AdminUser | null>(null);
@@ -262,12 +262,13 @@ export default function AdminPanel() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Dialog open={manageUser?.user_id === u.user_id} onOpenChange={(open) => setManageUser(open ? u : null)}>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-xs h-8">
-                            Manage
-                          </Button>
-                        </DialogTrigger>
+                      <div className="flex gap-1">
+                        <Dialog open={manageUser?.user_id === u.user_id} onOpenChange={(open) => setManageUser(open ? u : null)}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-xs h-8">
+                              Manage
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader>
                             <DialogTitle className="font-mono text-base">Manage Roles</DialogTitle>
@@ -297,7 +298,17 @@ export default function AdminPanel() {
                             />
                           )}
                         </DialogContent>
-                      </Dialog>
+                        </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-8"
+                          title="View as this user"
+                          onClick={() => startMasquerade({ userId: u.user_id, email: u.email || "", fullName: u.full_name || "" })}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </motion.tr>
                 ))}
