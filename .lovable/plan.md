@@ -1,102 +1,99 @@
 
 
-## Redesign Judge/Chief Judge Dashboard Flow
+## Seed Complete Demo Competition Data
 
-Restructure the judge experience so the Dashboard becomes the central hub with a competition selector and role-specific action cards that lead to dedicated content pages.
-
----
-
-### 1. Add Competition Selector to Dashboard Header
-
-**File: `src/pages/Dashboard.tsx`**
-
-For users with `judge` or `chief_judge` roles:
-- Add a combobox/select dropdown in the top-right area of the dashboard (below the welcome text) that lists competitions the user is assigned to
-- Fetch assigned competitions by querying `sub_event_assignments` for the current user, joining through `sub_events` and `competition_levels` to get competition IDs, then matching against `competitions`
-- Store selected competition ID in local state; persist in `localStorage` so it remembers across sessions
-- When no competition is selected, show a prompt to select one
-- When a competition is selected, the dashboard cards change to competition-specific links
+Expand the existing demo user seeding into a comprehensive edge function that populates a full competition with all supporting data, so every role's dashboard displays realistic content.
 
 ---
 
-### 2. Redefine Dashboard Cards for Judge Role
+### 1. Create New Edge Function: `seed-demo-data`
 
-**File: `src/pages/Dashboard.tsx`**
+**New file: `supabase/functions/seed-demo-data/index.ts`**
 
-When a competition is selected, show these 4 cards for **judge**:
+A single edge function (using service role key to bypass RLS) that:
 
-1. **Score Cards** -- links to `/competitions/:id/score` (the existing JudgeScoring page, which already has contestant selection and slider interface)
-2. **Contestant Profiles** -- links to a new route `/competitions/:id/contestants` showing profile cards
-3. **Rules** -- links to `/competitions/:id/rules-rubric` (filtered to rules section)
-4. **Rubric** -- links to `/competitions/:id/rules-rubric` (filtered to rubric section, or separate anchor)
+1. **Calls `seed-demo-users` logic first** -- ensures all 7 demo users exist with correct roles
+2. **Creates the demo competition**:
+   - Name: "FCNPS National Poetry Slam 2025"
+   - Status: `active`, slug: `fcnps-2025`
+   - Description, start/end dates, rules_url (a placeholder PDF or markdown URL)
+   - Created by the organizer demo user
 
-For **chief_judge**, show the same 4 plus:
+3. **Creates 3 competition levels** (rounds):
+   - Round 1: Auditions (sort_order 0)
+   - Round 2: Semi-Finals (sort_order 1)
+   - Round 3: Finals (sort_order 2)
 
-5. **Certify Results** -- links to `/competitions/:id/chief-judge` (existing ChiefJudgeDashboard which shows the Master Score Sheet and certification flow)
+4. **Creates sub-events** (one per level):
+   - Each with a location, event_date, start_time, end_time, status `scheduled`
 
-Remove the generic "My Assignments", "Judging Hub", "Rules and Rubric" cards for these roles. Replace with the dynamic competition-specific cards above.
+5. **Creates rubric criteria** (5 scoring criteria):
+   - Content & Meaning (descriptions for scores 1-5)
+   - Vocal Delivery
+   - Stage Presence
+   - Originality
+   - Audience Connection
+   - Each with meaningful descriptor text for all 5 levels
 
----
+6. **Creates penalty rules**:
+   - Time limit: 180 seconds, grace period: 10 seconds
+   - 0-10s over: 0.5 point penalty
+   - 10-20s over: 1.0 point penalty
+   - 20s+: 2.0 point penalty
 
-### 3. Upgrade Contestant Selector to Search Combobox
+7. **Registers 5 demo contestants** (contestant_registrations):
+   - The demo contestant user + 4 additional fictional contestants (created as auth users)
+   - All with status `approved`, bios, age categories, locations
+   - Each assigned to sub-events via `sub_event_id`
 
-**File: `src/pages/JudgeScoring.tsx`**
+8. **Creates sub-event assignments**:
+   - Demo Judge assigned to all 3 sub-events as `judge`
+   - Demo Chief Judge assigned to all 3 sub-events as `chief_judge`
+   - Demo Tabulator assigned to all 3 sub-events as `tabulator`
+   - Demo Witness assigned to all 3 sub-events as `witness`
 
-Replace the plain `<Select>` for choosing a contestant with a `cmdk`-based `<Command>` combobox (already available via `@/components/ui/command`):
-- Type-ahead search by contestant name
-- Shows contestant list filtered by the selected sub-event
-- Popover-style dropdown that opens on click/focus
+9. **Creates sample judge scores** (for Round 1 only, to show partially scored state):
+   - Demo Judge's scores for 3 of the 5 contestants in the Auditions sub-event
+   - Each with realistic `criterion_scores` JSON, `raw_total`, `final_score`, and `performance_duration_seconds`
+   - Leaves 2 contestants unscored so the judge has work to do
 
----
-
-### 4. Create Contestant Profiles Page
-
-**New file: `src/pages/CompetitionContestants.tsx`**
-
-A page at `/competitions/:id/contestants` that:
-- Fetches all approved contestant registrations for the competition
-- Displays them as profile cards (photo, name, age category, location, bio snippet)
-- Tapping a card navigates to `/profile/:userId` for the full profile view
-- Add this route to `src/App.tsx`
-
----
-
-### 5. Split Rules and Rubric into Separate Deep-Link Targets
-
-**File: `src/pages/RulesAndRubric.tsx`**
-
-Add URL hash support so `/competitions/:id/rules-rubric#rules` scrolls to the rules section and `/competitions/:id/rules-rubric#rubric` scrolls to the rubric section. Add `id` attributes to each section element. The dashboard cards for "Rules" and "Rubric" will link with appropriate hashes.
-
----
-
-### 6. Update Bottom Navigation
-
-**File: `src/components/AppLayout.tsx`**
-
-Simplify bottom nav for judges/chief judges -- remove the separate "Assignments" and "Judging" entries. The Dashboard card-based flow replaces them. Keep: Dashboard, Events, Profile.
+10. **Idempotency**: Checks if demo competition already exists (by slug) and skips creation if so, returning existing IDs
 
 ---
 
-### 7. Register New Route
+### 2. Add "Seed Demo Data" Button to Admin Panel
 
-**File: `src/App.tsx`**
+**File: `src/components/admin/GlobalSettingsPanel.tsx`** (or `src/pages/AdminPanel.tsx`)
 
-Add protected route for `/competitions/:id/contestants` rendering the new `CompetitionContestants` page.
-
----
-
-### 8. Update Breadcrumbs
-
-**File: `src/components/PageBreadcrumbs.tsx`**
-
-Add label mapping for "contestants" segment.
+- Add a button labeled "Seed Demo Competition" that calls the `seed-demo-data` edge function
+- Shows a loading spinner while seeding
+- Displays success/error toast with results summary
+- Only visible to admin role users
 
 ---
 
-### Technical Summary
+### 3. Demo Data Details
 
-- New file: `src/pages/CompetitionContestants.tsx`
-- Modified files: `src/pages/Dashboard.tsx`, `src/pages/JudgeScoring.tsx`, `src/pages/RulesAndRubric.tsx`, `src/components/AppLayout.tsx`, `src/App.tsx`, `src/components/PageBreadcrumbs.tsx`
-- No database changes needed -- all data already exists in `sub_event_assignments`, `contestant_registrations`, `competitions`, and `rubric_criteria` tables
-- Uses existing `cmdk` dependency for the combobox search
+**Additional contestant users created** (4 fictional performers):
+| Email | Name | Age Category | Location |
+|---|---|---|---|
+| contestant2@demo.scorz.app | Maya Johnson | adult | Brooklyn, NY |
+| contestant3@demo.scorz.app | Carlos Rivera | adult | Miami, FL |
+| contestant4@demo.scorz.app | Aisha Patel | young_adult | Chicago, IL |
+| contestant5@demo.scorz.app | Jordan Lee | adult | Atlanta, GA |
+
+**Sample scores for Auditions round** (Judge scoring 3 of 5 contestants):
+- Scores use realistic half-point values across all 5 criteria
+- Raw totals range from 18.5 to 22.0 out of 25
+- No time penalties applied (clean performances)
+
+---
+
+### Technical Notes
+
+- The edge function uses `SUPABASE_SERVICE_ROLE_KEY` to bypass all RLS policies for data insertion
+- No database migrations needed -- all tables already exist with the correct schema
+- The function is idempotent: safe to call multiple times without duplicating data
+- New contestant users get the `contestant` role automatically via the same pattern as existing demo users
+- All inserted data uses `gen_random_uuid()` defaults for IDs (generated by Postgres)
 
