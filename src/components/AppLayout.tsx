@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
@@ -73,6 +74,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
+        <PageBreadcrumbs />
         {children}
       </main>
 
