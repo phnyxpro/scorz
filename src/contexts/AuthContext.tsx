@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "witness" | "contestant" | "audience";
 
+interface MasqueradeTarget {
+  userId: string;
+  email: string;
+  fullName: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -15,6 +21,11 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   hasRole: (role: AppRole) => boolean;
+  // Masquerade
+  masquerade: MasqueradeTarget | null;
+  startMasquerade: (target: MasqueradeTarget) => Promise<void>;
+  stopMasquerade: () => void;
+  isMasquerading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [masquerade, setMasquerade] = useState<MasqueradeTarget | null>(null);
+  const [realRoles, setRealRoles] = useState<AppRole[]>([]);
 
   const fetchRoles = useCallback(async (userId: string) => {
     try {
@@ -91,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    setMasquerade(null);
+    setRealRoles([]);
     await supabase.auth.signOut();
     setRoles([]);
   };
@@ -114,8 +129,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (role: AppRole) => roles.includes(role);
 
+  const startMasquerade = useCallback(async (target: MasqueradeTarget) => {
+    // Save real roles before masquerading
+    setRealRoles(roles);
+    setMasquerade(target);
+    // Load target user's roles
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", target.userId);
+      if (error) throw error;
+      setRoles(data?.map((r: any) => r.role as AppRole) || []);
+    } catch {
+      setRoles([]);
+    }
+  }, [roles]);
+
+  const stopMasquerade = useCallback(() => {
+    setMasquerade(null);
+    setRoles(realRoles);
+    setRealRoles([]);
+  }, [realRoles]);
+
+  const isMasquerading = masquerade !== null;
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, signUp, signIn, signOut, resetPassword, signInWithGoogle, hasRole }}>
+    <AuthContext.Provider value={{
+      user, session, loading, roles, signUp, signIn, signOut, resetPassword, signInWithGoogle, hasRole,
+      masquerade, startMasquerade, stopMasquerade, isMasquerading,
+    }}>
       {children}
     </AuthContext.Provider>
   );
