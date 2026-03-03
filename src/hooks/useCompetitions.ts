@@ -154,9 +154,10 @@ export function useCreateCompetition() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (values: { name: string; description?: string; start_date?: string; end_date?: string }) => {
+      const slug = values.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || crypto.randomUUID().slice(0, 8);
       const { data, error } = await supabase
         .from("competitions")
-        .insert({ ...values, created_by: user!.id })
+        .insert({ ...values, created_by: user!.id, slug } as any)
         .select()
         .single();
       if (error) throw error;

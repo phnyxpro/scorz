@@ -252,6 +252,7 @@ export type Database = {
           id: string
           name: string
           rules_url: string | null
+          slug: string
           social_links: Json
           start_date: string | null
           status: string
@@ -267,6 +268,7 @@ export type Database = {
           id?: string
           name: string
           rules_url?: string | null
+          slug: string
           social_links?: Json
           start_date?: string | null
           status?: string
@@ -282,6 +284,7 @@ export type Database = {
           id?: string
           name?: string
           rules_url?: string | null
+          slug?: string
           social_links?: Json
           start_date?: string | null
           status?: string

@@ -25,13 +25,15 @@ import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
 
-function usePublicCompetition(id: string | undefined) {
+function usePublicCompetition(slug: string | undefined) {
   return useQuery({
-    queryKey: ["public-competition", id],
-    enabled: !!id,
+    queryKey: ["public-competition", slug],
+    enabled: !!slug,
     queryFn: async () => {
-      const { data, error } = await supabase.from("competitions").select("*").eq("id", id!).single();
+      const query: any = supabase.from("competitions").select("*");
+      const { data, error } = await query.eq("slug", slug!).maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error("Not found");
       return data;
     },
   });
@@ -81,11 +83,12 @@ export default function PublicEventDetail() {
   const currentTab = searchParams.get("tab") || "schedule";
 
   const { data: comp, isLoading } = usePublicCompetition(id);
-  const { data: levels } = usePublicLevelsWithSubEvents(id);
-  const { data: sponsors } = useCompetitionSponsors(id);
-  const { data: updates } = useCompetitionUpdates(id);
-  const { data: criteria } = useRubricCriteria(id);
-  const { data: penalties } = usePenaltyRules(id);
+  const compId = comp?.id;
+  const { data: levels } = usePublicLevelsWithSubEvents(compId);
+  const { data: sponsors } = useCompetitionSponsors(compId);
+  const { data: updates } = useCompetitionUpdates(compId);
+  const { data: criteria } = useRubricCriteria(compId);
+  const { data: penalties } = usePenaltyRules(compId);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -205,8 +208,8 @@ export default function PublicEventDetail() {
 
                 {comp.status === "active" && (
                   <Button size="lg" className="w-full sm:w-auto" onClick={() => {
-                    if (user) navigate(`/competitions/${id}/register`);
-                    else navigate(`/auth?redirect=/competitions/${id}/register`);
+                    if (user) navigate(`/competitions/${compId}/register`);
+                    else navigate(`/auth?redirect=/competitions/${compId}/register`);
                   }}>
                     <UserPlus className="h-4 w-4 mr-2" /> Register as Contestant
                   </Button>
@@ -293,7 +296,7 @@ export default function PublicEventDetail() {
                     Supporters can vote for their favorite contestants across all events.
                     Every vote helps promote their artistic journey!
                   </p>
-                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${id}/vote`)}>
+                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${compId}/vote`)}>
                     <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
                   </Button>
                 </div>
