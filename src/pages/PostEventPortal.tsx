@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Award, CheckCircle, Lock, MessageSquare, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
+import { PrintableScorecard } from "@/components/results/PrintableScorecard";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 export default function PostEventPortal() {
@@ -93,6 +94,18 @@ export default function PostEventPortal() {
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name} — {myReg?.full_name}</p>
         </div>
+        {allCertified && certifiedScores.length > 0 && (
+          <PrintableScorecard
+            competitionName={comp?.name || ""}
+            subEventName={subEvents?.find(se => se.id === selectedSubEventId)?.name || ""}
+            contestantName={myReg?.full_name || ""}
+            scores={certifiedScores}
+            sortedRubric={sortedRubric}
+            indexToName={indexToName}
+            overallAvg={overallAvg}
+            criterionAverages={criterionAverages}
+          />
+        )}
       </div>
 
       {/* Sub-event selector */}
