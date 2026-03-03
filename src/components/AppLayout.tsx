@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X } from "lucide-react";
+import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X, Settings } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -26,7 +26,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ...(roles.includes("tabulator") || roles.includes("witness") ? [{ path: "/tabulator", label: "Tabulator", icon: ClipboardList }] : []),
     ...(!isJudgeRole ? [{ path: "/competitions", label: "Events", icon: Trophy }] : []),
-    { path: "/profile", label: "Profile", icon: User },
+    { path: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -68,7 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Shield className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/profile")} title="My Profile">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings">
               <User className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out">

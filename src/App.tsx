@@ -32,6 +32,7 @@ import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
 import RulesAndRubric from "./pages/RulesAndRubric";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -185,6 +186,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ContestantProfile />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Settings />
                     </AppLayout>
                   </ProtectedRoute>
                 }
