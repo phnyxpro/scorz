@@ -27,6 +27,7 @@ import MasterScoreSheet from "./pages/MasterScoreSheet";
 import LevelMasterSheet from "./pages/LevelMasterSheet";
 import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route
                 path="/dashboard"
                 element={
