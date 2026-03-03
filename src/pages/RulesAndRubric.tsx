@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useCompetition, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,11 +9,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RulesAndRubric() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const location = useLocation();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
   const { data: criteria, isLoading: criteriaLoading } = useRubricCriteria(competitionId);
   const { data: penalties, isLoading: penaltiesLoading } = usePenaltyRules(competitionId);
 
   const isLoading = compLoading || criteriaLoading || penaltiesLoading;
+
+  // Scroll to hash section on load
+  useEffect(() => {
+    if (!isLoading && location.hash) {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [isLoading, location.hash]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -38,7 +48,7 @@ export default function RulesAndRubric() {
       ) : (
         <>
           {/* Official Rules */}
-          <section className="space-y-3">
+          <section id="rules" className="space-y-3 scroll-mt-20">
             <h2 className="text-lg font-bold font-mono flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" /> Official Rules
             </h2>
@@ -77,7 +87,7 @@ export default function RulesAndRubric() {
           </section>
 
           {/* Scoring Rubric */}
-          <section>
+          <section id="rubric" className="scroll-mt-20">
             <PublicRubric criteria={criteria || []} penalties={penalties || []} />
           </section>
         </>

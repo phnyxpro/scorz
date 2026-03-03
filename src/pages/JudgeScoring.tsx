@@ -14,7 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { motion } from "framer-motion";
@@ -51,6 +54,7 @@ export default function JudgeScoring() {
   useJudgeScoresRealtime(subEventId || undefined);
 
   const [selectedContestant, setSelectedContestant] = useState(searchParams.get("contestant") || "");
+  const [contestantOpen, setContestantOpen] = useState(false);
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
 
   const upsert = useUpsertScore();
@@ -194,19 +198,46 @@ export default function JudgeScoring() {
               </Select>
             </div>
           </div>
-          {selectedSubEventId && (
-            <div>
-              <label className="text-xs text-muted-foreground">Contestant</label>
-              <Select value={selectedContestant} onValueChange={setSelectedContestant}>
-                <SelectTrigger><SelectValue placeholder="Choose a contestant…" /></SelectTrigger>
-                <SelectContent>
-                  {registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)).map(r => (
-                    <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {selectedSubEventId && (() => {
+            const filteredContestants = registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)) ?? [];
+            const selectedName = filteredContestants.find(r => r.id === selectedContestant)?.full_name;
+            return (
+              <div>
+                <label className="text-xs text-muted-foreground">Contestant</label>
+                <Popover open={contestantOpen} onOpenChange={setContestantOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={contestantOpen} className="w-full justify-between font-normal">
+                      {selectedName || "Search contestant…"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Type a name…" />
+                      <CommandList>
+                        <CommandEmpty>No contestants found.</CommandEmpty>
+                        <CommandGroup>
+                          {filteredContestants.map(r => (
+                            <CommandItem
+                              key={r.id}
+                              value={r.full_name}
+                              onSelect={() => {
+                                setSelectedContestant(r.id);
+                                setContestantOpen(false);
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", selectedContestant === r.id ? "opacity-100" : "opacity-0")} />
+                              {r.full_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 
