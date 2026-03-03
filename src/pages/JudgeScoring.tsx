@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
+import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
@@ -53,6 +53,16 @@ export default function JudgeScoring() {
 
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
+  const { data: myScores } = useMyScores(subEventId || undefined);
+
+  // Build lookup: contestant_registration_id -> score status
+  const scoreStatusMap = useMemo(() => {
+    const map = new Map<string, "scored" | "certified">();
+    for (const s of myScores || []) {
+      map.set(s.contestant_registration_id, s.is_certified ? "certified" : "scored");
+    }
+    return map;
+  }, [myScores]);
 
   const [selectedContestant, setSelectedContestant] = useState(searchParams.get("contestant") || "");
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
@@ -225,7 +235,13 @@ export default function JudgeScoring() {
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="truncate text-xs">{r.full_name}</span>
+                    <span className="truncate text-xs flex-1">{r.full_name}</span>
+                    {scoreStatusMap.get(r.id) === "certified" && (
+                      <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                    )}
+                    {scoreStatusMap.get(r.id) === "scored" && (
+                      <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    )}
                   </button>
                 ))}
                 {filteredContestants.length === 0 && (
