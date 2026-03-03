@@ -25,6 +25,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "judge-dashboard": "Judge Dashboard",
   "master-sheet": "Master Sheet",
   "level-sheet": "Level Sheet",
+  "rules-rubric": "Rules & Rubric",
   pricing: "Pricing",
 };
 

@@ -155,6 +155,14 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
                         <CardDescription className="text-xs font-mono">
                             Level: {subEvent.level?.name}
                         </CardDescription>
+                        {(subEvent.event_date || subEvent.start_time) && (
+                            <CardDescription className="text-xs font-mono mt-0.5">
+                                {subEvent.event_date || ""}{subEvent.start_time ? ` • ${subEvent.start_time}` : ""}{subEvent.end_time ? ` – ${subEvent.end_time}` : ""}
+                            </CardDescription>
+                        )}
+                        {subEvent.location && (
+                            <CardDescription className="text-xs mt-0.5">{subEvent.location}</CardDescription>
+                        )}
                     </div>
                     <Badge className="bg-primary/20 text-primary border-primary/30">
                         {contestants.length} Contestants
@@ -192,11 +200,18 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
                     )}
                 </div>
 
-                <Button asChild variant="outline" className="w-full text-xs" size="sm">
-                    <Link to={`/competitions/${competitionId}/score?sub_event=${subEvent.id}`}>
-                        <ClipboardList className="h-3.5 w-3.5 mr-2" /> Full Score Sheet
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button asChild variant="outline" className="flex-1 text-xs" size="sm">
+                        <Link to={`/competitions/${competitionId}/score?sub_event=${subEvent.id}`}>
+                            <ClipboardList className="h-3.5 w-3.5 mr-2" /> Full Score Sheet
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="text-xs" size="sm">
+                        <Link to={`/competitions/${competitionId}/rules-rubric`}>
+                            <FileText className="h-3.5 w-3.5 mr-1" /> Rules
+                        </Link>
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );

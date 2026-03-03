@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ChiefJudgeDashboard() {
@@ -198,6 +198,39 @@ export default function ChiefJudgeDashboard() {
 
       {selectedSubEventId && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Summary card */}
+          <Card className="border-border/50 bg-card/80 mb-4">
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Contestants</p>
+                  <p className="text-xl font-bold text-foreground">{Object.keys(scoresByContestant).length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Scorecards</p>
+                  <p className="text-xl font-bold text-foreground">{allScores?.length ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Certified</p>
+                  <p className="text-xl font-bold text-foreground">{allScores?.filter(s => s.is_certified).length ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Ties</p>
+                  <p className="text-xl font-bold text-foreground">{ties.length}</p>
+                </div>
+              </div>
+              <div className="flex justify-end mt-3">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/master-sheet?sub_event=${selectedSubEventId}`}>
+                    <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                    Master Score Sheet
+                    <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Tabs defaultValue="panel" className="space-y-4">
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>

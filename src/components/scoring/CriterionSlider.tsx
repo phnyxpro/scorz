@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 import type { RubricCriterion } from "@/hooks/useCompetitions";
@@ -10,8 +11,6 @@ interface CriterionSliderProps {
   onChange: (value: number) => void;
   disabled?: boolean;
 }
-
-const scoreLabels = ["", "1 – Very Weak", "2 – Weak", "3 – Average", "4 – Strong", "5 – Excellent"];
 
 export function CriterionSlider({ criterion, value, onChange, disabled = false }: CriterionSliderProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -24,6 +23,9 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
     5: criterion.description_5,
   };
 
+  // Get the nearest whole-number descriptor for display
+  const nearestDesc = value > 0 ? descriptions[Math.round(value)] : null;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
     const key = e.key;
@@ -31,6 +33,14 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
       onChange(parseInt(key, 10));
       e.preventDefault();
     }
+  };
+
+  const handleNumberInput = (raw: string) => {
+    const num = parseFloat(raw);
+    if (isNaN(num)) return;
+    // Clamp to 0.5–5 and round to nearest 0.5
+    const clamped = Math.min(5, Math.max(0.5, Math.round(num * 2) / 2));
+    onChange(clamped);
   };
 
   return (
@@ -50,7 +60,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
             </TooltipTrigger>
             <TooltipContent side="right" className="max-w-xs space-y-1 text-xs">
               {[1, 2, 3, 4, 5].map(n => (
-                <div key={n} className={n === value ? "font-bold text-primary" : ""}>
+                <div key={n} className={n === Math.round(value) ? "font-bold text-primary" : ""}>
                   <span className="font-mono">{n}.</span> {descriptions[n]}
                 </div>
               ))}
@@ -63,25 +73,34 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
               Press 1-5
             </span>
           )}
-          <span className={`text-sm font-mono font-bold ${value > 0 ? "text-primary" : "text-muted-foreground"}`}>
-            {value > 0 ? value : "–"}
-          </span>
+          <Input
+            type="number"
+            min={0.5}
+            max={5}
+            step={0.5}
+            value={value > 0 ? value : ""}
+            onChange={(e) => handleNumberInput(e.target.value)}
+            disabled={disabled}
+            className="w-16 h-7 text-center font-mono font-bold text-sm px-1"
+            tabIndex={-1}
+            placeholder="–"
+          />
         </div>
       </div>
 
       <Slider
-        min={1}
+        min={0.5}
         max={5}
-        step={1}
-        value={[value || 1]}
+        step={0.5}
+        value={[value || 0.5]}
         onValueChange={([v]) => onChange(v)}
         disabled={disabled}
         className="py-1"
-        tabIndex={-1} // Parent handles focus for shortcuts
+        tabIndex={-1}
       />
 
-      {value > 0 && (
-        <p className="text-xs text-muted-foreground italic">{descriptions[value]}</p>
+      {nearestDesc && value > 0 && (
+        <p className="text-xs text-muted-foreground italic">{nearestDesc}</p>
       )}
     </div>
   );
