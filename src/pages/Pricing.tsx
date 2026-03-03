@@ -354,6 +354,13 @@ export default function Pricing() {
           <a href="mailto:dev@phnyx.pro">Contact Us</a>
         </Button>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border/40 py-6 px-4">
+        <p className="text-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+        </p>
+      </footer>
     </div>
   );
 }
