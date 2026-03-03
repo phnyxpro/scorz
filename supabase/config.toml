@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.notify-registration-status]
+verify_jwt = false
