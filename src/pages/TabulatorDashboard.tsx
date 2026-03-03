@@ -9,6 +9,7 @@ import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator } from "@/hooks/useTabulator";
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
+import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -175,6 +176,7 @@ export default function TabulatorDashboard() {
             <TabsList>
               <TabsTrigger value="summary">Score Summary</TabsTrigger>
               <TabsTrigger value="detail">Side-by-Side Detail</TabsTrigger>
+              <TabsTrigger value="votes">Vote Audit</TabsTrigger>
             </TabsList>
 
             <TabsContent value="summary">
@@ -205,6 +207,10 @@ export default function TabulatorDashboard() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="votes">
+              <VoteAudit subEventId={selectedSubEventId} />
             </TabsContent>
           </Tabs>
 
