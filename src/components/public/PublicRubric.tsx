@@ -31,7 +31,8 @@ export function PublicRubric({ criteria, penalties }: PublicRubricProps) {
                                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
                                     {[1, 2, 3, 4, 5].map((level) => (
                                         <div key={level} className="flex flex-col gap-1 p-2 rounded bg-muted/30 border border-border/30">
-                                            <span className="text-[10px] font-bold text-primary">Level {level}</span>
+                                            <span className="text-xs font-bold font-mono text-primary">{level}</span>
+                                            <span className="text-[10px] font-medium text-foreground/70">Level {level}</span>
                                             <p className="text-[10px] text-muted-foreground leading-tight">
                                                 {(criterion as any)[`description_${level}`]}
                                             </p>
