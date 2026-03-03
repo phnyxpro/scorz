@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +75,8 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
 
 export default function MasterScoreSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const { hasRole } = useAuth();
+  const canExport = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
   const subEventId = searchParams.get("sub_event");
 
@@ -177,7 +180,7 @@ export default function MasterScoreSheet() {
             </p>
           </div>
         </div>
-        <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Master Sheet" />
+        {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Master Sheet" />}
       </div>
 
       <Card className="border-border/50 bg-card/80">
