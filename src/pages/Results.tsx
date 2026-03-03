@@ -114,17 +114,22 @@ export default function Results() {
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
         {allCertified && leaderboard.length > 0 && (
-          <PrintableResults
-            competitionName={comp?.name || ""}
-            subEventName={selectedSubEvent?.name || ""}
-            leaderboard={leaderboard}
-            rubricNames={rubricNames}
-            certificationDates={{
-              chiefJudge: chiefCert?.signed_at || undefined,
-              tabulator: tabCert?.signed_at || undefined,
-              witness: witnessCert?.signed_at || undefined,
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/competitions/${competitionId}/post-event`}>My Feedback</Link>
+            </Button>
+            <PrintableResults
+              competitionName={comp?.name || ""}
+              subEventName={selectedSubEvent?.name || ""}
+              leaderboard={leaderboard}
+              rubricNames={rubricNames}
+              certificationDates={{
+                chiefJudge: chiefCert?.signed_at || undefined,
+                tabulator: tabCert?.signed_at || undefined,
+                witness: witnessCert?.signed_at || undefined,
+              }}
+            />
+          </div>
         )}
       </div>
 
