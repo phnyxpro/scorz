@@ -394,10 +394,9 @@ export default function ContestantRegistration() {
           )}
 
           {steps[step].id === "schedule" && (
-            <ScheduleStep
-              levels={levels || []}
+             <ScheduleStep
+              firstLevel={levels?.[0] || null}
               selectedLevelId={selectedLevelId}
-              setSelectedLevelId={setSelectedLevelId}
               selectedSubEvent={selectedSubEvent}
               setSelectedSubEvent={(id) => { setSelectedSubEvent(id); setSelectedSlotId(""); }}
               selectedSlotId={selectedSlotId}
@@ -426,17 +425,15 @@ export default function ContestantRegistration() {
 }
 
 function ScheduleStep({
-  levels,
+  firstLevel,
   selectedLevelId,
-  setSelectedLevelId,
   selectedSubEvent,
   setSelectedSubEvent,
   selectedSlotId,
   setSelectedSlotId,
 }: {
-  levels: { id: string; name: string }[];
+  firstLevel: { id: string; name: string } | null;
   selectedLevelId: string;
-  setSelectedLevelId: (id: string) => void;
   selectedSubEvent: string;
   setSelectedSubEvent: (id: string) => void;
   selectedSlotId: string;
@@ -476,17 +473,12 @@ function ScheduleStep({
         <CardDescription>Choose your sub-event and performance time (optional)</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {levels.length > 0 && (
+        {firstLevel && (
           <div>
-            <label className="text-xs text-muted-foreground">Level / Stage</label>
-            <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
-              <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-              <SelectContent>
-                {levels.map(l => (
-                  <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-xs text-muted-foreground">Round</label>
+            <div className="mt-1">
+              <Badge variant="secondary" className="text-sm px-3 py-1">{firstLevel.name}</Badge>
+            </div>
           </div>
         )}
 
@@ -513,9 +505,9 @@ function ScheduleStep({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground py-4 text-center">
-            {levels.length === 0
+            {!firstLevel
               ? "No levels configured yet. You can skip scheduling."
-              : "No sub-events available for this level."}
+              : "No sub-events available for this round."}
           </p>
         )}
 
