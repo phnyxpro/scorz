@@ -31,6 +31,7 @@ export default function CompetitionDetail() {
   const qc = useQueryClient();
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -42,6 +43,7 @@ export default function CompetitionDetail() {
   useEffect(() => {
     if (comp) {
       setName(comp.name);
+      setSlug((comp as any).slug || "");
       setDescription(comp.description || "");
       setStartDate(comp.start_date || "");
       setEndDate(comp.end_date || "");
@@ -57,7 +59,7 @@ export default function CompetitionDetail() {
     // Update standard fields via hook
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
     // Update new fields directly (not in typed hook)
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
@@ -112,6 +114,15 @@ export default function CompetitionDetail() {
                 }}
               />
               <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+              <div>
+                <label className="text-xs text-muted-foreground">URL Slug</label>
+                <Input
+                  placeholder="e.g. my-competition-2026"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Public URL: /events/{slug || '...'}</p>
+              </div>
               <Textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
               <div className="grid grid-cols-2 gap-3">
                 <div>

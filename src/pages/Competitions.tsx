@@ -39,6 +39,7 @@ export default function Competitions() {
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -65,8 +66,8 @@ export default function Competitions() {
     }
 
     create.mutate(
-      { name, description: description || undefined, start_date: startDate || undefined, end_date: endDate || undefined },
-      { onSuccess: () => { setOpen(false); setName(""); setDescription(""); setStartDate(""); setEndDate(""); } }
+      { name, slug: slug.trim() || undefined, description: description || undefined, start_date: startDate || undefined, end_date: endDate || undefined },
+      { onSuccess: () => { setOpen(false); setName(""); setSlug(""); setDescription(""); setStartDate(""); setEndDate(""); } }
     );
   };
 
@@ -90,7 +91,16 @@ export default function Competitions() {
             <DialogContent>
               <DialogHeader><DialogTitle>Create Competition</DialogTitle></DialogHeader>
               <div className="space-y-3 mt-2">
-                <Input placeholder="Competition name" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input placeholder="Competition name" value={name} onChange={(e) => { setName(e.target.value); if (!slug) { /* auto-generate hint */ } }} />
+                <div>
+                  <label className="text-xs text-muted-foreground">URL Slug</label>
+                  <Input
+                    placeholder={name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : "e.g. my-competition-2026"}
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Public URL: /events/{slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '...'}</p>
+                </div>
                 <Textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
                 <div className="grid grid-cols-2 gap-3">
                   <div>
