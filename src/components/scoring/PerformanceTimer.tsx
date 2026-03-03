@@ -45,11 +45,10 @@ export function PerformanceTimer({
     onDurationChange(0);
   }, [stop, onDurationChange]);
 
+  // Report duration changes continuously
   useEffect(() => {
-    if (!running) {
-      onDurationChange(elapsed);
-    }
-  }, [running, elapsed, onDurationChange]);
+    onDurationChange(elapsed);
+  }, [elapsed, onDurationChange]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
