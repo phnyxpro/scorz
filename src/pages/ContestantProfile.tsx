@@ -247,15 +247,17 @@ export default function ContestantProfile() {
 
         {/* Score Details Tab */}
         <TabsContent value="scores">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <Card className="border-border/50 bg-card/80">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Detailed Scores</CardTitle>
-                <CardDescription>Breakdown of scores received from each judge</CardDescription>
+                <CardDescription>Breakdown of scores received from each judge. Scores are visible after full event certification.</CardDescription>
               </CardHeader>
               <CardContent>
                 {(scores || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">No scores available yet.</p>
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No scores available yet. Scores will appear here after the event is fully certified by the chief judge.
+                  </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -300,6 +302,35 @@ export default function ContestantProfile() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Judge Feedback */}
+            {(scores || []).some((s) => s.comments && s.is_certified) && (
+              <Card className="border-border/50 bg-card/80">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Award className="h-4 w-4 text-secondary" /> Judge Feedback
+                  </CardTitle>
+                  <CardDescription>Comments from judges on your performances</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(scores || [])
+                    .filter((s) => s.comments && s.is_certified)
+                    .map((s) => {
+                      const reg = registrations?.find((r) => r.id === s.contestant_registration_id);
+                      const comp = reg ? compMap[reg.competition_id] : null;
+                      return (
+                        <div key={s.id} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground">{comp?.name || "Unknown"}</span>
+                            <span className="text-xs font-mono text-primary font-bold">{s.final_score} pts</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{s.comments}</p>
+                        </div>
+                      );
+                    })}
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </TabsContent>
 
