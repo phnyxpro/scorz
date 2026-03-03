@@ -14,7 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { PublicRubric } from "@/components/public/PublicRubric";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 
@@ -207,6 +209,18 @@ export default function JudgeScoring() {
           )}
         </CardContent>
       </Card>
+
+      {/* Collapsible Rubric Reference */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="gap-2 text-xs text-muted-foreground mb-2">
+            <Info className="h-3.5 w-3.5" /> View Full Rubric & Penalties
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mb-4">
+          <PublicRubric criteria={rubric || []} penalties={penalties || []} />
+        </CollapsibleContent>
+      </Collapsible>
 
       {selectedContestant && !scoreLoading && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">

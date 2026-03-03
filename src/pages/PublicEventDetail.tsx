@@ -176,14 +176,19 @@ export default function PublicEventDetail() {
               <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
                 <Award className="h-4 w-4" /> Judges
               </TabsTrigger>
-              <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
-                <Heart className="h-4 w-4" /> Voting
-              </TabsTrigger>
+              {(comp as any).voting_enabled && (
+                <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
+                  <Heart className="h-4 w-4" /> Voting
+                </TabsTrigger>
+              )}
               <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-2 px-6">
                 <ListOrdered className="h-4 w-4" /> Lineup
               </TabsTrigger>
               <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-2 px-6">
-                <Info className="h-4 w-4" /> Rules
+                <FileText className="h-4 w-4" /> Rules
+              </TabsTrigger>
+              <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-2 px-6">
+                <Info className="h-4 w-4" /> Rubric
               </TabsTrigger>
             </TabsList>
           </div>
@@ -278,30 +283,32 @@ export default function PublicEventDetail() {
               </div>
             </TabsContent>
 
-            {/* Voting Tab */}
-            <TabsContent value="voting" className="space-y-6 text-center py-12">
-              <div className="max-w-md mx-auto space-y-4">
-                <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-                <p className="text-muted-foreground">
-                  Supporters can vote for their favorite contestants across all events.
-                  Every vote helps promote their artistic journey!
-                </p>
-                <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${id}/vote`)}>
-                  <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
-                </Button>
-              </div>
-            </TabsContent>
+            {/* Voting Tab (conditional) */}
+            {(comp as any).voting_enabled && (
+              <TabsContent value="voting" className="space-y-6 text-center py-12">
+                <div className="max-w-md mx-auto space-y-4">
+                  <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
+                  <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
+                  <p className="text-muted-foreground">
+                    Supporters can vote for their favorite contestants across all events.
+                    Every vote helps promote their artistic journey!
+                  </p>
+                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${id}/vote`)}>
+                    <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
+                  </Button>
+                </div>
+              </TabsContent>
+            )}
 
             {/* Live Lineup Tab */}
             <TabsContent value="lineup">
               <LiveLineup allSubEventIds={allSubEventIds} levels={levels} />
             </TabsContent>
 
-            {/* Rules & Rubric Tab */}
+            {/* Rules Tab */}
             <TabsContent value="rules">
               <div className="max-w-4xl mx-auto space-y-8">
-                {rulesUrl && (
+                {rulesUrl ? (
                   <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex gap-4 items-center">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -318,8 +325,15 @@ export default function PublicEventDetail() {
                       </a>
                     </Button>
                   </Card>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic text-center py-8">No official rules document has been published yet.</p>
                 )}
+              </div>
+            </TabsContent>
 
+            {/* Rubric Tab */}
+            <TabsContent value="rubric">
+              <div className="max-w-4xl mx-auto">
                 <PublicRubric criteria={criteria || []} penalties={penalties || []} />
               </div>
             </TabsContent>

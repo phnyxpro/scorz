@@ -256,6 +256,7 @@ export type Database = {
           start_date: string | null
           status: string
           updated_at: string
+          voting_enabled: boolean
         }
         Insert: {
           banner_url?: string | null
@@ -270,6 +271,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Update: {
           banner_url?: string | null
@@ -284,6 +286,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Relationships: []
       }
