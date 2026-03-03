@@ -18,7 +18,8 @@ import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 export default function PostEventPortal() {
   const { id: competitionId } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const canExport = hasRole("admin") || hasRole("organizer");
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: myReg } = useMyRegistration(competitionId);
@@ -94,7 +95,7 @@ export default function PostEventPortal() {
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name} — {myReg?.full_name}</p>
         </div>
-        {allCertified && certifiedScores.length > 0 && (
+        {canExport && allCertified && certifiedScores.length > 0 && (
           <PrintableScorecard
             competitionName={comp?.name || ""}
             subEventName={subEvents?.find(se => se.id === selectedSubEventId)?.name || ""}

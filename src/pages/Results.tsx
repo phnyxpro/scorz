@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
@@ -19,6 +20,8 @@ const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 
 export default function Results() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const { hasRole } = useAuth();
+  const canExport = hasRole("admin") || hasRole("organizer");
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
@@ -118,17 +121,19 @@ export default function Results() {
             <Button asChild variant="outline" size="sm">
               <Link to={`/competitions/${competitionId}/post-event`}>My Feedback</Link>
             </Button>
-            <PrintableResults
-              competitionName={comp?.name || ""}
-              subEventName={selectedSubEvent?.name || ""}
-              leaderboard={leaderboard}
-              rubricNames={rubricNames}
-              certificationDates={{
-                chiefJudge: chiefCert?.signed_at || undefined,
-                tabulator: tabCert?.signed_at || undefined,
-                witness: witnessCert?.signed_at || undefined,
-              }}
-            />
+            {canExport && (
+              <PrintableResults
+                competitionName={comp?.name || ""}
+                subEventName={selectedSubEvent?.name || ""}
+                leaderboard={leaderboard}
+                rubricNames={rubricNames}
+                certificationDates={{
+                  chiefJudge: chiefCert?.signed_at || undefined,
+                  tabulator: tabCert?.signed_at || undefined,
+                  witness: witnessCert?.signed_at || undefined,
+                }}
+              />
+            )}
           </div>
         )}
       </div>
