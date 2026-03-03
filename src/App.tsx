@@ -22,6 +22,7 @@ import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
 import TabulatorDashboard from "./pages/TabulatorDashboard";
 import WitnessDashboard from "./pages/WitnessDashboard";
 import Results from "./pages/Results";
+import PostEventPortal from "./pages/PostEventPortal";
 import AudienceVoting from "./pages/AudienceVoting";
 import ContestantProfile from "./pages/ContestantProfile";
 import AdminPanel from "./pages/AdminPanel";
@@ -154,6 +155,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Results />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/post-event"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PostEventPortal />
                     </AppLayout>
                   </ProtectedRoute>
                 }
