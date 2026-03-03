@@ -18,17 +18,21 @@ import { RegistrationsManager } from "@/components/competition/RegistrationsMana
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
+  const { hasRole, loading: authLoading } = useAuth();
   const { data: comp, isLoading } = useCompetition(id);
   const update = useUpdateCompetition();
   const qc = useQueryClient();
+
+  const canConfigure = hasRole("admin") || hasRole("organizer");
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -56,9 +60,7 @@ export default function CompetitionDetail() {
 
   const handleSave = async () => {
     if (!id) return;
-    // Update standard fields via hook
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    // Update new fields directly (not in typed hook)
     await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
@@ -67,7 +69,11 @@ export default function CompetitionDetail() {
     setSocialLinks(prev => ({ ...prev, [key]: val }));
   };
 
-  if (isLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (!authLoading && !canConfigure) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (isLoading || authLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
   if (!comp) return <div className="text-muted-foreground">Competition not found</div>;
 
   return (
