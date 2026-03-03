@@ -29,8 +29,8 @@ export default function Dashboard() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Welcome back{user?.email ? `, ${user.email}` : ""}
+      <p className="text-muted-foreground text-sm mt-1">
+          Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
         </p>
       </div>
 

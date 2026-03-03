@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Zap, ArrowLeft, Mail } from "lucide-react";
+
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
@@ -82,14 +83,19 @@ export default function Auth() {
 
   return (
     <div className="auditorium-filter min-h-screen flex items-center justify-center bg-background p-4 relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-4 left-4 gap-2 text-muted-foreground hover:text-foreground"
-        onClick={() => navigate("/")}
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Home
-      </Button>
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Home
+        </Button>
+        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+          <Link to="/pricing">Pricing</Link>
+        </Button>
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

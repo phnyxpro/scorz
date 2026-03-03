@@ -13,6 +13,7 @@ import { format } from "date-fns";
 function usePublicCompetitions() {
   return useQuery({
     queryKey: ["public-competitions"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
@@ -39,6 +40,9 @@ export default function PublicEvents() {
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/pricing">Pricing</Link>
+            </Button>
             {user ? (
               <Button asChild size="sm" variant="outline">
                 <Link to="/dashboard">Dashboard</Link>

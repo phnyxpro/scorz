@@ -99,7 +99,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
 }
 
 export default function AdminPanel() {
-  const { hasRole, startMasquerade } = useAuth();
+  const { hasRole, startMasquerade, subscription, refreshSubscription } = useAuth();
   const { users, loading, refetch, assignRole, revokeRole } = useAdminUsers();
   const [search, setSearch] = useState("");
   const [manageUser, setManageUser] = useState<AdminUser | null>(null);
@@ -118,16 +118,6 @@ export default function AdminPanel() {
     },
   });
 
-  // Subscription status for billing tab
-  const { data: subscription, refetch: refetchSub } = useQuery({
-    queryKey: ["admin-subscription"],
-    enabled: hasRole("admin"),
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
-      return data as { subscribed: boolean; product_id?: string; price_id?: string; subscription_end?: string };
-    },
-  });
 
   if (!hasRole("admin")) {
     return (
@@ -284,7 +274,7 @@ export default function AdminPanel() {
 
         {/* Billing Tab */}
         <TabsContent value="billing">
-          <BillingPanel subscription={subscription} onRefresh={() => refetchSub()} />
+          <BillingPanel subscription={subscription ? { subscribed: subscription.subscribed, product_id: subscription.productId, price_id: subscription.priceId, subscription_end: subscription.subscriptionEnd } : undefined} onRefresh={() => refreshSubscription()} />
         </TabsContent>
       </Tabs>
     </div>

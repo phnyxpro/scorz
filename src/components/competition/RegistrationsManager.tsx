@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,6 +40,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInName, setWalkInName] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
+  const [walkInConsent, setWalkInConsent] = useState(false);
 
   // Get all sub-events for filtering
   const allLevelIds = levels?.map(l => l.id) || [];
@@ -133,6 +136,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       setWalkInName("");
       setWalkInEmail("");
       setWalkInAge("adult");
+      setWalkInConsent(false);
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -299,7 +303,17 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <SelectItem value="minor">Minor</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleWalkInAdd} disabled={!walkInName || !walkInEmail || createReg.isPending} className="w-full">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="walk-in-consent"
+                checked={walkInConsent}
+                onCheckedChange={(v) => setWalkInConsent(!!v)}
+              />
+              <Label htmlFor="walk-in-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I confirm the contestant has verbally acknowledged the competition rules and consents to registration on their behalf.
+              </Label>
+            </div>
+            <Button onClick={handleWalkInAdd} disabled={!walkInName || !walkInEmail || !walkInConsent || createReg.isPending} className="w-full">
               {createReg.isPending ? "Adding…" : "Add & Approve"}
             </Button>
           </div>
