@@ -7,11 +7,13 @@ import type { JudgeScore } from "@/hooks/useJudgeScores";
 interface Props {
   scores: JudgeScore[];
   rubricNames: string[];
+  /** Map from numeric index ("0","1",...) to rubric name */
+  indexToName?: Record<string, string>;
   contestantName: string;
   contestantUserId?: string;
 }
 
-export function SideBySideScores({ scores, rubricNames, contestantName, contestantUserId }: Props) {
+export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId }: Props) {
   if (scores.length === 0) return null;
 
   return (
@@ -40,12 +42,17 @@ export function SideBySideScores({ scores, rubricNames, contestantName, contesta
           <TableBody>
             {scores.map((s) => {
               const cs = s.criterion_scores as Record<string, number>;
+              // Remap numeric indices to rubric names
+              const mapped: Record<string, number> = {};
+              for (const [k, v] of Object.entries(cs)) {
+                mapped[indexToName[k] ?? k] = v;
+              }
               return (
                 <TableRow key={s.id}>
                   <TableCell className="font-mono text-xs">{s.judge_id}</TableCell>
                   {rubricNames.map((n) => (
                     <TableCell key={n} className="text-center font-mono text-xs">
-                      {cs[n] != null ? cs[n] : "—"}
+                      {mapped[n] != null ? mapped[n] : "—"}
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-mono text-xs">{s.raw_total}</TableCell>
@@ -67,7 +74,12 @@ export function SideBySideScores({ scores, rubricNames, contestantName, contesta
             <TableRow className="bg-muted/30 font-semibold">
               <TableCell className="text-xs">Average</TableCell>
               {rubricNames.map((n) => {
-                const vals = scores.filter(s => s.is_certified).map(s => (s.criterion_scores as Record<string, number>)[n]).filter(v => v != null);
+                const vals = scores.filter(s => s.is_certified).map(s => {
+                  const cs = s.criterion_scores as Record<string, number>;
+                  const mapped: Record<string, number> = {};
+                  for (const [k, v] of Object.entries(cs)) { mapped[indexToName[k] ?? k] = v; }
+                  return mapped[n];
+                }).filter(v => v != null);
                 const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
                 return (
                   <TableCell key={n} className="text-center font-mono text-xs">
