@@ -1,77 +1,59 @@
 
 
-# Role-Based Dashboard Cards
+## Plan: Enhance Public Event Page with Accessible Contestants, Judges, Voting Toggle, and Separated Rules/Rubric
 
-## Revised Role Definitions
+### Summary
 
-Based on your clarification, the **Admin** is a platform-level superuser who manages the Scorz infrastructure itself -- they don't run competitions directly. Here's the corrected mapping:
+The public event detail page needs several improvements:
+1. Contestants and Judges tabs already exist but may have RLS issues for unauthenticated users -- need to verify and fix
+2. Voting tab should only appear when voting is enabled via a backend toggle (new `voting_enabled` column on `competitions`)
+3. Rules and Rubric should be split into two separate tabs instead of one combined "Rules" tab
+4. Rubric and Rules should also be accessible from the contestant profile and judge dashboard views
 
-## Card Sets by Role
+### Changes
 
-### Admin (Platform Superuser)
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| Admin Panel | Manage users, settings & billing | `/admin` | `Shield` |
-| Platform Analytics | View metrics across all events | `/admin` | `BarChart3` |
-| All Competitions | Browse all hosted competitions | `/competitions` | `Trophy` |
-| Support Mode | Masquerade as an organiser | `/admin` | `Eye` |
+#### 1. Database Migration: Add `voting_enabled` column to `competitions`
 
-### Organiser
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| My Competitions | Manage your events & stages | `/competitions` | `Trophy` |
-| Judging Hub | Monitor all scoring | `/judging` | `ClipboardList` |
-| Contestants | Registrations & profiles | `/profile` | `Users` |
-| Payments | View ticket sales & revenue | `/competitions` | `CreditCard` |
-| People's Choice | Audience voting | `/competitions` | `Mic` |
+Add a boolean column `voting_enabled` (default `false`) to `competitions`. Organizers/admins can toggle this on to activate the People's Choice voting on the public page.
 
-### Judge
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| My Assignments | View and score your sessions | `/judge-dashboard` | `ClipboardList` |
-| Rules & Rubric | Competition rules and criteria | `/competitions` | `BookOpen` |
-| Judging Hub | Monitor scoring progress | `/judging` | `BarChart3` |
+```sql
+ALTER TABLE public.competitions ADD COLUMN voting_enabled boolean NOT NULL DEFAULT false;
+```
 
-### Chief Judge
-All Judge cards, plus:
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| Certify Results | Review and certify results | `/chief-judge` | `ShieldCheck` |
+#### 2. Update `PublicEventDetail.tsx` -- Split Rules/Rubric and Conditionally Show Voting
 
-### Tabulator (includes Witness duties)
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| Tabulator Dashboard | Verify scores & witness results | `/tabulator` | `BarChart3` |
-| Judging Hub | Monitor scoring progress | `/judging` | `ClipboardList` |
+- Split the current "Rules" tab into two separate tabs: **Rules** (official handbook link) and **Rubric** (scoring criteria + penalties)
+- Only render the "Voting" tab and its content when `comp.voting_enabled === true`
+- Both Contestants and Judges tabs already work via `PublicRoleList`; no changes needed there
 
-### Contestant
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| My Profile | View registration & profile | `/profile` | `User` |
-| Public Events | Browse competitions | `/public-events` | `Calendar` |
+#### 3. Update `CompetitionDetail.tsx` -- Add voting toggle for organizers
 
-### Audience
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| Public Events | Browse competitions | `/public-events` | `Calendar` |
-| People's Choice | Cast your votes | `/competitions` | `Mic` |
+Add a switch/checkbox in the competition management page so admins/organizers can toggle `voting_enabled` on/off.
 
-### No Roles (New User)
-| Card | Description | Route | Icon |
-|------|-------------|-------|------|
-| Public Events | Browse competitions | `/public-events` | `Calendar` |
-| Pricing | View plans & get started | `/pricing` | `DollarSign` |
+#### 4. Add Rubric and Rules visibility to Contestant and Judge views
 
-## Multi-Role Handling
-Users with multiple roles see the union of all their role cards, deduplicated by route (first occurrence wins for title/description).
+- In `ContestantProfile.tsx`: Add a tab or section showing the competition's rubric criteria and rules link (reuse `PublicRubric` component)
+- In `JudgeDashboard.tsx` / `JudgeScoring.tsx`: Add a collapsible or linked section showing the rubric and rules for the competition being judged (reuse `PublicRubric` component)
 
-## Technical Details
+#### 5. Update Supabase types
 
-**Single file change:** `src/pages/Dashboard.tsx`
+The types file will auto-regenerate after the migration to include `voting_enabled`.
 
-1. Define a `ROLE_CARDS` map keyed by role, each containing an array of card configs (title, desc, icon, color, route)
-2. Iterate user's `roles` array, collect all matching cards, deduplicate by route
-3. If no roles, show the fallback "new user" set
-4. Import new icons: `Shield`, `BarChart3`, `Eye`, `CreditCard`, `BookOpen`, `ShieldCheck`, `User`, `Calendar`, `DollarSign`
-5. Keep existing animation variants, greeting, and card component structure unchanged
-6. No database changes or new API calls required
+### Technical Details
+
+**Files to modify:**
+- `supabase/migrations/` -- new migration for `voting_enabled` column
+- `src/pages/PublicEventDetail.tsx` -- split Rules/Rubric tabs, conditional voting tab based on `comp.voting_enabled`
+- `src/pages/CompetitionDetail.tsx` -- add voting toggle switch for organizers
+- `src/pages/ContestantProfile.tsx` -- add Rubric/Rules tab using `PublicRubric` component
+- `src/pages/JudgeDashboard.tsx` -- add rubric/rules access per competition
+- `src/pages/JudgeScoring.tsx` -- add collapsible rubric reference panel
+
+**Components reused:**
+- `PublicRubric` -- already renders criteria + penalties, will be reused in contestant and judge views
+- `PublicRoleList` -- already handles contestants and judges display, no changes needed
+
+**RLS considerations:**
+- The `competitions` table already has a public SELECT policy for active competitions, so `voting_enabled` will be readable
+- `rubric_criteria` and `penalty_rules` already have public/authenticated SELECT policies
+
