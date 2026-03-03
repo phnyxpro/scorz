@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
+import PublicEvents from "./pages/PublicEvents";
 import PublicEventDetail from "./pages/PublicEventDetail";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -41,6 +42,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/public-events" element={<PublicEvents />} />
               <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/pricing" element={<Pricing />} />
@@ -210,6 +212,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <LevelMasterSheet />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chief-judge"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Competitions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tabulator"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Competitions />
                     </AppLayout>
                   </ProtectedRoute>
                 }
