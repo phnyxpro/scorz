@@ -20,36 +20,56 @@ export function PerformanceTimer({
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
+  const onDurationChangeRef = useRef(onDurationChange);
+  const elapsedRef = useRef(elapsed);
 
-  const stop = useCallback(() => {
+  // Keep refs current
+  onDurationChangeRef.current = onDurationChange;
+  elapsedRef.current = elapsed;
+
+  const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    setRunning(false);
   }, []);
 
+  const stop = useCallback(() => {
+    clearTimer();
+    setRunning(false);
+  }, [clearTimer]);
+
   const start = useCallback(() => {
-    startTimeRef.current = Date.now() - elapsed * 1000;
+    if (intervalRef.current) return; // already running
+    startTimeRef.current = Date.now() - elapsedRef.current * 1000;
     intervalRef.current = setInterval(() => {
-      const now = Date.now();
-      const secs = (now - startTimeRef.current) / 1000;
+      const secs = (Date.now() - startTimeRef.current) / 1000;
       setElapsed(secs);
+      onDurationChangeRef.current(secs);
     }, 50);
     setRunning(true);
-  }, [elapsed]);
+  }, []);
 
   const reset = useCallback(() => {
-    stop();
+    clearTimer();
+    setRunning(false);
     setElapsed(0);
-    onDurationChange(0);
-  }, [stop, onDurationChange]);
+    onDurationChangeRef.current(0);
+  }, [clearTimer]);
 
-  // Report duration changes continuously
+  // Report duration when stopped
   useEffect(() => {
-    onDurationChange(elapsed);
-  }, [elapsed, onDurationChange]);
+    if (!running) {
+      onDurationChangeRef.current(elapsed);
+    }
+  }, [running, elapsed]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => clearTimer();
+  }, [clearTimer]);
+
+  // Spacebar shortcut
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (disabled) return;
@@ -58,22 +78,21 @@ export function PerformanceTimer({
         const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
         if (!isInput) {
           e.preventDefault();
-          if (running) stop();
-          else start();
+          if (intervalRef.current) {
+            stop();
+          } else {
+            start();
+          }
         }
       }
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleGlobalKeyDown);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [running, start, stop, disabled]);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [start, stop, disabled]);
 
   const graceStart = timeLimitSeconds;
   const penaltyStart = timeLimitSeconds + gracePeriodSeconds;
 
-  // Color zones
   let zoneClass = "text-foreground";
   let bgClass = "bg-card/80";
   if (elapsed > penaltyStart) {
