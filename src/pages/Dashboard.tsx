@@ -44,14 +44,14 @@ const ROLE_CARDS: Record<string, CardConfig[]> = {
   ],
   chief_judge: [
     { title: "My Assignments", desc: "View and score your sessions", icon: ClipboardList, color: "text-primary", to: "/judge-dashboard" },
-    { title: "Rules & Rubric", desc: "Competition rules and criteria", icon: BookOpen, color: "text-secondary", to: "/competitions?tab=rubric" },
-    { title: "Certify Results", desc: "Review and certify results", icon: ShieldCheck, color: "text-primary", to: "/chief-judge" },
     { title: "Judging Hub", desc: "Monitor scoring progress", icon: BarChart3, color: "text-secondary", to: "/judging" },
+    { title: "Certify Results", desc: "Review and certify results", icon: ShieldCheck, color: "text-primary", to: "/chief-judge" },
+    { title: "Rules & Rubric", desc: "Competition rules and criteria", icon: BookOpen, color: "text-secondary", to: "/competitions?tab=rubric" },
   ],
   judge: [
     { title: "My Assignments", desc: "View and score your sessions", icon: ClipboardList, color: "text-primary", to: "/judge-dashboard" },
-    { title: "Rules & Rubric", desc: "Competition rules and criteria", icon: BookOpen, color: "text-secondary", to: "/competitions?tab=rubric" },
-    { title: "Judging Hub", desc: "Monitor scoring progress", icon: BarChart3, color: "text-primary", to: "/judging" },
+    { title: "Judging Hub", desc: "Monitor scoring progress", icon: BarChart3, color: "text-secondary", to: "/judging" },
+    { title: "Rules & Rubric", desc: "Competition rules and criteria", icon: BookOpen, color: "text-primary", to: "/competitions?tab=rubric" },
   ],
   tabulator: [
     { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator" },

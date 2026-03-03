@@ -29,6 +29,7 @@ import LevelMasterSheet from "./pages/LevelMasterSheet";
 import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
+import RulesAndRubric from "./pages/RulesAndRubric";
 
 const queryClient = new QueryClient();
 
@@ -212,6 +213,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <LevelMasterSheet />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/rules-rubric"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RulesAndRubric />
                     </AppLayout>
                   </ProtectedRoute>
                 }
