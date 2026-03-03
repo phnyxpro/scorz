@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,8 @@ const DEMO_ACCOUNTS = [
 
 export default function Auth() {
   const { signIn, signUp, resetPassword, signInWithGoogle } = useAuth();
+  const { brightness, contrast } = useTheme();
+  const needsFilter = brightness !== 100 || contrast !== 100;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -102,7 +105,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="auditorium-filter min-h-screen flex items-center justify-center bg-background p-4 relative">
+    <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen flex items-center justify-center bg-background p-4 relative`}>
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
         <Button
           variant="ghost"

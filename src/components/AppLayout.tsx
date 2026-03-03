@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,10 @@ import scorzLogo from "@/assets/scorz-logo.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles, masquerade, stopMasquerade, isMasquerading } = useAuth();
+  const { brightness, contrast } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const needsFilter = brightness !== 100 || contrast !== 100;
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,7 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="auditorium-filter min-h-screen bg-background">
+    <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen bg-background`}>
       {/* Masquerade banner */}
       {isMasquerading && masquerade && (
         <div className="sticky top-0 z-[60] bg-destructive/90 text-destructive-foreground px-4 py-2 flex items-center justify-between text-sm">

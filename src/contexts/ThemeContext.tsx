@@ -31,14 +31,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [isDark]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--auditorium-brightness",
-      `brightness(${brightness / 100})`
-    );
-    document.documentElement.style.setProperty(
-      "--auditorium-contrast",
-      `contrast(${contrast / 100})`
-    );
+    if (brightness !== 100) {
+      document.documentElement.style.setProperty("--auditorium-brightness", `brightness(${brightness / 100})`);
+    } else {
+      document.documentElement.style.removeProperty("--auditorium-brightness");
+    }
+    if (contrast !== 100) {
+      document.documentElement.style.setProperty("--auditorium-contrast", `contrast(${contrast / 100})`);
+    } else {
+      document.documentElement.style.removeProperty("--auditorium-contrast");
+    }
     localStorage.setItem("brightness", String(brightness));
     localStorage.setItem("contrast", String(contrast));
   }, [brightness, contrast]);
