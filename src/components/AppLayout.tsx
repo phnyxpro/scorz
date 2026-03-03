@@ -19,6 +19,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const bottomNavItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ path: "/judge-dashboard", label: "Judging", icon: ClipboardList }] : []),
+    ...(roles.includes("tabulator") || roles.includes("witness") ? [{ path: "/tabulator", label: "Tabulator", icon: ClipboardList }] : []),
     { path: "/competitions", label: "Events", icon: Trophy },
     { path: "/profile", label: "Profile", icon: User },
   ];
