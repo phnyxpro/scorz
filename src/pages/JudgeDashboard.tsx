@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 
 export default function JudgeDashboard() {
     const { user } = useAuth();
-    const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents("judge");
+    const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents(["judge", "chief_judge"]);
     const { data: competitions } = useCompetitions();
 
     // Get distinct competition IDs from assignments
