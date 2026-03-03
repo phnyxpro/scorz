@@ -17,12 +17,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     navigate("/auth");
   };
 
+  const isJudgeRole = roles.includes("judge") || roles.includes("chief_judge");
+
   const bottomNavItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ path: "/judge-dashboard", label: "Assignments", icon: ClipboardList }] : []),
-    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ path: "/judging", label: "Judging", icon: ClipboardList }] : []),
     ...(roles.includes("tabulator") || roles.includes("witness") ? [{ path: "/tabulator", label: "Tabulator", icon: ClipboardList }] : []),
-    { path: "/competitions", label: "Events", icon: Trophy },
+    ...(!isJudgeRole ? [{ path: "/competitions", label: "Events", icon: Trophy }] : []),
     { path: "/profile", label: "Profile", icon: User },
   ];
 

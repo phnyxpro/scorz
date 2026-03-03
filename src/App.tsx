@@ -13,6 +13,7 @@ import PublicEventDetail from "./pages/PublicEventDetail";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Competitions from "./pages/Competitions";
+import CompetitionContestants from "./pages/CompetitionContestants";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import ContestantRegistration from "./pages/ContestantRegistration";
 import JudgeScoring from "./pages/JudgeScoring";
@@ -223,6 +224,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <RulesAndRubric />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/contestants"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CompetitionContestants />
                     </AppLayout>
                   </ProtectedRoute>
                 }
