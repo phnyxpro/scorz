@@ -1,99 +1,47 @@
 
 
-## Seed Complete Demo Competition Data
+## Fix Blank Rendering in Browser Automation
 
-Expand the existing demo user seeding into a comprehensive edge function that populates a full competition with all supporting data, so every role's dashboard displays realistic content.
+The app appears blank in headless browser testing due to two compounding issues:
 
----
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### 1. Create New Edge Function: `seed-demo-data`
-
-**New file: `supabase/functions/seed-demo-data/index.ts`**
-
-A single edge function (using service role key to bypass RLS) that:
-
-1. **Calls `seed-demo-users` logic first** -- ensures all 7 demo users exist with correct roles
-2. **Creates the demo competition**:
-   - Name: "FCNPS National Poetry Slam 2025"
-   - Status: `active`, slug: `fcnps-2025`
-   - Description, start/end dates, rules_url (a placeholder PDF or markdown URL)
-   - Created by the organizer demo user
-
-3. **Creates 3 competition levels** (rounds):
-   - Round 1: Auditions (sort_order 0)
-   - Round 2: Semi-Finals (sort_order 1)
-   - Round 3: Finals (sort_order 2)
-
-4. **Creates sub-events** (one per level):
-   - Each with a location, event_date, start_time, end_time, status `scheduled`
-
-5. **Creates rubric criteria** (5 scoring criteria):
-   - Content & Meaning (descriptions for scores 1-5)
-   - Vocal Delivery
-   - Stage Presence
-   - Originality
-   - Audience Connection
-   - Each with meaningful descriptor text for all 5 levels
-
-6. **Creates penalty rules**:
-   - Time limit: 180 seconds, grace period: 10 seconds
-   - 0-10s over: 0.5 point penalty
-   - 10-20s over: 1.0 point penalty
-   - 20s+: 2.0 point penalty
-
-7. **Registers 5 demo contestants** (contestant_registrations):
-   - The demo contestant user + 4 additional fictional contestants (created as auth users)
-   - All with status `approved`, bios, age categories, locations
-   - Each assigned to sub-events via `sub_event_id`
-
-8. **Creates sub-event assignments**:
-   - Demo Judge assigned to all 3 sub-events as `judge`
-   - Demo Chief Judge assigned to all 3 sub-events as `chief_judge`
-   - Demo Tabulator assigned to all 3 sub-events as `tabulator`
-   - Demo Witness assigned to all 3 sub-events as `witness`
-
-9. **Creates sample judge scores** (for Round 1 only, to show partially scored state):
-   - Demo Judge's scores for 3 of the 5 contestants in the Auditions sub-event
-   - Each with realistic `criterion_scores` JSON, `raw_total`, `final_score`, and `performance_duration_seconds`
-   - Leaves 2 contestants unscored so the judge has work to do
-
-10. **Idempotency**: Checks if demo competition already exists (by slug) and skips creation if so, returning existing IDs
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### 2. Add "Seed Demo Data" Button to Admin Panel
+### Fix 1: Conditionally apply auditorium filter
 
-**File: `src/components/admin/GlobalSettingsPanel.tsx`** (or `src/pages/AdminPanel.tsx`)
+**File: `src/contexts/ThemeContext.tsx`**
 
-- Add a button labeled "Seed Demo Competition" that calls the `seed-demo-data` edge function
-- Shows a loading spinner while seeding
-- Displays success/error toast with results summary
-- Only visible to admin role users
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
 
 ---
 
-### 3. Demo Data Details
+### Summary
 
-**Additional contestant users created** (4 fictional performers):
-| Email | Name | Age Category | Location |
-|---|---|---|---|
-| contestant2@demo.scorz.app | Maya Johnson | adult | Brooklyn, NY |
-| contestant3@demo.scorz.app | Carlos Rivera | adult | Miami, FL |
-| contestant4@demo.scorz.app | Aisha Patel | young_adult | Chicago, IL |
-| contestant5@demo.scorz.app | Jordan Lee | adult | Atlanta, GA |
-
-**Sample scores for Auditions round** (Judge scoring 3 of 5 contestants):
-- Scores use realistic half-point values across all 5 criteria
-- Raw totals range from 18.5 to 22.0 out of 25
-- No time penalties applied (clean performances)
-
----
-
-### Technical Notes
-
-- The edge function uses `SUPABASE_SERVICE_ROLE_KEY` to bypass all RLS policies for data insertion
-- No database migrations needed -- all tables already exist with the correct schema
-- The function is idempotent: safe to call multiple times without duplicating data
-- New contestant users get the `contestant` role automatically via the same pattern as existing demo users
-- All inserted data uses `gen_random_uuid()` defaults for IDs (generated by Postgres)
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
