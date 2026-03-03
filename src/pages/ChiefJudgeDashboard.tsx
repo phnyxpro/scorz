@@ -14,6 +14,8 @@ import {
 } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
@@ -41,6 +43,7 @@ export default function ChiefJudgeDashboard() {
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
 
   // Auto-select first level
   if (levels?.length && !selectedLevelId) {
@@ -134,6 +137,8 @@ export default function ChiefJudgeDashboard() {
         chief_judge_id: user.id,
       } as any);
     }
+    setConsentChecked(false);
+    setSignature("");
     setShowCertifyDialog(true);
   };
 
@@ -343,13 +348,24 @@ export default function ChiefJudgeDashboard() {
 
             <SignaturePad label="Chief Judge Signature" onSignature={setSignature} />
 
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-consent"
+                checked={consentChecked}
+                onCheckedChange={(v) => setConsentChecked(v === true)}
+              />
+              <Label htmlFor="certify-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I confirm that all scores have been reviewed, penalties are accurate, ties have been resolved, and I consent to certify and permanently lock these results.
+              </Label>
+            </div>
+
             <Button
               onClick={handleCertify}
-              disabled={!signature || certifySubEvent.isPending}
+              disabled={!signature || !consentChecked || certifySubEvent.isPending}
               className="w-full"
             >
               <Lock className="h-4 w-4 mr-1" />
-              {certifySubEvent.isPending ? "Certifying…" : "Certify & Publish Results"}
+              {certifySubEvent.isPending ? "Certifying…" : "Certify & Lock Results"}
             </Button>
           </div>
         </DialogContent>
