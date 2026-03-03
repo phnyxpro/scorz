@@ -59,12 +59,37 @@ export function RegistrationsManager({ competitionId }: Props) {
     return list;
   }, [registrations, search, filterSubEvent]);
 
+  const sendNotification = async (registrationId: string, status: string) => {
+    try {
+      // Get competition name for the email
+      const { data: comp } = await supabase
+        .from("competitions")
+        .select("name")
+        .eq("id", competitionId)
+        .single();
+
+      await supabase.functions.invoke("notify-registration-status", {
+        body: {
+          registration_id: registrationId,
+          status,
+          competition_name: comp?.name || "Competition",
+        },
+      });
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
+  };
+
   const handleApprove = (id: string) => {
-    updateReg.mutate({ id, status: "approved" } as any);
+    updateReg.mutate({ id, status: "approved" } as any, {
+      onSuccess: () => sendNotification(id, "approved"),
+    });
   };
 
   const handleReject = (id: string) => {
-    updateReg.mutate({ id, status: "rejected" } as any);
+    updateReg.mutate({ id, status: "rejected" } as any, {
+      onSuccess: () => sendNotification(id, "rejected"),
+    });
   };
 
   const handleMoveOrder = async (id: string, direction: "up" | "down") => {
