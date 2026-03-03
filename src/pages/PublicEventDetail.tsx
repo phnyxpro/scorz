@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper
+  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
@@ -54,6 +54,23 @@ function usePublicLevelsWithSubEvents(compId: string | undefined) {
         ...l,
         sub_events: (subEvents || []).filter(s => s.level_id === l.id),
       }));
+    },
+  });
+}
+
+function useLineup(subEventIds: string[]) {
+  return useQuery({
+    queryKey: ["public-lineup", subEventIds],
+    enabled: subEventIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contestant_registrations")
+        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
+        .in("sub_event_id", subEventIds)
+        .eq("status", "approved")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data;
     },
   });
 }
@@ -161,6 +178,9 @@ export default function PublicEventDetail() {
               </TabsTrigger>
               <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
                 <Heart className="h-4 w-4" /> Voting
+              </TabsTrigger>
+              <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-2 px-6">
+                <ListOrdered className="h-4 w-4" /> Lineup
               </TabsTrigger>
               <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-2 px-6">
                 <Info className="h-4 w-4" /> Rules
@@ -273,6 +293,11 @@ export default function PublicEventDetail() {
               </div>
             </TabsContent>
 
+            {/* Live Lineup Tab */}
+            <TabsContent value="lineup">
+              <LiveLineup allSubEventIds={allSubEventIds} levels={levels} />
+            </TabsContent>
+
             {/* Rules & Rubric Tab */}
             <TabsContent value="rules">
               <div className="max-w-4xl mx-auto space-y-8">
@@ -332,6 +357,67 @@ export default function PublicEventDetail() {
           @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
       </footer>
+    </div>
+  );
+}
+
+function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
+  const { data: lineup } = useLineup(allSubEventIds);
+
+  if (!lineup || lineup.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-12">
+        <ListOrdered className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No lineup published yet.</p>
+      </div>
+    );
+  }
+
+  // Group by sub-event
+  const grouped: Record<string, typeof lineup> = {};
+  lineup.forEach(c => {
+    const key = c.sub_event_id || "unassigned";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(c);
+  });
+
+  const subEventName = (seId: string) => {
+    for (const l of levels || []) {
+      const se = l.sub_events?.find((s: any) => s.id === seId);
+      if (se) return `${l.name} — ${se.name}`;
+    }
+    return "Event";
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {Object.entries(grouped).map(([seId, contestants]) => (
+        <Card key={seId} className="border-border/50 bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{subEventName(seId)}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {contestants.map((c, idx) => (
+                <div key={c.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
+                  <span className="text-lg font-bold font-mono text-muted-foreground w-8 text-center">{idx + 1}</span>
+                  {c.profile_photo_url ? (
+                    <img src={c.profile_photo_url} alt={c.full_name} className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{c.full_name}</p>
+                    <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

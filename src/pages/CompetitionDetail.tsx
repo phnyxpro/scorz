@@ -14,6 +14,7 @@ import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { StaffInvitationForm } from "@/components/admin/StaffInvitationForm";
+import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -80,6 +81,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+          <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
           <TabsTrigger value="invitations" className="flex-shrink-0">Invitations</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
@@ -164,6 +166,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="penalties">
           <PenaltyConfig competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="registrations">
+          <RegistrationsManager competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="assignments">

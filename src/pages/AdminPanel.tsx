@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Constants } from "@/integrations/supabase/types";
-import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert } from "lucide-react";
+import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Users, Trophy, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ALL_ROLES = Constants.public.Enums.app_role;
@@ -115,6 +117,26 @@ export default function AdminPanel() {
   const [search, setSearch] = useState("");
   const [manageUser, setManageUser] = useState<AdminUser | null>(null);
 
+  // Platform analytics
+  const { data: stats } = useQuery({
+    queryKey: ["admin-platform-stats"],
+    enabled: hasRole("admin"),
+    queryFn: async () => {
+      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("contestant_registrations").select("*", { count: "exact", head: true }),
+      ]);
+      return {
+        users: userCount || 0,
+        competitions: compCount || 0,
+        active: activeCount || 0,
+        registrations: regCount || 0,
+      };
+    },
+  });
+
   if (!hasRole("admin")) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
@@ -151,6 +173,28 @@ export default function AdminPanel() {
           Refresh
         </Button>
       </div>
+
+      {/* Platform Analytics */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Total Users", value: stats.users, icon: Users, color: "text-primary" },
+            { label: "Competitions", value: stats.competitions, icon: Trophy, color: "text-secondary" },
+            { label: "Active Events", value: stats.active, icon: BarChart3, color: "text-accent" },
+            { label: "Registrations", value: stats.registrations, icon: UserPlus, color: "text-primary" },
+          ].map((s) => (
+            <Card key={s.label} className="border-border/50 bg-card/80">
+              <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
+                <div>
+                  <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card className="border-border/50 bg-card/80">
         <CardHeader className="pb-3">
