@@ -558,6 +558,57 @@ export type Database = {
           },
         ]
       }
+      performance_slots: {
+        Row: {
+          contestant_registration_id: string | null
+          created_at: string
+          end_time: string
+          id: string
+          is_booked: boolean
+          slot_index: number
+          start_time: string
+          sub_event_id: string
+          updated_at: string
+        }
+        Insert: {
+          contestant_registration_id?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          is_booked?: boolean
+          slot_index?: number
+          start_time: string
+          sub_event_id: string
+          updated_at?: string
+        }
+        Update: {
+          contestant_registration_id?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_booked?: boolean
+          slot_index?: number
+          start_time?: string
+          sub_event_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_slots_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_slots_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

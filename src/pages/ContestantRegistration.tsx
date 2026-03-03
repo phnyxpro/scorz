@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useRubricCriteria, usePenaltyRules, useLevels, useSubEvents } from "@/hooks/useCompetitions";
+import { useQuery } from "@tanstack/react-query";
 import { useMyRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -76,6 +77,7 @@ export default function ContestantRegistration() {
   // Schedule
   const [selectedSubEvent, setSelectedSubEvent] = useState("");
   const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -149,7 +151,14 @@ export default function ContestantRegistration() {
       guardian_signed_at: isMinor ? new Date().toISOString() : undefined,
       sub_event_id: selectedSubEvent || undefined,
     } as any, {
-      onSuccess: () => {
+      onSuccess: async (data: any) => {
+        // Book the selected time slot if one was chosen
+        if (selectedSlotId && data?.id) {
+          await supabase
+            .from("performance_slots")
+            .update({ is_booked: true, contestant_registration_id: data.id } as any)
+            .eq("id", selectedSlotId);
+        }
         toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
         navigate(`/competitions`);
       },
@@ -390,7 +399,9 @@ export default function ContestantRegistration() {
               selectedLevelId={selectedLevelId}
               setSelectedLevelId={setSelectedLevelId}
               selectedSubEvent={selectedSubEvent}
-              setSelectedSubEvent={setSelectedSubEvent}
+              setSelectedSubEvent={(id) => { setSelectedSubEvent(id); setSelectedSlotId(""); }}
+              selectedSlotId={selectedSlotId}
+              setSelectedSlotId={setSelectedSlotId}
             />
           )}
         </motion.div>
@@ -420,20 +431,49 @@ function ScheduleStep({
   setSelectedLevelId,
   selectedSubEvent,
   setSelectedSubEvent,
+  selectedSlotId,
+  setSelectedSlotId,
 }: {
   levels: { id: string; name: string }[];
   selectedLevelId: string;
   setSelectedLevelId: (id: string) => void;
   selectedSubEvent: string;
   setSelectedSubEvent: (id: string) => void;
+  selectedSlotId: string;
+  setSelectedSlotId: (id: string) => void;
 }) {
   const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+
+  // Fetch available slots for selected sub-event
+  const { data: slots } = useQuery({
+    queryKey: ["performance-slots", selectedSubEvent],
+    enabled: !!selectedSubEvent,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("*")
+        .eq("sub_event_id", selectedSubEvent)
+        .order("slot_index", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const formatTime = (t: string) => {
+    const [h, m] = t.split(":");
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  };
+
+  const availableSlots = slots?.filter(s => !s.is_booked) || [];
 
   return (
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <CardTitle className="text-base">Select Time Slot</CardTitle>
-        <CardDescription>Choose when you'd like to perform (optional)</CardDescription>
+        <CardDescription>Choose your sub-event and performance time (optional)</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {levels.length > 0 && (
@@ -452,7 +492,7 @@ function ScheduleStep({
 
         {subEvents && subEvents.length > 0 ? (
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground">Available Time Slots</label>
+            <label className="text-xs text-muted-foreground">Sub-Event</label>
             {subEvents.map(se => (
               <button
                 key={se.id}
@@ -477,6 +517,33 @@ function ScheduleStep({
               ? "No levels configured yet. You can skip scheduling."
               : "No sub-events available for this level."}
           </p>
+        )}
+
+        {/* Time slot picker */}
+        {selectedSubEvent && slots && slots.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            <label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Available Performance Slots
+            </label>
+            {availableSlots.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {availableSlots.map(slot => (
+                  <button
+                    key={slot.id}
+                    onClick={() => setSelectedSlotId(slot.id === selectedSlotId ? "" : slot.id)}
+                    className={`text-center border rounded-md p-2 transition-colors text-sm font-mono ${slot.id === selectedSlotId
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-border/50 bg-muted/20 hover:bg-muted/40 text-foreground"
+                      }`}
+                  >
+                    {formatTime((slot as any).start_time)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-2">All slots are booked.</p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
