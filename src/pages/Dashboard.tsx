@@ -120,10 +120,10 @@ export default function Dashboard() {
                 </div>
               ))
             : stats.map((s) => (
-                <div key={s.label} className="rounded-lg border border-border/40 bg-card/60 p-3">
+                <Link key={s.label} to={s.to} className="rounded-lg border border-border/40 bg-card/60 p-3 hover:bg-card/90 hover:border-primary/30 transition-colors cursor-pointer">
                   <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
-                </div>
+                </Link>
               ))}
         </motion.div>
       )}
