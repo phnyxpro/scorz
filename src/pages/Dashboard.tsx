@@ -5,6 +5,8 @@ import {
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 
@@ -92,6 +94,7 @@ function buildCards(roles: string[]): CardConfig[] {
 export default function Dashboard() {
   const { user, roles } = useAuth();
   const cards = buildCards(roles);
+  const { stats, loading: statsLoading } = useDashboardStats();
 
   return (
     <div>
@@ -101,6 +104,29 @@ export default function Dashboard() {
           Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
         </p>
       </div>
+
+      {/* Quick stats */}
+      {stats.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-6"
+        >
+          {statsLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-lg border border-border/40 bg-card/60 p-3">
+                  <Skeleton className="h-3 w-20 mb-2" />
+                  <Skeleton className="h-6 w-10" />
+                </div>
+              ))
+            : stats.map((s) => (
+                <div key={s.label} className="rounded-lg border border-border/40 bg-card/60 p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
+                </div>
+              ))}
+        </motion.div>
+      )}
 
       <motion.div
         variants={container}
