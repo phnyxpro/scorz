@@ -19,6 +19,7 @@ import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const statusColor: Record<string, string> = {
@@ -30,7 +31,8 @@ const statusColor: Record<string, string> = {
 export default function ContestantProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isStaff = hasRole("judge") || hasRole("chief_judge") || hasRole("tabulator") || hasRole("witness");
 
   const profileUserId = userId || user?.id;
   const isOwnProfile = profileUserId === user?.id;
@@ -188,11 +190,11 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={cn("grid w-full", isStaff ? "grid-cols-3" : "grid-cols-4")}>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
-          <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
+          {!isStaff && <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>}
         </TabsList>
 
         {/* Performance History Tab */}
