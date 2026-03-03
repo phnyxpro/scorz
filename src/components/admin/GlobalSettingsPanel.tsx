@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Save, Palette, UserPlus, Mail, Flag } from "lucide-react";
+import { Save, Palette, UserPlus, Mail, Flag, Database, Loader2 } from "lucide-react";
 
 interface SettingsMap {
   [key: string]: any;
@@ -58,8 +58,41 @@ export default function GlobalSettingsPanel() {
   const emailNotifs = settings.email_notifications || {};
   const featureFlags = settings.feature_flags || {};
 
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedDemo = async () => {
+    setSeeding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seed-demo-data");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(data?.message || "Demo data seeded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to seed demo data");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
-    <Tabs defaultValue="branding" className="space-y-4">
+    <div className="space-y-6">
+      {/* Seed Demo Data Card */}
+      <Card className="border-border/50 bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-mono">Demo Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-3">
+            Seed a complete demo competition with 3 rounds, 5 contestants, judges, rubric, penalty rules, and sample scores. Safe to run multiple times.
+          </p>
+          <Button size="sm" onClick={handleSeedDemo} disabled={seeding}>
+            {seeding ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Database className="h-3.5 w-3.5 mr-1" />}
+            {seeding ? "Seeding…" : "Seed Demo Competition"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="branding" className="space-y-4">
       <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
         <TabsTrigger value="branding" className="text-xs gap-1"><Palette className="h-3.5 w-3.5" />Branding</TabsTrigger>
         <TabsTrigger value="registration" className="text-xs gap-1"><UserPlus className="h-3.5 w-3.5" />Registration</TabsTrigger>
@@ -197,5 +230,6 @@ export default function GlobalSettingsPanel() {
         </Card>
       </TabsContent>
     </Tabs>
+    </div>
   );
 }
