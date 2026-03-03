@@ -21,6 +21,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -68,6 +69,12 @@ export default function CompetitionDetail() {
   const updateSocial = (key: string, val: string) => {
     setSocialLinks(prev => ({ ...prev, [key]: val }));
   };
+
+  useEffect(() => {
+    if (!authLoading && !canConfigure) {
+      toast({ title: "Unauthorized", description: "You don't have permission to access this page.", variant: "destructive" });
+    }
+  }, [authLoading, canConfigure]);
 
   if (!authLoading && !canConfigure) {
     return <Navigate to="/dashboard" replace />;
