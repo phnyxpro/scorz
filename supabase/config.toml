@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.notify-registration-status]
 verify_jwt = false
+
+[functions.seed-demo-data]
+verify_jwt = false
+
+[functions.seed-demo-users]
+verify_jwt = false
