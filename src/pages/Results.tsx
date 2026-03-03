@@ -43,7 +43,15 @@ export default function Results() {
     (tabCert?.is_certified ?? false) &&
     (witnessCert?.is_certified ?? false);
 
-  const rubricNames = useMemo(() => rubric?.map((r) => r.name) ?? [], [rubric]);
+  // Rubric sorted by sort_order to match numeric indices in criterion_scores
+  const sortedRubric = useMemo(() => [...(rubric ?? [])].sort((a, b) => a.sort_order - b.sort_order), [rubric]);
+  const rubricNames = useMemo(() => sortedRubric.map((r) => r.name), [sortedRubric]);
+  // Map from numeric index ("0","1",...) to rubric name
+  const indexToName = useMemo(() => {
+    const map: Record<string, string> = {};
+    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    return map;
+  }, [sortedRubric]);
 
   const contestantName = (regId: string) =>
     registrations?.find((r) => r.id === regId)?.full_name ?? "Unknown";
@@ -69,7 +77,9 @@ export default function Results() {
         for (const s of certified) {
           const cs = s.criterion_scores as Record<string, number>;
           for (const [k, v] of Object.entries(cs)) {
-            criterionAvgs[k] = (criterionAvgs[k] || 0) + v;
+            // Remap numeric index to rubric name
+            const name = indexToName[k] ?? k;
+            criterionAvgs[name] = (criterionAvgs[name] || 0) + v;
           }
         }
         for (const k of Object.keys(criterionAvgs)) {
@@ -88,7 +98,7 @@ export default function Results() {
       avgFinal: number;
       judgeCount: number;
     }[];
-  }, [allScores, allCertified, registrations]);
+  }, [allScores, allCertified, registrations, indexToName]);
 
   return (
     <div className="max-w-4xl mx-auto">
