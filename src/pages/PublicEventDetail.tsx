@@ -66,14 +66,32 @@ function useLineup(subEventIds: string[]) {
     queryKey: ["public-lineup", subEventIds],
     enabled: subEventIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: contestants, error } = await supabase
         .from("contestant_registrations")
         .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
         .in("sub_event_id", subEventIds)
         .eq("status", "approved")
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data;
+
+      // Fetch booked slots to show scheduled times
+      const { data: slots } = await supabase
+        .from("performance_slots")
+        .select("contestant_registration_id, start_time, end_time, slot_index")
+        .in("sub_event_id", subEventIds)
+        .eq("is_booked", true);
+
+      const slotMap = new Map<string, { start_time: string; end_time: string }>();
+      (slots || []).forEach(s => {
+        if (s.contestant_registration_id) {
+          slotMap.set(s.contestant_registration_id, { start_time: s.start_time, end_time: s.end_time });
+        }
+      });
+
+      return (contestants || []).map(c => ({
+        ...c,
+        slot: slotMap.get(c.id) || null,
+      }));
     },
   });
 }
@@ -417,9 +435,17 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                       <Users className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{c.full_name}</p>
-                    <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                      {(c as any).slot && (
+                        <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {(c as any).slot.start_time} – {(c as any).slot.end_time}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
