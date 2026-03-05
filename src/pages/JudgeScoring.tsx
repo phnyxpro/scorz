@@ -35,7 +35,7 @@ export default function JudgeScoring() {
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
-  const { data: myAssignments } = useMyAssignedSubEvents(["judge", "chief_judge"]);
+  const { data: myAssignments } = useMyAssignedSubEvents("judge");
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");

@@ -9,7 +9,7 @@ import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
  * Represents the restricted roles that operate within the scope of a specific sub-event.
  * These staff members are assigned via the `sub_event_assignments` table.
  */
-export type StaffRole = "judge" | "chief_judge" | "tabulator";
+export type StaffRole = "judge" | "tabulator";
 
 /**
  * A custom hook to fetch and aggregate data for a staff member (like a judge or tabulator).

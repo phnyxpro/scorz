@@ -37,7 +37,7 @@ export interface NavItem {
 
 export const mainNavItems: NavItem[] = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/judge-dashboard", label: "Judging", icon: ClipboardList, roles: ["judge", "chief_judge"] },
+    { path: "/judge-dashboard", label: "Judging", icon: ClipboardList, roles: ["judge"] },
     { path: "/competitions", label: "Events", icon: Trophy },
     { path: "/settings", label: "Settings", icon: Settings },
 ];

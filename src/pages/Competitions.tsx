@@ -284,11 +284,6 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}/score`}><ClipboardList className="h-3 w-3 mr-1" /> Score</Link>
                       </Button>
                     )}
-                    {c.status === "active" && isChiefJudge && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
-                      </Button>
-                    )}
                     {c.status === "active" && isTabulator && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/tabulator`}><Calculator className="h-3 w-3 mr-1" /> Tabulate</Link>

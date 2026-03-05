@@ -185,6 +185,11 @@ export function SubEventAssignments({ competitionId }: Props) {
                             <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
                               {a.role.replace("_", " ")}
                             </Badge>
+                            {(a as any).is_chief && (
+                              <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
+                                <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                              </Badge>
+                            )}
                             {a.responsibility && (
                               <Badge variant="outline" className="text-[10px]">
                                 {a.responsibility === "timer" ? "Timer" : "Full"}

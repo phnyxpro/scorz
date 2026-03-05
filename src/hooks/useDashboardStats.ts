@@ -53,7 +53,7 @@ export function useDashboardStats() {
           .from("sub_event_assignments")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .in("role", ["judge", "chief_judge"]);
+          .eq("role", "judge" as any);
         results.push({ label: "My Assignments", value: unscoredCount ?? 0, to: "/judge-dashboard" });
 
         const { count: uncertified } = await supabase

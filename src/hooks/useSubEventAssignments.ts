@@ -75,10 +75,12 @@ export function useAssignableUsers() {
 export function useAddAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (values: { sub_event_id: string; user_id: string; role: string }) => {
+    mutationFn: async (values: { sub_event_id: string; user_id: string; role: string; is_chief?: boolean }) => {
+      const insertData: any = { sub_event_id: values.sub_event_id, user_id: values.user_id, role: values.role as any };
+      if (values.is_chief !== undefined) insertData.is_chief = values.is_chief;
       const { data, error } = await supabase
         .from("sub_event_assignments")
-        .insert({ sub_event_id: values.sub_event_id, user_id: values.user_id, role: values.role as any })
+        .insert(insertData)
         .select()
         .single();
       if (error) throw error;
