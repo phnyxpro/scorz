@@ -224,7 +224,17 @@ export default function ChiefJudgeDashboard() {
                   <p className="text-xl font-bold text-foreground">{ties.length}</p>
                 </div>
               </div>
-              <div className="flex justify-end mt-3">
+              <div className="flex justify-end mt-3 gap-2">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/rules`}>
+                    <FileText className="h-3.5 w-3.5 mr-1.5" /> Rules
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/rubric`}>
+                    <ClipboardList className="h-3.5 w-3.5 mr-1.5" /> Rubric
+                  </Link>
+                </Button>
                 <Button asChild variant="outline" size="sm" className="text-xs">
                   <Link to={`/competitions/${competitionId}/master-sheet?sub_event=${selectedSubEventId}`}>
                     <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
