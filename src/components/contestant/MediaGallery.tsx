@@ -142,8 +142,24 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
   const videos = (files || []).filter(f => f.type === "video");
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-      <Card className="border-border/50 bg-card/80">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-4"
+      onDragEnter={isOwnProfile ? handleDragEnter : undefined}
+      onDragLeave={isOwnProfile ? handleDragLeave : undefined}
+      onDragOver={isOwnProfile ? handleDragOver : undefined}
+      onDrop={isOwnProfile ? handleDrop : undefined}
+    >
+      <Card className={`border-border/50 bg-card/80 relative transition-colors ${dragging ? "border-primary ring-2 ring-primary/20" : ""}`}>
+        {dragging && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-primary/10 backdrop-blur-sm rounded-lg border-2 border-dashed border-primary pointer-events-none">
+            <div className="text-center">
+              <ImagePlus className="h-10 w-10 text-primary mx-auto mb-2" />
+              <p className="text-sm font-medium text-primary">Drop files to upload</p>
+            </div>
+          </div>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
