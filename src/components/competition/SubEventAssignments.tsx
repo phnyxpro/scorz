@@ -60,8 +60,10 @@ export function SubEventAssignments({ competitionId }: Props) {
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
       role: selectedRole,
+      ...(selectedRole === "tabulator" && selectedResponsibility ? { responsibility: selectedResponsibility } : {}),
     });
     setSelectedUserId("");
+    setSelectedResponsibility("");
   };
 
   const userName = (userId: string) => {
