@@ -13,6 +13,7 @@ import { SubEventAssignments } from "@/components/competition/SubEventAssignment
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { BannerUpload } from "@/components/shared/BannerUpload";
+import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { StaffInvitationForm } from "@/components/admin/StaffInvitationForm";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
@@ -44,6 +45,8 @@ export default function CompetitionDetail() {
   const [rulesUrl, setRulesUrl] = useState("");
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
+  const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
 
   useEffect(() => {
     if (comp) {
@@ -56,13 +59,15 @@ export default function CompetitionDetail() {
       setRulesUrl((comp as any).rules_url || "");
       setSocialLinks((comp as any).social_links || {});
       setVotingEnabled((comp as any).voting_enabled || false);
+      setRulesDocumentUrl((comp as any).rules_document_url || "");
+      setRubricDocumentUrl((comp as any).rubric_document_url || "");
     }
   }, [comp]);
 
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
@@ -174,6 +179,24 @@ export default function CompetitionDetail() {
                 <label className="text-xs text-muted-foreground">Competition Rules URL</label>
                 <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
               </div>
+
+              {/* Rules Document Upload */}
+              <DocumentUpload
+                currentUrl={rulesDocumentUrl || null}
+                folder={`rules/${id}`}
+                label="Rules Document (PDF)"
+                onUploaded={(url) => setRulesDocumentUrl(url)}
+                onRemoved={() => setRulesDocumentUrl("")}
+              />
+
+              {/* Rubric Document Upload */}
+              <DocumentUpload
+                currentUrl={rubricDocumentUrl || null}
+                folder={`rubric/${id}`}
+                label="Rubric Document (PDF)"
+                onUploaded={(url) => setRubricDocumentUrl(url)}
+                onRemoved={() => setRubricDocumentUrl("")}
+              />
 
               {/* Social Links */}
               <div className="space-y-2">

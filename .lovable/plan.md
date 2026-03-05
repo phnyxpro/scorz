@@ -1,50 +1,47 @@
 
 
-## Plan: Document Upload with Content Display for Rules & Rubric
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The user wants uploaded documents (rules PDF, rubric document) to have their content extracted and displayed inline on the platform, rather than just providing a download link.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Current State
-- No `DocumentUpload` component exists yet (was planned but not implemented).
-- No `documents` storage bucket exists.
-- The `competitions` table lacks `rules_document_url` and `rubric_document_url` columns.
-- Build errors exist in `NotificationCenter.tsx` (unrelated, will fix).
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Approach
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**1. Database Migration**
-- Add `rules_document_url` and `rubric_document_url` columns to `competitions`.
-- Create a `documents` storage bucket (public read) with RLS policies for authenticated admin/organizer uploads.
+---
 
-**2. New `DocumentUpload` Component** (`src/components/shared/DocumentUpload.tsx`)
-- Reusable file upload component accepting PDF, DOCX, DOC files (max 10MB).
-- Uploads to the `documents` bucket.
-- Shows the current file name with download and remove actions.
-- Mirrors the `BannerUpload` pattern.
+### Fix 1: Conditionally apply auditorium filter
 
-**3. PDF Content Rendering**
-- For PDF files: embed an inline `<iframe>` viewer so content is displayed directly on the page.
-- For non-PDF files: provide a download card with file type icon.
-- This means when a rules or rubric document is uploaded, the public page will render the PDF inline (the browser's native PDF viewer) rather than requiring a separate download.
+**File: `src/contexts/ThemeContext.tsx`**
 
-**4. Update `CompetitionDetail.tsx` General Tab**
-- Add two `DocumentUpload` fields: one for rules document, one for rubric document.
-- Keep the existing rules URL text input as an alternative.
-- Wire `onUploaded`/`onRemoved` callbacks to save URLs to the new columns.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**5. Update `RulesAndRubric.tsx` Public Page**
-- If `rules_document_url` exists, render an embedded PDF viewer (iframe) for PDFs or a download card for other formats.
-- If `rubric_document_url` exists, render it similarly in the rubric section.
-- Fall back to existing behavior (external URL link, criteria grid) when no documents are uploaded.
+### Fix 2: Remove filter class when at defaults
 
-**6. Fix `NotificationCenter.tsx` Build Errors**
-- The `notifications` table doesn't exist in the generated types. The existing `as any` casts should work, but the error suggests the Supabase client generic is rejecting `"notifications"`. Will ensure all `.from("notifications")` calls use proper type assertions to suppress TS errors.
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-### Files Changed
-- **Migration**: Add columns + storage bucket + RLS policies
-- **New**: `src/components/shared/DocumentUpload.tsx`
-- **Modified**: `src/pages/CompetitionDetail.tsx` — add document upload sections
-- **Modified**: `src/pages/RulesAndRubric.tsx` — render uploaded documents inline
-- **Modified**: `src/components/notifications/NotificationCenter.tsx` — fix build errors
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
