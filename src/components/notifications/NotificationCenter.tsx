@@ -76,7 +76,7 @@ export function NotificationCenter() {
 
     const markRead = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase.from("notifications") as any)
+            const { error } = await (supabase as any).from("notifications")
                 .update({ is_read: true })
                 .eq("id", id);
             if (error) throw error;
