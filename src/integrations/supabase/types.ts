@@ -251,7 +251,9 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          rubric_content: string | null
           rubric_document_url: string | null
+          rules_content: string | null
           rules_document_url: string | null
           rules_url: string | null
           slug: string
@@ -269,7 +271,9 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          rubric_content?: string | null
           rubric_document_url?: string | null
+          rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
           slug: string
@@ -287,7 +291,9 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          rubric_content?: string | null
           rubric_document_url?: string | null
+          rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
           slug?: string

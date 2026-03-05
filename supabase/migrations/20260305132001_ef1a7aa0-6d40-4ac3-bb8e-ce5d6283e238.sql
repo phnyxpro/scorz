@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions ADD COLUMN rules_content text, ADD COLUMN rubric_content text;
