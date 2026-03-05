@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon
+  FileText, ListChecks, LucideIcon, UserPlus
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { dashboardCards, AppRole } from "@/lib/navigation";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const container = {
