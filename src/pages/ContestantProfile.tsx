@@ -186,12 +186,12 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className={`grid w-full ${isJudgeViewer ? "grid-cols-3" : "grid-cols-5"}`}>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="media">Media</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="scores">Scores</TabsTrigger>
-          <TabsTrigger value="votes">Votes</TabsTrigger>
+          {!isJudgeViewer && <TabsTrigger value="scores">Scores</TabsTrigger>}
+          {!isJudgeViewer && <TabsTrigger value="votes">Votes</TabsTrigger>}
         </TabsList>
 
         {/* Media Gallery Tab */}
