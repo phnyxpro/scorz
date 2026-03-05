@@ -393,7 +393,6 @@ export default function ContestantProfile() {
         </TabsContent>
 
       </Tabs>
-      </Tabs>
     </div>
   );
 }
