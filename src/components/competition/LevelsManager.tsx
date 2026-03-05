@@ -82,13 +82,18 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       {events?.map((e) => (
         <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="flex items-center gap-2 flex-wrap text-left hover:opacity-70 transition-opacity cursor-pointer"
+              onClick={() => openEdit(e)}
+            >
               <span className="font-medium text-foreground">{e.name}</span>
               {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
               {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
               {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
-            </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
+              <Pencil className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
