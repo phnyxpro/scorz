@@ -1,47 +1,31 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add Ticket Check-In Hub for Organizers
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Overview
+Add a "Ticket Check-In" action card on the organizer dashboard that links to a new hub page. The hub follows the same pattern as Registrations/Contestant Profiles/Results: select a competition first, then see all tickets for that competition's sub-events with the ability to check patrons in by scanning/entering their ticket barcode.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. `src/lib/navigation.ts`** -- Add a new organizer dashboard card:
+- "Ticket Check-In", desc: "Check in patrons at events", icon: `Ticket`, to: `/check-in`, roles: `["organizer", "admin"]`
 
----
+**2. Create `src/pages/CheckInHub.tsx`** -- New hub page with:
+- Competition selector dropdown (fetches organizer's competitions via `useCompetitions`)
+- Once selected, fetches all `event_tickets` joined with `sub_events` for that competition
+- Search/scan input field at the top for entering a ticket number (barcode value)
+- When a ticket number is entered/scanned, it finds the matching ticket and marks it as checked in (`is_checked_in = true`, `checked_in_at = now()`) via a Supabase update
+- Shows a table of all tickets grouped or filterable by sub-event, with columns: Ticket #, Name, Email, Sub-Event, Type, Status (Checked In / Pending)
+- Quick visual feedback (green flash / toast) on successful check-in
+- Stats summary at top: total tickets, checked in count, pending count
 
-### Fix 1: Conditionally apply auditorium filter
+**3. `src/App.tsx`** -- Add route `/check-in` → `CheckInHub` within `AppLayout` + `ProtectedRoute`
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Files
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+| File | Action |
+|------|--------|
+| `src/pages/CheckInHub.tsx` | Create -- competition selector + ticket search/scan + check-in table |
+| `src/lib/navigation.ts` | Add "Ticket Check-In" card for organizer/admin |
+| `src/App.tsx` | Add `/check-in` route |
 
