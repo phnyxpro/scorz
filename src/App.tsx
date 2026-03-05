@@ -42,6 +42,9 @@ import PenaltiesPage from "./pages/PenaltiesPage";
 import Settings from "./pages/Settings";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import PeoplesChoiceManager from "./pages/PeoplesChoiceManager";
+import RegistrationsHub from "./pages/RegistrationsHub";
+import ContestantProfilesHub from "./pages/ContestantProfilesHub";
+import ResultsHub from "./pages/ResultsHub";
 
 const queryClient = new QueryClient();
 
