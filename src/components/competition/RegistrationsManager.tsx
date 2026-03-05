@@ -43,6 +43,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
+  const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
 
   // Get all sub-events for filtering
   const allLevelIds = levels?.map(l => l.id) || [];
