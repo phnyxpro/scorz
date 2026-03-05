@@ -124,6 +124,7 @@ export default function CompetitionDetail() {
       } else {
         // Save raw text
         await supabase.from("competitions").update({ rubric_content: data.raw_text } as any).eq("id", id);
+        setRubricContent(data.raw_text);
         qc.invalidateQueries({ queryKey: ["competition", id] });
 
         if (data.criteria && data.criteria.length > 0) {
