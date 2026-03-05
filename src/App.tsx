@@ -213,6 +213,15 @@ const App = () => (
                 }
               />
               <Route
+                path="/peoples-choice"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PeoplesChoiceManager />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              <Route
                 path="/profile/:userId"
                 element={
                   <ProtectedRoute>
