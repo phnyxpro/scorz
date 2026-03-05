@@ -102,7 +102,8 @@ export default function CompetitionDetail() {
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="w-full flex overflow-x-auto no-scrollbar">
           <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
-          <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
+          <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
+          <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
           <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
