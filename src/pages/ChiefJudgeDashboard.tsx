@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ChiefJudgeDashboard() {
