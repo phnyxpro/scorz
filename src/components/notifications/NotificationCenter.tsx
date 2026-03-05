@@ -97,7 +97,7 @@ export function NotificationCenter() {
 
     const deleteNotification = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase.from("notifications") as any)
+            const { error } = await (supabase as any).from("notifications")
                 .delete()
                 .eq("id", id);
             if (error) throw error;
