@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered
+  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered, Video, Globe, ChevronRight
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
