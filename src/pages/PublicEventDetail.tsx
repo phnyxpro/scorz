@@ -69,7 +69,7 @@ function useLineup(subEventIds: string[]) {
     queryFn: async () => {
       const { data: contestants, error } = await supabase
         .from("contestant_registrations")
-        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
+        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id")
         .in("sub_event_id", subEventIds)
         .eq("status", "approved")
         .order("sort_order", { ascending: true });
