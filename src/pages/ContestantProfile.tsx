@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 
 const statusColor: Record<string, string> = {
@@ -183,12 +183,117 @@ export default function ContestantProfile() {
       </motion.div>
 
       {/* Tabs */}
-      <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="details" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
         </TabsList>
+
+        {/* Registration Details Tab */}
+        <TabsContent value="details">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            {(registrations || []).map((reg) => {
+              const comp = compMap[reg.competition_id];
+              const sub = reg.sub_event_id ? subEventMap[reg.sub_event_id] : null;
+              const socialHandles = reg.social_handles as Record<string, string> | null;
+
+              return (
+                <Card key={reg.id} className="border-border/50 bg-card/80">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{comp?.name || "Unknown Competition"}</CardTitle>
+                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>{reg.status}</Badge>
+                    </div>
+                    {sub && <CardDescription>{sub.name}{sub.event_date ? ` · ${sub.event_date}` : ""}</CardDescription>}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Personal Info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DetailField icon={User} label="Full Name" value={reg.full_name} />
+                      <DetailField icon={Mail} label="Email" value={reg.email} />
+                      <DetailField icon={Phone} label="Phone" value={reg.phone} />
+                      <DetailField icon={MapPin} label="Location" value={reg.location} />
+                      <DetailField icon={Calendar} label="Age Category" value={reg.age_category === "minor" ? "Minor" : "Adult"} />
+                      <DetailField icon={Calendar} label="Registered" value={new Date(reg.created_at).toLocaleDateString()} />
+                    </div>
+
+                    {/* Bio */}
+                    {reg.bio && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bio</p>
+                        <p className="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-3 border border-border/30">{reg.bio}</p>
+                      </div>
+                    )}
+
+                    {/* Social Handles */}
+                    {socialHandles && Object.keys(socialHandles).length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Globe className="h-3 w-3" /> Social Handles
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(socialHandles).filter(([, v]) => v).map(([platform, handle]) => (
+                            <Badge key={platform} variant="outline" className="text-xs font-mono">
+                              {platform}: {handle}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Media */}
+                    <div className="flex flex-wrap gap-3">
+                      {reg.profile_photo_url && (
+                        <a href={reg.profile_photo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                          <User className="h-3 w-3" /> Profile Photo <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {reg.performance_video_url && (
+                        <a href={reg.performance_video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                          <Video className="h-3 w-3" /> Performance Video <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Guardian Info (minors) */}
+                    {reg.age_category === "minor" && (reg.guardian_name || reg.guardian_email) && (
+                      <div className="space-y-1.5 pt-2 border-t border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Shield className="h-3 w-3" /> Guardian Information
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <DetailField icon={User} label="Guardian Name" value={reg.guardian_name} />
+                          <DetailField icon={Mail} label="Guardian Email" value={reg.guardian_email} />
+                          <DetailField icon={Phone} label="Guardian Phone" value={reg.guardian_phone} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compliance */}
+                    <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
+                      <Badge variant={reg.rules_acknowledged ? "default" : "outline"} className="text-[10px]">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Rules {reg.rules_acknowledged ? "Acknowledged" : "Not Acknowledged"}
+                      </Badge>
+                      {reg.contestant_signed_at && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Signed {new Date(reg.contestant_signed_at).toLocaleDateString()}
+                        </Badge>
+                      )}
+                      {reg.guardian_signed_at && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Guardian Signed {new Date(reg.guardian_signed_at).toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </motion.div>
+        </TabsContent>
 
         {/* Performance History Tab */}
         <TabsContent value="history">
@@ -401,6 +506,19 @@ function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; val
       <div>
         <p className="font-mono font-bold text-sm text-foreground">{value}</p>
         <p className="text-[10px] text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function DetailField({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-sm text-foreground">{value}</p>
       </div>
     </div>
   );
