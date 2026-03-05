@@ -66,14 +66,32 @@ function useLineup(subEventIds: string[]) {
     queryKey: ["public-lineup", subEventIds],
     enabled: subEventIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: contestants, error } = await supabase
         .from("contestant_registrations")
         .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
         .in("sub_event_id", subEventIds)
         .eq("status", "approved")
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data;
+
+      // Fetch booked slots to show scheduled times
+      const { data: slots } = await supabase
+        .from("performance_slots")
+        .select("contestant_registration_id, start_time, end_time, slot_index")
+        .in("sub_event_id", subEventIds)
+        .eq("is_booked", true);
+
+      const slotMap = new Map<string, { start_time: string; end_time: string }>();
+      (slots || []).forEach(s => {
+        if (s.contestant_registration_id) {
+          slotMap.set(s.contestant_registration_id, { start_time: s.start_time, end_time: s.end_time });
+        }
+      });
+
+      return (contestants || []).map(c => ({
+        ...c,
+        slot: slotMap.get(c.id) || null,
+      }));
     },
   });
 }
