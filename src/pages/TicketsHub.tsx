@@ -13,6 +13,7 @@ import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Calendar,
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
+import { ExportDropdown } from "@/components/shared/ExportDropdown";
 
 type TicketRow = Tables<"event_tickets">;
 
