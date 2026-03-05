@@ -112,6 +112,7 @@ export default function PublicEventDetail() {
   );
 
   const allSubEventIds = levels?.flatMap(l => l.sub_events.map((s: any) => s.id)) || [];
+  const anyVotingEnabled = levels?.some(l => l.sub_events?.some((se: any) => se.voting_enabled)) || false;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
