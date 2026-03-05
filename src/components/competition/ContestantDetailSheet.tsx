@@ -31,6 +31,33 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   if (!reg) return null;
 
+  const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
+
+  const { data: mediaFiles } = useQuery({
+    queryKey: ["contestant-media-sheet", reg?.user_id],
+    enabled: open && !!reg?.user_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("contestant-media")
+        .list(reg!.user_id, { limit: 50, sortBy: { column: "created_at", order: "desc" } });
+      if (error) throw error;
+      const { data: { publicUrl: baseUrl } } = supabase.storage
+        .from("contestant-media")
+        .getPublicUrl(`${reg!.user_id}/placeholder`);
+      const prefix = baseUrl.replace("/placeholder", "");
+      return (data || [])
+        .filter(f => f.name !== ".emptyFolderPlaceholder")
+        .filter(f => {
+          const ext = f.name.split(".").pop()?.toLowerCase() || "";
+          return IMAGE_EXTENSIONS.includes(ext);
+        })
+        .map(f => ({
+          name: f.name,
+          url: `${prefix}/${f.name}`,
+        }));
+    },
+  });
+
   const socialHandles = reg.social_handles as Record<string, string> | null;
   const hasSocials = socialHandles && Object.keys(socialHandles).length > 0;
   const isMinor = reg.age_category === "minor";
