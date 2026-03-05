@@ -63,13 +63,13 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
     },
   });
 
-  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles || selectedFiles.length === 0) return;
+  const uploadFiles = useCallback(async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      for (const file of Array.from(selectedFiles)) {
+      for (const file of files) {
         const ext = file.name.split(".").pop()?.toLowerCase() || "";
         const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const path = `${userId}/${safeName}`;
@@ -80,15 +80,46 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
 
         if (error) throw error;
       }
-      toast({ title: "Upload complete", description: `${selectedFiles.length} file(s) uploaded.` });
+      toast({ title: "Upload complete", description: `${files.length} file(s) uploaded.` });
       queryClient.invalidateQueries({ queryKey: ["contestant-media", userId] });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }, [userId, queryClient]);
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) uploadFiles(e.target.files);
+    e.target.value = "";
+  }, [uploadFiles]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    setDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files) uploadFiles(e.dataTransfer.files);
+  }, [uploadFiles]);
 
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
