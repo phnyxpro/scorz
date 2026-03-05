@@ -90,6 +90,24 @@ export default function TicketsHub() {
     );
   }, [tickets, searchQuery]);
 
+  const exportRows = useMemo(() => {
+    return filtered.map((t) => {
+      const se = subEventMap[t.sub_event_id];
+      return {
+        "Ticket #": t.ticket_number,
+        "Name": t.full_name,
+        "Email": t.email,
+        "Phone": t.phone ?? "",
+        "Sub-Event": se?.name ?? "",
+        "Type": t.ticket_type,
+        "Price": `$${(se?.ticket_price ?? 0).toFixed(2)}`,
+        "Status": t.is_checked_in ? "Checked In" : "Pending",
+        "Checked In At": t.checked_in_at ? format(new Date(t.checked_in_at), "MMM d, yyyy h:mm a") : "",
+        "Purchased": format(new Date(t.created_at), "MMM d, yyyy h:mm a"),
+      };
+    });
+  }, [filtered, subEventMap]);
+
   const selectedSe = selectedTicket ? subEventMap[selectedTicket.sub_event_id] : null;
 
   return (
