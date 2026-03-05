@@ -54,7 +54,8 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/competitions", roles: ["organizer"] },
     { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-primary", to: "/profile", roles: ["contestant"] },
     { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/finance", roles: ["organizer", "admin"] },
-    { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-primary", to: "/peoples-choice", roles: ["organizer", "audience"] },
+    { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-primary", to: "/peoples-choice", roles: ["organizer", "admin"] },
+    { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
 
     // Tabulator / Witness
     { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator", "witness"] },

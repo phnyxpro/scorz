@@ -24,6 +24,7 @@ import { PublicRoleList } from "@/components/public/PublicRoleList";
 import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
+import { PublicVotingForm } from "@/components/public/PublicVotingForm";
 
 function usePublicCompetition(slug: string | undefined) {
   return useQuery({
@@ -111,6 +112,7 @@ export default function PublicEventDetail() {
   );
 
   const allSubEventIds = levels?.flatMap(l => l.sub_events.map((s: any) => s.id)) || [];
+  const anyVotingEnabled = levels?.some(l => l.sub_events?.some((se: any) => se.voting_enabled)) || false;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
@@ -179,7 +181,7 @@ export default function PublicEventDetail() {
               <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
                 <Award className="h-4 w-4" /> Judges
               </TabsTrigger>
-              {(comp as any).voting_enabled && (
+              {anyVotingEnabled && (
                 <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
                   <Heart className="h-4 w-4" /> Voting
                 </TabsTrigger>
@@ -287,19 +289,9 @@ export default function PublicEventDetail() {
             </TabsContent>
 
             {/* Voting Tab (conditional) */}
-            {(comp as any).voting_enabled && (
-              <TabsContent value="voting" className="space-y-6 text-center py-12">
-                <div className="max-w-md mx-auto space-y-4">
-                  <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                  <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-                  <p className="text-muted-foreground">
-                    Supporters can vote for their favorite contestants across all events.
-                    Every vote helps promote their artistic journey!
-                  </p>
-                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${compId}/vote`)}>
-                    <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
-                  </Button>
-                </div>
+            {anyVotingEnabled && (
+              <TabsContent value="voting" className="space-y-6">
+                <PublicVotingForm competitionId={compId} levels={levels} />
               </TabsContent>
             )}
 

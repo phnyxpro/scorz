@@ -1,40 +1,47 @@
 
 
-## Plan: Public Voting + Role-Based People's Choice Access
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-1. The public event page's Voting tab only links to an authenticated voting page -- audience should be able to vote directly from the public page without needing to log in.
-2. The `/peoples-choice` manager page (with toggle controls and audit) is accessible to all authenticated users, but should be restricted to admins and organizers only.
-3. The audience dashboard's People's Choice card should show a page where they can cast votes (if not yet voted) or see their existing votes per competition.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Changes
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Add inline voting form to the public event page's Voting tab**
-- **Modified**: `src/pages/PublicEventDetail.tsx`
-- Replace the current "Go to Voting Page" button with an inline voting experience directly in the Voting tab.
-- Show level/sub-event selector, contestant list, voter info form (name, email, phone, ticket number), and submit button.
-- Show "already voted" confirmation if the email has already voted for that sub-event.
-- Show the voting tab when ANY sub-event has `voting_enabled` (not just `competitions.voting_enabled`).
-- No authentication required -- uses the existing `audience_votes` RLS which allows anonymous SELECT.
-- Note: INSERT requires authentication, so unauthenticated users will be prompted to sign in before submitting.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. Restrict `/peoples-choice` manager to admin/organizer roles**
-- **Modified**: `src/pages/PeoplesChoiceManager.tsx`
-- Add role check at the top using `useAuth` and the user_roles table. If user is not admin/organizer, redirect to dashboard with a toast.
+---
 
-**3. Repurpose `/competitions/:id/vote` (AudienceVoting) for audience dashboard**
-- **Modified**: `src/pages/AudienceVoting.tsx`
-- Rework to show: for each sub-event where the user has voted, display their vote choice. For sub-events where voting is open and they haven't voted, show the voting form.
-- Fetch all votes by the user's email across sub-events in the competition.
+### Fix 1: Conditionally apply auditorium filter
 
-**4. Update navigation for audience role**
-- **Modified**: `src/lib/navigation.ts`
-- Change the People's Choice card for the `audience` role to link to `/competitions` (where they can navigate to vote) instead of `/peoples-choice` (which is admin/organizer only).
-- Keep `/peoples-choice` link for `organizer` role only.
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Files Changed
-- **Modified**: `src/pages/PublicEventDetail.tsx` -- inline voting form in Voting tab
-- **Modified**: `src/pages/PeoplesChoiceManager.tsx` -- add admin/organizer role guard
-- **Modified**: `src/pages/AudienceVoting.tsx` -- show existing votes + voting form
-- **Modified**: `src/lib/navigation.ts` -- separate audience vs organizer People's Choice card links
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
