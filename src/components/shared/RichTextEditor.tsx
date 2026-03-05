@@ -608,7 +608,7 @@ export function RichTextEditor({
       {editor && editable && (
         <BubbleMenu
           editor={editor}
-          tippyOptions={{ duration: 150, placement: "top" }}
+          options={{ duration: 150, placement: "top" }}
           className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg border border-border bg-popover shadow-lg"
         >
           <ToolbarButton
