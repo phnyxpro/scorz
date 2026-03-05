@@ -135,10 +135,22 @@ export function SubEventAssignments({ competitionId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedRole === "tabulator" && (
+                  <div>
+                    <label className="text-xs text-muted-foreground">Responsibility</label>
+                    <Select value={selectedResponsibility} onValueChange={setSelectedResponsibility}>
+                      <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Full Tabulator</SelectItem>
+                        <SelectItem value="timer">Timer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button
                   size="sm"
                   onClick={handleAdd}
-                  disabled={!selectedUserId || !selectedRole || addAssignment.isPending}
+                  disabled={!selectedUserId || !selectedRole || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending}
                   className="w-full sm:w-auto"
                 >
                   <UserPlus className="h-3.5 w-3.5 mr-1" /> Assign
