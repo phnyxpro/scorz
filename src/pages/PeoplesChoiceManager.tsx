@@ -165,44 +165,8 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
 export default function PeoplesChoiceManager() {
   const { data: competitions, isLoading: compsLoading } = useCompetitions();
   const [selectedCompId, setSelectedCompId] = useState<string>("");
-  const qc = useQueryClient();
-
-  const selectedComp = useMemo(
-    () => competitions?.find(c => c.id === selectedCompId),
-    [competitions, selectedCompId]
-  );
-
-  // Fetch full competition row to get voting_enabled
-  const { data: compFull } = useQuery({
-    queryKey: ["competition-full", selectedCompId],
-    enabled: !!selectedCompId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competitions")
-        .select("id, voting_enabled")
-        .eq("id", selectedCompId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: subEvents, isLoading: subsLoading } = useCompetitionSubEvents(selectedCompId || undefined);
-
-  const toggleVoting = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const { error } = await supabase
-        .from("competitions")
-        .update({ voting_enabled: enabled })
-        .eq("id", selectedCompId);
-      if (error) throw error;
-    },
-    onSuccess: (_, enabled) => {
-      qc.invalidateQueries({ queryKey: ["competition-full", selectedCompId] });
-      toast({ title: enabled ? "Voting activated" : "Voting deactivated" });
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
 
   // Aggregate stats
   const totalSubEvents = subEvents?.length || 0;
