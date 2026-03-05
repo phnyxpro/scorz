@@ -59,6 +59,40 @@ export default function RulesAndRubric() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Inline PDF viewer for uploaded rules document */}
+            {(comp as any)?.rules_document_url && (
+              <Card className="border-border/50 bg-card/80 overflow-hidden">
+                <CardContent className="p-0">
+                  {(comp as any).rules_document_url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={(comp as any).rules_document_url}
+                      className="w-full h-[600px] border-0"
+                      title="Rules Document"
+                    />
+                  ) : (
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-3 items-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Rules Document</p>
+                          <p className="text-xs text-muted-foreground">Uploaded document</p>
+                        </div>
+                      </div>
+                      <a
+                        href={(comp as any).rules_document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {(comp as any)?.rules_url ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4 flex items-center justify-between gap-4">
@@ -80,14 +114,46 @@ export default function RulesAndRubric() {
                 </CardContent>
               </Card>
             ) : (
-              !comp?.description && (
+              !comp?.description && !(comp as any)?.rules_document_url && (
                 <p className="text-sm text-muted-foreground italic">No rules have been published for this competition.</p>
               )
             )}
           </section>
 
           {/* Scoring Rubric */}
-          <section id="rubric" className="scroll-mt-20">
+          <section id="rubric" className="space-y-3 scroll-mt-20">
+            {/* Inline PDF viewer for uploaded rubric document */}
+            {(comp as any)?.rubric_document_url && (
+              <Card className="border-border/50 bg-card/80 overflow-hidden mb-4">
+                <CardContent className="p-0">
+                  {(comp as any).rubric_document_url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={(comp as any).rubric_document_url}
+                      className="w-full h-[600px] border-0"
+                      title="Rubric Document"
+                    />
+                  ) : (
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-3 items-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Rubric Document</p>
+                          <p className="text-xs text-muted-foreground">Uploaded document</p>
+                        </div>
+                      </div>
+                      <a
+                        href={(comp as any).rubric_document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             <PublicRubric criteria={criteria || []} penalties={penalties || []} />
           </section>
         </>

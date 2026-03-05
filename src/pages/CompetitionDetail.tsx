@@ -180,6 +180,24 @@ export default function CompetitionDetail() {
                 <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
               </div>
 
+              {/* Rules Document Upload */}
+              <DocumentUpload
+                currentUrl={rulesDocumentUrl || null}
+                folder={`rules/${id}`}
+                label="Rules Document (PDF)"
+                onUploaded={(url) => setRulesDocumentUrl(url)}
+                onRemoved={() => setRulesDocumentUrl("")}
+              />
+
+              {/* Rubric Document Upload */}
+              <DocumentUpload
+                currentUrl={rubricDocumentUrl || null}
+                folder={`rubric/${id}`}
+                label="Rubric Document (PDF)"
+                onUploaded={(url) => setRubricDocumentUrl(url)}
+                onRemoved={() => setRubricDocumentUrl("")}
+              />
+
               {/* Social Links */}
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Social Media Links</label>
