@@ -44,9 +44,9 @@ export const mainNavItems: NavItem[] = [
 
 export const dashboardCards: { title: string; desc: string; icon: LucideIcon; color: string; to: string; roles?: AppRole[] }[] = [
     // Admin
-    { title: "Admin Panel", desc: "Manage users, settings & billing", icon: Shield, color: "text-primary", to: "/admin", roles: ["admin"] },
-    { title: "Platform Analytics", desc: "View metrics across all events", icon: BarChart3, color: "text-secondary", to: "/admin?tab=analytics", roles: ["admin"] },
-    { title: "Support Mode", desc: "Masquerade as an organiser", icon: Eye, color: "text-secondary", to: "/admin?tab=support", roles: ["admin"] },
+    { title: "User Management", desc: "Manage users & assign roles", icon: Users, color: "text-primary", to: "/admin/users", roles: ["admin"] },
+    { title: "Global Settings", desc: "Branding, flags & defaults", icon: Shield, color: "text-secondary", to: "/admin/settings", roles: ["admin"] },
+    { title: "Billing", desc: "Subscriptions & payment tiers", icon: CreditCard, color: "text-secondary", to: "/admin/billing", roles: ["admin"] },
 
     // Organizer
     { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions", roles: ["organizer"] },

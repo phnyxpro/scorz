@@ -250,11 +250,31 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin"
+                path="/admin/users"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
-                      <AdminPanel />
+                      <AdminUsers />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AdminSettings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/billing"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AdminBilling />
                     </AppLayout>
                   </ProtectedRoute>
                 }

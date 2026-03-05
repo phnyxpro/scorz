@@ -152,10 +152,20 @@ export function GlobalSearch() {
                             <span>Dashboard</span>
                         </CommandItem>
                         {hasRole("admin") && (
-                            <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
-                                <Shield className="mr-2 h-4 w-4" />
-                                <span>Admin Panel</span>
-                            </CommandItem>
+                            <>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>User Management</span>
+                                </CommandItem>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/settings"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>Global Settings</span>
+                                </CommandItem>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/billing"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>Billing</span>
+                                </CommandItem>
+                            </>
                         )}
                         <CommandItem onSelect={() => runCommand(() => navigate("/settings"))}>
                             <Users className="mr-2 h-4 w-4" />
