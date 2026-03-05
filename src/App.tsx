@@ -65,6 +65,26 @@ const App = () => (
                 }
               />
               <Route
+                path="/audience-events"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AudienceEvents />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-tickets"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MyTickets />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/judging"
                 element={
                   <ProtectedRoute>
