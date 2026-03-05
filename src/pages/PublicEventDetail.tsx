@@ -435,9 +435,17 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                       <Users className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{c.full_name}</p>
-                    <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                      {(c as any).slot && (
+                        <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {(c as any).slot.start_time} – {(c as any).slot.end_time}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
