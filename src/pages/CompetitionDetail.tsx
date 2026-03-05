@@ -355,13 +355,15 @@ export default function CompetitionDetail() {
                   onRemoved={() => setRubricDocumentUrl("")}
                 />
 
-                {/* Extracted content preview */}
-                {(comp as any)?.rubric_content && (
-                  <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
-                    <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
-                    <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rubric_content}</p>
-                  </div>
-                )}
+              {/* Rich text editor for rubric content */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rubric Content</label>
+                <RichTextEditor
+                  content={rubricContent}
+                  onChange={setRubricContent}
+                  placeholder="Scan a document or type rubric content here..."
+                />
+              </div>
 
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={update.isPending}>
