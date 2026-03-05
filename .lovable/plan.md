@@ -1,47 +1,35 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add "Tickets" Action Card and Hub Page for Organizers
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Overview
+Create a new "Tickets" hub page following the same pattern as Registrations/Contestant Profiles/Results. The organizer selects a competition, then sees all ticket purchases with purchaser details, ticket codes (with QR/barcode display), ticket type, and check-in status.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. `src/lib/navigation.ts`** -- Add a "Tickets" dashboard card for organizer/admin roles, linking to `/tickets-hub`. Use the `Ticket` icon (from lucide-react). Place it near the existing ticket-related cards.
 
----
+**2. Create `src/pages/TicketsHub.tsx`** -- New hub page with:
+- Competition selector dropdown at top (same pattern as other hubs)
+- Summary stats cards: Total Tickets, Checked In, Pending, Revenue (based on ticket_price from sub_events)
+- Full tickets table with columns: Ticket #, QR Code (rendered inline as a small QR image using a lightweight QR library), Purchaser Name, Email, Phone, Sub-Event, Ticket Type, Price, Check-In Status, Purchase Date
+- Search/filter input to find tickets by name, email, or ticket number
+- Each ticket number displayed in monospace with a small inline QR code generated client-side
 
-### Fix 1: Conditionally apply auditorium filter
+**3. `src/App.tsx`** -- Add route `/tickets-hub` → `TicketsHub` within AppLayout + ProtectedRoute.
 
-**File: `src/contexts/ThemeContext.tsx`**
+**4. QR Code rendering** -- Use a lightweight library (`qrcode.react` or similar) to render small QR codes inline for each ticket number. This gives organizers a visual of what each patron's code looks like.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+### Data Flow
+- Select competition → fetch levels → fetch sub_event IDs → fetch `event_tickets` where `sub_event_id` in those IDs
+- Join sub_event name for display; pull `ticket_price` and `ticket_type` from sub_events for revenue calc
+- Reuses the same query pattern as `CheckInHub`
 
-### Fix 2: Remove filter class when at defaults
+### Files
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+| File | Action |
+|------|--------|
+| `src/pages/TicketsHub.tsx` | Create -- competition selector + stats + searchable tickets table with QR codes |
+| `src/lib/navigation.ts` | Add "Tickets" card for organizer/admin |
+| `src/App.tsx` | Add `/tickets-hub` route |
 
