@@ -83,7 +83,7 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       // Get competition IDs from levels
       const { data: levels } = await supabase
         .from("competition_levels")
-        .select("competition_id")
+        .select("id, competition_id")
         .in("id", levelIds);
 
       if (!levels?.length) { setLoading(false); return; }
