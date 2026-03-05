@@ -105,12 +105,22 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
               {subEvent.levelName} · {subEvent.event_date || "No date"} · {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
             </CardDescription>
           </div>
-          {ranked[0] && (
-            <Badge variant="secondary" className="text-xs">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {ranked[0].name}
+          <div className="flex items-center gap-2">
+            {ranked[0] && (
+              <Badge variant="secondary" className="text-xs">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {ranked[0].name}
+              </Badge>
+            )}
+            <Switch
+              checked={subEvent.voting_enabled}
+              onCheckedChange={(checked) => toggleSubEventVoting.mutate(checked)}
+              disabled={toggleSubEventVoting.isPending}
+            />
+            <Badge variant={subEvent.voting_enabled ? "default" : "secondary"} className="text-xs">
+              {subEvent.voting_enabled ? "Live" : "Off"}
             </Badge>
-          )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
