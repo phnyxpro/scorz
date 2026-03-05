@@ -202,7 +202,13 @@ export default function CompetitionDetail() {
 
         <TabsContent value="rules">
           <Card className="border-border/50 bg-card/80">
-            <CardHeader><CardTitle className="text-base">Competition Rules</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">Competition Rules</CardTitle>
+              </div>
+              <CardDescription>Add an external rules URL or upload a PDF document that contestants and judges can reference.</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground">Competition Rules URL</label>
