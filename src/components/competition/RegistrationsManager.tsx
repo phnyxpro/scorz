@@ -329,6 +329,15 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Contestant Detail Sheet */}
+      <ContestantDetailSheet
+        registration={selectedReg}
+        open={!!selectedReg}
+        onOpenChange={(open) => { if (!open) setSelectedReg(null); }}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
     </div>
   );
 }
