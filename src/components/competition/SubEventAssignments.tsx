@@ -138,6 +138,12 @@ export function SubEventAssignments({ competitionId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedRole === "judge" && (
+                  <div className="flex items-center gap-2 self-end pb-1">
+                    <Switch checked={isChief} onCheckedChange={setIsChief} id="is-chief-toggle" />
+                    <label htmlFor="is-chief-toggle" className="text-xs text-muted-foreground cursor-pointer">Chief Judge</label>
+                  </div>
+                )}
                 {selectedRole === "tabulator" && (
                   <div>
                     <label className="text-xs text-muted-foreground">Responsibility</label>
