@@ -64,6 +64,22 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
   const { data: voteCounts, isLoading } = useVoteCounts(subEvent.id);
   const { data: contestants } = useContestantNames(competitionId);
   const [auditOpen, setAuditOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const toggleSubEventVoting = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { error } = await supabase
+        .from("sub_events")
+        .update({ voting_enabled: enabled })
+        .eq("id", subEvent.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, enabled) => {
+      qc.invalidateQueries({ queryKey: ["competition-sub-events"] });
+      toast({ title: enabled ? "Voting activated for " + subEvent.name : "Voting deactivated for " + subEvent.name });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 
   const ranked = useMemo(() => {
     if (!voteCounts) return [];
@@ -89,12 +105,22 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
               {subEvent.levelName} · {subEvent.event_date || "No date"} · {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
             </CardDescription>
           </div>
-          {ranked[0] && (
-            <Badge variant="secondary" className="text-xs">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {ranked[0].name}
+          <div className="flex items-center gap-2">
+            {ranked[0] && (
+              <Badge variant="secondary" className="text-xs">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {ranked[0].name}
+              </Badge>
+            )}
+            <Switch
+              checked={subEvent.voting_enabled}
+              onCheckedChange={(checked) => toggleSubEventVoting.mutate(checked)}
+              disabled={toggleSubEventVoting.isPending}
+            />
+            <Badge variant={subEvent.voting_enabled ? "default" : "secondary"} className="text-xs">
+              {subEvent.voting_enabled ? "Live" : "Off"}
             </Badge>
-          )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -139,44 +165,8 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
 export default function PeoplesChoiceManager() {
   const { data: competitions, isLoading: compsLoading } = useCompetitions();
   const [selectedCompId, setSelectedCompId] = useState<string>("");
-  const qc = useQueryClient();
-
-  const selectedComp = useMemo(
-    () => competitions?.find(c => c.id === selectedCompId),
-    [competitions, selectedCompId]
-  );
-
-  // Fetch full competition row to get voting_enabled
-  const { data: compFull } = useQuery({
-    queryKey: ["competition-full", selectedCompId],
-    enabled: !!selectedCompId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competitions")
-        .select("id, voting_enabled")
-        .eq("id", selectedCompId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: subEvents, isLoading: subsLoading } = useCompetitionSubEvents(selectedCompId || undefined);
-
-  const toggleVoting = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const { error } = await supabase
-        .from("competitions")
-        .update({ voting_enabled: enabled })
-        .eq("id", selectedCompId);
-      if (error) throw error;
-    },
-    onSuccess: (_, enabled) => {
-      qc.invalidateQueries({ queryKey: ["competition-full", selectedCompId] });
-      toast({ title: enabled ? "Voting activated" : "Voting deactivated" });
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
 
   // Aggregate stats
   const totalSubEvents = subEvents?.length || 0;
@@ -214,19 +204,7 @@ export default function PeoplesChoiceManager() {
               </Select>
             </div>
 
-            {selectedCompId && compFull && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
-                <div className="text-sm font-medium">Audience Voting</div>
-                <Switch
-                  checked={compFull.voting_enabled}
-                  onCheckedChange={(checked) => toggleVoting.mutate(checked)}
-                  disabled={toggleVoting.isPending}
-                />
-                <Badge variant={compFull.voting_enabled ? "default" : "secondary"} className="text-xs">
-                  {compFull.voting_enabled ? "Active" : "Off"}
-                </Badge>
-              </div>
-            )}
+            
           </div>
         </CardContent>
       </Card>

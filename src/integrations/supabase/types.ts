@@ -776,6 +776,7 @@ export type Database = {
           ticket_price: number | null
           ticketing_type: string
           updated_at: string
+          voting_enabled: boolean
         }
         Insert: {
           banner_url?: string | null
@@ -792,6 +793,7 @@ export type Database = {
           ticket_price?: number | null
           ticketing_type?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Update: {
           banner_url?: string | null
@@ -808,6 +810,7 @@ export type Database = {
           ticket_price?: number | null
           ticketing_type?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Relationships: [
           {

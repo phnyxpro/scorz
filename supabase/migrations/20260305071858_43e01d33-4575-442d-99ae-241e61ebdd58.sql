@@ -1,0 +1,1 @@
+ALTER TABLE public.sub_events ADD COLUMN voting_enabled boolean NOT NULL DEFAULT false;
