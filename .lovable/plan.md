@@ -1,47 +1,49 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Full Google Docs-like Rich Text Editor
 
-The app appears blank in headless browser testing due to two compounding issues:
+Upgrade the TipTap editor with comprehensive formatting capabilities including tables, text styling, alignment, and more.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### New Dependencies to Install
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+- `@tiptap/extension-table` (includes TableKit: Table, TableRow, TableHeader, TableCell)
+- `@tiptap/extension-underline`
+- `@tiptap/extension-text-align`
+- `@tiptap/extension-highlight`
+- `@tiptap/extension-subscript`
+- `@tiptap/extension-superscript`
+- `@tiptap/extension-color`
+- `@tiptap/extension-text-style`
+- `@tiptap/extension-placeholder`
 
----
+### File Changes
 
-### Fix 1: Conditionally apply auditorium filter
+**`src/components/shared/RichTextEditor.tsx`** — Full rewrite of the editor component:
 
-**File: `src/contexts/ThemeContext.tsx`**
+1. **Extensions**: Add all new extensions to the editor config (TableKit, Underline, TextAlign, Highlight, Color, TextStyle, Subscript, Superscript, Placeholder)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+2. **Toolbar** — Organized into grouped sections with dividers:
+   - **Text formatting**: Bold, Italic, Underline, Strikethrough, Subscript, Superscript
+   - **Headings**: H1, H2, H3
+   - **Text color / Highlight**: Color picker popover, highlight toggle
+   - **Alignment**: Left, Center, Right, Justify
+   - **Lists**: Bullet, Ordered
+   - **Table controls**: Insert table, Add/delete row, Add/delete column, Merge/split cells
+   - **Misc**: Horizontal rule, Blockquote, Undo, Redo
 
-### Fix 2: Remove filter class when at defaults
+3. **Table CSS**: Add scoped styles for table borders, cell padding, header styling, and selected-cell highlight so tables render properly in both the editor and public views
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**`src/index.css`** — Add table styling rules for the `.prose` class so saved HTML tables render with borders on public-facing pages (RulesPage, RubricPage)
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+### Toolbar Layout
 
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+```text
+[B][I][U][S̶][x₂][x²] | [H1][H2][H3] | [Color][Highlight] | [⫷][⫸][⫿][⫾] | [•][1.] | [⊞ Table ▾] | [—][❝] | [↩][↪]
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+The table dropdown will contain: Insert 3x3 table, Add row before/after, Delete row, Add column before/after, Delete column, Merge cells, Split cell, Delete table.
 
----
+### No database changes required
 
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Existing `rules_content` and `rubric_content` columns already store HTML — the richer HTML from these new formatting options will render correctly via the existing `dangerouslySetInnerHTML` + `prose` class on public pages.
 
