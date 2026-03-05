@@ -5,7 +5,6 @@ import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/ho
 import { useMyRegistration } from "@/hooks/useRegistrations";
 import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
 import { useTabulatorCertification } from "@/hooks/useTabulator";
-import { useWitnessCertification } from "@/hooks/useWitness";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,14 +33,11 @@ export default function PostEventPortal() {
   const { data: allScores } = useAllScoresForSubEvent(selectedSubEventId || undefined);
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
-  const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
 
   const allCertified =
     (chiefCert?.is_certified ?? false) &&
-    (tabCert?.is_certified ?? false) &&
-    (witnessCert?.is_certified ?? false);
+    (tabCert?.is_certified ?? false);
 
-  // Sorted rubric for index mapping
   const sortedRubric = useMemo(() => [...(rubric ?? [])].sort((a, b) => a.sort_order - b.sort_order), [rubric]);
   const indexToName = useMemo(() => {
     const map: Record<string, string> = {};
@@ -49,7 +45,6 @@ export default function PostEventPortal() {
     return map;
   }, [sortedRubric]);
 
-  // Filter scores for current contestant only
   const myScores = useMemo(() => {
     if (!allScores || !myReg) return [];
     return allScores.filter((s) => s.contestant_registration_id === myReg.id);
@@ -57,7 +52,6 @@ export default function PostEventPortal() {
 
   const certifiedScores = useMemo(() => myScores.filter((s) => s.is_certified), [myScores]);
 
-  // Compute averages per criterion
   const criterionAverages = useMemo(() => {
     if (certifiedScores.length === 0) return {};
     const sums: Record<string, number> = {};
@@ -83,7 +77,6 @@ export default function PostEventPortal() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button asChild variant="ghost" size="icon">
           <Link to={`/competitions/${competitionId}/results`}><ArrowLeft className="h-4 w-4" /></Link>
@@ -109,7 +102,6 @@ export default function PostEventPortal() {
         )}
       </div>
 
-      {/* Sub-event selector */}
       <Card className="border-border/50 bg-card/80 mb-4">
         <CardContent className="pt-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -137,7 +129,6 @@ export default function PostEventPortal() {
 
       {selectedSubEventId && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Certification status */}
           <div className="flex flex-wrap gap-2">
             <Badge variant={chiefCert?.is_certified ? "secondary" : "outline"} className="gap-1">
               {chiefCert?.is_certified ? <CheckCircle className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -146,10 +137,6 @@ export default function PostEventPortal() {
             <Badge variant={tabCert?.is_certified ? "secondary" : "outline"} className="gap-1">
               {tabCert?.is_certified ? <CheckCircle className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
               Tabulator
-            </Badge>
-            <Badge variant={witnessCert?.is_certified ? "secondary" : "outline"} className="gap-1">
-              {witnessCert?.is_certified ? <CheckCircle className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-              Witness
             </Badge>
           </div>
 
@@ -173,7 +160,6 @@ export default function PostEventPortal() {
             </Card>
           ) : (
             <>
-              {/* Score overview */}
               <Card className="border-border/50 bg-card/80">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -184,13 +170,10 @@ export default function PostEventPortal() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Overall final average */}
                   <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
                     <span className="text-sm font-medium text-foreground">Overall Final Average</span>
                     <span className="text-2xl font-bold text-primary font-mono">{overallAvg.toFixed(2)}</span>
                   </div>
-
-                  {/* Criterion breakdown */}
                   <div className="space-y-3">
                     {sortedRubric.map((criterion) => {
                       const avg = criterionAverages[criterion.name];
@@ -216,7 +199,6 @@ export default function PostEventPortal() {
                 </CardContent>
               </Card>
 
-              {/* Individual judge feedback */}
               <Card className="border-border/50 bg-card/80">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -256,7 +238,6 @@ function JudgeFeedbackCard({
   indexToName: Record<string, string>;
 }) {
   const cs = score.criterion_scores as Record<string, number>;
-  // Remap numeric indices
   const mapped: Record<string, number> = {};
   for (const [k, v] of Object.entries(cs)) {
     mapped[indexToName[k] ?? k] = v;
@@ -268,8 +249,6 @@ function JudgeFeedbackCard({
         <Badge variant="outline" className="text-xs">Judge #{judgeNumber}</Badge>
         <span className="text-sm font-mono font-bold text-primary">{score.final_score.toFixed(2)}</span>
       </div>
-
-      {/* Criterion scores */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
         {sortedRubric.map((criterion) => (
           <div key={criterion.id} className="flex justify-between text-xs">
@@ -278,15 +257,12 @@ function JudgeFeedbackCard({
           </div>
         ))}
       </div>
-
       <div className="flex gap-4 text-xs text-muted-foreground">
         <span>Raw: <span className="font-mono text-foreground">{score.raw_total}</span></span>
         {score.time_penalty > 0 && (
           <span>Penalty: <span className="font-mono text-destructive">-{score.time_penalty}</span></span>
         )}
       </div>
-
-      {/* Comments */}
       {score.comments && (
         <>
           <Separator />

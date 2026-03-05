@@ -13,13 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { UserPlus, X, Users } from "lucide-react";
 
-const ASSIGNABLE_ROLES = ["judge", "chief_judge", "tabulator", "witness"] as const;
+const ASSIGNABLE_ROLES = ["judge", "chief_judge", "tabulator"] as const;
 
 const roleColors: Record<string, string> = {
   judge: "bg-primary/20 text-primary",
   chief_judge: "bg-accent/20 text-accent-foreground",
   tabulator: "bg-secondary/20 text-secondary-foreground",
-  witness: "bg-muted text-muted-foreground",
 };
 
 interface Props {
