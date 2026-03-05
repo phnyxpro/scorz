@@ -42,6 +42,9 @@ import PenaltiesPage from "./pages/PenaltiesPage";
 import Settings from "./pages/Settings";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import PeoplesChoiceManager from "./pages/PeoplesChoiceManager";
+import RegistrationsHub from "./pages/RegistrationsHub";
+import ContestantProfilesHub from "./pages/ContestantProfilesHub";
+import ResultsHub from "./pages/ResultsHub";
 
 const queryClient = new QueryClient();
 
@@ -365,6 +368,36 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Competitions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/registrations"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RegistrationsHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contestant-profiles"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantProfilesHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/results-hub"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ResultsHub />
                     </AppLayout>
                   </ProtectedRoute>
                 }

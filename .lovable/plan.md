@@ -1,35 +1,47 @@
 
 
-## Plan: Replace Contestants Card, Add Registrations + Contestant Profiles + Results Action Cards
+## Fix Blank Rendering in Browser Automation
 
-### Current State
-- Dashboard has a "Contestants" card for organizers that links to `/competitions` (generic)
-- `CompetitionContestants` page exists at `/competitions/:id/contestants` showing approved contestant cards
-- `RegistrationsManager` component exists inside `CompetitionDetail` page
-- `Results` page exists at `/competitions/:id/results` with level/sub-event selectors
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Changes
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Update `src/lib/navigation.ts`** -- Replace the "Contestants" card with three new organizer cards:
-- "Registrations" -- links to `/registrations` (new page)
-- "Contestant Profiles" -- links to `/contestant-profiles` (new page)
-- "Results" -- links to `/results` (new page)
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. Create `src/pages/RegistrationsHub.tsx`** -- Competition selector at top, then renders `RegistrationsManager` for the selected competition. Back button to dashboard.
+---
 
-**3. Create `src/pages/ContestantProfilesHub.tsx`** -- Competition selector at top, then shows approved contestants grid (reuse logic from `CompetitionContestants`). Clicking a contestant links to `/profile/:userId`.
+### Fix 1: Conditionally apply auditorium filter
 
-**4. Create `src/pages/ResultsHub.tsx`** -- Competition selector at top, then renders the results/leaderboard view (reuse logic from existing `Results.tsx`). Essentially wraps Results with a competition picker instead of requiring `:id` in URL.
+**File: `src/contexts/ThemeContext.tsx`**
 
-**5. Update `src/App.tsx`** -- Add routes for `/registrations`, `/contestant-profiles`, `/results-hub`. Keep existing `/competitions/:id/results` and `/competitions/:id/contestants` routes intact.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### Files
+### Fix 2: Remove filter class when at defaults
 
-| File | Action |
-|------|--------|
-| `src/pages/RegistrationsHub.tsx` | Create -- competition selector + RegistrationsManager |
-| `src/pages/ContestantProfilesHub.tsx` | Create -- competition selector + contestant grid |
-| `src/pages/ResultsHub.tsx` | Create -- competition selector + results view |
-| `src/lib/navigation.ts` | Replace "Contestants" card with 3 new cards |
-| `src/App.tsx` | Add 3 new routes |
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
