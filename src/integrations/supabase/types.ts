@@ -251,6 +251,8 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          rubric_document_url: string | null
+          rules_document_url: string | null
           rules_url: string | null
           slug: string
           social_links: Json
@@ -267,6 +269,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          rubric_document_url?: string | null
+          rules_document_url?: string | null
           rules_url?: string | null
           slug: string
           social_links?: Json
@@ -283,6 +287,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          rubric_document_url?: string | null
+          rules_document_url?: string | null
           rules_url?: string | null
           slug?: string
           social_links?: Json
