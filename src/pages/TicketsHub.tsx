@@ -1,17 +1,19 @@
 import { useState, useMemo } from "react";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Calendar, MapPin } from "lucide-react";
+import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Send } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 
@@ -21,7 +23,45 @@ export default function TicketsHub() {
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketRow | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
   const { data: competitions } = useCompetitions();
+
+  const sendTicketEmail = useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { data, error } = await supabase.functions.invoke("send-ticket-email", {
+        body: { ticket_id: ticketId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Ticket sent!", description: "Email with ticket and QR code has been sent." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSendAll = async () => {
+    if (!filtered.length) return;
+    setSendingAll(true);
+    let sent = 0;
+    let failed = 0;
+    for (const t of filtered) {
+      try {
+        await supabase.functions.invoke("send-ticket-email", { body: { ticket_id: t.id } });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+    setSendingAll(false);
+    toast({
+      title: "Bulk send complete",
+      description: `${sent} sent, ${failed} failed out of ${filtered.length} tickets.`,
+    });
+  };
 
   // Fetch sub-events with price info
   const { data: subEvents } = useQuery({
@@ -167,6 +207,15 @@ export default function TicketsHub() {
               />
             </div>
             <ExportDropdown rows={exportRows} filename="ticket-sales" sheetName="Tickets" />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={sendingAll || filtered.length === 0}
+              onClick={handleSendAll}
+            >
+              <Send className="h-4 w-4 mr-1.5" />
+              {sendingAll ? "Sending…" : "Send All"}
+            </Button>
           </div>
 
           {/* Tickets table */}
@@ -326,6 +375,18 @@ export default function TicketsHub() {
                     </div>
                   )}
                 </div>
+
+                <Separator />
+
+                {/* Send Action */}
+                <Button
+                  className="w-full"
+                  disabled={sendTicketEmail.isPending}
+                  onClick={() => sendTicketEmail.mutate(selectedTicket.id)}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {sendTicketEmail.isPending ? "Sending…" : "Send Ticket via Email"}
+                </Button>
               </div>
             </>
           )}
