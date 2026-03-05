@@ -289,19 +289,9 @@ export default function PublicEventDetail() {
             </TabsContent>
 
             {/* Voting Tab (conditional) */}
-            {(comp as any).voting_enabled && (
-              <TabsContent value="voting" className="space-y-6 text-center py-12">
-                <div className="max-w-md mx-auto space-y-4">
-                  <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                  <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-                  <p className="text-muted-foreground">
-                    Supporters can vote for their favorite contestants across all events.
-                    Every vote helps promote their artistic journey!
-                  </p>
-                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${compId}/vote`)}>
-                    <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
-                  </Button>
-                </div>
+            {anyVotingEnabled && (
+              <TabsContent value="voting" className="space-y-6">
+                <PublicVotingForm competitionId={compId} levels={levels} />
               </TabsContent>
             )}
 

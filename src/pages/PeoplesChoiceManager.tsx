@@ -166,8 +166,32 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
 }
 
 export default function PeoplesChoiceManager() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: competitions, isLoading: compsLoading } = useCompetitions();
   const [selectedCompId, setSelectedCompId] = useState<string>("");
+
+  // Role guard: only admin/organizer
+  const { data: userRoles, isLoading: rolesLoading } = useQuery({
+    queryKey: ["user-roles-check", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      return (data || []).map(r => r.role);
+    },
+  });
+
+  useEffect(() => {
+    if (rolesLoading || !userRoles) return;
+    const allowed = userRoles.some(r => r === "admin" || r === "organizer");
+    if (!allowed) {
+      toast({ title: "Access denied", description: "Only admins and organizers can manage People's Choice.", variant: "destructive" });
+      navigate("/dashboard", { replace: true });
+    }
+  }, [userRoles, rolesLoading, navigate]);
 
   const { data: subEvents, isLoading: subsLoading } = useCompetitionSubEvents(selectedCompId || undefined);
 
