@@ -44,7 +44,7 @@ export default function CompetitionDetail() {
   const [status, setStatus] = useState("draft");
   const [rulesUrl, setRulesUrl] = useState("");
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
-  const [votingEnabled, setVotingEnabled] = useState(false);
+  
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
 
