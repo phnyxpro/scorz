@@ -48,6 +48,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
 interface AssignedCompetition {
   id: string;
   name: string;
+  hasChiefAssignment: boolean;
 }
 
 function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolean) {
