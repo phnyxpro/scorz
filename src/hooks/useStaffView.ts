@@ -5,8 +5,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 
+/**
+ * Represents the restricted roles that operate within the scope of a specific sub-event.
+ * These staff members are assigned via the `sub_event_assignments` table.
+ */
 export type StaffRole = "judge" | "chief_judge" | "tabulator" | "witness";
 
+/**
+ * A custom hook to fetch and aggregate data for a staff member (like a judge or tabulator).
+ * It retrieves the user's assigned sub-events, the details of those sub-events (including parent level),
+ * and the top-level competitions they belong to.
+ * 
+ * @param {StaffRole} [role] - Optional filter to only fetch assignments where the user has this specific role.
+ * @returns An object containing:
+ * - `assignedCompetitions`: An array of `Competition` objects the user is assigned to.
+ * - `subEventDetails`: An array of `SubEvent` objects (with nested `level` data) the user is assigned to.
+ * - `myAssignments`: The raw assignment records from `sub_event_assignments`.
+ * - `isLoading`: Boolean indicating if any of the underlying queries are still loading.
+ */
 export function useStaffView(role?: StaffRole) {
     const { user } = useAuth();
     const { data: competitions, isLoading: compsLoading } = useCompetitions();

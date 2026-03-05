@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useCompetitions, useCreateCompetition, useDeleteCompetition } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -23,6 +27,16 @@ const statusColors: Record<string, string> = {
   completed: "bg-secondary/20 text-secondary",
   archived: "bg-muted text-muted-foreground",
 };
+
+const competitionSchema = z.object({
+  name: z.string().min(3, "Competition name must be at least 3 characters.").max(100),
+  slug: z.string().regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens.")
+    .max(100).optional().or(z.literal('')),
+  description: z.string().max(500).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+type CompetitionFormValues = z.infer<typeof competitionSchema>;
 
 export default function Competitions() {
   const { data: competitions, isLoading } = useCompetitions();
@@ -38,11 +52,11 @@ export default function Competitions() {
   const isWitness = hasRole("witness");
 
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const form = useForm<CompetitionFormValues>({
+    resolver: zodResolver(competitionSchema),
+    defaultValues: { name: "", slug: "", description: "", startDate: "", endDate: "" },
+  });
 
   // Subscription enforcement for organizers (admins bypass)
   const { user } = useAuth();
@@ -52,9 +66,7 @@ export default function Competitions() {
   const isAtLimit = limit !== -1 && competitionCount >= limit;
   const needsSubscription = !isAdmin && !subscription.subscribed;
 
-  const handleCreate = () => {
-    if (!name.trim()) return;
-
+  const onSubmit = (data: CompetitionFormValues) => {
     if (needsSubscription) {
       toast.error("You need an active subscription to create competitions. Visit the billing page to subscribe.");
       return;
@@ -66,8 +78,19 @@ export default function Competitions() {
     }
 
     create.mutate(
-      { name, slug: slug.trim() || undefined, description: description || undefined, start_date: startDate || undefined, end_date: endDate || undefined },
-      { onSuccess: () => { setOpen(false); setName(""); setSlug(""); setDescription(""); setStartDate(""); setEndDate(""); } }
+      {
+        name: data.name,
+        slug: data.slug || undefined,
+        description: data.description || undefined,
+        start_date: data.startDate || undefined,
+        end_date: data.endDate || undefined
+      },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          form.reset();
+        }
+      }
     );
   };
 
@@ -90,32 +113,83 @@ export default function Competitions() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Create Competition</DialogTitle></DialogHeader>
-              <div className="space-y-3 mt-2">
-                <Input placeholder="Competition name" value={name} onChange={(e) => { setName(e.target.value); if (!slug) { /* auto-generate hint */ } }} />
-                <div>
-                  <label className="text-xs text-muted-foreground">URL Slug</label>
-                  <Input
-                    placeholder={name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : "e.g. my-competition-2026"}
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input placeholder="Competition name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Public URL: /events/{slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '...'}</p>
-                </div>
-                <Textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Start Date</label>
-                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">URL Slug</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={form.watch("name") ? form.watch("name").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : "e.g. my-competition-2026"}
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                          />
+                        </FormControl>
+                        <p className="text-[10px] text-muted-foreground mt-1">Public URL: /events/{field.value || form.watch("name").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '...'}</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea placeholder="Description (optional)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">Start Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">End Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">End Date</label>
-                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                  </div>
-                </div>
-                <Button onClick={handleCreate} disabled={create.isPending || !name.trim()} className="w-full">
-                  {create.isPending ? "Creating…" : "Create Competition"}
-                </Button>
-              </div>
+                  <Button type="submit" disabled={create.isPending} className="w-full mt-4">
+                    {create.isPending ? "Creating…" : "Create Competition"}
+                  </Button>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         )}

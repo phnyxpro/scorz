@@ -5,13 +5,33 @@ import {
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
+/**
+ * Defines the comprehensive set of roles a user can hold within the Scorz platform context.
+ * 
+ * - `admin`: Platform-wide administrative privileges. Can view/edit all data globally.
+ * - `organizer`: The creator/owner of a competition. Manages event settings, registration, and staffing.
+ * - `chief_judge`: Oversees a judging panel. Can score, monitor other judges, and certify final event results.
+ * - `judge`: Assigned to sub-events to provide scores to contestants based on defined rubrics.
+ * - `tabulator`: Reviews certified scores, calculates aggregate results, and manages publication.
+ * - `witness`: An independent observer assigned to monitor the integrity of the event. Read-only access.
+ * - `contestant`: A participant registered for one or more events.
+ * - `audience`: A general user who can view public events and participate in voting.
+ */
 export type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "witness" | "contestant" | "audience";
 
+/**
+ * Interface defining a navigation item for the sidebar and mobile menus.
+ */
 export interface NavItem {
+    /** The URL path the item links to. */
     path: string;
+    /** The text label displayed in the UI. */
     label: string;
+    /** The Lucide icon component to display alongside the label. */
     icon: LucideIcon;
+    /** An optional array of roles allowed to view this item. If omitted, the item is visible to all authenticated users. */
     roles?: AppRole[];
+    /** Whether the route matching should be exact (used for active state highlighting). */
     exact?: boolean;
 }
 
