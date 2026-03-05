@@ -62,7 +62,7 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       // Get sub-event IDs assigned to user
       const { data: assignments } = await supabase
         .from("sub_event_assignments")
-        .select("sub_event_id")
+        .select("sub_event_id, is_chief")
         .eq("user_id", userId);
 
       if (!assignments?.length) { setLoading(false); return; }
