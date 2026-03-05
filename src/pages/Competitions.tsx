@@ -300,7 +300,7 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}/results`}><BarChart3 className="h-3 w-3 mr-1" /> Results</Link>
                       </Button>
                     )}
-                    {c.status === "active" && !canManage && !isJudge && !isTabulator && !isWitness && (
+                    {c.status === "active" && !canManage && !isJudge && !isTabulator && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/vote`}><Heart className="h-3 w-3 mr-1" /> Vote</Link>
                       </Button>
