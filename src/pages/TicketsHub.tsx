@@ -207,6 +207,15 @@ export default function TicketsHub() {
               />
             </div>
             <ExportDropdown rows={exportRows} filename="ticket-sales" sheetName="Tickets" />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={sendingAll || filtered.length === 0}
+              onClick={handleSendAll}
+            >
+              <Send className="h-4 w-4 mr-1.5" />
+              {sendingAll ? "Sending…" : "Send All"}
+            </Button>
           </div>
 
           {/* Tickets table */}
