@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,11 +8,22 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Trash2, Plus, Zap } from "lucide-react";
+import { Clock, Trash2, Zap } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PerformanceOrder } from "./PerformanceOrder";
 
 interface Props {
   competitionId: string;
+}
+
+interface SlotWithPerformer {
+  id: string;
+  slot_index: number;
+  start_time: string;
+  end_time: string;
+  is_booked: boolean;
+  contestant_registration_id: string | null;
+  performer_name?: string;
 }
 
 function usePerformanceSlots(subEventId: string | undefined) {
@@ -22,14 +33,30 @@ function usePerformanceSlots(subEventId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_slots")
-        .select("*")
+        .select("*, contestant_registrations(full_name)")
         .eq("sub_event_id", subEventId!)
         .order("slot_index", { ascending: true });
       if (error) throw error;
-      return data;
+      return (data as any[]).map((s) => ({
+        id: s.id,
+        slot_index: s.slot_index,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        is_booked: s.is_booked,
+        contestant_registration_id: s.contestant_registration_id,
+        performer_name: s.contestant_registrations?.full_name || undefined,
+      })) as SlotWithPerformer[];
     },
   });
 }
+
+const formatTime = (t: string) => {
+  const [h, m] = t.split(":");
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+};
 
 export function SlotsManager({ competitionId }: Props) {
   const { data: levels } = useLevels(competitionId);
@@ -38,7 +65,6 @@ export function SlotsManager({ competitionId }: Props) {
   const [startTime, setStartTime] = useState("09:00");
   const [slotCount, setSlotCount] = useState("10");
   const [slotDuration, setSlotDuration] = useState("5");
-
   const qc = useQueryClient();
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
@@ -54,20 +80,14 @@ export function SlotsManager({ competitionId }: Props) {
 
     const [h, m] = startTime.split(":").map(Number);
     const slotsToInsert = [];
-
     for (let i = 0; i < count; i++) {
       const totalMinStart = h * 60 + m + i * duration;
       const totalMinEnd = totalMinStart + duration;
-      const sH = Math.floor(totalMinStart / 60);
-      const sM = totalMinStart % 60;
-      const eH = Math.floor(totalMinEnd / 60);
-      const eM = totalMinEnd % 60;
-
       slotsToInsert.push({
         sub_event_id: selectedSubEventId,
         slot_index: i,
-        start_time: `${String(sH).padStart(2, "0")}:${String(sM).padStart(2, "0")}:00`,
-        end_time: `${String(eH).padStart(2, "0")}:${String(eM).padStart(2, "0")}:00`,
+        start_time: `${String(Math.floor(totalMinStart / 60)).padStart(2, "0")}:${String(totalMinStart % 60).padStart(2, "0")}:00`,
+        end_time: `${String(Math.floor(totalMinEnd / 60)).padStart(2, "0")}:${String(totalMinEnd % 60).padStart(2, "0")}:00`,
       });
     }
 
@@ -92,14 +112,6 @@ export function SlotsManager({ competitionId }: Props) {
     toast({ title: "All slots cleared" });
   };
 
-  const formatTime = (t: string) => {
-    const [h, m] = t.split(":");
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 || 12;
-    return `${h12}:${m} ${ampm}`;
-  };
-
   const bookedCount = slots?.filter(s => s.is_booked).length || 0;
 
   return (
@@ -109,7 +121,7 @@ export function SlotsManager({ competitionId }: Props) {
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" /> Performance Time Slots
           </CardTitle>
-          <CardDescription>Generate 5-minute slots for contestants to book</CardDescription>
+          <CardDescription>Generate time slots and manage order of performance</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -178,6 +190,7 @@ export function SlotsManager({ competitionId }: Props) {
                         <TableRow>
                           <TableHead className="text-xs w-[40px]">#</TableHead>
                           <TableHead className="text-xs">Time</TableHead>
+                          <TableHead className="text-xs">Performer</TableHead>
                           <TableHead className="text-xs">Status</TableHead>
                           <TableHead className="text-xs w-[40px]"></TableHead>
                         </TableRow>
@@ -185,9 +198,16 @@ export function SlotsManager({ competitionId }: Props) {
                       <TableBody>
                         {slots.map(slot => (
                           <TableRow key={slot.id}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{(slot as any).slot_index + 1}</TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">{slot.slot_index + 1}</TableCell>
                             <TableCell className="text-sm font-mono">
-                              {formatTime((slot as any).start_time)} – {formatTime((slot as any).end_time)}
+                              {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {slot.performer_name ? (
+                                <span className="font-medium">{slot.performer_name}</span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {slot.is_booked ? (
@@ -216,6 +236,10 @@ export function SlotsManager({ competitionId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {selectedSubEventId && (
+        <PerformanceOrder subEventId={selectedSubEventId} />
+      )}
     </div>
   );
 }
