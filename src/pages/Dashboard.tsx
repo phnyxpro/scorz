@@ -125,7 +125,7 @@ export default function Dashboard() {
   const { user, roles, hasRole } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
   const isAdmin = hasRole("admin");
-
+  const isTabulator = hasRole("tabulator");
   const { data: adminStats } = useQuery({
     queryKey: ["admin-platform-stats"],
     enabled: isAdmin,
