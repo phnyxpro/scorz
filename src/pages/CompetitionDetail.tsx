@@ -199,8 +199,47 @@ export default function CompetitionDetail() {
           <LevelsManager competitionId={id!} />
         </TabsContent>
 
+        <TabsContent value="rules">
+          <Card className="border-border/50 bg-card/80">
+            <CardHeader><CardTitle className="text-base">Competition Rules</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Competition Rules URL</label>
+                <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
+              </div>
+              <DocumentUpload
+                currentUrl={rulesDocumentUrl || null}
+                folder={`rules/${id}`}
+                label="Rules Document (PDF)"
+                onUploaded={(url) => setRulesDocumentUrl(url)}
+                onRemoved={() => setRulesDocumentUrl("")}
+              />
+              <Button onClick={handleSave} disabled={update.isPending}>
+                {update.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="rubric">
-          <RubricBuilder competitionId={id!} />
+          <div className="space-y-4">
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader><CardTitle className="text-base">Rubric Document</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <DocumentUpload
+                  currentUrl={rubricDocumentUrl || null}
+                  folder={`rubric/${id}`}
+                  label="Rubric Document (PDF)"
+                  onUploaded={(url) => setRubricDocumentUrl(url)}
+                  onRemoved={() => setRubricDocumentUrl("")}
+                />
+                <Button onClick={handleSave} disabled={update.isPending}>
+                  {update.isPending ? "Saving…" : "Save Changes"}
+                </Button>
+              </CardContent>
+            </Card>
+            <RubricBuilder competitionId={id!} />
+          </div>
         </TabsContent>
 
         <TabsContent value="penalties">
