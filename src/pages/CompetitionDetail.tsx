@@ -249,9 +249,6 @@ export default function CompetitionDetail() {
           <SponsorsManager competitionId={id!} />
         </TabsContent>
 
-        <TabsContent value="updates">
-          <UpdatesManager competitionId={id!} />
-        </TabsContent>
       </Tabs>
     </div>
   );
