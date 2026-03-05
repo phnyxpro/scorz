@@ -202,7 +202,14 @@ export function RegistrationsManager({ competitionId }: Props) {
                 {filtered.map((reg, idx) => (
                   <TableRow key={reg.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="text-sm font-medium">{reg.full_name}</TableCell>
+                    <TableCell>
+                      <button
+                        className="text-sm font-medium text-primary hover:underline text-left"
+                        onClick={() => setSelectedReg(reg)}
+                      >
+                        {reg.full_name}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px]">
