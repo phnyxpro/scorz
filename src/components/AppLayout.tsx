@@ -62,6 +62,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <GlobalSearch />
             </div>
           </div>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 shrink-0">
             {roles.length > 0 && (
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
