@@ -205,6 +205,28 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Admin platform stats */}
+      {isAdmin && adminStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
+            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-secondary" },
+            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-accent" },
+            { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
+          ].map((s) => (
+            <Card key={s.label} className="border-border/50 bg-card/80">
+              <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
+                <div>
+                  <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Prompt to select competition */}
       {isJudgeRole && !selectedCompId && assignedComps.length > 0 && (
         <Card className="border-primary/30 bg-primary/5 mb-6">
