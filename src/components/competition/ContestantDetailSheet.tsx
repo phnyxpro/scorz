@@ -28,6 +28,7 @@ interface Props {
 
 export function ContestantDetailSheet({ registration, open, onOpenChange, onApprove, onReject }: Props) {
   const reg = registration;
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   if (!reg) return null;
 
   const socialHandles = reg.social_handles as Record<string, string> | null;
