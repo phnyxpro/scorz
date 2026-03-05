@@ -19,23 +19,53 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const qc = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
-    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
+    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false); setEditingId(null);
   };
 
-  const handleAdd = () => {
+  const openCreate = () => {
+    resetForm();
+    setModalOpen(true);
+  };
+
+  const openEdit = (e: any) => {
+    setEditingId(e.id);
+    setName(e.name);
+    setLocation(e.location || "");
+    setEventDate(e.event_date || "");
+    setStartTime(e.start_time || "");
+    setEndTime(e.end_time || "");
+    setVotingEnabled(e.voting_enabled || false);
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
     if (!name.trim()) return;
-    create.mutate(
-      { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
-      { onSuccess: () => { resetForm(); setModalOpen(false); } }
-    );
+    if (editingId) {
+      setSaving(true);
+      await supabase.from("sub_events").update({
+        name, location: location || null, event_date: eventDate || null,
+        start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
+      } as any).eq("id", editingId);
+      qc.invalidateQueries({ queryKey: ["sub_events", levelId] });
+      setSaving(false);
+      resetForm();
+      setModalOpen(false);
+    } else {
+      create.mutate(
+        { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
+        { onSuccess: () => { resetForm(); setModalOpen(false); } }
+      );
+    }
   };
 
   const updateBanner = async (id: string, url: string | null) => {
