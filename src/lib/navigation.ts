@@ -51,7 +51,9 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     // Organizer
     { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions", roles: ["organizer"] },
     { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging", roles: ["organizer", "tabulator"] },
-    { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/competitions", roles: ["organizer"] },
+    { title: "Registrations", desc: "Manage contestant registrations", icon: ListChecks, color: "text-primary", to: "/registrations", roles: ["organizer"] },
+    { title: "Contestant Profiles", desc: "View approved contestant profiles", icon: User, color: "text-primary", to: "/contestant-profiles", roles: ["organizer"] },
+    { title: "Results", desc: "View certified competition results", icon: BarChart3, color: "text-secondary", to: "/results-hub", roles: ["organizer", "admin"] },
     { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-primary", to: "/profile", roles: ["contestant"] },
     { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/finance", roles: ["organizer", "admin"] },
     { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-primary", to: "/peoples-choice", roles: ["organizer", "admin"] },
