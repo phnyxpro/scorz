@@ -13,6 +13,7 @@ import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Calendar,
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
+import { ExportDropdown } from "@/components/shared/ExportDropdown";
 
 type TicketRow = Tables<"event_tickets">;
 
@@ -89,6 +90,24 @@ export default function TicketsHub() {
     );
   }, [tickets, searchQuery]);
 
+  const exportRows = useMemo(() => {
+    return filtered.map((t) => {
+      const se = subEventMap[t.sub_event_id];
+      return {
+        "Ticket #": t.ticket_number,
+        "Name": t.full_name,
+        "Email": t.email,
+        "Phone": t.phone ?? "",
+        "Sub-Event": se?.name ?? "",
+        "Type": t.ticket_type,
+        "Price": `$${(se?.ticket_price ?? 0).toFixed(2)}`,
+        "Status": t.is_checked_in ? "Checked In" : "Pending",
+        "Checked In At": t.checked_in_at ? format(new Date(t.checked_in_at), "MMM d, yyyy h:mm a") : "",
+        "Purchased": format(new Date(t.created_at), "MMM d, yyyy h:mm a"),
+      };
+    });
+  }, [filtered, subEventMap]);
+
   const selectedSe = selectedTicket ? subEventMap[selectedTicket.sub_event_id] : null;
 
   return (
@@ -136,15 +155,18 @@ export default function TicketsHub() {
             </Card>
           </div>
 
-          {/* Search */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Search by name, email, or ticket #…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Search + Export */}
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Search by name, email, or ticket #…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <ExportDropdown rows={exportRows} filename="ticket-sales" sheetName="Tickets" />
           </div>
 
           {/* Tickets table */}
