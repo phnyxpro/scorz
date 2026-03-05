@@ -4,7 +4,7 @@ import { BannerUpload } from "@/components/shared/BannerUpload";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, ExternalLink } from "lucide-react";
+import { Trash2, Plus, ExternalLink, Handshake } from "lucide-react";
 
 export function SponsorsManager({ competitionId }: { competitionId: string }) {
   const { data: sponsors, isLoading } = useCompetitionSponsors(competitionId);
