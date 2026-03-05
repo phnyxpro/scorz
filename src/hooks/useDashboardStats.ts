@@ -30,7 +30,7 @@ export function useDashboardStats() {
       results.push({ label: "Active Events", value: activeComps ?? 0, to: "/competitions" });
 
       const isAdminOrOrg = roles.includes("admin") || roles.includes("organizer");
-      const isJudge = roles.includes("judge") || roles.includes("chief_judge");
+      const isJudge = roles.includes("judge");
       const isTabulator = roles.includes("tabulator");
       const isContestant = roles.includes("contestant");
 
