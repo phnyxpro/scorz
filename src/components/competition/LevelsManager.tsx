@@ -75,7 +75,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
 
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
-      <Button size="sm" variant="outline" onClick={() => setModalOpen(true)} className="w-full h-8 text-xs">
+      <Button size="sm" variant="outline" onClick={openCreate} className="w-full h-8 text-xs">
         <Plus className="h-3 w-3 mr-1" /> Add Sub-Event
       </Button>
 
