@@ -43,23 +43,26 @@ export function useMyAssignedSubEvents(role?: string | string[], options?: { isC
     queryKey: ["my_assigned_sub_events", user?.id, role, options?.isChief],
     enabled: !!user,
     queryFn: async () => {
-      let query = supabase
+      const baseQuery = supabase
         .from("sub_event_assignments")
         .select("*")
         .eq("user_id", user!.id);
+      
+      // Build filter chain
+      let finalQuery: any = baseQuery;
       if (role) {
         if (Array.isArray(role)) {
-          query = query.in("role", role as any);
+          finalQuery = finalQuery.in("role", role);
         } else {
-          query = query.eq("role", role as any);
+          finalQuery = finalQuery.eq("role", role);
         }
       }
       if (options?.isChief !== undefined) {
-        query = query.eq("is_chief" as any, options.isChief);
+        finalQuery = finalQuery.eq("is_chief", options.isChief);
       }
-      const { data, error } = await query.order("created_at");
+      const { data, error } = await finalQuery.order("created_at");
       if (error) throw error;
-      return data as unknown as SubEventAssignment[];
+      return (data || []) as SubEventAssignment[];
     },
   });
 }
