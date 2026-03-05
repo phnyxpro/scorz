@@ -372,6 +372,36 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/registrations"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RegistrationsHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contestant-profiles"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantProfilesHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/results-hub"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ResultsHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
