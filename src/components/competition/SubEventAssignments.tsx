@@ -61,10 +61,12 @@ export function SubEventAssignments({ competitionId }: Props) {
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
       role: selectedRole,
+      ...(selectedRole === "judge" ? { is_chief: isChief } : {}),
       ...(selectedRole === "tabulator" && selectedResponsibility ? { responsibility: selectedResponsibility } : {}),
     });
     setSelectedUserId("");
     setSelectedResponsibility("");
+    setIsChief(false);
   };
 
   const userName = (userId: string) => {
