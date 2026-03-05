@@ -295,11 +295,6 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}/tabulator`}><Calculator className="h-3 w-3 mr-1" /> Tabulate</Link>
                       </Button>
                     )}
-                    {c.status === "active" && isWitness && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/competitions/${c.id}/witness`}><Eye className="h-3 w-3 mr-1" /> Witness</Link>
-                      </Button>
-                    )}
                     {(c.status === "active" || c.status === "completed") && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/results`}><BarChart3 className="h-3 w-3 mr-1" /> Results</Link>
