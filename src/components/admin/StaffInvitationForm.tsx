@@ -36,7 +36,7 @@ export function StaffInvitationForm({ competitionId }: StaffInvitationFormProps)
                     <CardTitle className="text-base flex items-center gap-2">
                         <UserPlus className="h-4 w-4 text-primary" /> Invite Staff
                     </CardTitle>
-                    <CardDescription>Invite judges, tabulators, and witnesses to your competition</CardDescription>
+                    <CardDescription>Invite judges and tabulators to your competition</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleInvite} className="flex flex-wrap gap-4 items-end">
@@ -61,7 +61,6 @@ export function StaffInvitationForm({ competitionId }: StaffInvitationFormProps)
                                     <SelectItem value="judge">Judge</SelectItem>
                                     <SelectItem value="chief_judge">Chief Judge</SelectItem>
                                     <SelectItem value="tabulator">Tabulator</SelectItem>
-                                    <SelectItem value="witness">Witness</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

@@ -13,13 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { UserPlus, X, Users } from "lucide-react";
 
-const ASSIGNABLE_ROLES = ["judge", "chief_judge", "tabulator", "witness"] as const;
+const ASSIGNABLE_ROLES = ["judge", "chief_judge", "tabulator"] as const;
 
 const roleColors: Record<string, string> = {
   judge: "bg-primary/20 text-primary",
   chief_judge: "bg-accent/20 text-accent-foreground",
   tabulator: "bg-secondary/20 text-secondary-foreground",
-  witness: "bg-muted text-muted-foreground",
 };
 
 interface Props {
@@ -36,6 +35,7 @@ export function SubEventAssignments({ competitionId }: Props) {
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [selectedResponsibility, setSelectedResponsibility] = useState("");
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
@@ -60,8 +60,10 @@ export function SubEventAssignments({ competitionId }: Props) {
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
       role: selectedRole,
+      ...(selectedRole === "tabulator" && selectedResponsibility ? { responsibility: selectedResponsibility } : {}),
     });
     setSelectedUserId("");
+    setSelectedResponsibility("");
   };
 
   const userName = (userId: string) => {
@@ -106,7 +108,7 @@ export function SubEventAssignments({ competitionId }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
                 <div>
                   <label className="text-xs text-muted-foreground">Role</label>
-                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); }}>
+                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); setSelectedResponsibility(""); }}>
                     <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                     <SelectContent>
                       {ASSIGNABLE_ROLES.map((r) => (
@@ -133,10 +135,22 @@ export function SubEventAssignments({ competitionId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedRole === "tabulator" && (
+                  <div>
+                    <label className="text-xs text-muted-foreground">Responsibility</label>
+                    <Select value={selectedResponsibility} onValueChange={setSelectedResponsibility}>
+                      <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Full Tabulator</SelectItem>
+                        <SelectItem value="timer">Timer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button
                   size="sm"
                   onClick={handleAdd}
-                  disabled={!selectedUserId || !selectedRole || addAssignment.isPending}
+                  disabled={!selectedUserId || !selectedRole || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending}
                   className="w-full sm:w-auto"
                 >
                   <UserPlus className="h-3.5 w-3.5 mr-1" /> Assign
@@ -158,9 +172,16 @@ export function SubEventAssignments({ competitionId }: Props) {
                       <TableRow key={a.id}>
                         <TableCell className="text-sm">{userName(a.user_id)}</TableCell>
                         <TableCell>
-                          <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
-                            {a.role.replace("_", " ")}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
+                              {a.role.replace("_", " ")}
+                            </Badge>
+                            {a.responsibility && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {a.responsibility === "timer" ? "Timer" : "Full"}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Button

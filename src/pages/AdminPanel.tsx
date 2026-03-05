@@ -31,7 +31,6 @@ const roleBadgeColor: Record<string, string> = {
   chief_judge: "bg-secondary/15 text-secondary border-secondary/30",
   judge: "bg-secondary/15 text-secondary border-secondary/30",
   tabulator: "bg-muted text-muted-foreground border-border",
-  witness: "bg-muted text-muted-foreground border-border",
   contestant: "bg-primary/10 text-primary border-primary/20",
   audience: "bg-muted text-muted-foreground border-border",
 };

@@ -17,7 +17,7 @@ import { LucideIcon } from "lucide-react";
  * - `contestant`: A participant registered for one or more events.
  * - `audience`: A general user who can view public events and participate in voting.
  */
-export type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "witness" | "contestant" | "audience";
+export type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "contestant" | "audience";
 
 /**
  * Interface defining a navigation item for the sidebar and mobile menus.
@@ -50,7 +50,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
 
     // Organizer
     { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions", roles: ["organizer"] },
-    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging", roles: ["organizer", "tabulator", "witness"] },
+    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging", roles: ["organizer", "tabulator"] },
     { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/competitions", roles: ["organizer"] },
     { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-primary", to: "/profile", roles: ["contestant"] },
     { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/finance", roles: ["organizer", "admin"] },
@@ -58,7 +58,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
 
     // Tabulator / Witness
-    { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator", "witness"] },
+    { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator"] },
 
     // Contestant / Audience Fallbacks
     { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/audience-events", roles: ["contestant", "audience"] },
