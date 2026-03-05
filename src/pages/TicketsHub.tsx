@@ -25,6 +25,8 @@ export default function TicketsHub() {
   const [selectedTicket, setSelectedTicket] = useState<TicketRow | null>(null);
   const [sendingAll, setSendingAll] = useState(false);
   const { data: competitions } = useCompetitions();
+  const queryClient = useQueryClient();
+  const { data: competitions } = useCompetitions();
 
   const sendTicketEmail = useMutation({
     mutationFn: async (ticketId: string) => {
