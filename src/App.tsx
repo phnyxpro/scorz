@@ -45,6 +45,7 @@ import PeoplesChoiceManager from "./pages/PeoplesChoiceManager";
 import RegistrationsHub from "./pages/RegistrationsHub";
 import ContestantProfilesHub from "./pages/ContestantProfilesHub";
 import ResultsHub from "./pages/ResultsHub";
+import CheckInHub from "./pages/CheckInHub";
 
 const queryClient = new QueryClient();
 
