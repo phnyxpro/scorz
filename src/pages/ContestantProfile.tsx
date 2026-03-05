@@ -185,12 +185,18 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="media">Media</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
         </TabsList>
+
+        {/* Media Gallery Tab */}
+        <TabsContent value="media">
+          <ContestantMediaGallery userId={profileUserId!} isOwnProfile={isOwnProfile} />
+        </TabsContent>
 
         {/* Registration Details Tab */}
         <TabsContent value="details">
