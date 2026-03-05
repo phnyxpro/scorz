@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCompetitionSponsors, useCreateSponsor, useDeleteSponsor } from "@/hooks/useCompetitionSponsors";
 import { BannerUpload } from "@/components/shared/BannerUpload";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, ExternalLink } from "lucide-react";
