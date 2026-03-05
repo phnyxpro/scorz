@@ -145,8 +145,8 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setModalOpen(false); }}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={create.isPending || !name.trim()}>
-              {create.isPending ? "Adding…" : "Add Sub-Event"}
+            <Button onClick={handleSubmit} disabled={(create.isPending || saving) || !name.trim()}>
+              {saving ? "Saving…" : create.isPending ? "Adding…" : editingId ? "Save Changes" : "Add Sub-Event"}
             </Button>
           </DialogFooter>
         </DialogContent>
