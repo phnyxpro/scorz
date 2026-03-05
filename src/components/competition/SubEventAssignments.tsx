@@ -172,9 +172,16 @@ export function SubEventAssignments({ competitionId }: Props) {
                       <TableRow key={a.id}>
                         <TableCell className="text-sm">{userName(a.user_id)}</TableCell>
                         <TableCell>
-                          <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
-                            {a.role.replace("_", " ")}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
+                              {a.role.replace("_", " ")}
+                            </Badge>
+                            {a.responsibility && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {a.responsibility === "timer" ? "Timer" : "Full"}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Button
