@@ -18,7 +18,7 @@ import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
