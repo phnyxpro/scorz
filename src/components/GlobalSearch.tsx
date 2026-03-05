@@ -134,7 +134,7 @@ export function GlobalSearch() {
                             {results.contestants.map((con) => (
                                 <CommandItem
                                     key={con.id}
-                                    onSelect={() => runCommand(() => navigate(`/admin`))}
+                                    onSelect={() => runCommand(() => navigate(`/competitions/${con.competition_id}`))}
                                     className="gap-2"
                                 >
                                     <Users className="h-4 w-4 text-secondary" />
