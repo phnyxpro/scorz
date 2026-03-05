@@ -47,21 +47,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
       )}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
-          <div className="flex items-center gap-4 sm:gap-8">
+        <div className="container flex h-14 items-center px-3 sm:px-6">
+          {/* Left: Logo + Brand */}
+          <div className="flex items-center gap-2 shrink-0">
             <Link to="/dashboard" className="flex items-center gap-2">
               <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-              <span className="font-mono text-sm font-bold tracking-tighter text-foreground hidden xs:inline">SCOR<span className="text-accent">Z</span></span>
+              <span className="font-mono text-sm font-bold tracking-tighter text-foreground">SCOR<span className="text-accent">Z</span></span>
             </Link>
-            <div className="hidden md:block">
+          </div>
+
+          {/* Center: Search */}
+          <div className="flex-1 flex justify-center px-4">
+            <div className="w-full max-w-sm">
               <GlobalSearch />
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="md:hidden">
-              <GlobalSearch />
-            </div>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 shrink-0">
             {roles.length > 0 && (
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
