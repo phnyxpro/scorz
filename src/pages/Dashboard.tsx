@@ -1,8 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Users, ClipboardList, Mic } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { dashboardCards } from "@/lib/navigation";
+import { useMemo } from "react";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,13 +18,12 @@ const item = {
 export default function Dashboard() {
   const { user, roles } = useAuth();
 
-  const cards = [
-    { title: "Competitions", desc: "Manage events & stages", icon: Trophy, color: "text-primary", to: "/competitions" },
-    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ title: "My Assignments", desc: "View and score your sessions", icon: ClipboardList, color: "text-secondary", to: "/judge-dashboard" }] : []),
-    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging" },
-    { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/profile" },
-    { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-secondary", to: "/competitions" },
-  ];
+  const visibleCards = useMemo(() => {
+    return dashboardCards.filter(card => {
+      if (!card.roles) return true;
+      return card.roles.some(role => roles.includes(role));
+    });
+  }, [roles]);
 
   return (
     <div>
@@ -40,7 +40,7 @@ export default function Dashboard() {
         animate="show"
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {cards.map((c) => (
+        {visibleCards.map((c) => (
           <motion.div key={c.title} variants={item}>
             <Link to={c.to}>
               <Card className="border-border/50 bg-card/80 hover:bg-card transition-colors cursor-pointer group">

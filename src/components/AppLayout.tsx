@@ -1,13 +1,14 @@
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList } from "lucide-react";
+import { LogOut, User, Shield } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
+import { mainNavItems } from "@/lib/navigation";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, signOut, roles } = useAuth();
+  const { user, signOut, roles, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,12 +17,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     navigate("/auth");
   };
 
-  const bottomNavItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ...(roles.includes("judge") || roles.includes("chief_judge") ? [{ path: "/judge-dashboard", label: "Judging", icon: ClipboardList }] : []),
-    { path: "/competitions", label: "Events", icon: Trophy },
-    { path: "/profile", label: "Profile", icon: User },
-  ];
+  const visibleNavItems = useMemo(() => {
+    return mainNavItems.filter(item => {
+      if (!item.roles) return true;
+      return item.roles.some(role => roles.includes(role));
+    });
+  }, [roles]);
 
   return (
     <div className="auditorium-filter min-h-screen bg-background">
@@ -43,7 +44,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <AuditoriumControls />
-            {roles.includes("admin") && (
+            {hasRole("admin") && (
               <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
                 <Shield className="h-4 w-4" />
               </Button>
@@ -70,7 +71,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
         <div className="flex items-stretch h-14">
-          {bottomNavItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             return (
               <Link

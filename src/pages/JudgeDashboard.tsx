@@ -1,50 +1,17 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
-import { useCompetitions, useLevels, useSubEvents } from "@/hooks/useCompetitions";
+import { useStaffView } from "@/hooks/useStaffView";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, ClipboardList, User, ChevronRight, Star } from "lucide-react";
-import { motion } from "framer-motion";
+import { Trophy, User, ChevronRight, Star, ClipboardList } from "lucide-react";
 
 export default function JudgeDashboard() {
-    const { user } = useAuth();
-    const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents("judge");
-    const { data: competitions } = useCompetitions();
+    const { assignedCompetitions, subEventDetails, isLoading } = useStaffView("judge");
 
-    // Get distinct competition IDs from assignments
-    const assignedCompIds = useMemo(() => {
-        if (!myAssignments) return [];
-        return [...new Set(myAssignments.map((a) => a.sub_event_id))]; // Wait, assignments have sub_event_id. We need the competition_id.
-    }, [myAssignments]);
-
-    // Fetch sub-event details to get competition_id and level_id
-    const { data: subEventDetails } = useQuery({
-        queryKey: ["assigned_sub_events_details", assignedCompIds],
-        enabled: assignedCompIds.length > 0,
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from("sub_events")
-                .select("*, level:competition_levels(*)")
-                .in("id", assignedCompIds);
-            if (error) throw error;
-            return data;
-        },
-    });
-
-    const assignedCompetitions = useMemo(() => {
-        if (!subEventDetails || !competitions) return [];
-        const compIds = [...new Set(subEventDetails.map((se) => se.level.competition_id))];
-        return competitions.filter((c) => compIds.includes(c.id));
-    }, [subEventDetails, competitions]);
-
-    if (assignmentsLoading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -52,7 +19,7 @@ export default function JudgeDashboard() {
         );
     }
 
-    if (!myAssignments || myAssignments.length === 0) {
+    if (!assignedCompetitions || assignedCompetitions.length === 0) {
         return (
             <Card className="border-border/50 bg-card/80">
                 <CardContent className="py-12 text-center">
