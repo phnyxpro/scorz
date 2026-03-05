@@ -117,7 +117,7 @@ export default function MyTickets() {
                       </TableCell>
                       <TableCell>
                         {t.is_checked_in ? (
-                          <span className="flex items-center gap-1 text-xs text-green-500">
+                          <span className="flex items-center gap-1 text-xs text-primary">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Checked In
                           </span>
                         ) : (
