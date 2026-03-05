@@ -405,6 +405,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/tickets-hub"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <TicketsHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/check-in"
                 element={
                   <ProtectedRoute>

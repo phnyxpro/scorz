@@ -58,6 +58,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/finance", roles: ["organizer", "admin"] },
     { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-primary", to: "/peoples-choice", roles: ["organizer", "admin"] },
     { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
+    { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-secondary", to: "/tickets-hub", roles: ["organizer", "admin"] },
     { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-primary", to: "/check-in", roles: ["organizer", "admin"] },
 
     // Tabulator / Witness
