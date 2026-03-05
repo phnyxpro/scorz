@@ -98,7 +98,7 @@ export default function CheckInHub() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Ticket Check-In</h1>
 
       <Select value={selectedCompetitionId} onValueChange={setSelectedCompetitionId}>

@@ -125,7 +125,7 @@ export default function JudgingHub() {
   if (compsLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-primary" /> Judging Hub

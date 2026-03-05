@@ -93,7 +93,7 @@ export default function ResultsHub() {
   }, [allScores, allCertified, registrations, indexToName]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="icon">
           <Link to="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>

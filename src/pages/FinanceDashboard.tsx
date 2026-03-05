@@ -91,7 +91,7 @@ export default function FinanceDashboard() {
     const { totalRevenue, totalRegistrations, monthlyData, recentTransactions } = stats || { totalRevenue: 0, totalRegistrations: 0, monthlyData: [], recentTransactions: [] };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Finance Dashboard</h2>
                 <p className="text-muted-foreground">
