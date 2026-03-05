@@ -1,47 +1,30 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add Icon and Description to Rubric Tab Card
 
-The app appears blank in headless browser testing due to two compounding issues:
+Update the Rubric Document card header in `CompetitionDetail.tsx` (line 234) to match the Rules tab pattern -- add a `BookOpen` icon and a `CardDescription`.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Change
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**File: `src/pages/CompetitionDetail.tsx`**
 
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+Replace line 234:
+```tsx
+<CardHeader><CardTitle className="text-base">Rubric Document</CardTitle></CardHeader>
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+With:
+```tsx
+<CardHeader>
+  <div className="flex items-center gap-2">
+    <BookOpen className="h-5 w-5 text-primary" />
+    <CardTitle className="text-base">Scoring Rubric</CardTitle>
+  </div>
+  <CardDescription>Upload a rubric PDF or build scoring criteria below for judges to use during evaluation.</CardDescription>
+</CardHeader>
+```
 
----
+Also add `BookOpen` to the existing lucide-react import.
 
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Single file change, no database modifications.
 
