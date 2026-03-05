@@ -164,14 +164,6 @@ export default function CompetitionDetail() {
                 </Select>
               </div>
 
-              {/* Voting Toggle */}
-              <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="voting-toggle" className="text-sm font-medium">People's Choice Voting</Label>
-                  <p className="text-xs text-muted-foreground">Enable audience voting on the public event page</p>
-                </div>
-                <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
-              </div>
 
 
 
