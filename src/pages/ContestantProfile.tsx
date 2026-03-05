@@ -14,12 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink } from "lucide-react";
-import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
-import { PublicRubric } from "@/components/public/PublicRubric";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award } from "lucide-react";
 import { motion } from "framer-motion";
 
 const statusColor: Record<string, string> = {
@@ -189,11 +184,10 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
-          <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
 
         {/* Performance History Tab */}
@@ -395,70 +389,7 @@ export default function ContestantProfile() {
           </motion.div>
         </TabsContent>
 
-        {/* Rules & Rubric Tab */}
-        <TabsContent value="rubric">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {competitionIds.map((compId) => (
-              <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
-            ))}
-          </motion.div>
-        </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function CompetitionRubricSection({ competitionId, competitionName }: { competitionId: string; competitionName: string }) {
-  const { data: criteria } = useRubricCriteria(competitionId);
-  const { data: penalties } = usePenaltyRules(competitionId);
-  const { data: comp } = useQuery({
-    queryKey: ["competition-rules", competitionId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("competitions").select("rules_url, description").eq("id", competitionId).single();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const rulesUrl = (comp as any)?.rules_url as string | undefined;
-  const description = (comp as any)?.description as string | undefined;
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold font-mono">{competitionName}</h3>
-
-      {/* Official Rules */}
-      {(rulesUrl || description) && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <h4 className="text-base font-bold font-mono">Official Rules</h4>
-          </div>
-          {description && (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="pt-4">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{description}</p>
-              </CardContent>
-            </Card>
-          )}
-          {rulesUrl && (
-            <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
-              <div className="flex gap-3 items-center">
-                <FileText className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium text-sm">Competition Handbook</p>
-                  <p className="text-xs text-muted-foreground">Official rules document</p>
-                </div>
-              </div>
-              <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
-                <ExternalLink className="h-3.5 w-3.5" /> View
-              </a>
-            </Card>
-          )}
-        </section>
-      )}
-
-      <PublicRubric criteria={criteria || []} penalties={penalties || []} />
     </div>
   );
 }
