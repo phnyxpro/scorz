@@ -510,3 +510,16 @@ function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; val
     </div>
   );
 }
+
+function DetailField({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-sm text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
