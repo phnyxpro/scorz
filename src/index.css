@@ -121,7 +121,7 @@
 
 /* Auditorium Mode filter overlay */
 .auditorium-filter {
-  filter: var(--auditorium-brightness, brightness(1)) var(--auditorium-contrast, contrast(1));
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
 }
 
 /* Print styles for score sheets */

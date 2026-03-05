@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
@@ -14,6 +14,8 @@ import {
 } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
@@ -23,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ChiefJudgeDashboard() {
@@ -41,6 +43,7 @@ export default function ChiefJudgeDashboard() {
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
 
   // Auto-select first level
   if (levels?.length && !selectedLevelId) {
@@ -134,6 +137,8 @@ export default function ChiefJudgeDashboard() {
         chief_judge_id: user.id,
       } as any);
     }
+    setConsentChecked(false);
+    setSignature("");
     setShowCertifyDialog(true);
   };
 
@@ -198,6 +203,39 @@ export default function ChiefJudgeDashboard() {
 
       {selectedSubEventId && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Summary card */}
+          <Card className="border-border/50 bg-card/80 mb-4">
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Contestants</p>
+                  <p className="text-xl font-bold text-foreground">{Object.keys(scoresByContestant).length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Scorecards</p>
+                  <p className="text-xl font-bold text-foreground">{allScores?.length ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Certified</p>
+                  <p className="text-xl font-bold text-foreground">{allScores?.filter(s => s.is_certified).length ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Ties</p>
+                  <p className="text-xl font-bold text-foreground">{ties.length}</p>
+                </div>
+              </div>
+              <div className="flex justify-end mt-3">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/master-sheet?sub_event=${selectedSubEventId}`}>
+                    <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                    Master Score Sheet
+                    <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Tabs defaultValue="panel" className="space-y-4">
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
@@ -310,13 +348,24 @@ export default function ChiefJudgeDashboard() {
 
             <SignaturePad label="Chief Judge Signature" onSignature={setSignature} />
 
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-consent"
+                checked={consentChecked}
+                onCheckedChange={(v) => setConsentChecked(v === true)}
+              />
+              <Label htmlFor="certify-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I confirm that all scores have been reviewed, penalties are accurate, ties have been resolved, and I consent to certify and permanently lock these results.
+              </Label>
+            </div>
+
             <Button
               onClick={handleCertify}
-              disabled={!signature || certifySubEvent.isPending}
+              disabled={!signature || !consentChecked || certifySubEvent.isPending}
               className="w-full"
             >
               <Lock className="h-4 w-4 mr-1" />
-              {certifySubEvent.isPending ? "Certifying…" : "Certify & Publish Results"}
+              {certifySubEvent.isPending ? "Certifying…" : "Certify & Lock Results"}
             </Button>
           </div>
         </DialogContent>

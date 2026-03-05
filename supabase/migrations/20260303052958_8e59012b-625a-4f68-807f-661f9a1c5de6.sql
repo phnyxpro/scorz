@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions ADD COLUMN voting_enabled boolean NOT NULL DEFAULT false;

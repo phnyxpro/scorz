@@ -1,44 +1,47 @@
 
 
-## Fix: Public Schedule Not Showing on Event Page
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The `/events/:id` page shows "No levels defined" because the database security policies on `competition_levels` and `sub_events` tables only allow **logged-in users** to read data. Visitors who aren't signed in get empty results.
+The app appears blank in headless browser testing due to two compounding issues:
 
-The `competitions` table already has a public-access policy, but the child tables (`competition_levels`, `sub_events`) do not.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Solution
-Add public SELECT policies to both tables so unauthenticated visitors can view the competition schedule.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-### Database Changes
+---
 
-**1. Add public SELECT policy on `competition_levels`:**
-- Allow anyone (including anonymous visitors) to read levels
-- Policy: `USING (true)` for SELECT, applied to the `anon` role
+### Fix 1: Conditionally apply auditorium filter
 
-**2. Add public SELECT policy on `sub_events`:**
-- Same approach -- allow anyone to read sub-events so the schedule renders
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Code Changes
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**3. Update `PublicEventDetail.tsx` header branding:**
-- Replace leftover `Zap` icon and "SCORE" text with the Scorz logo (missed in the earlier rebrand)
-- Update footer to remove "PHNYX.DEV" reference
+### Fix 2: Remove filter class when at defaults
 
-### Technical Details
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-Two new RLS policies will be created:
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-```sql
-CREATE POLICY "Public can view levels"
-  ON public.competition_levels FOR SELECT
-  TO anon
-  USING (true);
+### Fix 3: Update CSS to use filter only when properties exist
 
-CREATE POLICY "Public can view sub_events"
-  ON public.sub_events FOR SELECT
-  TO anon
-  USING (true);
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-These are safe because levels and sub-events contain no sensitive data -- they only hold names, dates, times, and locations, which are intended to be publicly visible on the event page.
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+

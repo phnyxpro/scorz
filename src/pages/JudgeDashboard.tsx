@@ -6,10 +6,23 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+<<<<<<< HEAD
 import { Trophy, User, ChevronRight, Star, ClipboardList } from "lucide-react";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, isLoading } = useStaffView("judge");
+=======
+import { Trophy, ClipboardList, User, ChevronRight, Star, Info, FileText, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
+import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { PublicRubric } from "@/components/public/PublicRubric";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
+export default function JudgeDashboard() {
+    const { user } = useAuth();
+    const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents(["judge", "chief_judge"]);
+    const { data: competitions } = useCompetitions();
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
     if (isLoading) {
         return (
@@ -56,6 +69,10 @@ export default function JudgeDashboard() {
 }
 
 function CompetitionAssignmentSection({ competition, subEventDetails }: { competition: any, subEventDetails: any[] }) {
+    const { data: criteria } = useRubricCriteria(competition.id);
+    const { data: penalties } = usePenaltyRules(competition.id);
+    const rulesUrl = (competition as any).rules_url as string | undefined;
+
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -64,6 +81,32 @@ function CompetitionAssignmentSection({ competition, subEventDetails }: { compet
                 </Badge>
                 <h2 className="text-lg font-bold">{competition.name}</h2>
             </div>
+
+            {/* Collapsible Rubric & Rules */}
+            <Collapsible>
+                <CollapsibleTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 text-xs">
+                        <Info className="h-3.5 w-3.5" /> View Rules & Rubric
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-4">
+                    {rulesUrl && (
+                        <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
+                            <div className="flex gap-3 items-center">
+                                <FileText className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="font-medium text-sm">Official Rules</p>
+                                    <p className="text-xs text-muted-foreground">Competition handbook</p>
+                                </div>
+                            </div>
+                            <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
+                                <ExternalLink className="h-3.5 w-3.5" /> View
+                            </a>
+                        </Card>
+                    )}
+                    <PublicRubric criteria={criteria || []} penalties={penalties || []} />
+                </CollapsibleContent>
+            </Collapsible>
 
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                 {subEventDetails.map((se) => (
@@ -89,6 +132,14 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
                         <CardDescription className="text-xs font-mono">
                             Level: {subEvent.level?.name}
                         </CardDescription>
+                        {(subEvent.event_date || subEvent.start_time) && (
+                            <CardDescription className="text-xs font-mono mt-0.5">
+                                {subEvent.event_date || ""}{subEvent.start_time ? ` • ${subEvent.start_time}` : ""}{subEvent.end_time ? ` – ${subEvent.end_time}` : ""}
+                            </CardDescription>
+                        )}
+                        {subEvent.location && (
+                            <CardDescription className="text-xs mt-0.5">{subEvent.location}</CardDescription>
+                        )}
                     </div>
                     <Badge className="bg-primary/20 text-primary border-primary/30">
                         {contestants.length} Contestants
@@ -126,11 +177,18 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
                     )}
                 </div>
 
-                <Button asChild variant="outline" className="w-full text-xs" size="sm">
-                    <Link to={`/competitions/${competitionId}/score?sub_event=${subEvent.id}`}>
-                        <ClipboardList className="h-3.5 w-3.5 mr-2" /> Full Score Sheet
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button asChild variant="outline" className="flex-1 text-xs" size="sm">
+                        <Link to={`/competitions/${competitionId}/score?sub_event=${subEvent.id}`}>
+                            <ClipboardList className="h-3.5 w-3.5 mr-2" /> Full Score Sheet
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="text-xs" size="sm">
+                        <Link to={`/competitions/${competitionId}/rules-rubric`}>
+                            <FileText className="h-3.5 w-3.5 mr-1" /> Rules
+                        </Link>
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );

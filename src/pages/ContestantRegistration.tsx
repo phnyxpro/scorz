@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 import { useState, useEffect, useMemo } from "react";
+=======
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useRubricCriteria, usePenaltyRules, useLevels, useSubEvents } from "@/hooks/useCompetitions";
+import { useQuery } from "@tanstack/react-query";
 import { useMyRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+<<<<<<< HEAD
 import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar, Info, Link as LinkIcon } from "lucide-react";
+=======
+import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar, Clock } from "lucide-react";
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
@@ -74,6 +84,7 @@ export default function ContestantRegistration() {
     return STEPS;
   }, [user]);
 
+<<<<<<< HEAD
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
@@ -84,6 +95,26 @@ export default function ContestantRegistration() {
       contestantSig: "",
     },
   });
+=======
+  // Rules
+  const [rulesChecked, setRulesChecked] = useState<Record<string, boolean>>({});
+  const ruleItems = [
+    "I have read and understand the competition rules",
+    "I agree to the scoring rubric and criteria",
+    "I understand the time limits and penalty structure",
+    "I consent to have my performance recorded and scored",
+  ];
+  const allRulesChecked = ruleItems.every((_, i) => rulesChecked[`rule_${i}`]);
+
+  // Signature
+  const [contestantSig, setContestantSig] = useState("");
+  const [guardianSig, setGuardianSig] = useState("");
+
+  // Schedule
+  const [selectedSubEvent, setSelectedSubEvent] = useState("");
+  const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState("");
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
   useEffect(() => {
     if (user) {
@@ -149,9 +180,22 @@ export default function ContestantRegistration() {
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
     } as any, {
+<<<<<<< HEAD
       onSuccess: () => {
         toast({ title: "Success!", description: "Registration submitted." });
         navigate("/competitions");
+=======
+      onSuccess: async (data: any) => {
+        // Book the selected time slot if one was chosen
+        if (selectedSlotId && data?.id) {
+          await supabase
+            .from("performance_slots")
+            .update({ is_booked: true, contestant_registration_id: data.id } as any)
+            .eq("id", selectedSlotId);
+        }
+        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
+        navigate(`/competitions`);
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
       },
     });
   };
@@ -196,6 +240,7 @@ export default function ContestantRegistration() {
             </motion.div>
           </AnimatePresence>
 
+<<<<<<< HEAD
           <footer className="flex justify-between pt-4 border-t border-border/50">
             <Button
               type="button"
@@ -217,10 +262,176 @@ export default function ContestantRegistration() {
           </footer>
         </form>
       </FormProvider>
+=======
+          {steps[step].id === "info" && (
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader>
+                <CardTitle className="text-base">Personal Information</CardTitle>
+                <CardDescription>Tell us about yourself</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-xs text-muted-foreground">Full Name *</label>
+                    <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Email *</label>
+                    <Input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Phone</label>
+                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1..." />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Location</label>
+                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="City, State" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Age Category *</label>
+                    <Select value={ageCategory} onValueChange={setAgeCategory}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="adult">Adult (18+)</SelectItem>
+                        <SelectItem value="minor">Minor (Under 18)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {isMinor && (
+                  <div className="border border-border/50 rounded-md p-3 space-y-2 bg-muted/30">
+                    <p className="text-xs font-medium text-foreground">Parent / Guardian Information</p>
+                    <Input value={guardianName} onChange={e => setGuardianName(e.target.value)} placeholder="Guardian full name *" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={guardianEmail} onChange={e => setGuardianEmail(e.target.value)} placeholder="Guardian email" />
+                      <Input value={guardianPhone} onChange={e => setGuardianPhone(e.target.value)} placeholder="Guardian phone" />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs text-muted-foreground">Bio</label>
+                  <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Brief bio or performance background" rows={3} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Performance Video URL</label>
+                  <Input value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Personal Info Step handled above */}
+
+          {steps[step].id === "rules" && (
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader>
+                <CardTitle className="text-base">Rules & Rubric Acknowledgment</CardTitle>
+                <CardDescription>Read and acknowledge each section</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Rubric summary */}
+                {rubric && rubric.length > 0 && (
+                  <div className="border border-border/50 rounded-md p-3 bg-muted/20">
+                    <p className="text-xs font-medium text-foreground mb-2">Scoring Criteria</p>
+                    <div className="space-y-1">
+                      {rubric.map(c => (
+                        <div key={c.id} className="text-xs text-muted-foreground flex justify-between">
+                          <span>{c.name}</span>
+                          <span className="font-mono">1-5 pts</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Penalty summary */}
+                {penalties && penalties.length > 0 && (
+                  <div className="border border-border/50 rounded-md p-3 bg-muted/20">
+                    <p className="text-xs font-medium text-foreground mb-2">Time Penalties</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Time limit: {Math.floor(penalties[0].time_limit_seconds / 60)}:{String(penalties[0].time_limit_seconds % 60).padStart(2, "0")}
+                      {" "}| Grace: {penalties[0].grace_period_seconds}s
+                    </p>
+                    {penalties.map(p => (
+                      <div key={p.id} className="text-xs text-muted-foreground flex justify-between">
+                        <span>{p.from_seconds}s – {p.to_seconds ? `${p.to_seconds}s` : "beyond"}</span>
+                        <span className="text-destructive font-mono">-{p.penalty_points} pts</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Rule checkboxes */}
+                <div className="space-y-3 pt-2">
+                  {ruleItems.map((rule, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Checkbox
+                        id={`rule_${i}`}
+                        checked={!!rulesChecked[`rule_${i}`]}
+                        onCheckedChange={(v) => setRulesChecked(prev => ({ ...prev, [`rule_${i}`]: !!v }))}
+                      />
+                      <label htmlFor={`rule_${i}`} className="text-sm text-foreground cursor-pointer leading-tight">
+                        {rule}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {steps[step].id === "signature" && (
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader>
+                <CardTitle className="text-base">Digital Signature</CardTitle>
+                <CardDescription>
+                  Draw your signature to certify that all information is accurate and you accept the competition rules
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SignaturePad label="Contestant Signature *" onSignature={setContestantSig} />
+                {isMinor && (
+                  <SignaturePad label="Parent / Guardian Signature *" onSignature={setGuardianSig} />
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {steps[step].id === "schedule" && (
+             <ScheduleStep
+              firstLevel={levels?.[0] || null}
+              selectedLevelId={selectedLevelId}
+              selectedSubEvent={selectedSubEvent}
+              setSelectedSubEvent={(id) => { setSelectedSubEvent(id); setSelectedSlotId(""); }}
+              selectedSlotId={selectedSlotId}
+              setSelectedSlotId={setSelectedSlotId}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="flex justify-between mt-4">
+        <Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s - 1)}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        {step < steps.length - 1 ? (
+          <Button disabled={!canProceed() || authLoading} onClick={handleNext}>
+            {authLoading ? "Initializing…" : "Next"} <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        ) : (
+          <Button disabled={!canProceed() || createReg.isPending} onClick={handleSubmit}>
+            {createReg.isPending ? "Submitting…" : "Submit Registration"}
+          </Button>
+        )}
+      </div>
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
     </div>
   );
 }
 
+<<<<<<< HEAD
 function StepIndicator({ steps, currentStep }: { steps: typeof STEPS; currentStep: number }) {
   return (
     <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
@@ -284,10 +495,54 @@ function AccountStep({ data, setData, loading }: { data: any, setData: any, load
 function PersonalStep() {
   const { register, watch, formState: { errors } } = useFormContext<RegistrationFormData>();
   const isMinor = watch("ageCategory") === "minor";
+=======
+function ScheduleStep({
+  firstLevel,
+  selectedLevelId,
+  selectedSubEvent,
+  setSelectedSubEvent,
+  selectedSlotId,
+  setSelectedSlotId,
+}: {
+  firstLevel: { id: string; name: string } | null;
+  selectedLevelId: string;
+  selectedSubEvent: string;
+  setSelectedSubEvent: (id: string) => void;
+  selectedSlotId: string;
+  setSelectedSlotId: (id: string) => void;
+}) {
+  const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
+
+  // Fetch available slots for selected sub-event
+  const { data: slots } = useQuery({
+    queryKey: ["performance-slots", selectedSubEvent],
+    enabled: !!selectedSubEvent,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("*")
+        .eq("sub_event_id", selectedSubEvent)
+        .order("slot_index", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const formatTime = (t: string) => {
+    const [h, m] = t.split(":");
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  };
+
+  const availableSlots = slots?.filter(s => !s.is_booked) || [];
 
   return (
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
+<<<<<<< HEAD
         <CardTitle>About You</CardTitle>
         <CardDescription>Basic details for the competition organizers.</CardDescription>
       </CardHeader>
@@ -297,8 +552,21 @@ function PersonalStep() {
             <Label>Full Name *</Label>
             <Input {...register("fullName")} placeholder="Legal Name" />
             {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
+=======
+        <CardTitle className="text-base">Select Time Slot</CardTitle>
+        <CardDescription>Choose your sub-event and performance time (optional)</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {firstLevel && (
+          <div>
+            <label className="text-xs text-muted-foreground">Round</label>
+            <div className="mt-1">
+              <Badge variant="secondary" className="text-sm px-3 py-1">{firstLevel.name}</Badge>
+            </div>
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
           </div>
           <div className="space-y-2">
+<<<<<<< HEAD
             <Label>Email *</Label>
             <Input {...register("email")} type="email" />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
@@ -347,6 +615,60 @@ function PersonalStep() {
               </div>
             </div>
           </motion.div>
+=======
+            <label className="text-xs text-muted-foreground">Sub-Event</label>
+            {subEvents.map(se => (
+              <button
+                key={se.id}
+                onClick={() => setSelectedSubEvent(se.id === selectedSubEvent ? "" : se.id)}
+                className={`w-full text-left border rounded-md p-3 transition-colors ${se.id === selectedSubEvent
+                  ? "border-primary bg-primary/10"
+                  : "border-border/50 bg-muted/20 hover:bg-muted/40"
+                  }`}
+              >
+                <div className="font-medium text-sm text-foreground">{se.name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {se.event_date && <span>{se.event_date}</span>}
+                  {se.start_time && <span> · {se.start_time}{se.end_time ? ` – ${se.end_time}` : ""}</span>}
+                  {se.location && <span> · {se.location}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground py-4 text-center">
+            {!firstLevel
+              ? "No levels configured yet. You can skip scheduling."
+              : "No sub-events available for this round."}
+          </p>
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
+        )}
+
+        {/* Time slot picker */}
+        {selectedSubEvent && slots && slots.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            <label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Available Performance Slots
+            </label>
+            {availableSlots.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {availableSlots.map(slot => (
+                  <button
+                    key={slot.id}
+                    onClick={() => setSelectedSlotId(slot.id === selectedSlotId ? "" : slot.id)}
+                    className={`text-center border rounded-md p-2 transition-colors text-sm font-mono ${slot.id === selectedSlotId
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-border/50 bg-muted/20 hover:bg-muted/40 text-foreground"
+                      }`}
+                  >
+                    {formatTime((slot as any).start_time)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-2">All slots are booked.</p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

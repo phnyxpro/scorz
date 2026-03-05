@@ -1,22 +1,39 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, ArrowLeft, Mail } from "lucide-react";
+import { Zap, ArrowLeft, Mail, Copy, Check } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 
+const DEMO_ACCOUNTS = [
+  { role: "Organizer", email: "organizer@demo.scorz.app", password: "demo1234", color: "bg-primary/10 text-primary" },
+  { role: "Chief Judge", email: "chief_judge@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
+  { role: "Judge", email: "judge@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
+  { role: "Tabulator", email: "tabulator@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
+  { role: "Witness", email: "witness@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
+  { role: "Contestant", email: "contestant@demo.scorz.app", password: "demo1234", color: "bg-muted text-muted-foreground" },
+  { role: "Audience", email: "audience@demo.scorz.app", password: "demo1234", color: "bg-muted text-muted-foreground" },
+];
+
 export default function Auth() {
   const { signIn, signUp, resetPassword, signInWithGoogle } = useAuth();
+  const { brightness, contrast } = useTheme();
+  const needsFilter = brightness !== 100 || contrast !== 100;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -80,16 +97,28 @@ export default function Auth() {
     }
   };
 
+  const fillDemoCredentials = (email: string, password: string) => {
+    setLoginEmail(email);
+    setLoginPassword(password);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 1500);
+  };
+
   return (
-    <div className="auditorium-filter min-h-screen flex items-center justify-center bg-background p-4 relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-4 left-4 gap-2 text-muted-foreground hover:text-foreground"
-        onClick={() => navigate("/")}
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Home
-      </Button>
+    <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen flex items-center justify-center bg-background p-4 relative`}>
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Home
+        </Button>
+        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+          <Link to="/pricing">Pricing</Link>
+        </Button>
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -186,6 +215,45 @@ export default function Auth() {
                   </svg>
                   Google
                 </Button>
+
+                {/* Demo Accounts Accordion */}
+                <Accordion type="single" collapsible className="mt-6">
+                  <AccordionItem value="demo-accounts" className="border-border/30">
+                    <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <Zap className="h-3 w-3" />
+                        Demo Accounts — Try every role
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2">
+                        {DEMO_ACCOUNTS.map((acc) => (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            onClick={() => fillDemoCredentials(acc.email, acc.password)}
+                            className="w-full flex items-center justify-between gap-2 rounded-md border border-border/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Badge variant="secondary" className={`text-[10px] shrink-0 ${acc.color}`}>
+                                {acc.role}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate font-mono">{acc.email}</span>
+                            </div>
+                            {copiedEmail === acc.email ? (
+                              <Check className="h-3 w-3 text-green-500 shrink-0" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                        <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">
+                          Password for all: <code className="font-mono bg-muted px-1 rounded">demo1234</code>
+                        </p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </TabsContent>
 
               <TabsContent value="signup">

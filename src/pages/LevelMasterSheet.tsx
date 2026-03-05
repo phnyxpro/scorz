@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +77,8 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
 
 export default function LevelMasterSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const { hasRole } = useAuth();
+  const canExport = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
   const levelId = searchParams.get("level");
 
@@ -182,7 +185,7 @@ export default function LevelMasterSheet() {
             </p>
           </div>
         </div>
-        <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />
+        {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
       </div>
 
       <Card className="border-border/50 bg-card/80">

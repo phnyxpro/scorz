@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
+import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
@@ -14,31 +14,37 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { PublicRubric } from "@/components/public/PublicRubric";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
-  const { data: myAssignments } = useMyAssignedSubEvents("judge");
+  const { data: myAssignments } = useMyAssignedSubEvents(["judge", "chief_judge"]);
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
   const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
 
-  // Filter sub-events to only those the judge is assigned to
   const subEvents = useMemo(() => {
     if (!allSubEvents || !myAssignments) return [];
     const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
@@ -47,6 +53,16 @@ export default function JudgeScoring() {
 
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
+  const { data: myScores } = useMyScores(subEventId || undefined);
+
+  // Build lookup: contestant_registration_id -> score status
+  const scoreStatusMap = useMemo(() => {
+    const map = new Map<string, "scored" | "certified">();
+    for (const s of myScores || []) {
+      map.set(s.contestant_registration_id, s.is_certified ? "certified" : "scored");
+    }
+    return map;
+  }, [myScores]);
 
   const [selectedContestant, setSelectedContestant] = useState(searchParams.get("contestant") || "");
   const { data: existingScore, isLoading: scoreLoading } = useMyScoreForContestant(subEventId, selectedContestant || undefined);
@@ -54,7 +70,6 @@ export default function JudgeScoring() {
   const upsert = useUpsertScore();
   const certify = useCertifyScore();
 
-  // Scoring state
   const [scores, setScores] = useState<Record<string, number>>({});
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState("");
@@ -64,7 +79,11 @@ export default function JudgeScoring() {
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
 
-  // Load existing score
+  // Filtered contestants for the selected sub-event
+  const filteredContestants = useMemo(() => {
+    return registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)) ?? [];
+  }, [registrations, subEventId]);
+
   useEffect(() => {
     if (existingScore) {
       setScores(existingScore.criterion_scores || {});
@@ -77,14 +96,12 @@ export default function JudgeScoring() {
     }
   }, [existingScore]);
 
-  // Calculate penalty
   const calculatePenalty = useCallback((durationSecs: number): number => {
     if (!penalties?.length) return 0;
     let totalPenalty = 0;
     const overTime = durationSecs - timeLimitSecs - gracePeriodSecs;
     if (overTime <= 0) return 0;
     for (const rule of penalties) {
-      const fromOver = rule.from_seconds - timeLimitSecs - gracePeriodSecs;
       if (durationSecs >= rule.from_seconds) {
         if (!rule.to_seconds || durationSecs <= rule.to_seconds) {
           totalPenalty = Math.max(totalPenalty, rule.penalty_points);
@@ -132,182 +149,249 @@ export default function JudgeScoring() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCertified) return;
-
       const target = e.target as HTMLElement;
       const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
       if (isInput) return;
 
       if (e.key.toLowerCase() === "s") {
         e.preventDefault();
-        if (allScored && !upsert.isPending) {
-          handleSave();
-        }
+        if (allScored && !upsert.isPending) handleSave();
       } else if (e.key === "Enter") {
         e.preventDefault();
-        if (allScored && existingScore?.id) {
-          setShowCertifyDialog(true);
-        }
+        if (allScored && existingScore?.id) setShowCertifyDialog(true);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isCertified, allScored, upsert.isPending, existingScore, handleSave]);
 
+  const selectedContestantName = filteredContestants.find(r => r.id === selectedContestant)?.full_name;
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Judge Scoring</h1>
-          <p className="text-muted-foreground text-xs">{comp?.name}</p>
+    <div className="flex h-full min-h-0">
+      {/* Left sidebar / panel */}
+      <aside
+        className={cn(
+          "flex-shrink-0 border-r border-border/50 bg-card/60 transition-all duration-200 flex flex-col",
+          sidebarOpen ? "w-64" : "w-0 overflow-hidden",
+          isMobile && sidebarOpen && "absolute inset-y-0 left-0 z-30 w-72 shadow-xl bg-card"
+        )}
+      >
+        <div className="p-3 border-b border-border/30 flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Navigation</h2>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSidebarOpen(false)}>
+            <PanelLeftClose className="h-3.5 w-3.5" />
+          </Button>
         </div>
-      </div>
 
-      {/* Sub-event & contestant selector */}
-      <Card className="border-border/50 bg-card/80 mb-4">
-        <CardContent className="pt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Level</label>
-              <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                <SelectContent>
-                  {levels?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Sub-Event</label>
-              <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
-                <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
-                <SelectContent>
-                  {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                  {subEvents.length === 0 && (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="p-3 space-y-3">
+          <div>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Level</label>
+            <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); setSelectedContestant(""); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select level" /></SelectTrigger>
+              <SelectContent>
+                {levels?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          {selectedSubEventId && (
-            <div>
-              <label className="text-xs text-muted-foreground">Contestant</label>
-              <Select value={selectedContestant} onValueChange={setSelectedContestant}>
-                <SelectTrigger><SelectValue placeholder="Choose a contestant…" /></SelectTrigger>
-                <SelectContent>
-                  {registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)).map(r => (
-                    <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Sub-Event</label>
+            <Select value={selectedSubEventId} onValueChange={(v) => { setSelectedSubEventId(v); setSelectedContestant(""); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-event" /></SelectTrigger>
+              <SelectContent>
+                {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                {subEvents.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      {selectedContestant && !scoreLoading && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {isCertified && (
-            <Card className="border-secondary/30 bg-secondary/10">
-              <CardContent className="flex items-center gap-2 py-3">
-                <CheckCircle className="h-4 w-4 text-secondary" />
-                <span className="text-sm text-secondary font-medium">This scorecard is certified and locked</span>
+        {/* Contestant list */}
+        {selectedSubEventId && (
+          <>
+            <div className="px-3 pt-1 pb-1.5 border-t border-border/30">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Contestants ({filteredContestants.length})
+              </span>
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="px-2 pb-3 space-y-0.5">
+                {filteredContestants.map((r, idx) => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setSelectedContestant(r.id);
+                      if (isMobile) setSidebarOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                      selectedContestant === r.id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground/80 hover:bg-muted/50"
+                    )}
+                  >
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="truncate text-xs flex-1">{r.full_name}</span>
+                    {scoreStatusMap.get(r.id) === "certified" && (
+                      <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                    )}
+                    {scoreStatusMap.get(r.id) === "scored" && (
+                      <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                ))}
+                {filteredContestants.length === 0 && (
+                  <p className="text-xs text-muted-foreground px-2 py-4 text-center">No contestants</p>
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </aside>
+
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 z-20 bg-black/40" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Main scoring area */}
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            {!sidebarOpen && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="shrink-0">
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)} className="shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-foreground truncate">Judge Scoring</h1>
+              <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
+            </div>
+            {selectedContestantName && (
+              <Badge variant="secondary" className="ml-auto shrink-0 gap-1">
+                <User className="h-3 w-3" />
+                <span className="truncate max-w-[120px]">{selectedContestantName}</span>
+              </Badge>
+            )}
+          </div>
+
+          {/* Rubric reference */}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 text-xs text-muted-foreground mb-2">
+                <Info className="h-3.5 w-3.5" /> View Full Rubric & Penalties
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mb-4">
+              <PublicRubric criteria={rubric || []} penalties={penalties || []} />
+            </CollapsibleContent>
+          </Collapsible>
+
+          {!selectedContestant && (
+            <Card className="border-border/50 bg-card/80">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <User className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">Select a contestant from the {isMobile ? "menu" : "sidebar"} to begin scoring</p>
               </CardContent>
             </Card>
           )}
 
-          {/* Performance Timer */}
-          <PerformanceTimer
-            timeLimitSeconds={timeLimitSecs}
-            gracePeriodSeconds={gracePeriodSecs}
-            onDurationChange={setDuration}
-            disabled={isCertified}
-          />
+          {selectedContestant && !scoreLoading && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              {isCertified && (
+                <Card className="border-secondary/30 bg-secondary/10">
+                  <CardContent className="flex items-center gap-2 py-3">
+                    <CheckCircle className="h-4 w-4 text-secondary" />
+                    <span className="text-sm text-secondary font-medium">This scorecard is certified and locked</span>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Scoring Criteria */}
-          <Card className="border-border/50 bg-card/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Scoring Card</CardTitle>
-              <CardDescription>Rate each criterion from 1 to 5</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {rubric?.map(criterion => (
-                <CriterionSlider
-                  key={criterion.id}
-                  criterion={criterion}
-                  value={scores[criterion.id] || 0}
-                  onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
-                  disabled={isCertified}
-                />
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Totals */}
-          <Card className="border-border/50 bg-card/80">
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xs text-muted-foreground">Raw Total</p>
-                  <p className="text-lg font-mono font-bold text-foreground">{rawTotal}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Time Penalty</p>
-                  <p className={`text-lg font-mono font-bold ${timePenalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {timePenalty > 0 ? `-${timePenalty}` : "0"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Final Score</p>
-                  <p className="text-lg font-mono font-bold text-primary">{finalScore}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Comments with Speech-to-Text */}
-          <Card className="border-border/50 bg-card/80">
-            <CardContent className="pt-4">
-              <SpeechComments
-                value={comments}
-                onChange={setComments}
+              <PerformanceTimer
+                timeLimitSeconds={timeLimitSecs}
+                gracePeriodSeconds={gracePeriodSecs}
+                onDurationChange={setDuration}
                 disabled={isCertified}
               />
-            </CardContent>
-          </Card>
 
-          {/* Actions */}
-          {!isCertified && (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                disabled={upsert.isPending || !allScored}
-                className="flex-1"
-                variant="outline"
-              >
-                <Save className="h-4 w-4 mr-1" />
-                {upsert.isPending ? "Saving…" : "Save Draft"}
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!existingScore?.id) {
-                    toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
-                    return;
-                  }
-                  setShowCertifyDialog(true);
-                }}
-                disabled={!allScored || !existingScore?.id}
-                className="flex-1"
-              >
-                <Lock className="h-4 w-4 mr-1" /> Certify & Lock
-              </Button>
-            </div>
+              <Card className="border-border/50 bg-card/80">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Scoring Card</CardTitle>
+                  <CardDescription>Rate each criterion from 1 to 5</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {rubric?.map(criterion => (
+                    <CriterionSlider
+                      key={criterion.id}
+                      criterion={criterion}
+                      value={scores[criterion.id] || 0}
+                      onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
+                      disabled={isCertified}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-card/80">
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Raw Total</p>
+                      <p className="text-lg font-mono font-bold text-foreground">{rawTotal}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Time Penalty</p>
+                      <p className={`text-lg font-mono font-bold ${timePenalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {timePenalty > 0 ? `-${timePenalty}` : "0"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Final Score</p>
+                      <p className="text-lg font-mono font-bold text-primary">{finalScore}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-card/80">
+                <CardContent className="pt-4">
+                  <SpeechComments value={comments} onChange={setComments} disabled={isCertified} />
+                </CardContent>
+              </Card>
+
+              {!isCertified && (
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                    <Save className="h-4 w-4 mr-1" />
+                    {upsert.isPending ? "Saving…" : "Save Draft"}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (!existingScore?.id) {
+                        toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
+                        return;
+                      }
+                      setShowCertifyDialog(true);
+                    }}
+                    disabled={!allScored || !existingScore?.id}
+                    className="flex-1"
+                  >
+                    <Lock className="h-4 w-4 mr-1" /> Certify & Lock
+                  </Button>
+                </div>
+              )}
+            </motion.div>
           )}
-        </motion.div>
-      )}
+        </div>
+      </div>
 
       {/* Certify Dialog */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
@@ -318,7 +402,6 @@ export default function JudgeScoring() {
               Sign below to certify this scorecard. Once certified, scores cannot be changed.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
             <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
               <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
@@ -326,7 +409,6 @@ export default function JudgeScoring() {
                 By signing, you confirm that all scores are accurate and final. This action is irreversible.
               </p>
             </div>
-
             <div className="text-sm space-y-1">
               <div className="flex justify-between text-muted-foreground">
                 <span>Raw Total</span><span className="font-mono">{rawTotal}</span>
@@ -338,14 +420,8 @@ export default function JudgeScoring() {
                 <span>Final Score</span><span className="font-mono text-primary">{finalScore}</span>
               </div>
             </div>
-
             <SignaturePad label="Judge Signature" onSignature={setSignature} />
-
-            <Button
-              onClick={handleCertify}
-              disabled={!signature || certify.isPending}
-              className="w-full"
-            >
+            <Button onClick={handleCertify} disabled={!signature || certify.isPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certify.isPending ? "Certifying…" : "Certify Scorecard"}
             </Button>

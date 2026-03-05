@@ -252,10 +252,12 @@ export type Database = {
           id: string
           name: string
           rules_url: string | null
+          slug: string
           social_links: Json
           start_date: string | null
           status: string
           updated_at: string
+          voting_enabled: boolean
         }
         Insert: {
           banner_url?: string | null
@@ -266,10 +268,12 @@ export type Database = {
           id?: string
           name: string
           rules_url?: string | null
+          slug: string
           social_links?: Json
           start_date?: string | null
           status?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Update: {
           banner_url?: string | null
@@ -280,10 +284,12 @@ export type Database = {
           id?: string
           name?: string
           rules_url?: string | null
+          slug?: string
           social_links?: Json
           start_date?: string | null
           status?: string
           updated_at?: string
+          voting_enabled?: boolean
         }
         Relationships: []
       }
@@ -310,6 +316,7 @@ export type Database = {
           rules_acknowledged: boolean
           rules_acknowledged_at: string | null
           social_handles: Json | null
+          sort_order: number
           status: string
           sub_event_id: string | null
           updated_at: string
@@ -337,6 +344,7 @@ export type Database = {
           rules_acknowledged?: boolean
           rules_acknowledged_at?: string | null
           social_handles?: Json | null
+          sort_order?: number
           status?: string
           sub_event_id?: string | null
           updated_at?: string
@@ -364,6 +372,7 @@ export type Database = {
           rules_acknowledged?: boolean
           rules_acknowledged_at?: string | null
           social_handles?: Json | null
+          sort_order?: number
           status?: string
           sub_event_id?: string | null
           updated_at?: string
@@ -554,6 +563,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      performance_slots: {
+        Row: {
+          contestant_registration_id: string | null
+          created_at: string
+          end_time: string
+          id: string
+          is_booked: boolean
+          slot_index: number
+          start_time: string
+          sub_event_id: string
+          updated_at: string
+        }
+        Insert: {
+          contestant_registration_id?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          is_booked?: boolean
+          slot_index?: number
+          start_time: string
+          sub_event_id: string
+          updated_at?: string
+        }
+        Update: {
+          contestant_registration_id?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_booked?: boolean
+          slot_index?: number
+          start_time?: string
+          sub_event_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_slots_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_slots_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

@@ -1,31 +1,68 @@
 import { ReactNode, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
+<<<<<<< HEAD
 import { LogOut, User, Shield } from "lucide-react";
+=======
+import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X, Settings } from "lucide-react";
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { mainNavItems } from "@/lib/navigation";
 
 export function AppLayout({ children }: { children: ReactNode }) {
+<<<<<<< HEAD
   const { user, signOut, roles, hasRole } = useAuth();
+=======
+  const { user, signOut, roles, masquerade, stopMasquerade, isMasquerading } = useAuth();
+  const { brightness, contrast } = useTheme();
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
   const navigate = useNavigate();
   const location = useLocation();
+  const needsFilter = brightness !== 100 || contrast !== 100;
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
+<<<<<<< HEAD
   const visibleNavItems = useMemo(() => {
     return mainNavItems.filter(item => {
       if (!item.roles) return true;
       return item.roles.some(role => roles.includes(role));
     });
   }, [roles]);
+=======
+  const isJudgeRole = roles.includes("judge") || roles.includes("chief_judge");
+
+  const bottomNavItems = [
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ...(roles.includes("tabulator") || roles.includes("witness") ? [{ path: "/tabulator", label: "Tabulator", icon: ClipboardList }] : []),
+    ...(!isJudgeRole ? [{ path: "/competitions", label: "Events", icon: Trophy }] : []),
+    { path: "/settings", label: "Settings", icon: Settings },
+  ];
+>>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
   return (
-    <div className="auditorium-filter min-h-screen bg-background">
+    <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen bg-background`}>
+      {/* Masquerade banner */}
+      {isMasquerading && masquerade && (
+        <div className="sticky top-0 z-[60] bg-destructive/90 text-destructive-foreground px-4 py-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            <span className="font-mono text-xs">
+              Viewing as <strong>{masquerade.fullName || masquerade.email}</strong>
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" className="h-7 text-destructive-foreground hover:bg-destructive-foreground/20" onClick={stopMasquerade}>
+            <X className="h-3 w-3 mr-1" /> Exit
+          </Button>
+        </div>
+      )}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
@@ -49,7 +86,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Shield className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/profile")} title="My Profile">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings">
               <User className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out">
@@ -59,6 +96,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
+        <PageBreadcrumbs />
         {children}
       </main>
 

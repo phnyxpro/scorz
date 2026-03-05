@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
@@ -19,6 +20,8 @@ const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 
 export default function Results() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const { hasRole } = useAuth();
+  const canExport = hasRole("admin") || hasRole("organizer");
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
@@ -43,7 +46,15 @@ export default function Results() {
     (tabCert?.is_certified ?? false) &&
     (witnessCert?.is_certified ?? false);
 
-  const rubricNames = useMemo(() => rubric?.map((r) => r.name) ?? [], [rubric]);
+  // Rubric sorted by sort_order to match numeric indices in criterion_scores
+  const sortedRubric = useMemo(() => [...(rubric ?? [])].sort((a, b) => a.sort_order - b.sort_order), [rubric]);
+  const rubricNames = useMemo(() => sortedRubric.map((r) => r.name), [sortedRubric]);
+  // Map from numeric index ("0","1",...) to rubric name
+  const indexToName = useMemo(() => {
+    const map: Record<string, string> = {};
+    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    return map;
+  }, [sortedRubric]);
 
   const contestantName = (regId: string) =>
     registrations?.find((r) => r.id === regId)?.full_name ?? "Unknown";
@@ -69,7 +80,9 @@ export default function Results() {
         for (const s of certified) {
           const cs = s.criterion_scores as Record<string, number>;
           for (const [k, v] of Object.entries(cs)) {
-            criterionAvgs[k] = (criterionAvgs[k] || 0) + v;
+            // Remap numeric index to rubric name
+            const name = indexToName[k] ?? k;
+            criterionAvgs[name] = (criterionAvgs[name] || 0) + v;
           }
         }
         for (const k of Object.keys(criterionAvgs)) {
@@ -88,7 +101,7 @@ export default function Results() {
       avgFinal: number;
       judgeCount: number;
     }[];
-  }, [allScores, allCertified, registrations]);
+  }, [allScores, allCertified, registrations, indexToName]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -104,17 +117,24 @@ export default function Results() {
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
         {allCertified && leaderboard.length > 0 && (
-          <PrintableResults
-            competitionName={comp?.name || ""}
-            subEventName={selectedSubEvent?.name || ""}
-            leaderboard={leaderboard}
-            rubricNames={rubricNames}
-            certificationDates={{
-              chiefJudge: chiefCert?.signed_at || undefined,
-              tabulator: tabCert?.signed_at || undefined,
-              witness: witnessCert?.signed_at || undefined,
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/competitions/${competitionId}/post-event`}>My Feedback</Link>
+            </Button>
+            {canExport && (
+              <PrintableResults
+                competitionName={comp?.name || ""}
+                subEventName={selectedSubEvent?.name || ""}
+                leaderboard={leaderboard}
+                rubricNames={rubricNames}
+                certificationDates={{
+                  chiefJudge: chiefCert?.signed_at || undefined,
+                  tabulator: tabCert?.signed_at || undefined,
+                  witness: witnessCert?.signed_at || undefined,
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
 

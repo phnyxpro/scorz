@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper
+  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
@@ -25,13 +25,15 @@ import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
 
-function usePublicCompetition(id: string | undefined) {
+function usePublicCompetition(slug: string | undefined) {
   return useQuery({
-    queryKey: ["public-competition", id],
-    enabled: !!id,
+    queryKey: ["public-competition", slug],
+    enabled: !!slug,
     queryFn: async () => {
-      const { data, error } = await supabase.from("competitions").select("*").eq("id", id!).single();
+      const query: any = supabase.from("competitions").select("*");
+      const { data, error } = await query.eq("slug", slug!).maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error("Not found");
       return data;
     },
   });
@@ -58,17 +60,35 @@ function usePublicLevelsWithSubEvents(compId: string | undefined) {
   });
 }
 
+function useLineup(subEventIds: string[]) {
+  return useQuery({
+    queryKey: ["public-lineup", subEventIds],
+    enabled: subEventIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contestant_registrations")
+        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
+        .in("sub_event_id", subEventIds)
+        .eq("status", "approved")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export default function PublicEventDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "schedule";
 
   const { data: comp, isLoading } = usePublicCompetition(id);
-  const { data: levels } = usePublicLevelsWithSubEvents(id);
-  const { data: sponsors } = useCompetitionSponsors(id);
-  const { data: updates } = useCompetitionUpdates(id);
-  const { data: criteria } = useRubricCriteria(id);
-  const { data: penalties } = usePenaltyRules(id);
+  const compId = comp?.id;
+  const { data: levels } = usePublicLevelsWithSubEvents(compId);
+  const { data: sponsors } = useCompetitionSponsors(compId);
+  const { data: updates } = useCompetitionUpdates(compId);
+  const { data: criteria } = useRubricCriteria(compId);
+  const { data: penalties } = usePenaltyRules(compId);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -159,11 +179,19 @@ export default function PublicEventDetail() {
               <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
                 <Award className="h-4 w-4" /> Judges
               </TabsTrigger>
-              <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
-                <Heart className="h-4 w-4" /> Voting
+              {(comp as any).voting_enabled && (
+                <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
+                  <Heart className="h-4 w-4" /> Voting
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-2 px-6">
+                <ListOrdered className="h-4 w-4" /> Lineup
               </TabsTrigger>
               <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-2 px-6">
-                <Info className="h-4 w-4" /> Rules
+                <FileText className="h-4 w-4" /> Rules
+              </TabsTrigger>
+              <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-2 px-6">
+                <Info className="h-4 w-4" /> Rubric
               </TabsTrigger>
             </TabsList>
           </div>
@@ -180,8 +208,8 @@ export default function PublicEventDetail() {
 
                 {comp.status === "active" && (
                   <Button size="lg" className="w-full sm:w-auto" onClick={() => {
-                    if (user) navigate(`/competitions/${id}/register`);
-                    else navigate(`/auth?redirect=/competitions/${id}/register`);
+                    if (user) navigate(`/competitions/${compId}/register`);
+                    else navigate(`/auth?redirect=/competitions/${compId}/register`);
                   }}>
                     <UserPlus className="h-4 w-4 mr-2" /> Register as Contestant
                   </Button>
@@ -258,25 +286,32 @@ export default function PublicEventDetail() {
               </div>
             </TabsContent>
 
-            {/* Voting Tab */}
-            <TabsContent value="voting" className="space-y-6 text-center py-12">
-              <div className="max-w-md mx-auto space-y-4">
-                <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-                <p className="text-muted-foreground">
-                  Supporters can vote for their favorite contestants across all events.
-                  Every vote helps promote their artistic journey!
-                </p>
-                <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${id}/vote`)}>
-                  <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
-                </Button>
-              </div>
+            {/* Voting Tab (conditional) */}
+            {(comp as any).voting_enabled && (
+              <TabsContent value="voting" className="space-y-6 text-center py-12">
+                <div className="max-w-md mx-auto space-y-4">
+                  <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
+                  <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
+                  <p className="text-muted-foreground">
+                    Supporters can vote for their favorite contestants across all events.
+                    Every vote helps promote their artistic journey!
+                  </p>
+                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${compId}/vote`)}>
+                    <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
+                  </Button>
+                </div>
+              </TabsContent>
+            )}
+
+            {/* Live Lineup Tab */}
+            <TabsContent value="lineup">
+              <LiveLineup allSubEventIds={allSubEventIds} levels={levels} />
             </TabsContent>
 
-            {/* Rules & Rubric Tab */}
+            {/* Rules Tab */}
             <TabsContent value="rules">
               <div className="max-w-4xl mx-auto space-y-8">
-                {rulesUrl && (
+                {rulesUrl ? (
                   <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex gap-4 items-center">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -293,8 +328,15 @@ export default function PublicEventDetail() {
                       </a>
                     </Button>
                   </Card>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic text-center py-8">No official rules document has been published yet.</p>
                 )}
+              </div>
+            </TabsContent>
 
+            {/* Rubric Tab */}
+            <TabsContent value="rubric">
+              <div className="max-w-4xl mx-auto">
                 <PublicRubric criteria={criteria || []} penalties={penalties || []} />
               </div>
             </TabsContent>
@@ -332,6 +374,67 @@ export default function PublicEventDetail() {
           @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
       </footer>
+    </div>
+  );
+}
+
+function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
+  const { data: lineup } = useLineup(allSubEventIds);
+
+  if (!lineup || lineup.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-12">
+        <ListOrdered className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No lineup published yet.</p>
+      </div>
+    );
+  }
+
+  // Group by sub-event
+  const grouped: Record<string, typeof lineup> = {};
+  lineup.forEach(c => {
+    const key = c.sub_event_id || "unassigned";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(c);
+  });
+
+  const subEventName = (seId: string) => {
+    for (const l of levels || []) {
+      const se = l.sub_events?.find((s: any) => s.id === seId);
+      if (se) return `${l.name} — ${se.name}`;
+    }
+    return "Event";
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {Object.entries(grouped).map(([seId, contestants]) => (
+        <Card key={seId} className="border-border/50 bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{subEventName(seId)}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {contestants.map((c, idx) => (
+                <div key={c.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
+                  <span className="text-lg font-bold font-mono text-muted-foreground w-8 text-center">{idx + 1}</span>
+                  {c.profile_photo_url ? (
+                    <img src={c.profile_photo_url} alt={c.full_name} className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{c.full_name}</p>
+                    <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

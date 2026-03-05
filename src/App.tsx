@@ -8,10 +8,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
+import PublicEvents from "./pages/PublicEvents";
 import PublicEventDetail from "./pages/PublicEventDetail";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Competitions from "./pages/Competitions";
+import CompetitionContestants from "./pages/CompetitionContestants";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import ContestantRegistration from "./pages/ContestantRegistration";
 import JudgeScoring from "./pages/JudgeScoring";
@@ -20,6 +22,7 @@ import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
 import TabulatorDashboard from "./pages/TabulatorDashboard";
 import WitnessDashboard from "./pages/WitnessDashboard";
 import Results from "./pages/Results";
+import PostEventPortal from "./pages/PostEventPortal";
 import AudienceVoting from "./pages/AudienceVoting";
 import ContestantProfile from "./pages/ContestantProfile";
 import AdminPanel from "./pages/AdminPanel";
@@ -27,6 +30,9 @@ import MasterScoreSheet from "./pages/MasterScoreSheet";
 import LevelMasterSheet from "./pages/LevelMasterSheet";
 import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
+import Pricing from "./pages/Pricing";
+import RulesAndRubric from "./pages/RulesAndRubric";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -40,8 +46,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/public-events" element={<PublicEvents />} />
               <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route
                 path="/dashboard"
                 element={
@@ -153,6 +161,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/competitions/:id/post-event"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PostEventPortal />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/competitions/:id/vote"
                 element={
                   <ProtectedRoute>
@@ -168,6 +186,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ContestantProfile />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Settings />
                     </AppLayout>
                   </ProtectedRoute>
                 }
@@ -208,6 +236,46 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <LevelMasterSheet />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/rules-rubric"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RulesAndRubric />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/contestants"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CompetitionContestants />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chief-judge"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Competitions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tabulator"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Competitions />
                     </AppLayout>
                   </ProtectedRoute>
                 }

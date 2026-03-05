@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink } from "lucide-react";
+import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { PublicRubric } from "@/components/public/PublicRubric";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const statusColor: Record<string, string> = {
@@ -26,7 +31,7 @@ const statusColor: Record<string, string> = {
 export default function ContestantProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
 
   const profileUserId = userId || user?.id;
   const isOwnProfile = profileUserId === user?.id;
@@ -184,10 +189,11 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="history">Performance History</TabsTrigger>
-          <TabsTrigger value="scores">Score Details</TabsTrigger>
-          <TabsTrigger value="votes">People's Choice</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="scores">Scores</TabsTrigger>
+          <TabsTrigger value="votes">Votes</TabsTrigger>
+          <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
 
         {/* Performance History Tab */}
@@ -247,15 +253,17 @@ export default function ContestantProfile() {
 
         {/* Score Details Tab */}
         <TabsContent value="scores">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <Card className="border-border/50 bg-card/80">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Detailed Scores</CardTitle>
-                <CardDescription>Breakdown of scores received from each judge</CardDescription>
+                <CardDescription>Breakdown of scores received from each judge. Scores are visible after full event certification.</CardDescription>
               </CardHeader>
               <CardContent>
                 {(scores || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">No scores available yet.</p>
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No scores available yet. Scores will appear here after the event is fully certified by the chief judge.
+                  </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -300,6 +308,35 @@ export default function ContestantProfile() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Judge Feedback */}
+            {(scores || []).some((s) => s.comments && s.is_certified) && (
+              <Card className="border-border/50 bg-card/80">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Award className="h-4 w-4 text-secondary" /> Judge Feedback
+                  </CardTitle>
+                  <CardDescription>Comments from judges on your performances</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(scores || [])
+                    .filter((s) => s.comments && s.is_certified)
+                    .map((s) => {
+                      const reg = registrations?.find((r) => r.id === s.contestant_registration_id);
+                      const comp = reg ? compMap[reg.competition_id] : null;
+                      return (
+                        <div key={s.id} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground">{comp?.name || "Unknown"}</span>
+                            <span className="text-xs font-mono text-primary font-bold">{s.final_score} pts</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{s.comments}</p>
+                        </div>
+                      );
+                    })}
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </TabsContent>
 
@@ -357,7 +394,71 @@ export default function ContestantProfile() {
             </Card>
           </motion.div>
         </TabsContent>
+
+        {/* Rules & Rubric Tab */}
+        <TabsContent value="rubric">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {competitionIds.map((compId) => (
+              <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
+            ))}
+          </motion.div>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function CompetitionRubricSection({ competitionId, competitionName }: { competitionId: string; competitionName: string }) {
+  const { data: criteria } = useRubricCriteria(competitionId);
+  const { data: penalties } = usePenaltyRules(competitionId);
+  const { data: comp } = useQuery({
+    queryKey: ["competition-rules", competitionId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("competitions").select("rules_url, description").eq("id", competitionId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const rulesUrl = (comp as any)?.rules_url as string | undefined;
+  const description = (comp as any)?.description as string | undefined;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-bold font-mono">{competitionName}</h3>
+
+      {/* Official Rules */}
+      {(rulesUrl || description) && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <h4 className="text-base font-bold font-mono">Official Rules</h4>
+          </div>
+          {description && (
+            <Card className="border-border/50 bg-card/80">
+              <CardContent className="pt-4">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{description}</p>
+              </CardContent>
+            </Card>
+          )}
+          {rulesUrl && (
+            <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
+              <div className="flex gap-3 items-center">
+                <FileText className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">Competition Handbook</p>
+                  <p className="text-xs text-muted-foreground">Official rules document</p>
+                </div>
+              </div>
+              <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
+                <ExternalLink className="h-3.5 w-3.5" /> View
+              </a>
+            </Card>
+          )}
+        </section>
+      )}
+
+      <PublicRubric criteria={criteria || []} penalties={penalties || []} />
     </div>
   );
 }
