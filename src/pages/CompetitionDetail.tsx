@@ -258,6 +258,15 @@ export default function CompetitionDetail() {
                 ))}
               </div>
 
+              {/* People's Choice Visibility Toggle */}
+              <div className="flex items-center justify-between rounded-md border border-border/50 p-3">
+                <div>
+                  <Label htmlFor="pc-toggle" className="text-sm font-medium">Show People's Choice to Contestants</Label>
+                  <p className="text-xs text-muted-foreground">Allow contestants to see their audience vote counts on the feedback page</p>
+                </div>
+                <Switch id="pc-toggle" checked={showPeoplesChoice} onCheckedChange={setShowPeoplesChoice} />
+              </div>
+
               <Button onClick={handleSave} disabled={update.isPending}>
                 {update.isPending ? "Saving…" : "Save Changes"}
               </Button>
