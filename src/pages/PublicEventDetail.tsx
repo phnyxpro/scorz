@@ -24,6 +24,7 @@ import { PublicRoleList } from "@/components/public/PublicRoleList";
 import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
+import { PublicVotingForm } from "@/components/public/PublicVotingForm";
 
 function usePublicCompetition(slug: string | undefined) {
   return useQuery({

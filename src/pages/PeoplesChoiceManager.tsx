@@ -12,6 +12,9 @@ import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { Mic, Vote, Users, TrendingUp, ChevronDown, BarChart3, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 // Fetch all sub-events for a competition across all levels
 function useCompetitionSubEvents(competitionId: string | undefined) {
