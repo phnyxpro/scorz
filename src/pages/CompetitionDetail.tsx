@@ -15,6 +15,7 @@ import { SponsorsManager } from "@/components/competition/SponsorsManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
+import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
@@ -69,6 +70,8 @@ export default function CompetitionDetail() {
   
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
+  const [rulesContent, setRulesContent] = useState("");
+  const [rubricContent, setRubricContent] = useState("");
 
   // Scanning state
   const [scanningRules, setScanningRules] = useState(false);
@@ -88,6 +91,8 @@ export default function CompetitionDetail() {
       
       setRulesDocumentUrl((comp as any).rules_document_url || "");
       setRubricDocumentUrl((comp as any).rubric_document_url || "");
+      setRulesContent((comp as any).rules_content || "");
+      setRubricContent((comp as any).rubric_content || "");
       setShowPeoplesChoice((comp as any).show_peoples_choice_to_contestants || false);
     }
   }, [comp]);
@@ -95,7 +100,7 @@ export default function CompetitionDetail() {
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null, show_peoples_choice_to_contestants: showPeoplesChoice } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null, rules_content: rulesContent || null, rubric_content: rubricContent || null, show_peoples_choice_to_contestants: showPeoplesChoice } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
@@ -113,11 +118,13 @@ export default function CompetitionDetail() {
 
       if (type === "rules") {
         await supabase.from("competitions").update({ rules_content: data.content } as any).eq("id", id);
+        setRulesContent(data.content);
         qc.invalidateQueries({ queryKey: ["competition", id] });
-        toast({ title: "Rules scanned", description: "Document content has been extracted and saved." });
+        toast({ title: "Rules scanned", description: "Document content extracted into the editor." });
       } else {
         // Save raw text
         await supabase.from("competitions").update({ rubric_content: data.raw_text } as any).eq("id", id);
+        setRubricContent(data.raw_text);
         qc.invalidateQueries({ queryKey: ["competition", id] });
 
         if (data.criteria && data.criteria.length > 0) {
@@ -300,13 +307,15 @@ export default function CompetitionDetail() {
                 onRemoved={() => setRulesDocumentUrl("")}
               />
 
-              {/* Extracted content preview */}
-              {(comp as any)?.rules_content && (
-                <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
-                  <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
-                  <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rules_content}</p>
-                </div>
-              )}
+              {/* Rich text editor for rules content */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rules Content</label>
+                <RichTextEditor
+                  content={rulesContent}
+                  onChange={setRulesContent}
+                  placeholder="Scan a document or type rules content here..."
+                />
+              </div>
 
               <div className="flex gap-2">
                 <Button onClick={handleSave} disabled={update.isPending}>
@@ -346,13 +355,15 @@ export default function CompetitionDetail() {
                   onRemoved={() => setRubricDocumentUrl("")}
                 />
 
-                {/* Extracted content preview */}
-                {(comp as any)?.rubric_content && (
-                  <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
-                    <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
-                    <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rubric_content}</p>
-                  </div>
-                )}
+              {/* Rich text editor for rubric content */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rubric Content</label>
+                <RichTextEditor
+                  content={rubricContent}
+                  onChange={setRubricContent}
+                  placeholder="Scan a document or type rubric content here..."
+                />
+              </div>
 
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={update.isPending}>
