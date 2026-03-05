@@ -210,8 +210,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
-            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-secondary" },
-            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-accent" },
+            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-primary" },
+            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-primary" },
             { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
           ].map((s) => (
             <Card key={s.label} className="border-border/50 bg-card/80">
