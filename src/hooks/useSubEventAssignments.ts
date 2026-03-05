@@ -44,7 +44,7 @@ export function useAssignableUsers() {
       const { data: roles, error: rolesErr } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["judge", "chief_judge", "tabulator", "witness"]);
+        .in("role", ["judge", "tabulator", "witness"]);
       if (rolesErr) throw rolesErr;
 
       const userIds = [...new Set((roles || []).map((r) => r.user_id))];
