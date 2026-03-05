@@ -171,7 +171,7 @@ export default function TicketsHub() {
   const selectedSe = selectedTicket ? subEventMap[selectedTicket.sub_event_id] : null;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Tickets</h1>
 
       <Select value={selectedCompetitionId} onValueChange={setSelectedCompetitionId}>
