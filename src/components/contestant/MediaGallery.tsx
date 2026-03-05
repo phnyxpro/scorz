@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,6 +35,8 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState<MediaFile | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragCounter = useRef(0);
 
   const { data: files, isLoading } = useQuery({
     queryKey: ["contestant-media", userId],
@@ -61,13 +63,13 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
     },
   });
 
-  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles || selectedFiles.length === 0) return;
+  const uploadFiles = useCallback(async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      for (const file of Array.from(selectedFiles)) {
+      for (const file of files) {
         const ext = file.name.split(".").pop()?.toLowerCase() || "";
         const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const path = `${userId}/${safeName}`;
@@ -78,15 +80,46 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
 
         if (error) throw error;
       }
-      toast({ title: "Upload complete", description: `${selectedFiles.length} file(s) uploaded.` });
+      toast({ title: "Upload complete", description: `${files.length} file(s) uploaded.` });
       queryClient.invalidateQueries({ queryKey: ["contestant-media", userId] });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }, [userId, queryClient]);
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) uploadFiles(e.target.files);
+    e.target.value = "";
+  }, [uploadFiles]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    setDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files) uploadFiles(e.dataTransfer.files);
+  }, [uploadFiles]);
 
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
@@ -109,8 +142,24 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
   const videos = (files || []).filter(f => f.type === "video");
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-      <Card className="border-border/50 bg-card/80">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-4"
+      onDragEnter={isOwnProfile ? handleDragEnter : undefined}
+      onDragLeave={isOwnProfile ? handleDragLeave : undefined}
+      onDragOver={isOwnProfile ? handleDragOver : undefined}
+      onDrop={isOwnProfile ? handleDrop : undefined}
+    >
+      <Card className={`border-border/50 bg-card/80 relative transition-colors ${dragging ? "border-primary ring-2 ring-primary/20" : ""}`}>
+        {dragging && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-primary/10 backdrop-blur-sm rounded-lg border-2 border-dashed border-primary pointer-events-none">
+            <div className="text-center">
+              <ImagePlus className="h-10 w-10 text-primary mx-auto mb-2" />
+              <p className="text-sm font-medium text-primary">Drop files to upload</p>
+            </div>
+          </div>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
