@@ -23,7 +23,45 @@ export default function TicketsHub() {
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketRow | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
   const { data: competitions } = useCompetitions();
+
+  const sendTicketEmail = useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { data, error } = await supabase.functions.invoke("send-ticket-email", {
+        body: { ticket_id: ticketId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Ticket sent!", description: "Email with ticket and QR code has been sent." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSendAll = async () => {
+    if (!filtered.length) return;
+    setSendingAll(true);
+    let sent = 0;
+    let failed = 0;
+    for (const t of filtered) {
+      try {
+        await supabase.functions.invoke("send-ticket-email", { body: { ticket_id: t.id } });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+    setSendingAll(false);
+    toast({
+      title: "Bulk send complete",
+      description: `${sent} sent, ${failed} failed out of ${filtered.length} tickets.`,
+    });
+  };
 
   // Fetch sub-events with price info
   const { data: subEvents } = useQuery({
