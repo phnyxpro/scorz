@@ -49,7 +49,7 @@ export default function Competitions() {
   const isJudge = hasRole("judge") || hasRole("chief_judge");
   const isChiefJudge = hasRole("chief_judge");
   const isTabulator = hasRole("tabulator");
-  const isWitness = hasRole("witness");
+  
 
   const [open, setOpen] = useState(false);
 
