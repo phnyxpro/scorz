@@ -165,16 +165,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/competitions/:id/witness"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <WitnessDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/competitions/:id/results"
                 element={
                   <ProtectedRoute>
