@@ -143,7 +143,11 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   return (
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
-        <CardTitle className="text-base">Levels & Sub-Events</CardTitle>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Levels & Sub-Events</CardTitle>
+        </div>
+        <CardDescription>Organize your competition into levels (e.g. Auditions, Finals) and add sub-events with schedules.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
