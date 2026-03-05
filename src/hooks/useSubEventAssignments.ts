@@ -36,6 +36,34 @@ export function useSubEventAssignments(subEventId: string | undefined) {
   });
 }
 
+/** Fetch sub-events the current user is assigned to, optionally filtered by role(s) and is_chief */
+export function useMyAssignedSubEvents(role?: string | string[], options?: { isChief?: boolean }) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_assigned_sub_events", user?.id, role, options?.isChief],
+    enabled: !!user,
+    queryFn: async () => {
+      let query = supabase
+        .from("sub_event_assignments")
+        .select("*")
+        .eq("user_id", user!.id);
+      if (role) {
+        if (Array.isArray(role)) {
+          query = query.in("role", role as any);
+        } else {
+          query = query.eq("role", role as any);
+        }
+      }
+      if (options?.isChief !== undefined) {
+        query = query.eq("is_chief" as any, options.isChief);
+      }
+      const { data, error } = await query.order("created_at");
+      if (error) throw error;
+      return data as unknown as SubEventAssignment[];
+    },
+  });
+}
+
 /** Fetch all users who have assignable roles (judge, tabulator, witness) */
 export function useAssignableUsers() {
   return useQuery({
