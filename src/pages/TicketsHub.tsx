@@ -7,13 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Ticket, Users, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Calendar, MapPin } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
+import type { Tables } from "@/integrations/supabase/types";
+
+type TicketRow = Tables<"event_tickets">;
 
 export default function TicketsHub() {
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState<TicketRow | null>(null);
   const { data: competitions } = useCompetitions();
 
   // Fetch sub-events with price info
@@ -82,6 +88,8 @@ export default function TicketsHub() {
         (t.phone?.toLowerCase().includes(q))
     );
   }, [tickets, searchQuery]);
+
+  const selectedSe = selectedTicket ? subEventMap[selectedTicket.sub_event_id] : null;
 
   return (
     <div className="space-y-6">
@@ -161,7 +169,11 @@ export default function TicketsHub() {
                   {filtered.map((t) => {
                     const se = subEventMap[t.sub_event_id];
                     return (
-                      <TableRow key={t.id}>
+                      <TableRow
+                        key={t.id}
+                        className="cursor-pointer"
+                        onClick={() => setSelectedTicket(t)}
+                      >
                         <TableCell>
                           <QRCodeSVG value={t.ticket_number} size={40} />
                         </TableCell>
@@ -196,6 +208,107 @@ export default function TicketsHub() {
           </Card>
         </>
       )}
+
+      {/* Ticket Detail Sheet */}
+      <Sheet open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
+        <SheetContent className="sm:max-w-md overflow-y-auto">
+          {selectedTicket && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Ticket Details</SheetTitle>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-6">
+                {/* QR Code */}
+                <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-muted/50">
+                  <QRCodeSVG value={selectedTicket.ticket_number} size={180} />
+                  <p className="font-mono text-sm font-semibold tracking-wider">{selectedTicket.ticket_number}</p>
+                </div>
+
+                {/* Status */}
+                <div className="flex justify-center">
+                  {selectedTicket.is_checked_in ? (
+                    <Badge className="bg-green-600 text-white text-sm px-4 py-1">Checked In</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-sm px-4 py-1">Pending</Badge>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Purchaser Info */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Purchaser</h3>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold">{selectedTicket.full_name}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{selectedTicket.email}</span>
+                    </div>
+                    {selectedTicket.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{selectedTicket.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Event & Ticket Info */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Event & Ticket</h3>
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Sub-Event</p>
+                      <p className="font-medium">{selectedSe?.name ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Ticket Type</p>
+                      <p className="font-medium capitalize">{selectedTicket.ticket_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Price</p>
+                      <p className="font-medium">${(selectedSe?.ticket_price ?? 0).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Purchased</p>
+                      <p className="font-medium">{format(new Date(selectedTicket.created_at), "MMM d, yyyy h:mm a")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Check-In History */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Check-In History</h3>
+                  {selectedTicket.is_checked_in && selectedTicket.checked_in_at ? (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium text-green-800 dark:text-green-200">Checked in</p>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          {format(new Date(selectedTicket.checked_in_at), "EEEE, MMM d, yyyy 'at' h:mm:ss a")}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                      <Clock className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium">Not yet checked in</p>
+                        <p className="text-sm text-muted-foreground">Patron has not arrived or been scanned.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
