@@ -11,7 +11,7 @@ import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
-import { UpdatesManager } from "@/components/competition/UpdatesManager";
+
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { StaffInvitationForm } from "@/components/admin/StaffInvitationForm";
