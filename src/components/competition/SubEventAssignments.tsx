@@ -36,6 +36,7 @@ export function SubEventAssignments({ competitionId }: Props) {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedResponsibility, setSelectedResponsibility] = useState("");
+  const [isChief, setIsChief] = useState(false);
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
