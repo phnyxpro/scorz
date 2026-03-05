@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Trophy, ClipboardList, User, Shield, Mic, Users,
     BarChart3, Eye, CreditCard, BookOpen, ShieldCheck, Calendar,
-    DollarSign, FileText, ListChecks, Settings, TicketCheck
+    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -60,6 +60,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
     { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-secondary", to: "/tickets-hub", roles: ["organizer", "admin"] },
     { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-primary", to: "/check-in", roles: ["organizer", "admin"] },
+    { title: "News & Updates", desc: "Post updates for your events", icon: Newspaper, color: "text-primary", to: "/updates", roles: ["organizer", "admin"] },
 
     // Tabulator / Witness
     { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator"] },
