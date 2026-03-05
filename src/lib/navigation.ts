@@ -62,5 +62,5 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
 
     // Contestant / Audience Fallbacks
     { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/audience-events", roles: ["contestant", "audience"] },
-    { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-secondary", to: "/my-tickets", roles: ["audience"] },
+    { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-secondary", to: "/my-tickets", roles: ["audience", "contestant"] },
 ];
