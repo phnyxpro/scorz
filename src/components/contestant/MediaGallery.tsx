@@ -35,6 +35,8 @@ export function ContestantMediaGallery({ userId, isOwnProfile }: ContestantMedia
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState<MediaFile | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragCounter = useRef(0);
 
   const { data: files, isLoading } = useQuery({
     queryKey: ["contestant-media", userId],
