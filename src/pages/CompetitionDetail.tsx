@@ -65,6 +65,7 @@ export default function CompetitionDetail() {
   const [status, setStatus] = useState("draft");
   const [rulesUrl, setRulesUrl] = useState("");
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
+  const [showPeoplesChoice, setShowPeoplesChoice] = useState(false);
   
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
@@ -87,13 +88,14 @@ export default function CompetitionDetail() {
       
       setRulesDocumentUrl((comp as any).rules_document_url || "");
       setRubricDocumentUrl((comp as any).rubric_document_url || "");
+      setShowPeoplesChoice((comp as any).show_peoples_choice_to_contestants || false);
     }
   }, [comp]);
 
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null, show_peoples_choice_to_contestants: showPeoplesChoice } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
@@ -254,6 +256,15 @@ export default function CompetitionDetail() {
                     onChange={e => updateSocial(platform, e.target.value)}
                   />
                 ))}
+              </div>
+
+              {/* People's Choice Visibility Toggle */}
+              <div className="flex items-center justify-between rounded-md border border-border/50 p-3">
+                <div>
+                  <Label htmlFor="pc-toggle" className="text-sm font-medium">Show People's Choice to Contestants</Label>
+                  <p className="text-xs text-muted-foreground">Allow contestants to see their audience vote counts on the feedback page</p>
+                </div>
+                <Switch id="pc-toggle" checked={showPeoplesChoice} onCheckedChange={setShowPeoplesChoice} />
               </div>
 
               <Button onClick={handleSave} disabled={update.isPending}>

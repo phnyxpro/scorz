@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Trophy, ClipboardList, User, Shield, Mic, Users,
     BarChart3, Eye, CreditCard, BookOpen, ShieldCheck, Calendar,
-    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper
+    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper, MessageSquare
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -68,4 +68,5 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     // Contestant / Audience Fallbacks
     { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-secondary", to: "/audience-events", roles: ["contestant", "audience"] },
     { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-accent", to: "/my-tickets", roles: ["audience", "contestant"] },
+    { title: "Feedback", desc: "View judge & audience feedback", icon: MessageSquare, color: "text-secondary", to: "/feedback", roles: ["contestant"] },
 ];

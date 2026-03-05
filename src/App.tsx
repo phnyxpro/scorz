@@ -48,7 +48,7 @@ import ResultsHub from "./pages/ResultsHub";
 import CheckInHub from "./pages/CheckInHub";
 import TicketsHub from "./pages/TicketsHub";
 import UpdatesHub from "./pages/UpdatesHub";
-
+import ContestantFeedback from "./pages/ContestantFeedback";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -431,6 +431,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <CheckInHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/feedback"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantFeedback />
                     </AppLayout>
                   </ProtectedRoute>
                 }

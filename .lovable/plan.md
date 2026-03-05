@@ -1,49 +1,47 @@
 
 
-## Plan: Contestant Feedback Dashboard Card & Page
+## Fix Blank Rendering in Browser Automation
 
-### What We're Building
-A new "Feedback" dashboard action card for contestants that links to a dedicated `/feedback` page. On that page, the contestant selects a competition, then sees:
-1. **Judge Feedback** -- comments and scores from judges (only for certified sub-events, per existing RLS)
-2. **People's Choice** -- vote counts, with a toggle (controlled by organizer/admin) to show or hide this data from the contestant
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Database Change
-Add a `show_peoples_choice_to_contestants` boolean column to the `competitions` table (default `false`). Organizers toggle this on/off from the competition settings page.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**Migration:**
-```sql
-ALTER TABLE competitions ADD COLUMN show_peoples_choice_to_contestants boolean NOT NULL DEFAULT false;
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+
+---
+
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-### Files to Create
+This ensures no filter is applied when properties are unset, which is the default state.
 
-**`src/pages/ContestantFeedback.tsx`** -- New page:
-- Fetches the contestant's registrations (reuses `useContestantRegistrations`)
-- Competition selector dropdown (filters to competitions they're registered in)
-- Once selected, fetches:
-  - Judge scores for their registration IDs in that competition (reuses `useContestantScores` pattern, filtered to certified only)
-  - Rubric criteria names for the competition
-  - People's Choice vote counts (reuses `useContestantVotes` pattern)
-  - The competition's `show_peoples_choice_to_contestants` flag
-- Renders judge feedback as cards showing: judge comments, criterion scores, final score
-- Renders People's Choice section with vote count, only visible when the competition toggle is `true`
+---
 
-### Files to Modify
+### Summary
 
-1. **`src/lib/navigation.ts`** -- Add a dashboard card:
-   ```
-   { title: "Feedback", desc: "View judge & audience feedback", icon: MessageSquare, color: "text-secondary", to: "/feedback", roles: ["contestant"] }
-   ```
-
-2. **`src/App.tsx`** -- Add route `/feedback` pointing to `ContestantFeedback`
-
-3. **`src/pages/CompetitionDetail.tsx`** -- Add a toggle in the competition settings for "Show People's Choice votes to contestants" that updates `show_peoples_choice_to_contestants`
-
-### UI Layout (Feedback Page)
-
-- Header with back button + "My Feedback" title
-- Competition selector (Select dropdown)
-- Two sections below:
-  - **Judge Scores & Comments** -- table/cards showing each judge's scores per criterion, comments, and final score (only certified scores visible per RLS)
-  - **People's Choice** -- vote count badge, shown only when toggle is on; otherwise a message "People's Choice results are not yet available"
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

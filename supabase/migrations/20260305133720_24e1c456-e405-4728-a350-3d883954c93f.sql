@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions ADD COLUMN show_peoples_choice_to_contestants boolean NOT NULL DEFAULT false;

@@ -256,6 +256,7 @@ export type Database = {
           rules_content: string | null
           rules_document_url: string | null
           rules_url: string | null
+          show_peoples_choice_to_contestants: boolean
           slug: string
           social_links: Json
           start_date: string | null
@@ -276,6 +277,7 @@ export type Database = {
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
+          show_peoples_choice_to_contestants?: boolean
           slug: string
           social_links?: Json
           start_date?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
+          show_peoples_choice_to_contestants?: boolean
           slug?: string
           social_links?: Json
           start_date?: string | null
