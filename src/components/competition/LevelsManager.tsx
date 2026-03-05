@@ -110,7 +110,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Sub-Event</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Sub-Event" : "Add Sub-Event"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
