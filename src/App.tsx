@@ -221,6 +221,7 @@ const App = () => (
                     </AppLayout>
                   </ProtectedRoute>
                 }
+              />
               <Route
                 path="/profile/:userId"
                 element={
