@@ -66,7 +66,7 @@ export default function RulesAndRubric() {
             {rulesContent && (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4">
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{rulesContent}</p>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rulesContent }} />
                 </CardContent>
               </Card>
             )}
