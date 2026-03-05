@@ -47,6 +47,7 @@ import ContestantProfilesHub from "./pages/ContestantProfilesHub";
 import ResultsHub from "./pages/ResultsHub";
 import CheckInHub from "./pages/CheckInHub";
 import TicketsHub from "./pages/TicketsHub";
+import UpdatesHub from "./pages/UpdatesHub";
 
 const queryClient = new QueryClient();
 
