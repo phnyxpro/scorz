@@ -13,6 +13,7 @@ import { SubEventAssignments } from "@/components/competition/SubEventAssignment
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { BannerUpload } from "@/components/shared/BannerUpload";
+import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { StaffInvitationForm } from "@/components/admin/StaffInvitationForm";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
