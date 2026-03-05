@@ -3,7 +3,7 @@ import { usePenaltyRules, useCreatePenaltyRule, useDeletePenaltyRule } from "@/h
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Timer } from "lucide-react";
+import { Plus, Trash2, Timer, ShieldAlert } from "lucide-react";
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
