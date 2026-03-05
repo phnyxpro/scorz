@@ -1,47 +1,40 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Embed Judging Hub as Tabulator Dashboard Content
 
-The app appears blank in headless browser testing due to two compounding issues:
+### What Changes
+When a user with the `tabulator` role lands on the Dashboard, instead of showing quick-stats cards and action cards, they see the full **Judging Hub** content inline (competition selector, levels, sub-events, contestant score breakdowns). A link to the **Tabulator Dashboard** (`/tabulator`) is placed in the top-right header area.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Files to Modify
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**`src/pages/Dashboard.tsx`**
+1. Import `JudgingHub` component (lazy or direct) and detect `isTabulator` role
+2. For tabulators:
+   - Hide the quick-stats section (`stats.length > 0` block)
+   - Hide the action cards grid
+   - Add a "Tabulator Dashboard" link button in the top-right of the header (next to the welcome text)
+   - Render the `JudgingHub` component inline as the main content
+3. Non-tabulator users remain unchanged
 
----
+**`src/pages/JudgingHub.tsx`**
+- Export the `useJudgingOverview` hook and the inner content as a named export (e.g. `JudgingHubContent`) so Dashboard can embed it without duplicating code
+- The default export stays as-is for the standalone `/judging` route
 
-### Fix 1: Conditionally apply auditorium filter
+### Layout for Tabulators
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+```text
+┌─────────────────────────────────────────────┐
+│ Dashboard                    [Tab Dashboard] │
+│ Welcome back, ...                            │
+├─────────────────────────────────────────────┤
+│                                              │
+│  ┌─ Judging Hub Content ──────────────────┐  │
+│  │ Competition search + table             │  │
+│  │ Level tabs → sub-events → contestants  │  │
+│  │ Expandable side-by-side scores         │  │
+│  └────────────────────────────────────────┘  │
+└─────────────────────────────────────────────┘
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+No database changes required.
 
