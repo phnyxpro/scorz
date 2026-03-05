@@ -153,7 +153,7 @@ export default function AudienceVoting() {
           )}
 
           {/* Voting form or confirmation */}
-          {hasVoted ? (
+          {votingOpen && (hasVoted ? (
             <Card className="border-secondary/30 bg-secondary/10">
               <CardContent className="flex flex-col items-center py-8">
                 <CheckCircle className="h-10 w-10 text-secondary mb-3" />
@@ -209,9 +209,10 @@ export default function AudienceVoting() {
                 </Button>
               </CardContent>
             </Card>
-          )}
+          ))}
         </motion.div>
-      )}
+        );
+      })()}
     </div>
   );
 }
