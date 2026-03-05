@@ -106,7 +106,26 @@ export default function TicketsHub() {
     },
   });
 
-  // Stats
+  // Realtime subscription for live ticket updates
+  useEffect(() => {
+    if (!subEventIds.length) return;
+    const channel = supabase
+      .channel("tickets-hub-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_tickets" },
+        (payload) => {
+          const row = (payload.new as TicketRow) ?? (payload.old as TicketRow);
+          if (row && subEventIds.includes(row.sub_event_id)) {
+            queryClient.invalidateQueries({ queryKey: ["tickets-hub-tickets"] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventIds, queryClient]);
+
+
   const total = tickets?.length ?? 0;
   const checkedIn = tickets?.filter((t) => t.is_checked_in).length ?? 0;
   const pending = total - checkedIn;
