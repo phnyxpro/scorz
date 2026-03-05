@@ -378,3 +378,19 @@ export function JudgingHubContent() {
     </div>
   );
 }
+
+export default function JudgingHub() {
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+          <ClipboardList className="h-6 w-6 text-primary" /> Judging Hub
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Select a competition to view score sheets and judges per level.
+        </p>
+      </div>
+      <JudgingHubContent />
+    </div>
+  );
+}
