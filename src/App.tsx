@@ -435,6 +435,16 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/feedback"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ContestantFeedback />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
