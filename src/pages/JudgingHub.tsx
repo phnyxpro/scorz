@@ -91,7 +91,7 @@ function useJudgingOverview(competitionId: string | undefined) {
   });
 }
 
-export default function JudgingHub() {
+export function JudgingHubContent() {
   const { data: competitions, isLoading: compsLoading } = useCompetitions();
   const activeComps = useMemo(
     () => (competitions || []).filter((c) => c.status === "active" || c.status === "completed"),
@@ -125,15 +125,7 @@ export default function JudgingHub() {
   if (compsLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-          <ClipboardList className="h-6 w-6 text-primary" /> Judging Hub
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Select a competition to view score sheets and judges per level.
-        </p>
-      </div>
+    <div className="space-y-6">
 
       {/* Competition table with search */}
       <Card className="border-border/50 bg-card/80 mb-6">
