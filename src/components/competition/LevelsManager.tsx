@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useLevels, useCreateLevel, useDeleteLevel, useSubEvents, useCreateSubEvent, useDeleteSubEvent } from "@/hooks/useCompetitions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -143,7 +143,11 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   return (
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
-        <CardTitle className="text-base">Levels & Sub-Events</CardTitle>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Levels & Sub-Events</CardTitle>
+        </div>
+        <CardDescription>Organize your competition into levels (e.g. Auditions, Finals) and add sub-events with schedules.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">

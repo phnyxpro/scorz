@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useCompetitionSponsors, useCreateSponsor, useDeleteSponsor } from "@/hooks/useCompetitionSponsors";
 import { BannerUpload } from "@/components/shared/BannerUpload";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, ExternalLink } from "lucide-react";
+import { Trash2, Plus, ExternalLink, Handshake } from "lucide-react";
 
 export function SponsorsManager({ competitionId }: { competitionId: string }) {
   const { data: sponsors, isLoading } = useCompetitionSponsors(competitionId);
@@ -31,7 +31,13 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
 
   return (
     <Card className="border-border/50 bg-card/80">
-      <CardHeader><CardTitle className="text-base">Sponsors</CardTitle></CardHeader>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Handshake className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Sponsors</CardTitle>
+        </div>
+        <CardDescription>Add sponsor logos and links that will be displayed on the public event page.</CardDescription>
+      </CardHeader>
       <CardContent className="space-y-4">
         {/* Existing sponsors */}
         {isLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading…</p>}
