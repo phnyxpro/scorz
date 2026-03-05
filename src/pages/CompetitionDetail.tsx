@@ -91,6 +91,8 @@ export default function CompetitionDetail() {
       
       setRulesDocumentUrl((comp as any).rules_document_url || "");
       setRubricDocumentUrl((comp as any).rubric_document_url || "");
+      setRulesContent((comp as any).rules_content || "");
+      setRubricContent((comp as any).rubric_content || "");
       setShowPeoplesChoice((comp as any).show_peoples_choice_to_contestants || false);
     }
   }, [comp]);
