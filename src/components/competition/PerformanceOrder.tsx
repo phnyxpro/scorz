@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ListOrdered, Shuffle, ArrowUp, ArrowDown, Link } from "lucide-react";
+import { ListOrdered, Shuffle, GripVertical, Link } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Props {
   subEventId: string;
@@ -36,18 +36,45 @@ export function PerformanceOrder({ subEventId }: Props) {
   const [assigning, setAssigning] = useState(false);
   const qc = useQueryClient();
 
-  const moveContestant = async (index: number, direction: -1 | 1) => {
-    if (!contestants) return;
-    const swapIndex = index + direction;
-    if (swapIndex < 0 || swapIndex >= contestants.length) return;
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
 
-    const a = contestants[index];
-    const b = contestants[swapIndex];
+  const handleDragStart = (idx: number) => {
+    dragItem.current = idx;
+    setDragIdx(idx);
+  };
 
-    const updates = [
-      supabase.from("contestant_registrations").update({ sort_order: b.sort_order }).eq("id", a.id),
-      supabase.from("contestant_registrations").update({ sort_order: a.sort_order }).eq("id", b.id),
-    ];
+  const handleDragEnter = (idx: number) => {
+    dragOverItem.current = idx;
+    setOverIdx(idx);
+  };
+
+  const handleDragEnd = async () => {
+    if (dragItem.current === null || dragOverItem.current === null || !contestants) {
+      setDragIdx(null);
+      setOverIdx(null);
+      return;
+    }
+
+    const from = dragItem.current;
+    const to = dragOverItem.current;
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setDragIdx(null);
+    setOverIdx(null);
+
+    if (from === to) return;
+
+    const reordered = [...contestants];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+
+    // Persist new sort_order values
+    const updates = reordered.map((c, i) =>
+      supabase.from("contestant_registrations").update({ sort_order: i + 1 }).eq("id", c.id)
+    );
     await Promise.all(updates);
     qc.invalidateQueries({ queryKey: ["approved-contestants-order", subEventId] });
   };
@@ -68,7 +95,6 @@ export function PerformanceOrder({ subEventId }: Props) {
     if (!contestants || contestants.length === 0) return;
     setAssigning(true);
     try {
-      // Get available slots ordered by slot_index
       const { data: slots, error } = await supabase
         .from("performance_slots")
         .select("id, slot_index, is_booked")
@@ -125,7 +151,7 @@ export function PerformanceOrder({ subEventId }: Props) {
               <CardTitle className="text-base flex items-center gap-2">
                 <ListOrdered className="h-4 w-4 text-primary" /> Order of Performance
               </CardTitle>
-              <CardDescription>{contestants.length} approved contestants</CardDescription>
+              <CardDescription>{contestants.length} approved contestants — drag to reorder</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)}>
@@ -138,46 +164,27 @@ export function PerformanceOrder({ subEventId }: Props) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs w-[40px]">#</TableHead>
-                  <TableHead className="text-xs">Contestant</TableHead>
-                  <TableHead className="text-xs w-[80px]">Reorder</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contestants.map((c, idx) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="text-sm font-medium">{c.full_name}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={idx === 0}
-                          onClick={() => moveContestant(idx, -1)}
-                        >
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={idx === contestants.length - 1}
-                          onClick={() => moveContestant(idx, 1)}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="space-y-1">
+            {contestants.map((c, idx) => (
+              <div
+                key={c.id}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all cursor-grab active:cursor-grabbing select-none",
+                  dragIdx === idx && "opacity-40 border-dashed border-primary/50",
+                  overIdx === idx && dragIdx !== idx && "border-primary/40 bg-primary/5",
+                  dragIdx === null && "hover:bg-muted/30"
+                )}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="font-mono text-xs text-muted-foreground w-6 text-center">{idx + 1}</span>
+                <span className="text-sm font-medium text-foreground">{c.full_name}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
