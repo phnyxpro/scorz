@@ -395,6 +395,7 @@ export default function PublicEventDetail() {
 function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
   const { data: lineup } = useLineup(allSubEventIds);
   const [now, setNow] = useState(new Date());
+  const [selectedContestant, setSelectedContestant] = useState<any>(null);
 
   // Update current time every 30s for live detection
   useState(() => {
