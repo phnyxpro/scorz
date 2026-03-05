@@ -181,7 +181,7 @@ export default function PublicEventDetail() {
               <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
                 <Award className="h-4 w-4" /> Judges
               </TabsTrigger>
-              {(comp as any).voting_enabled && (
+              {anyVotingEnabled && (
                 <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
                   <Heart className="h-4 w-4" /> Voting
                 </TabsTrigger>
