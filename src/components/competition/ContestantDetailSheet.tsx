@@ -225,6 +225,32 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
             />
           </Section>
         </div>
+
+        {/* Photo Lightbox */}
+        <AnimatePresence>
+          {lightboxUrl && (
+            <motion.div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLightboxUrl(null)}
+            >
+              <motion.div
+                className="relative max-w-lg max-h-[80vh] w-full mx-4"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img src={lightboxUrl} alt="Performance photo" className="w-full h-auto max-h-[75vh] object-contain rounded-lg" />
+                <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8" onClick={() => setLightboxUrl(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </SheetContent>
     </Sheet>
   );
