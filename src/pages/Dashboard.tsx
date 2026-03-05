@@ -123,7 +123,6 @@ export default function Dashboard() {
   const { stats, loading: statsLoading } = useDashboardStats();
 
   const isJudgeRole = roles.includes("judge");
-  const isChief = false; // Chief status is now per-sub-event assignment, resolved contextually
 
   const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(user?.id, isJudgeRole);
 
