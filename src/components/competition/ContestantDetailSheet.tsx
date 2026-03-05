@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle, XCircle, ExternalLink, Video, MapPin, Phone, Mail, Calendar, Shield, User } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink, Video, MapPin, Phone, Mail, Calendar, Shield, User, Image as ImageIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -24,7 +28,35 @@ interface Props {
 
 export function ContestantDetailSheet({ registration, open, onOpenChange, onApprove, onReject }: Props) {
   const reg = registration;
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   if (!reg) return null;
+
+  const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
+
+  const { data: mediaFiles } = useQuery({
+    queryKey: ["contestant-media-sheet", reg?.user_id],
+    enabled: open && !!reg?.user_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("contestant-media")
+        .list(reg!.user_id, { limit: 50, sortBy: { column: "created_at", order: "desc" } });
+      if (error) throw error;
+      const { data: { publicUrl: baseUrl } } = supabase.storage
+        .from("contestant-media")
+        .getPublicUrl(`${reg!.user_id}/placeholder`);
+      const prefix = baseUrl.replace("/placeholder", "");
+      return (data || [])
+        .filter(f => f.name !== ".emptyFolderPlaceholder")
+        .filter(f => {
+          const ext = f.name.split(".").pop()?.toLowerCase() || "";
+          return IMAGE_EXTENSIONS.includes(ext);
+        })
+        .map(f => ({
+          name: f.name,
+          url: `${prefix}/${f.name}`,
+        }));
+    },
+  });
 
   const socialHandles = reg.social_handles as Record<string, string> | null;
   const hasSocials = socialHandles && Object.keys(socialHandles).length > 0;
@@ -130,6 +162,29 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
             </Section>
           )}
 
+          {/* Media Gallery */}
+          {mediaFiles && mediaFiles.length > 0 && (
+            <Section title="Performance Photos">
+              <div className="grid grid-cols-3 gap-2">
+                {mediaFiles.map((file) => (
+                  <motion.div
+                    key={file.name}
+                    className="aspect-square rounded-lg overflow-hidden border border-border/30 cursor-pointer bg-muted"
+                    whileHover={{ scale: 1.03 }}
+                    onClick={() => setLightboxUrl(file.url)}
+                  >
+                    <img
+                      src={file.url}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </Section>
+          )}
+
           {/* Guardian Info (minors) */}
           {isMinor && (
             <Section title="Guardian Information">
@@ -170,6 +225,32 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
             />
           </Section>
         </div>
+
+        {/* Photo Lightbox */}
+        <AnimatePresence>
+          {lightboxUrl && (
+            <motion.div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLightboxUrl(null)}
+            >
+              <motion.div
+                className="relative max-w-lg max-h-[80vh] w-full mx-4"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img src={lightboxUrl} alt="Performance photo" className="w-full h-auto max-h-[75vh] object-contain rounded-lg" />
+                <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8" onClick={() => setLightboxUrl(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </SheetContent>
     </Sheet>
   );
