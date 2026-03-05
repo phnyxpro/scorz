@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon
+  FileText, ListChecks, LucideIcon, UserPlus
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { dashboardCards, AppRole } from "@/lib/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 const container = {
   hidden: { opacity: 0 },
@@ -119,9 +120,23 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
 const SELECTED_COMP_KEY = "scorz_selected_competition";
 
 export default function Dashboard() {
-  const { user, roles } = useAuth();
+  const { user, roles, hasRole } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
+  const isAdmin = hasRole("admin");
 
+  const { data: adminStats } = useQuery({
+    queryKey: ["admin-platform-stats"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("contestant_registrations").select("*", { count: "exact", head: true }),
+      ]);
+      return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0 };
+    },
+  });
   const isJudgeRole = roles.includes("judge");
 
   const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(user?.id, isJudgeRole);
@@ -189,6 +204,28 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Admin platform stats */}
+      {isAdmin && adminStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
+            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-secondary" },
+            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-accent" },
+            { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
+          ].map((s) => (
+            <Card key={s.label} className="border-border/50 bg-card/80">
+              <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
+                <div>
+                  <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Prompt to select competition */}
       {isJudgeRole && !selectedCompId && assignedComps.length > 0 && (

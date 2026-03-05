@@ -1,43 +1,47 @@
 
 
-## Plan: Merge Admin Panel into Dashboard as Action Cards
+## Fix Blank Rendering in Browser Automation
 
-Instead of embedding a tabbed interface, the admin features become three action cards on the Dashboard that link to dedicated pages.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Changes
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-1. **`src/lib/navigation.ts`** -- Replace the 3 admin dashboard cards (Admin Panel, Platform Analytics, Support Mode) with:
-   - "User Management" → `/admin/users`
-   - "Global Settings" → `/admin/settings`  
-   - "Billing" → `/admin/billing`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-2. **Create 3 new page components** by extracting from `AdminPanel.tsx`:
-   - `src/pages/AdminUsers.tsx` -- Platform stats + user table with role management + masquerade
-   - `src/pages/AdminSettings.tsx` -- Wraps `GlobalSettingsPanel`
-   - `src/pages/AdminBilling.tsx` -- Wraps `BillingPanel`
+---
 
-3. **`src/App.tsx`** -- Replace the single `/admin` route with:
-   - `/admin/users`
-   - `/admin/settings`
-   - `/admin/billing`
-   - Redirect `/admin` → `/admin/users`
+### Fix 1: Conditionally apply auditorium filter
 
-4. **`src/pages/Dashboard.tsx`** -- For admin users, show the platform analytics stats (Total Users, Competitions, Active Events, Registrations) above the action cards. The admin action cards from `navigation.ts` handle the rest.
+**File: `src/contexts/ThemeContext.tsx`**
 
-5. **`src/pages/AdminPanel.tsx`** -- Remove or convert to redirect.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-6. **`src/components/GlobalSearch.tsx`** -- Update any `/admin` references to the new routes.
+### Fix 2: Remove filter class when at defaults
 
-### Files
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-| File | Action |
-|------|--------|
-| `src/pages/AdminUsers.tsx` | Create -- user table + stats + masquerade |
-| `src/pages/AdminSettings.tsx` | Create -- global settings wrapper |
-| `src/pages/AdminBilling.tsx` | Create -- billing wrapper |
-| `src/lib/navigation.ts` | Update admin cards to 3 dedicated routes |
-| `src/App.tsx` | Add 3 admin sub-routes, redirect `/admin` |
-| `src/pages/Dashboard.tsx` | Add inline platform stats for admins |
-| `src/pages/AdminPanel.tsx` | Remove or redirect |
-| `src/components/GlobalSearch.tsx` | Update admin references |
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

@@ -27,7 +27,9 @@ import Results from "./pages/Results";
 import PostEventPortal from "./pages/PostEventPortal";
 import AudienceVoting from "./pages/AudienceVoting";
 import ContestantProfile from "./pages/ContestantProfile";
-import AdminPanel from "./pages/AdminPanel";
+import AdminUsers from "./pages/AdminUsers";
+import AdminSettings from "./pages/AdminSettings";
+import AdminBilling from "./pages/AdminBilling";
 import MasterScoreSheet from "./pages/MasterScoreSheet";
 import LevelMasterSheet from "./pages/LevelMasterSheet";
 import JudgeDashboard from "./pages/JudgeDashboard";
@@ -248,11 +250,31 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin"
+                path="/admin/users"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
-                      <AdminPanel />
+                      <AdminUsers />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AdminSettings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/billing"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AdminBilling />
                     </AppLayout>
                   </ProtectedRoute>
                 }
