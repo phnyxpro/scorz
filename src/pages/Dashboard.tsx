@@ -138,6 +138,8 @@ export default function Dashboard() {
       return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0 };
     },
   });
+  const isJudgeRole = roles.includes("judge");
+
   const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(user?.id, isJudgeRole);
 
   const [selectedCompId, setSelectedCompId] = useState(() => localStorage.getItem(SELECTED_COMP_KEY) || "");
