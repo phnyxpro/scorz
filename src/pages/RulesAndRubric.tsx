@@ -4,7 +4,7 @@ import { useCompetition, useRubricCriteria, usePenaltyRules } from "@/hooks/useC
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, ExternalLink, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, ExternalLink, BookOpen, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RulesAndRubric() {
