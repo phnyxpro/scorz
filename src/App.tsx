@@ -34,6 +34,7 @@ import About from "./pages/About";
 import RulesAndRubric from "./pages/RulesAndRubric";
 import Settings from "./pages/Settings";
 import FinanceDashboard from "./pages/FinanceDashboard";
+import PeoplesChoiceManager from "./pages/PeoplesChoiceManager";
 
 const queryClient = new QueryClient();
 
@@ -207,6 +208,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <FinanceDashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/peoples-choice"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PeoplesChoiceManager />
                     </AppLayout>
                   </ProtectedRoute>
                 }
