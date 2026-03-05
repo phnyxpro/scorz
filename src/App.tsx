@@ -33,6 +33,7 @@ import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
 import RulesAndRubric from "./pages/RulesAndRubric";
 import Settings from "./pages/Settings";
+import FinanceDashboard from "./pages/FinanceDashboard";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +197,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Settings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/finance"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <FinanceDashboard />
                     </AppLayout>
                   </ProtectedRoute>
                 }

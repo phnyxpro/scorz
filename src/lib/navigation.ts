@@ -32,7 +32,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions", roles: ["organizer"] },
     { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging", roles: ["organizer", "tabulator", "witness"] },
     { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/profile", roles: ["organizer", "contestant"] },
-    { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/competitions?tab=payments", roles: ["organizer"] },
+    { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/finance", roles: ["organizer", "admin"] },
     { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-primary", to: "/competitions?tab=voting", roles: ["organizer", "audience"] },
 
     // Tabulator / Witness
