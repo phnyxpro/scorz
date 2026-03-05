@@ -1,17 +1,19 @@
 import { useState, useMemo } from "react";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Calendar, MapPin } from "lucide-react";
+import { Search, Ticket, CheckCircle2, Clock, DollarSign, Mail, Phone, Send } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 
