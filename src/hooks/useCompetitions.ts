@@ -117,6 +117,22 @@ export function useSubEvents(levelId: string | undefined) {
   });
 }
 
+export function useSubEvent(id: string | undefined) {
+  return useQuery({
+    queryKey: ["sub_event", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sub_events")
+        .select("*")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      return data as SubEvent;
+    },
+  });
+}
+
 export function useRubricCriteria(competitionId: string | undefined) {
   return useQuery({
     queryKey: ["rubric_criteria", competitionId],

@@ -2,24 +2,18 @@ import { ReactNode, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
-import { LogOut, User, Shield } from "lucide-react";
-=======
-import { LogOut, User, Shield, LayoutDashboard, Trophy, ClipboardList, Eye, X, Settings } from "lucide-react";
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
+import { LogOut, User, Shield, Eye, X } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { mainNavItems } from "@/lib/navigation";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { AuditoriumControls } from "@/components/AuditoriumControls";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-<<<<<<< HEAD
-  const { user, signOut, roles, hasRole } = useAuth();
-=======
-  const { user, signOut, roles, masquerade, stopMasquerade, isMasquerading } = useAuth();
+  const { user, signOut, roles, hasRole, masquerade, stopMasquerade, isMasquerading } = useAuth();
   const { brightness, contrast } = useTheme();
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
   const navigate = useNavigate();
   const location = useLocation();
   const needsFilter = brightness !== 100 || contrast !== 100;
@@ -29,23 +23,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     navigate("/auth");
   };
 
-<<<<<<< HEAD
   const visibleNavItems = useMemo(() => {
     return mainNavItems.filter(item => {
       if (!item.roles) return true;
       return item.roles.some(role => roles.includes(role));
     });
   }, [roles]);
-=======
-  const isJudgeRole = roles.includes("judge") || roles.includes("chief_judge");
-
-  const bottomNavItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ...(roles.includes("tabulator") || roles.includes("witness") ? [{ path: "/tabulator", label: "Tabulator", icon: ClipboardList }] : []),
-    ...(!isJudgeRole ? [{ path: "/competitions", label: "Events", icon: Trophy }] : []),
-    { path: "/settings", label: "Settings", icon: Settings },
-  ];
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
   return (
     <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen bg-background`}>
@@ -65,12 +48,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center justify-between px-3 sm:px-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-mono text-sm font-bold tracking-tighter text-foreground">SCOR<span className="text-accent">Z</span></span>
-          </Link>
+          <div className="flex items-center gap-4 sm:gap-8">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+              <span className="font-mono text-sm font-bold tracking-tighter text-foreground hidden xs:inline">SCOR<span className="text-accent">Z</span></span>
+            </Link>
+            <div className="hidden md:block">
+              <GlobalSearch />
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
+            <div className="md:hidden">
+              <GlobalSearch />
+            </div>
             {roles.length > 0 && (
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
@@ -81,6 +72,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <AuditoriumControls />
+            <NotificationCenter />
             {hasRole("admin") && (
               <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
                 <Shield className="h-4 w-4" />

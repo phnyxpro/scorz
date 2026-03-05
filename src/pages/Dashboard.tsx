@@ -1,26 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-<<<<<<< HEAD
-=======
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks,
+  FileText, ListChecks, LucideIcon
 } from "lucide-react";
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-<<<<<<< HEAD
-import { dashboardCards } from "@/lib/navigation";
-import { useMemo } from "react";
-=======
-import { LucideIcon } from "lucide-react";
+import { dashboardCards, AppRole } from "@/lib/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
 const container = {
   hidden: { opacity: 0 },
@@ -40,51 +32,6 @@ interface CardConfig {
   to: string;
 }
 
-<<<<<<< HEAD
-  const visibleCards = useMemo(() => {
-    return dashboardCards.filter(card => {
-      if (!card.roles) return true;
-      return card.roles.some(role => roles.includes(role));
-    });
-  }, [roles]);
-=======
-const ROLE_CARDS: Record<string, CardConfig[]> = {
-  admin: [
-    { title: "Admin Panel", desc: "Manage users, settings & billing", icon: Shield, color: "text-primary", to: "/admin" },
-    { title: "Platform Analytics", desc: "View metrics across all events", icon: BarChart3, color: "text-secondary", to: "/admin?tab=analytics" },
-    { title: "All Competitions", desc: "Browse all hosted competitions", icon: Trophy, color: "text-primary", to: "/competitions" },
-    { title: "Support Mode", desc: "Masquerade as an organiser", icon: Eye, color: "text-secondary", to: "/admin?tab=support" },
-  ],
-  organizer: [
-    { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions" },
-    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging" },
-    { title: "Contestants", desc: "Registrations & profiles", icon: Users, color: "text-primary", to: "/profile" },
-    { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-secondary", to: "/competitions?tab=payments" },
-    { title: "People's Choice", desc: "Audience voting", icon: Mic, color: "text-primary", to: "/competitions?tab=voting" },
-  ],
-  tabulator: [
-    { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator" },
-    { title: "Judging Hub", desc: "Monitor scoring progress", icon: ClipboardList, color: "text-secondary", to: "/judging" },
-  ],
-  witness: [
-    { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator" },
-    { title: "Judging Hub", desc: "Monitor scoring progress", icon: ClipboardList, color: "text-secondary", to: "/judging" },
-  ],
-  contestant: [
-    { title: "My Profile", desc: "View registration & profile", icon: User, color: "text-primary", to: "/profile" },
-    { title: "Public Events", desc: "Browse competitions", icon: Calendar, color: "text-secondary", to: "/public-events" },
-  ],
-  audience: [
-    { title: "Public Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/public-events" },
-    { title: "People's Choice", desc: "Cast your votes", icon: Mic, color: "text-secondary", to: "/competitions?tab=voting" },
-  ],
-};
-
-const FALLBACK_CARDS: CardConfig[] = [
-  { title: "Public Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/public-events" },
-  { title: "Pricing", desc: "View plans & get started", icon: DollarSign, color: "text-secondary", to: "/pricing" },
-];
-
 function buildJudgeCards(competitionId: string, isChief: boolean): CardConfig[] {
   const cards: CardConfig[] = [
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-primary", to: `/competitions/${competitionId}/score` },
@@ -96,22 +43,6 @@ function buildJudgeCards(competitionId: string, isChief: boolean): CardConfig[] 
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-primary", to: `/competitions/${competitionId}/chief-judge` });
   }
   return cards;
-}
-
-function buildCards(roles: string[]): CardConfig[] {
-  if (roles.length === 0) return FALLBACK_CARDS;
-  const seen = new Set<string>();
-  const result: CardConfig[] = [];
-  for (const role of roles) {
-    if (role === "judge" || role === "chief_judge") continue; // handled separately
-    for (const card of ROLE_CARDS[role] ?? []) {
-      if (!seen.has(card.to)) {
-        seen.add(card.to);
-        result.push(card);
-      }
-    }
-  }
-  return result.length ? result : FALLBACK_CARDS;
 }
 
 interface AssignedCompetition {
@@ -196,21 +127,18 @@ export default function Dashboard() {
     if (selectedCompId) localStorage.setItem(SELECTED_COMP_KEY, selectedCompId);
   }, [selectedCompId]);
 
-  // Build cards: for judge roles use dynamic competition-specific cards
   const cards = useMemo(() => {
+    // If user is a judge and has a competition selected, show judge-specific cards first
     if (isJudgeRole && selectedCompId) {
       return buildJudgeCards(selectedCompId, isChief);
     }
-    // For non-judge roles, or judge without selection, use standard cards
-    // But still include standard cards for other roles the user may have
-    const nonJudgeRoles = roles.filter(r => r !== "judge" && r !== "chief_judge");
-    if (isJudgeRole && !selectedCompId) {
-      // Show generic cards from other roles, or fallback
-      return nonJudgeRoles.length > 0 ? buildCards(nonJudgeRoles) : FALLBACK_CARDS;
-    }
-    return buildCards(roles);
+
+    // Otherwise, filter from centralized dashboardCards
+    return dashboardCards.filter(card => {
+      if (!card.roles) return true;
+      return card.roles.some(role => roles.includes(role as AppRole));
+    });
   }, [isJudgeRole, isChief, selectedCompId, roles]);
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
 
   return (
     <div>
@@ -266,17 +194,17 @@ export default function Dashboard() {
         >
           {statsLoading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-border/40 bg-card/60 p-3">
-                  <Skeleton className="h-3 w-20 mb-2" />
-                  <Skeleton className="h-6 w-10" />
-                </div>
-              ))
+              <div key={i} className="rounded-lg border border-border/40 bg-card/60 p-3">
+                <Skeleton className="h-3 w-20 mb-2" />
+                <Skeleton className="h-6 w-10" />
+              </div>
+            ))
             : stats.map((s) => (
-                <Link key={s.label} to={s.to} className="rounded-lg border border-border/40 bg-card/60 p-3 hover:bg-card/90 hover:border-primary/30 transition-colors cursor-pointer">
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
-                </Link>
-              ))}
+              <Link key={s.label} to={s.to} className="rounded-lg border border-border/40 bg-card/60 p-3 hover:bg-card/90 hover:border-primary/30 transition-colors cursor-pointer">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
+                <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
+              </Link>
+            ))}
         </motion.div>
       )}
 
@@ -286,13 +214,8 @@ export default function Dashboard() {
         animate="show"
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-<<<<<<< HEAD
-        {visibleCards.map((c) => (
-          <motion.div key={c.title} variants={item}>
-=======
         {cards.map((c) => (
           <motion.div key={c.to} variants={item}>
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
             <Link to={c.to}>
               <Card className="border-border/50 bg-card/80 hover:bg-card transition-colors cursor-pointer group">
                 <CardHeader className="pb-2">

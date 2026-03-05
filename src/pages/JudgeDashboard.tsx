@@ -3,26 +3,17 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaffView } from "@/hooks/useStaffView";
 import { useRegistrations } from "@/hooks/useRegistrations";
+import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
-import { Trophy, User, ChevronRight, Star, ClipboardList } from "lucide-react";
-
-export default function JudgeDashboard() {
-    const { assignedCompetitions, subEventDetails, isLoading } = useStaffView("judge");
-=======
-import { Trophy, ClipboardList, User, ChevronRight, Star, Info, FileText, ExternalLink } from "lucide-react";
+import { Trophy, User, ChevronRight, Star, ClipboardList, Info, FileText, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
-import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export default function JudgeDashboard() {
-    const { user } = useAuth();
-    const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents(["judge", "chief_judge"]);
-    const { data: competitions } = useCompetitions();
->>>>>>> 8e5e8026b13e9d80ab4c046779c02f5d95e64c8b
+    const { assignedCompetitions, subEventDetails, isLoading } = useStaffView("judge");
 
     if (isLoading) {
         return (
