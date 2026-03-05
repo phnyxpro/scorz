@@ -216,82 +216,88 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Admin platform stats */}
-      {isAdmin && adminStats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[
-            { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
-            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-primary" },
-            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-primary" },
-            { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
-          ].map((s) => (
-            <Card key={s.label} className="border-border/50 bg-card/80">
-              <CardContent className="pt-4 pb-3 flex items-center gap-3">
-                <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
-                <div>
-                  <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </div>
+      {/* Tabulator: show Judging Hub content instead of stats/cards */}
+      {isTabulator ? (
+        <JudgingHubContent />
+      ) : (
+        <>
+          {/* Admin platform stats */}
+          {isAdmin && adminStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
+                { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-primary" },
+                { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-primary" },
+                { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
+              ].map((s) => (
+                <Card key={s.label} className="border-border/50 bg-card/80">
+                  <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                    <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
+                    <div>
+                      <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
+                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Prompt to select competition */}
+          {isJudgeRole && !selectedCompId && assignedComps.length > 0 && (
+            <Card className="border-primary/30 bg-primary/5 mb-6">
+              <CardContent className="py-4 text-center">
+                <p className="text-sm text-foreground">Select a competition above to access your scoring tools.</p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          )}
 
-      {/* Prompt to select competition */}
-      {isJudgeRole && !selectedCompId && assignedComps.length > 0 && (
-        <Card className="border-primary/30 bg-primary/5 mb-6">
-          <CardContent className="py-4 text-center">
-            <p className="text-sm text-foreground">Select a competition above to access your scoring tools.</p>
-          </CardContent>
-        </Card>
-      )}
+          {/* Quick stats */}
+          {stats.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-6"
+            >
+              {statsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-lg border border-border/40 bg-card/60 p-3">
+                    <Skeleton className="h-3 w-20 mb-2" />
+                    <Skeleton className="h-6 w-10" />
+                  </div>
+                ))
+                : stats.map((s) => (
+                  <Link key={s.label} to={s.to} className="rounded-lg border border-border/40 bg-card/60 p-3 hover:bg-card/90 hover:border-primary/30 transition-colors cursor-pointer">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
+                    <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
+                  </Link>
+                ))}
+            </motion.div>
+          )}
 
-      {/* Quick stats */}
-      {stats.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-6"
-        >
-          {statsLoading
-            ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-border/40 bg-card/60 p-3">
-                <Skeleton className="h-3 w-20 mb-2" />
-                <Skeleton className="h-6 w-10" />
-              </div>
-            ))
-            : stats.map((s) => (
-              <Link key={s.label} to={s.to} className="rounded-lg border border-border/40 bg-card/60 p-3 hover:bg-card/90 hover:border-primary/30 transition-colors cursor-pointer">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-bold text-foreground mt-0.5">{s.value ?? "—"}</p>
-              </Link>
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {cards.map((c) => (
+              <motion.div key={c.to} variants={item}>
+                <Link to={c.to}>
+                  <Card className="border-border/50 bg-card/80 hover:bg-card transition-colors cursor-pointer group">
+                    <CardHeader className="pb-2">
+                      <c.icon className={`h-8 w-8 ${c.color} mb-2 group-hover:scale-110 transition-transform`} />
+                      <CardTitle className="text-base">{c.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>{c.desc}</CardDescription>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
             ))}
-        </motion.div>
-      )}
-
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        {cards.map((c) => (
-          <motion.div key={c.to} variants={item}>
-            <Link to={c.to}>
-              <Card className="border-border/50 bg-card/80 hover:bg-card transition-colors cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <c.icon className={`h-8 w-8 ${c.color} mb-2 group-hover:scale-110 transition-transform`} />
-                  <CardTitle className="text-base">{c.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{c.desc}</CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
           </motion.div>
-        ))}
-      </motion.div>
-    </div>
+        </>
+      )}
   );
 }
