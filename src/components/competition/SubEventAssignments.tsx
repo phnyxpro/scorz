@@ -111,7 +111,7 @@ export function SubEventAssignments({ competitionId }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
                 <div>
                   <label className="text-xs text-muted-foreground">Role</label>
-                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); setSelectedResponsibility(""); }}>
+                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); setSelectedResponsibility(""); setIsChief(false); }}>
                     <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                     <SelectContent>
                       {ASSIGNABLE_ROLES.map((r) => (
