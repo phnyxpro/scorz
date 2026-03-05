@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered
+  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered, Video, Globe, ChevronRight
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
@@ -69,7 +72,7 @@ function useLineup(subEventIds: string[]) {
     queryFn: async () => {
       const { data: contestants, error } = await supabase
         .from("contestant_registrations")
-        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
+        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id")
         .in("sub_event_id", subEventIds)
         .eq("status", "approved")
         .order("sort_order", { ascending: true });
@@ -392,6 +395,7 @@ export default function PublicEventDetail() {
 function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
   const { data: lineup } = useLineup(allSubEventIds);
   const [now, setNow] = useState(new Date());
+  const [selectedContestant, setSelectedContestant] = useState<any>(null);
 
   // Update current time every 30s for live detection
   useState(() => {
@@ -475,8 +479,9 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
+                      onClick={() => setSelectedContestant(c)}
                       className={cn(
-                        "flex items-center gap-3 p-2 rounded-md transition-colors relative",
+                        "flex items-center gap-3 p-2 rounded-md transition-colors relative cursor-pointer",
                         performing && "bg-primary/10 border border-primary/30 shadow-sm",
                         upNext && !performing && "bg-accent/10 border border-accent/20",
                         !performing && !upNext && "hover:bg-muted/30"
@@ -532,6 +537,7 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                           )}
                         </div>
                       </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </motion.div>
                   );
                 })}
@@ -540,6 +546,94 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
           </Card>
         );
       })}
+
+      {/* Contestant Detail Sheet */}
+      <Sheet open={!!selectedContestant} onOpenChange={(open) => !open && setSelectedContestant(null)}>
+        <SheetContent className="sm:max-w-md overflow-y-auto">
+          <SheetHeader className="pb-4">
+            <SheetTitle className="text-base">Contestant Profile</SheetTitle>
+          </SheetHeader>
+          {selectedContestant && (
+            <div className="space-y-5">
+              {/* Avatar & Name */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedContestant.profile_photo_url || undefined} alt={selectedContestant.full_name} />
+                  <AvatarFallback className="text-lg bg-muted">
+                    {selectedContestant.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{selectedContestant.full_name}</h3>
+                  <Badge variant="outline" className="text-xs">{selectedContestant.age_category}</Badge>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {selectedContestant.bio && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">About</p>
+                    <p className="text-sm text-foreground leading-relaxed">{selectedContestant.bio}</p>
+                  </div>
+                </>
+              )}
+
+              {/* Location */}
+              {selectedContestant.location && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{selectedContestant.location}</span>
+                </div>
+              )}
+
+              {/* Performance Time */}
+              {selectedContestant.slot && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-mono">{selectedContestant.slot.start_time} – {selectedContestant.slot.end_time}</span>
+                </div>
+              )}
+
+              {/* Performance Video */}
+              {selectedContestant.performance_video_url && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Performance Video</p>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <a href={selectedContestant.performance_video_url} target="_blank" rel="noopener noreferrer">
+                        <Video className="h-4 w-4 mr-2" /> Watch Video
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Social Handles */}
+              {selectedContestant.social_handles && Object.keys(selectedContestant.social_handles).some((k: string) => selectedContestant.social_handles[k]) && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Social Media</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(selectedContestant.social_handles as Record<string, string>).filter(([, v]) => v).map(([platform, url]) => (
+                        <Button key={platform} asChild variant="outline" size="sm">
+                          <a href={url.startsWith("http") ? url : `https://${url}`} target="_blank" rel="noopener noreferrer">
+                            <Globe className="h-3 w-3 mr-1" />
+                            {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                          </a>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
