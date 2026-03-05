@@ -8,7 +8,8 @@ export interface SubEventAssignment {
   sub_event_id: string;
   user_id: string;
   role: string;
-  responsibility: string | null;
+  responsibility?: string | null;
+  is_chief: boolean;
   created_at: string;
 }
 
