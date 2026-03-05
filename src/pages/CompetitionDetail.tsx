@@ -307,13 +307,15 @@ export default function CompetitionDetail() {
                 onRemoved={() => setRulesDocumentUrl("")}
               />
 
-              {/* Extracted content preview */}
-              {(comp as any)?.rules_content && (
-                <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
-                  <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
-                  <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rules_content}</p>
-                </div>
-              )}
+              {/* Rich text editor for rules content */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rules Content</label>
+                <RichTextEditor
+                  content={rulesContent}
+                  onChange={setRulesContent}
+                  placeholder="Scan a document or type rules content here..."
+                />
+              </div>
 
               <div className="flex gap-2">
                 <Button onClick={handleSave} disabled={update.isPending}>
