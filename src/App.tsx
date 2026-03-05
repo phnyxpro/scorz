@@ -46,6 +46,7 @@ import RegistrationsHub from "./pages/RegistrationsHub";
 import ContestantProfilesHub from "./pages/ContestantProfilesHub";
 import ResultsHub from "./pages/ResultsHub";
 import CheckInHub from "./pages/CheckInHub";
+import TicketsHub from "./pages/TicketsHub";
 
 const queryClient = new QueryClient();
 
@@ -399,6 +400,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ResultsHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tickets-hub"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <TicketsHub />
                     </AppLayout>
                   </ProtectedRoute>
                 }
