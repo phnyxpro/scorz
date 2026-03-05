@@ -67,7 +67,7 @@ export default function CompetitionDetail() {
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
