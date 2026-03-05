@@ -44,7 +44,7 @@ export default function CompetitionDetail() {
   const [status, setStatus] = useState("draft");
   const [rulesUrl, setRulesUrl] = useState("");
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
-  const [votingEnabled, setVotingEnabled] = useState(false);
+  
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
 
@@ -58,7 +58,7 @@ export default function CompetitionDetail() {
       setStatus(comp.status);
       setRulesUrl((comp as any).rules_url || "");
       setSocialLinks((comp as any).social_links || {});
-      setVotingEnabled((comp as any).voting_enabled || false);
+      
       setRulesDocumentUrl((comp as any).rules_document_url || "");
       setRubricDocumentUrl((comp as any).rubric_document_url || "");
     }
@@ -67,7 +67,7 @@ export default function CompetitionDetail() {
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
-    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, voting_enabled: votingEnabled, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
+    await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
   };
 
@@ -164,14 +164,6 @@ export default function CompetitionDetail() {
                 </Select>
               </div>
 
-              {/* Voting Toggle */}
-              <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="voting-toggle" className="text-sm font-medium">People's Choice Voting</Label>
-                  <p className="text-xs text-muted-foreground">Enable audience voting on the public event page</p>
-                </div>
-                <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
-              </div>
 
 
 

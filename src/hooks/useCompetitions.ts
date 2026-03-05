@@ -256,7 +256,7 @@ export function useDeleteLevel() {
 export function useCreateSubEvent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (values: { level_id: string; name: string; location?: string; event_date?: string; start_time?: string; end_time?: string }) => {
+    mutationFn: async (values: { level_id: string; name: string; location?: string; event_date?: string; start_time?: string; end_time?: string; voting_enabled?: boolean }) => {
       const { data, error } = await supabase.from("sub_events").insert(values).select().single();
       if (error) throw error;
       return data;
