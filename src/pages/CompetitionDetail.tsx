@@ -118,8 +118,9 @@ export default function CompetitionDetail() {
 
       if (type === "rules") {
         await supabase.from("competitions").update({ rules_content: data.content } as any).eq("id", id);
+        setRulesContent(data.content);
         qc.invalidateQueries({ queryKey: ["competition", id] });
-        toast({ title: "Rules scanned", description: "Document content has been extracted and saved." });
+        toast({ title: "Rules scanned", description: "Document content extracted into the editor." });
       } else {
         // Save raw text
         await supabase.from("competitions").update({ rubric_content: data.raw_text } as any).eq("id", id);
