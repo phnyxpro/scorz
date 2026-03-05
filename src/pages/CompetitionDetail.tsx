@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useCompetition, useUpdateCompetition } from "@/hooks/useCompetitions";
+import { useCompetition, useUpdateCompetition, useCreateRubricCriterion, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { CardDescription } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
-import { ArrowLeft, FileText, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,12 +26,33 @@ import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface ScannedCriterion {
+  name: string;
+  description_1: string;
+  description_2: string;
+  description_3: string;
+  description_4: string;
+  description_5: string;
+}
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
   const { hasRole, loading: authLoading } = useAuth();
   const { data: comp, isLoading } = useCompetition(id);
+  const { data: existingCriteria } = useRubricCriteria(id);
   const update = useUpdateCompetition();
+  const createCriterion = useCreateRubricCriterion();
   const qc = useQueryClient();
 
   const canConfigure = hasRole("admin") || hasRole("organizer");
@@ -47,6 +68,11 @@ export default function CompetitionDetail() {
   
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
+
+  // Scanning state
+  const [scanningRules, setScanningRules] = useState(false);
+  const [scanningRubric, setScanningRubric] = useState(false);
+  const [pendingRubricCriteria, setPendingRubricCriteria] = useState<ScannedCriterion[] | null>(null);
 
   useEffect(() => {
     if (comp) {
@@ -69,6 +95,59 @@ export default function CompetitionDetail() {
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
     await supabase.from("competitions").update({ rules_url: rulesUrl || null, social_links: socialLinks, slug: slug || undefined, rules_document_url: rulesDocumentUrl || null, rubric_document_url: rubricDocumentUrl || null } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["competition", id] });
+  };
+
+  const scanDocument = async (url: string, type: "rules" | "rubric") => {
+    if (!id) return;
+    const setScanning = type === "rules" ? setScanningRules : setScanningRubric;
+    setScanning(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-pdf", {
+        body: { url, type },
+      });
+
+      if (error) throw error;
+
+      if (type === "rules") {
+        await supabase.from("competitions").update({ rules_content: data.content } as any).eq("id", id);
+        qc.invalidateQueries({ queryKey: ["competition", id] });
+        toast({ title: "Rules scanned", description: "Document content has been extracted and saved." });
+      } else {
+        // Save raw text
+        await supabase.from("competitions").update({ rubric_content: data.raw_text } as any).eq("id", id);
+        qc.invalidateQueries({ queryKey: ["competition", id] });
+
+        if (data.criteria && data.criteria.length > 0) {
+          setPendingRubricCriteria(data.criteria);
+        } else {
+          toast({ title: "Rubric scanned", description: "Document text extracted. No scoring criteria could be identified." });
+        }
+      }
+    } catch (e: any) {
+      toast({ title: "Scan failed", description: e.message || "Could not extract document content", variant: "destructive" });
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const applyRubricCriteria = () => {
+    if (!pendingRubricCriteria || !id) return;
+    const startOrder = existingCriteria?.length || 0;
+    pendingRubricCriteria.forEach((c, i) => {
+      createCriterion.mutate({
+        competition_id: id,
+        name: c.name,
+        sort_order: startOrder + i,
+        description_1: c.description_1,
+        description_2: c.description_2,
+        description_3: c.description_3,
+        description_4: c.description_4,
+        description_5: c.description_5,
+      });
+    });
+    setPendingRubricCriteria(null);
+    toast({ title: "Criteria added", description: `${pendingRubricCriteria.length} criteria imported from document.` });
   };
 
   const updateSocial = (key: string, val: string) => {
@@ -164,10 +243,6 @@ export default function CompetitionDetail() {
                 </Select>
               </div>
 
-
-
-
-
               {/* Social Links */}
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Social Media Links</label>
@@ -213,9 +288,30 @@ export default function CompetitionDetail() {
                 onUploaded={(url) => setRulesDocumentUrl(url)}
                 onRemoved={() => setRulesDocumentUrl("")}
               />
-              <Button onClick={handleSave} disabled={update.isPending}>
-                {update.isPending ? "Saving…" : "Save Changes"}
-              </Button>
+
+              {/* Extracted content preview */}
+              {(comp as any)?.rules_content && (
+                <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
+                  <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
+                  <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rules_content}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button onClick={handleSave} disabled={update.isPending}>
+                  {update.isPending ? "Saving…" : "Save Changes"}
+                </Button>
+                {rulesDocumentUrl && (
+                  <Button
+                    variant="outline"
+                    onClick={() => scanDocument(rulesDocumentUrl, "rules")}
+                    disabled={scanningRules}
+                  >
+                    {scanningRules ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+                    {scanningRules ? "Scanning…" : "Scan Document"}
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -238,9 +334,30 @@ export default function CompetitionDetail() {
                   onUploaded={(url) => setRubricDocumentUrl(url)}
                   onRemoved={() => setRubricDocumentUrl("")}
                 />
-                <Button onClick={handleSave} disabled={update.isPending}>
-                  {update.isPending ? "Saving…" : "Save Changes"}
-                </Button>
+
+                {/* Extracted content preview */}
+                {(comp as any)?.rubric_content && (
+                  <div className="border border-border/50 rounded-md p-3 bg-muted/20 max-h-48 overflow-y-auto">
+                    <p className="text-[10px] font-mono text-muted-foreground mb-1">Extracted Content Preview</p>
+                    <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-6">{(comp as any).rubric_content}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} disabled={update.isPending}>
+                    {update.isPending ? "Saving…" : "Save Changes"}
+                  </Button>
+                  {rubricDocumentUrl && (
+                    <Button
+                      variant="outline"
+                      onClick={() => scanDocument(rubricDocumentUrl, "rubric")}
+                      disabled={scanningRubric}
+                    >
+                      {scanningRubric ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+                      {scanningRubric ? "Scanning…" : "Scan & Extract Criteria"}
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
             <RubricBuilder competitionId={id!} />
@@ -266,8 +383,28 @@ export default function CompetitionDetail() {
         <TabsContent value="sponsors">
           <SponsorsManager competitionId={id!} />
         </TabsContent>
-
       </Tabs>
+
+      {/* Rubric criteria confirmation dialog */}
+      <AlertDialog open={!!pendingRubricCriteria} onOpenChange={(open) => !open && setPendingRubricCriteria(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Import Rubric Criteria?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRubricCriteria?.length} scoring criteria were extracted from the document. Would you like to add them to the rubric builder?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-48 overflow-y-auto space-y-1 my-2">
+            {pendingRubricCriteria?.map((c, i) => (
+              <div key={i} className="text-xs bg-muted/30 rounded px-2 py-1.5 font-medium">{c.name}</div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Skip</AlertDialogCancel>
+            <AlertDialogAction onClick={applyRubricCriteria}>Import Criteria</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
