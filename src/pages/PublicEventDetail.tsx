@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -390,6 +391,13 @@ export default function PublicEventDetail() {
 
 function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
   const { data: lineup } = useLineup(allSubEventIds);
+  const [now, setNow] = useState(new Date());
+
+  // Update current time every 30s for live detection
+  useState(() => {
+    const interval = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(interval);
+  });
 
   if (!lineup || lineup.length === 0) {
     return (
@@ -408,51 +416,130 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
     grouped[key].push(c);
   });
 
-  const subEventName = (seId: string) => {
+  const subEventInfo = (seId: string) => {
     for (const l of levels || []) {
       const se = l.sub_events?.find((s: any) => s.id === seId);
-      if (se) return `${l.name} — ${se.name}`;
+      if (se) return { name: `${l.name} — ${se.name}`, date: se.event_date };
     }
-    return "Event";
+    return { name: "Event", date: null };
+  };
+
+  const isCurrentlyPerforming = (slot: { start_time: string; end_time: string } | null, eventDate: string | null) => {
+    if (!slot || !eventDate) return false;
+    const todayStr = format(now, "yyyy-MM-dd");
+    if (eventDate !== todayStr) return false;
+    const [sh, sm] = slot.start_time.split(":").map(Number);
+    const [eh, em] = slot.end_time.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
+  };
+
+  const isUpNext = (slot: { start_time: string; end_time: string } | null, eventDate: string | null) => {
+    if (!slot || !eventDate) return false;
+    const todayStr = format(now, "yyyy-MM-dd");
+    if (eventDate !== todayStr) return false;
+    const [sh, sm] = slot.start_time.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const startMins = sh * 60 + sm;
+    return startMins > nowMins && startMins - nowMins <= 10;
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {Object.entries(grouped).map(([seId, contestants]) => (
-        <Card key={seId} className="border-border/50 bg-card/80">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{subEventName(seId)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {contestants.map((c, idx) => (
-                <div key={c.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
-                  <span className="text-lg font-bold font-mono text-muted-foreground w-8 text-center">{idx + 1}</span>
-                  {c.profile_photo_url ? (
-                    <img src={c.profile_photo_url} alt={c.full_name} className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{c.full_name}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
-                      {(c as any).slot && (
-                        <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-2.5 w-2.5" />
-                          {(c as any).slot.start_time} – {(c as any).slot.end_time}
+      {Object.entries(grouped).map(([seId, contestants]) => {
+        const info = subEventInfo(seId);
+        // Find if there's a current performer to mark the next one
+        let foundCurrent = false;
+        let nextIdx = -1;
+        contestants.forEach((c, idx) => {
+          const slot = (c as any).slot;
+          if (isCurrentlyPerforming(slot, info.date)) foundCurrent = true;
+          else if (foundCurrent && nextIdx === -1 && slot) nextIdx = idx;
+        });
+
+        return (
+          <Card key={seId} className="border-border/50 bg-card/80">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{info.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                {contestants.map((c, idx) => {
+                  const slot = (c as any).slot;
+                  const performing = isCurrentlyPerforming(slot, info.date);
+                  const upNext = nextIdx === idx || (!foundCurrent && isUpNext(slot, info.date));
+
+                  return (
+                    <motion.div
+                      key={c.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.03 }}
+                      className={cn(
+                        "flex items-center gap-3 p-2 rounded-md transition-colors relative",
+                        performing && "bg-primary/10 border border-primary/30 shadow-sm",
+                        upNext && !performing && "bg-accent/10 border border-accent/20",
+                        !performing && !upNext && "hover:bg-muted/30"
+                      )}
+                    >
+                      {performing && (
+                        <span className="absolute -left-1 top-1/2 -translate-y-1/2 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
                         </span>
                       )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                      <span className={cn(
+                        "text-lg font-bold font-mono w-8 text-center",
+                        performing ? "text-primary" : "text-muted-foreground"
+                      )}>{idx + 1}</span>
+                      {c.profile_photo_url ? (
+                        <img src={c.profile_photo_url} alt={c.full_name} className={cn(
+                          "w-8 h-8 rounded-full object-cover",
+                          performing && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )} />
+                      ) : (
+                        <div className={cn(
+                          "w-8 h-8 rounded-full bg-muted flex items-center justify-center",
+                          performing && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )}>
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className={cn(
+                            "text-sm font-medium",
+                            performing ? "text-primary" : "text-foreground"
+                          )}>{c.full_name}</p>
+                          {performing && (
+                            <Badge className="text-[9px] px-1.5 py-0 bg-primary text-primary-foreground animate-pulse">
+                              NOW PERFORMING
+                            </Badge>
+                          )}
+                          {upNext && !performing && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-accent text-accent-foreground">
+                              UP NEXT
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                          {slot && (
+                            <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" />
+                              {slot.start_time} – {slot.end_time}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
