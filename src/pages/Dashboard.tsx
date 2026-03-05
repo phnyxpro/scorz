@@ -96,7 +96,19 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
         .select("id, name")
         .in("id", compIds);
 
-      setCompetitions(comps || []);
+      // Determine which competitions have chief assignments
+      const levelToComp = new Map((levels || []).map(l => [l.id, l.competition_id]));
+      const subEventToLevel = new Map((subEvents || []).map(se => [se.id, se.level_id]));
+      const compsWithChief = new Set<string>();
+      for (const seId of chiefSubEventIds) {
+        const levelId = subEventToLevel.get(seId);
+        if (levelId) {
+          const compId = levelToComp.get(levelId);
+          if (compId) compsWithChief.add(compId);
+        }
+      }
+
+      setCompetitions((comps || []).map(c => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
       setLoading(false);
     })();
   }, [userId, isJudgeRole]);
