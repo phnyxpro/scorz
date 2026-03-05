@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContestantDetailSheet } from "./ContestantDetailSheet";
+import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +43,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
+  const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
 
   // Get all sub-events for filtering
   const allLevelIds = levels?.map(l => l.id) || [];
@@ -199,7 +202,14 @@ export function RegistrationsManager({ competitionId }: Props) {
                 {filtered.map((reg, idx) => (
                   <TableRow key={reg.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="text-sm font-medium">{reg.full_name}</TableCell>
+                    <TableCell>
+                      <button
+                        className="text-sm font-medium text-primary hover:underline text-left"
+                        onClick={() => setSelectedReg(reg)}
+                      >
+                        {reg.full_name}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px]">
@@ -319,6 +329,15 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Contestant Detail Sheet */}
+      <ContestantDetailSheet
+        registration={selectedReg}
+        open={!!selectedReg}
+        onOpenChange={(open) => { if (!open) setSelectedReg(null); }}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
     </div>
   );
 }
