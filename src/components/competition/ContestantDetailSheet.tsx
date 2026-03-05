@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle, XCircle, ExternalLink, Video, MapPin, Phone, Mail, Calendar, Shield, User } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink, Video, MapPin, Phone, Mail, Calendar, Shield, User, Image as ImageIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
