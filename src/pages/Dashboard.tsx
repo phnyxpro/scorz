@@ -36,9 +36,9 @@ interface CardConfig {
 function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): CardConfig[] {
   const cards: CardConfig[] = [
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-primary", to: `/competitions/${competitionId}/score` },
-    { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
+    { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-primary", to: `/competitions/${competitionId}/contestants` },
     { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-primary", to: `/competitions/${competitionId}/rules` },
-    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
+    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-primary", to: `/competitions/${competitionId}/rubric` },
   ];
   if (hasChiefAssignments) {
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-primary", to: `/competitions/${competitionId}/chief-judge` });
@@ -210,8 +210,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
-            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-secondary" },
-            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-accent" },
+            { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-primary" },
+            { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-primary" },
             { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
           ].map((s) => (
             <Card key={s.label} className="border-border/50 bg-card/80">
