@@ -400,61 +400,6 @@ export default function ContestantProfile() {
   );
 }
 
-function CompetitionRubricSection({ competitionId, competitionName }: { competitionId: string; competitionName: string }) {
-  const { data: criteria } = useRubricCriteria(competitionId);
-  const { data: penalties } = usePenaltyRules(competitionId);
-  const { data: comp } = useQuery({
-    queryKey: ["competition-rules", competitionId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("competitions").select("rules_url, description").eq("id", competitionId).single();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const rulesUrl = (comp as any)?.rules_url as string | undefined;
-  const description = (comp as any)?.description as string | undefined;
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold font-mono">{competitionName}</h3>
-
-      {/* Official Rules */}
-      {(rulesUrl || description) && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <h4 className="text-base font-bold font-mono">Official Rules</h4>
-          </div>
-          {description && (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="pt-4">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{description}</p>
-              </CardContent>
-            </Card>
-          )}
-          {rulesUrl && (
-            <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
-              <div className="flex gap-3 items-center">
-                <FileText className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium text-sm">Competition Handbook</p>
-                  <p className="text-xs text-muted-foreground">Official rules document</p>
-                </div>
-              </div>
-              <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
-                <ExternalLink className="h-3.5 w-3.5" /> View
-              </a>
-            </Card>
-          )}
-        </section>
-      )}
-
-      <PublicRubric criteria={criteria || []} penalties={penalties || []} />
-    </div>
-  );
-}
-
 function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) {
   return (
     <div className="flex items-center gap-2 md:justify-end">
