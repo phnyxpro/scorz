@@ -239,10 +239,6 @@ export default function CompetitionDetail() {
           <SubEventAssignments competitionId={id!} />
         </TabsContent>
 
-        <TabsContent value="invitations">
-          <StaffInvitationForm competitionId={id!} />
-        </TabsContent>
-
         <TabsContent value="sponsors">
           <SponsorsManager competitionId={id!} />
         </TabsContent>
