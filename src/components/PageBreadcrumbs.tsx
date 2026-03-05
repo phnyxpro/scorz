@@ -29,7 +29,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "level-sheet": "Level Sheet",
   "rules-rubric": "Rules & Rubric",
   contestants: "Contestants",
-  pricing: "Pricing",
+  about: "About",
 };
 
 function ResolvedCrumb({ id, fallback }: { id: string; fallback: string }) {

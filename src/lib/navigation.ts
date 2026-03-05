@@ -60,5 +60,5 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
 
     // Contestant / Audience Fallbacks
     { title: "Public Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/public-events", roles: ["contestant", "audience"] },
-    { title: "Pricing", desc: "View plans & get started", icon: DollarSign, color: "text-secondary", to: "/pricing" },
+    { title: "About", desc: "View plans & get started", icon: DollarSign, color: "text-secondary", to: "/about" },
 ];

@@ -134,7 +134,7 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-export default function Pricing() {
+export default function About() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -270,9 +270,8 @@ export default function Pricing() {
                 transition={{ duration: 0.4, delay: i * 0.1 }}
               >
                 <Card
-                  className={`relative h-full flex flex-col border-border/50 bg-card/80 ${
-                    tier.highlight ? "ring-2 ring-secondary shadow-lg shadow-secondary/10" : ""
-                  }`}
+                  className={`relative h-full flex flex-col border-border/50 bg-card/80 ${tier.highlight ? "ring-2 ring-secondary shadow-lg shadow-secondary/10" : ""
+                    }`}
                 >
                   {tier.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">

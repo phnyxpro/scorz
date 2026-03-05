@@ -116,7 +116,7 @@ export default function Auth() {
           <ArrowLeft className="h-4 w-4" /> Back to Home
         </Button>
         <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-          <Link to="/pricing">Pricing</Link>
+          <Link to="/about">About</Link>
         </Button>
       </div>
       <motion.div

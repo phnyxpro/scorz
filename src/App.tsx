@@ -30,7 +30,7 @@ import MasterScoreSheet from "./pages/MasterScoreSheet";
 import LevelMasterSheet from "./pages/LevelMasterSheet";
 import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
-import Pricing from "./pages/Pricing";
+import About from "./pages/About";
 import RulesAndRubric from "./pages/RulesAndRubric";
 import Settings from "./pages/Settings";
 import FinanceDashboard from "./pages/FinanceDashboard";
@@ -50,7 +50,7 @@ const App = () => (
               <Route path="/public-events" element={<PublicEvents />} />
               <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/about" element={<About />} />
               <Route
                 path="/dashboard"
                 element={
