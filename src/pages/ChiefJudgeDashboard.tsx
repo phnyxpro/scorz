@@ -51,7 +51,7 @@ export default function ChiefJudgeDashboard() {
   }
 
   const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
-  const { data: myAssignments } = useMyAssignedSubEvents("chief_judge");
+  const { data: myAssignments } = useMyAssignedSubEvents("judge", { isChief: true });
 
   // Filter sub-events to assigned ones
   const subEvents = useMemo(() => {

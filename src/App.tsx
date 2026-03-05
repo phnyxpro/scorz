@@ -288,6 +288,36 @@ const App = () => (
                 }
               />
               <Route
+                path="/competitions/:id/rules"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RulesPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/rubric"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RubricPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/penalties"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PenaltiesPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/competitions/:id/contestants"
                 element={
                   <ProtectedRoute>

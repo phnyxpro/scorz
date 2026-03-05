@@ -32,14 +32,14 @@ interface CardConfig {
   to: string;
 }
 
-function buildJudgeCards(competitionId: string, isChief: boolean): CardConfig[] {
+function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): CardConfig[] {
   const cards: CardConfig[] = [
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-primary", to: `/competitions/${competitionId}/score` },
     { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
-    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-primary", to: `/competitions/${competitionId}/rules-rubric#rules` },
-    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rules-rubric#rubric` },
+    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-primary", to: `/competitions/${competitionId}/rules` },
+    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
   ];
-  if (isChief) {
+  if (hasChiefAssignments) {
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-primary", to: `/competitions/${competitionId}/chief-judge` });
   }
   return cards;
