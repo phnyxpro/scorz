@@ -121,11 +121,23 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
 const SELECTED_COMP_KEY = "scorz_selected_competition";
 
 export default function Dashboard() {
-  const { user, roles } = useAuth();
+  const { user, roles, hasRole } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
+  const isAdmin = hasRole("admin");
 
-  const isJudgeRole = roles.includes("judge");
-
+  const { data: adminStats } = useQuery({
+    queryKey: ["admin-platform-stats"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }),
+        supabase.from("competitions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("contestant_registrations").select("*", { count: "exact", head: true }),
+      ]);
+      return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0 };
+    },
+  });
   const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(user?.id, isJudgeRole);
 
   const [selectedCompId, setSelectedCompId] = useState(() => localStorage.getItem(SELECTED_COMP_KEY) || "");
