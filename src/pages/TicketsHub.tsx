@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ export default function TicketsHub() {
   const [selectedTicket, setSelectedTicket] = useState<TicketRow | null>(null);
   const [sendingAll, setSendingAll] = useState(false);
   const { data: competitions } = useCompetitions();
+  const queryClient = useQueryClient();
 
   const sendTicketEmail = useMutation({
     mutationFn: async (ticketId: string) => {
@@ -104,7 +105,26 @@ export default function TicketsHub() {
     },
   });
 
-  // Stats
+  // Realtime subscription for live ticket updates
+  useEffect(() => {
+    if (!subEventIds.length) return;
+    const channel = supabase
+      .channel("tickets-hub-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_tickets" },
+        (payload) => {
+          const row = (payload.new as TicketRow) ?? (payload.old as TicketRow);
+          if (row && subEventIds.includes(row.sub_event_id)) {
+            queryClient.invalidateQueries({ queryKey: ["tickets-hub-tickets"] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventIds, queryClient]);
+
+
   const total = tickets?.length ?? 0;
   const checkedIn = tickets?.filter((t) => t.is_checked_in).length ?? 0;
   const pending = total - checkedIn;
