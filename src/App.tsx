@@ -22,7 +22,7 @@ import JudgeScoring from "./pages/JudgeScoring";
 import JudgingHub from "./pages/JudgingHub";
 import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
 import TabulatorDashboard from "./pages/TabulatorDashboard";
-import WitnessDashboard from "./pages/WitnessDashboard";
+
 import Results from "./pages/Results";
 import PostEventPortal from "./pages/PostEventPortal";
 import AudienceVoting from "./pages/AudienceVoting";
