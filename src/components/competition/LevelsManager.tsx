@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,23 +19,53 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const qc = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
-    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
+    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false); setEditingId(null);
   };
 
-  const handleAdd = () => {
+  const openCreate = () => {
+    resetForm();
+    setModalOpen(true);
+  };
+
+  const openEdit = (e: any) => {
+    setEditingId(e.id);
+    setName(e.name);
+    setLocation(e.location || "");
+    setEventDate(e.event_date || "");
+    setStartTime(e.start_time || "");
+    setEndTime(e.end_time || "");
+    setVotingEnabled(e.voting_enabled || false);
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
     if (!name.trim()) return;
-    create.mutate(
-      { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
-      { onSuccess: () => { resetForm(); setModalOpen(false); } }
-    );
+    if (editingId) {
+      setSaving(true);
+      await supabase.from("sub_events").update({
+        name, location: location || null, event_date: eventDate || null,
+        start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
+      } as any).eq("id", editingId);
+      qc.invalidateQueries({ queryKey: ["sub_events", levelId] });
+      setSaving(false);
+      resetForm();
+      setModalOpen(false);
+    } else {
+      create.mutate(
+        { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
+        { onSuccess: () => { resetForm(); setModalOpen(false); } }
+      );
+    }
   };
 
   const updateBanner = async (id: string, url: string | null) => {
@@ -45,20 +75,25 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
 
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
-      <Button size="sm" variant="outline" onClick={() => setModalOpen(true)} className="w-full h-8 text-xs">
+      <Button size="sm" variant="outline" onClick={openCreate} className="w-full h-8 text-xs">
         <Plus className="h-3 w-3 mr-1" /> Add Sub-Event
       </Button>
 
       {events?.map((e) => (
         <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="flex items-center gap-2 flex-wrap text-left hover:opacity-70 transition-opacity cursor-pointer"
+              onClick={() => openEdit(e)}
+            >
               <span className="font-medium text-foreground">{e.name}</span>
               {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
               {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
               {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
-            </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
+              <Pencil className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
@@ -75,7 +110,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Sub-Event</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Sub-Event" : "Add Sub-Event"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -110,8 +145,8 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setModalOpen(false); }}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={create.isPending || !name.trim()}>
-              {create.isPending ? "Adding…" : "Add Sub-Event"}
+            <Button onClick={handleSubmit} disabled={(create.isPending || saving) || !name.trim()}>
+              {saving ? "Saving…" : create.isPending ? "Adding…" : editingId ? "Save Changes" : "Add Sub-Event"}
             </Button>
           </DialogFooter>
         </DialogContent>
