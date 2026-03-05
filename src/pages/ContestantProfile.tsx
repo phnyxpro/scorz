@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -184,12 +185,18 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="media">Media</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
         </TabsList>
+
+        {/* Media Gallery Tab */}
+        <TabsContent value="media">
+          <ContestantMediaGallery userId={profileUserId!} isOwnProfile={isOwnProfile} />
+        </TabsContent>
 
         {/* Registration Details Tab */}
         <TabsContent value="details">
