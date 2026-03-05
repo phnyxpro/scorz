@@ -41,7 +41,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
     { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
   ];
   if (hasChiefAssignments) {
-    cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-primary", to: `/competitions/${competitionId}/chief-judge` });
+    cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-secondary", to: `/competitions/${competitionId}/chief-judge` });
   }
   return cards;
 }

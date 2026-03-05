@@ -44,28 +44,28 @@ export const mainNavItems: NavItem[] = [
 
 export const dashboardCards: { title: string; desc: string; icon: LucideIcon; color: string; to: string; roles?: AppRole[] }[] = [
     // Admin
-    { title: "User Management", desc: "Manage users & assign roles", icon: Users, color: "text-primary", to: "/admin/users", roles: ["admin"] },
-    { title: "Global Settings", desc: "Branding, flags & defaults", icon: Shield, color: "text-primary", to: "/admin/settings", roles: ["admin"] },
-    { title: "Billing", desc: "Subscriptions & payment tiers", icon: CreditCard, color: "text-primary", to: "/admin/billing", roles: ["admin"] },
+    { title: "User Management", desc: "Manage users & assign roles", icon: Users, color: "text-accent", to: "/admin/users", roles: ["admin"] },
+    { title: "Global Settings", desc: "Branding, flags & defaults", icon: Shield, color: "text-accent", to: "/admin/settings", roles: ["admin"] },
+    { title: "Billing", desc: "Subscriptions & payment tiers", icon: CreditCard, color: "text-accent", to: "/admin/billing", roles: ["admin"] },
 
     // Organizer
-    { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-primary", to: "/competitions", roles: ["organizer"] },
-    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-primary", to: "/judging", roles: ["organizer", "tabulator"] },
-    { title: "Registrations", desc: "Manage contestant registrations", icon: ListChecks, color: "text-primary", to: "/registrations", roles: ["organizer"] },
-    { title: "Contestant Profiles", desc: "View approved contestant profiles", icon: User, color: "text-primary", to: "/contestant-profiles", roles: ["organizer"] },
-    { title: "Results", desc: "View certified competition results", icon: BarChart3, color: "text-primary", to: "/results-hub", roles: ["organizer", "admin"] },
-    { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-primary", to: "/profile", roles: ["contestant"] },
-    { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-primary", to: "/finance", roles: ["organizer", "admin"] },
-    { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-primary", to: "/peoples-choice", roles: ["organizer", "admin"] },
-    { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
-    { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-primary", to: "/tickets-hub", roles: ["organizer", "admin"] },
-    { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-primary", to: "/check-in", roles: ["organizer", "admin"] },
-    { title: "News & Updates", desc: "Post updates for your events", icon: Newspaper, color: "text-primary", to: "/updates", roles: ["organizer", "admin"] },
+    { title: "My Competitions", desc: "Manage your events & stages", icon: Trophy, color: "text-secondary", to: "/competitions", roles: ["organizer"] },
+    { title: "Judging Hub", desc: "Monitor all scoring", icon: ClipboardList, color: "text-secondary", to: "/judging", roles: ["organizer", "tabulator"] },
+    { title: "Registrations", desc: "Manage contestant registrations", icon: ListChecks, color: "text-secondary", to: "/registrations", roles: ["organizer"] },
+    { title: "Contestant Profiles", desc: "View approved contestant profiles", icon: User, color: "text-secondary", to: "/contestant-profiles", roles: ["organizer"] },
+    { title: "Results", desc: "View certified competition results", icon: BarChart3, color: "text-secondary", to: "/results-hub", roles: ["organizer", "admin"] },
+    { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-secondary", to: "/profile", roles: ["contestant"] },
+    { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-accent", to: "/finance", roles: ["organizer", "admin"] },
+    { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-secondary", to: "/peoples-choice", roles: ["organizer", "admin"] },
+    { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-secondary", to: "/competitions", roles: ["audience"] },
+    { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-accent", to: "/tickets-hub", roles: ["organizer", "admin"] },
+    { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-accent", to: "/check-in", roles: ["organizer", "admin"] },
+    { title: "News & Updates", desc: "Post updates for your events", icon: Newspaper, color: "text-secondary", to: "/updates", roles: ["organizer", "admin"] },
 
     // Tabulator / Witness
-    { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator"] },
+    { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-secondary", to: "/tabulator", roles: ["tabulator"] },
 
     // Contestant / Audience Fallbacks
-    { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/audience-events", roles: ["contestant", "audience"] },
-    { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-primary", to: "/my-tickets", roles: ["audience", "contestant"] },
+    { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-secondary", to: "/audience-events", roles: ["contestant", "audience"] },
+    { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-accent", to: "/my-tickets", roles: ["audience", "contestant"] },
 ];
