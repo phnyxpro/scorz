@@ -12,6 +12,8 @@ import PublicEvents from "./pages/PublicEvents";
 import PublicEventDetail from "./pages/PublicEventDetail";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import AudienceEvents from "./pages/AudienceEvents";
+import MyTickets from "./pages/MyTickets";
 import Competitions from "./pages/Competitions";
 import CompetitionContestants from "./pages/CompetitionContestants";
 import CompetitionDetail from "./pages/CompetitionDetail";
@@ -58,6 +60,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/audience-events"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AudienceEvents />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-tickets"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MyTickets />
                     </AppLayout>
                   </ProtectedRoute>
                 }

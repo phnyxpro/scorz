@@ -61,6 +61,6 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator", "witness"] },
 
     // Contestant / Audience Fallbacks
-    { title: "Public Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/public-events", roles: ["contestant", "audience"] },
-    { title: "About", desc: "View plans & get started", icon: DollarSign, color: "text-secondary", to: "/about" },
+    { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/audience-events", roles: ["contestant", "audience"] },
+    { title: "My Tickets", desc: "View tickets & invoices", icon: CreditCard, color: "text-secondary", to: "/my-tickets", roles: ["audience"] },
 ];
