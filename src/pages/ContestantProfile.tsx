@@ -394,14 +394,7 @@ export default function ContestantProfile() {
           </motion.div>
         </TabsContent>
 
-        {/* Rules & Rubric Tab */}
-        <TabsContent value="rubric">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {competitionIds.map((compId) => (
-              <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
-            ))}
-          </motion.div>
-        </TabsContent>
+      </Tabs>
       </Tabs>
     </div>
   );
