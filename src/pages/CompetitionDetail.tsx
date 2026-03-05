@@ -15,6 +15,7 @@ import { SponsorsManager } from "@/components/competition/SponsorsManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
+import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
