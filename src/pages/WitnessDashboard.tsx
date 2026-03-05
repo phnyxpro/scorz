@@ -12,6 +12,8 @@ import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -32,6 +34,7 @@ export default function WitnessDashboard() {
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
   const [observations, setObservations] = useState("");
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
@@ -88,6 +91,8 @@ export default function WitnessDashboard() {
         observations: observations || null,
       } as any);
     }
+    setConsentChecked(false);
+    setSignature("");
     setShowCertifyDialog(true);
   };
 
@@ -228,9 +233,20 @@ export default function WitnessDashboard() {
 
             <SignaturePad label="Witness Signature" onSignature={setSignature} />
 
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-consent"
+                checked={consentChecked}
+                onCheckedChange={(v) => setConsentChecked(v === true)}
+              />
+              <Label htmlFor="certify-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I attest that the scoring process was conducted fairly, the results are accurate as presented, and I consent to certify these results.
+              </Label>
+            </div>
+
             <Button
               onClick={handleCertify}
-              disabled={!signature || certifyWitness.isPending}
+              disabled={!signature || !consentChecked || certifyWitness.isPending}
               className="w-full"
             >
               <Lock className="h-4 w-4 mr-1" />

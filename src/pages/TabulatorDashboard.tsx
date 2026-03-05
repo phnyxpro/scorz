@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +37,7 @@ export default function TabulatorDashboard() {
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
   const [physicalMatch, setPhysicalMatch] = useState(false);
   const [discrepancyNotes, setDiscrepancyNotes] = useState("");
 
@@ -98,6 +100,8 @@ export default function TabulatorDashboard() {
         discrepancy_notes: discrepancyNotes || null,
       } as any);
     }
+    setConsentChecked(false);
+    setSignature("");
     setShowCertifyDialog(true);
   };
 
@@ -290,9 +294,20 @@ export default function TabulatorDashboard() {
 
             <SignaturePad label="Tabulator Signature" onSignature={setSignature} />
 
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-consent"
+                checked={consentChecked}
+                onCheckedChange={(v) => setConsentChecked(v === true)}
+              />
+              <Label htmlFor="certify-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I confirm that all digital scores have been cross-verified against physical scorecards, the totals are accurate, and I consent to certify and permanently lock these results.
+              </Label>
+            </div>
+
             <Button
               onClick={handleCertify}
-              disabled={!signature || certifyTab.isPending}
+              disabled={!signature || !consentChecked || certifyTab.isPending}
               className="w-full"
             >
               <Lock className="h-4 w-4 mr-1" />
