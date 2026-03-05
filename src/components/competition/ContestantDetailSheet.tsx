@@ -162,6 +162,29 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
             </Section>
           )}
 
+          {/* Media Gallery */}
+          {mediaFiles && mediaFiles.length > 0 && (
+            <Section title="Performance Photos">
+              <div className="grid grid-cols-3 gap-2">
+                {mediaFiles.map((file) => (
+                  <motion.div
+                    key={file.name}
+                    className="aspect-square rounded-lg overflow-hidden border border-border/30 cursor-pointer bg-muted"
+                    whileHover={{ scale: 1.03 }}
+                    onClick={() => setLightboxUrl(file.url)}
+                  >
+                    <img
+                      src={file.url}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </Section>
+          )}
+
           {/* Guardian Info (minors) */}
           {isMinor && (
             <Section title="Guardian Information">
