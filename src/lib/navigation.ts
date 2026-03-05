@@ -58,7 +58,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-primary", to: "/competitions", roles: ["audience"] },
 
     // Tabulator / Witness
-    { title: "Tabulator Dashboard", desc: "Verify scores & witness results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator", "witness"] },
+    { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-primary", to: "/tabulator", roles: ["tabulator"] },
 
     // Contestant / Audience Fallbacks
     { title: "Events", desc: "Browse competitions", icon: Calendar, color: "text-primary", to: "/audience-events", roles: ["contestant", "audience"] },

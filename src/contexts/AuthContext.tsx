@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getTierByProductId, type SubscriptionTier } from "@/lib/stripe-tiers";
 
-type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "witness" | "contestant" | "audience";
+type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "contestant" | "audience";
 
 interface MasqueradeTarget {
   userId: string;

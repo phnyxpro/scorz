@@ -31,7 +31,7 @@ export function useDashboardStats() {
 
       const isAdminOrOrg = roles.includes("admin") || roles.includes("organizer");
       const isJudge = roles.includes("judge") || roles.includes("chief_judge");
-      const isTabulator = roles.includes("tabulator") || roles.includes("witness");
+      const isTabulator = roles.includes("tabulator");
       const isContestant = roles.includes("contestant");
 
       if (isAdminOrOrg) {
