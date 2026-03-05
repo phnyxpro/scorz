@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
-import { UserPlus, X, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { UserPlus, X, Users, ShieldCheck } from "lucide-react";
 
-const ASSIGNABLE_ROLES = ["judge", "chief_judge", "tabulator"] as const;
+const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
 
 const roleColors: Record<string, string> = {
   judge: "bg-primary/20 text-primary",
-  chief_judge: "bg-accent/20 text-accent-foreground",
   tabulator: "bg-secondary/20 text-secondary-foreground",
 };
 
@@ -36,6 +36,7 @@ export function SubEventAssignments({ competitionId }: Props) {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedResponsibility, setSelectedResponsibility] = useState("");
+  const [isChief, setIsChief] = useState(false);
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
@@ -60,10 +61,12 @@ export function SubEventAssignments({ competitionId }: Props) {
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
       role: selectedRole,
+      ...(selectedRole === "judge" ? { is_chief: isChief } : {}),
       ...(selectedRole === "tabulator" && selectedResponsibility ? { responsibility: selectedResponsibility } : {}),
     });
     setSelectedUserId("");
     setSelectedResponsibility("");
+    setIsChief(false);
   };
 
   const userName = (userId: string) => {
@@ -108,7 +111,7 @@ export function SubEventAssignments({ competitionId }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
                 <div>
                   <label className="text-xs text-muted-foreground">Role</label>
-                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); setSelectedResponsibility(""); }}>
+                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(""); setSelectedResponsibility(""); setIsChief(false); }}>
                     <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                     <SelectContent>
                       {ASSIGNABLE_ROLES.map((r) => (
@@ -135,6 +138,12 @@ export function SubEventAssignments({ competitionId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedRole === "judge" && (
+                  <div className="flex items-center gap-2 self-end pb-1">
+                    <Switch checked={isChief} onCheckedChange={setIsChief} id="is-chief-toggle" />
+                    <label htmlFor="is-chief-toggle" className="text-xs text-muted-foreground cursor-pointer">Chief Judge</label>
+                  </div>
+                )}
                 {selectedRole === "tabulator" && (
                   <div>
                     <label className="text-xs text-muted-foreground">Responsibility</label>
@@ -176,6 +185,11 @@ export function SubEventAssignments({ competitionId }: Props) {
                             <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
                               {a.role.replace("_", " ")}
                             </Badge>
+                            {(a as any).is_chief && (
+                              <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
+                                <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                              </Badge>
+                            )}
                             {a.responsibility && (
                               <Badge variant="outline" className="text-[10px]">
                                 {a.responsibility === "timer" ? "Timer" : "Full"}

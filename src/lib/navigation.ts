@@ -17,7 +17,7 @@ import { LucideIcon } from "lucide-react";
  * - `contestant`: A participant registered for one or more events.
  * - `audience`: A general user who can view public events and participate in voting.
  */
-export type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "contestant" | "audience";
+export type AppRole = "admin" | "organizer" | "judge" | "tabulator" | "contestant" | "audience";
 
 /**
  * Interface defining a navigation item for the sidebar and mobile menus.
@@ -37,7 +37,7 @@ export interface NavItem {
 
 export const mainNavItems: NavItem[] = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/judge-dashboard", label: "Judging", icon: ClipboardList, roles: ["judge", "chief_judge"] },
+    { path: "/judge-dashboard", label: "Judging", icon: ClipboardList, roles: ["judge"] },
     { path: "/competitions", label: "Events", icon: Trophy },
     { path: "/settings", label: "Settings", icon: Settings },
 ];

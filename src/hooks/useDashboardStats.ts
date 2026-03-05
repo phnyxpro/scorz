@@ -30,7 +30,7 @@ export function useDashboardStats() {
       results.push({ label: "Active Events", value: activeComps ?? 0, to: "/competitions" });
 
       const isAdminOrOrg = roles.includes("admin") || roles.includes("organizer");
-      const isJudge = roles.includes("judge") || roles.includes("chief_judge");
+      const isJudge = roles.includes("judge");
       const isTabulator = roles.includes("tabulator");
       const isContestant = roles.includes("contestant");
 
@@ -53,7 +53,7 @@ export function useDashboardStats() {
           .from("sub_event_assignments")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .in("role", ["judge", "chief_judge"]);
+          .eq("role", "judge" as any);
         results.push({ label: "My Assignments", value: unscoredCount ?? 0, to: "/judge-dashboard" });
 
         const { count: uncertified } = await supabase

@@ -34,6 +34,9 @@ import JudgeDashboard from "./pages/JudgeDashboard";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import RulesAndRubric from "./pages/RulesAndRubric";
+import RulesPage from "./pages/RulesPage";
+import RubricPage from "./pages/RubricPage";
+import PenaltiesPage from "./pages/PenaltiesPage";
 import Settings from "./pages/Settings";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import PeoplesChoiceManager from "./pages/PeoplesChoiceManager";
@@ -280,6 +283,36 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <RulesAndRubric />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/rules"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RulesPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/rubric"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RubricPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/competitions/:id/penalties"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PenaltiesPage />
                     </AppLayout>
                   </ProtectedRoute>
                 }

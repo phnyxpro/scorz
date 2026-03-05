@@ -46,8 +46,7 @@ export default function Competitions() {
   const isAdmin = hasRole("admin");
   const isOrganizer = hasRole("organizer");
   const canManage = isAdmin || isOrganizer;
-  const isJudge = hasRole("judge") || hasRole("chief_judge");
-  const isChiefJudge = hasRole("chief_judge");
+  const isJudge = hasRole("judge");
   const isTabulator = hasRole("tabulator");
   
 
@@ -283,11 +282,6 @@ export default function Competitions() {
                     {c.status === "active" && isJudge && (
                       <Button asChild variant="secondary" size="sm">
                         <Link to={`/competitions/${c.id}/score`}><ClipboardList className="h-3 w-3 mr-1" /> Score</Link>
-                      </Button>
-                    )}
-                    {c.status === "active" && isChiefJudge && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
                       </Button>
                     )}
                     {c.status === "active" && isTabulator && (

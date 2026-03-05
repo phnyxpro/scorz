@@ -1,19 +1,14 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { useStaffView } from "@/hooks/useStaffView";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, User, ChevronRight, Star, ClipboardList, Info, FileText, ExternalLink } from "lucide-react";
-import { motion } from "framer-motion";
-import { PublicRubric } from "@/components/public/PublicRubric";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck } from "lucide-react";
 
 export default function JudgeDashboard() {
-    const { assignedCompetitions, subEventDetails, isLoading } = useStaffView("judge");
+    const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");
 
     if (isLoading) {
         return (
@@ -52,6 +47,7 @@ export default function JudgeDashboard() {
                         key={comp.id}
                         competition={comp}
                         subEventDetails={subEventDetails?.filter(se => se.level.competition_id === comp.id) || []}
+                        myAssignments={myAssignments || []}
                     />
                 ))}
             </div>
@@ -59,11 +55,7 @@ export default function JudgeDashboard() {
     );
 }
 
-function CompetitionAssignmentSection({ competition, subEventDetails }: { competition: any, subEventDetails: any[] }) {
-    const { data: criteria } = useRubricCriteria(competition.id);
-    const { data: penalties } = usePenaltyRules(competition.id);
-    const rulesUrl = (competition as any).rules_url as string | undefined;
-
+function CompetitionAssignmentSection({ competition, subEventDetails, myAssignments }: { competition: any, subEventDetails: any[], myAssignments: any[] }) {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -73,42 +65,45 @@ function CompetitionAssignmentSection({ competition, subEventDetails }: { compet
                 <h2 className="text-lg font-bold">{competition.name}</h2>
             </div>
 
-            {/* Collapsible Rubric & Rules */}
-            <Collapsible>
-                <CollapsibleTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 text-xs">
-                        <Info className="h-3.5 w-3.5" /> View Rules & Rubric
-                    </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3 space-y-4">
-                    {rulesUrl && (
-                        <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
-                            <div className="flex gap-3 items-center">
-                                <FileText className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="font-medium text-sm">Official Rules</p>
-                                    <p className="text-xs text-muted-foreground">Competition handbook</p>
-                                </div>
-                            </div>
-                            <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
-                                <ExternalLink className="h-3.5 w-3.5" /> View
-                            </a>
-                        </Card>
-                    )}
-                    <PublicRubric criteria={criteria || []} penalties={penalties || []} />
-                </CollapsibleContent>
-            </Collapsible>
+            {/* Quick links to Rules, Rubric, Penalties */}
+            <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                    <Link to={`/competitions/${competition.id}/rules`}>
+                        <FileText className="h-3.5 w-3.5 mr-1" /> Rules
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                    <Link to={`/competitions/${competition.id}/rubric`}>
+                        <Info className="h-3.5 w-3.5 mr-1" /> Rubric
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                    <Link to={`/competitions/${competition.id}/penalties`}>
+                        <Clock className="h-3.5 w-3.5 mr-1" /> Penalties
+                    </Link>
+                </Button>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-                {subEventDetails.map((se) => (
-                    <SubEventCard key={se.id} subEvent={se} competitionId={competition.id} />
-                ))}
+                {subEventDetails.map((se) => {
+                    const isChiefForThis = myAssignments.some(
+                        (a: any) => a.sub_event_id === se.id && a.is_chief
+                    );
+                    return (
+                        <SubEventCard
+                            key={se.id}
+                            subEvent={se}
+                            competitionId={competition.id}
+                            isChief={isChiefForThis}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
 }
 
-function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionId: string }) {
+function SubEventCard({ subEvent, competitionId, isChief }: { subEvent: any, competitionId: string, isChief: boolean }) {
     const { data: registrations } = useRegistrations(competitionId);
     const contestants = useMemo(() => {
         return (registrations || []).filter((r) => r.sub_event_id === subEvent.id && r.status === "approved");
@@ -119,7 +114,14 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-base">{subEvent.name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-base">{subEvent.name}</CardTitle>
+                            {isChief && (
+                                <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
+                                    <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                                </Badge>
+                            )}
+                        </div>
                         <CardDescription className="text-xs font-mono">
                             Level: {subEvent.level?.name}
                         </CardDescription>
@@ -174,11 +176,13 @@ function SubEventCard({ subEvent, competitionId }: { subEvent: any, competitionI
                             <ClipboardList className="h-3.5 w-3.5 mr-2" /> Full Score Sheet
                         </Link>
                     </Button>
-                    <Button asChild variant="ghost" className="text-xs" size="sm">
-                        <Link to={`/competitions/${competitionId}/rules-rubric`}>
-                            <FileText className="h-3.5 w-3.5 mr-1" /> Rules
-                        </Link>
-                    </Button>
+                    {isChief && (
+                        <Button asChild variant="secondary" className="text-xs" size="sm">
+                            <Link to={`/competitions/${competitionId}/chief-judge`}>
+                                <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Chief Panel
+                            </Link>
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>

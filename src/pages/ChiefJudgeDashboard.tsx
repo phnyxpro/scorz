@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ChiefJudgeDashboard() {
@@ -51,7 +51,7 @@ export default function ChiefJudgeDashboard() {
   }
 
   const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
-  const { data: myAssignments } = useMyAssignedSubEvents("chief_judge");
+  const { data: myAssignments } = useMyAssignedSubEvents("judge", { isChief: true });
 
   // Filter sub-events to assigned ones
   const subEvents = useMemo(() => {
@@ -224,7 +224,17 @@ export default function ChiefJudgeDashboard() {
                   <p className="text-xl font-bold text-foreground">{ties.length}</p>
                 </div>
               </div>
-              <div className="flex justify-end mt-3">
+              <div className="flex justify-end mt-3 gap-2">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/rules`}>
+                    <FileText className="h-3.5 w-3.5 mr-1.5" /> Rules
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/rubric`}>
+                    <ClipboardList className="h-3.5 w-3.5 mr-1.5" /> Rubric
+                  </Link>
+                </Button>
                 <Button asChild variant="outline" size="sm" className="text-xs">
                   <Link to={`/competitions/${competitionId}/master-sheet?sub_event=${selectedSubEventId}`}>
                     <ClipboardList className="h-3.5 w-3.5 mr-1.5" />

@@ -46,7 +46,7 @@ export function GlobalSearch() {
                     .limit(5),
 
                 // Sub-events (if staff/org)
-                (hasRole("admin") || hasRole("organizer") || hasRole("judge") || hasRole("chief_judge"))
+                (hasRole("admin") || hasRole("organizer") || hasRole("judge"))
                     ? supabase
                         .from("sub_events")
                         .select("id, name, competition_id")

@@ -32,14 +32,14 @@ interface CardConfig {
   to: string;
 }
 
-function buildJudgeCards(competitionId: string, isChief: boolean): CardConfig[] {
+function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): CardConfig[] {
   const cards: CardConfig[] = [
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-primary", to: `/competitions/${competitionId}/score` },
     { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
-    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-primary", to: `/competitions/${competitionId}/rules-rubric#rules` },
-    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rules-rubric#rubric` },
+    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-primary", to: `/competitions/${competitionId}/rules` },
+    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
   ];
-  if (isChief) {
+  if (hasChiefAssignments) {
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-primary", to: `/competitions/${competitionId}/chief-judge` });
   }
   return cards;
@@ -48,6 +48,7 @@ function buildJudgeCards(competitionId: string, isChief: boolean): CardConfig[] 
 interface AssignedCompetition {
   id: string;
   name: string;
+  hasChiefAssignment: boolean;
 }
 
 function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolean) {
@@ -61,17 +62,18 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       // Get sub-event IDs assigned to user
       const { data: assignments } = await supabase
         .from("sub_event_assignments")
-        .select("sub_event_id")
+        .select("sub_event_id, is_chief")
         .eq("user_id", userId);
 
       if (!assignments?.length) { setLoading(false); return; }
 
       const subEventIds = assignments.map(a => a.sub_event_id);
+      const chiefSubEventIds = new Set(assignments.filter((a: any) => a.is_chief).map(a => a.sub_event_id));
 
       // Get level IDs from sub-events
       const { data: subEvents } = await supabase
         .from("sub_events")
-        .select("level_id")
+        .select("id, level_id")
         .in("id", subEventIds);
 
       if (!subEvents?.length) { setLoading(false); return; }
@@ -81,7 +83,7 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       // Get competition IDs from levels
       const { data: levels } = await supabase
         .from("competition_levels")
-        .select("competition_id")
+        .select("id, competition_id")
         .in("id", levelIds);
 
       if (!levels?.length) { setLoading(false); return; }
@@ -94,7 +96,19 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
         .select("id, name")
         .in("id", compIds);
 
-      setCompetitions(comps || []);
+      // Determine which competitions have chief assignments
+      const levelToComp = new Map((levels || []).map(l => [l.id, l.competition_id]));
+      const subEventToLevel = new Map((subEvents || []).map(se => [se.id, se.level_id]));
+      const compsWithChief = new Set<string>();
+      for (const seId of chiefSubEventIds) {
+        const levelId = subEventToLevel.get(seId);
+        if (levelId) {
+          const compId = levelToComp.get(levelId);
+          if (compId) compsWithChief.add(compId);
+        }
+      }
+
+      setCompetitions((comps || []).map(c => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
       setLoading(false);
     })();
   }, [userId, isJudgeRole]);
@@ -108,8 +122,7 @@ export default function Dashboard() {
   const { user, roles } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
 
-  const isJudgeRole = roles.includes("judge") || roles.includes("chief_judge");
-  const isChief = roles.includes("chief_judge");
+  const isJudgeRole = roles.includes("judge");
 
   const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(user?.id, isJudgeRole);
 
@@ -127,18 +140,19 @@ export default function Dashboard() {
     if (selectedCompId) localStorage.setItem(SELECTED_COMP_KEY, selectedCompId);
   }, [selectedCompId]);
 
+  const selectedComp = assignedComps.find(c => c.id === selectedCompId);
+  const hasChiefForSelected = selectedComp?.hasChiefAssignment ?? false;
+
   const cards = useMemo(() => {
-    // If user is a judge and has a competition selected, show judge-specific cards first
     if (isJudgeRole && selectedCompId) {
-      return buildJudgeCards(selectedCompId, isChief);
+      return buildJudgeCards(selectedCompId, hasChiefForSelected);
     }
 
-    // Otherwise, filter from centralized dashboardCards
     return dashboardCards.filter(card => {
       if (!card.roles) return true;
       return card.roles.some(role => roles.includes(role as AppRole));
     });
-  }, [isJudgeRole, isChief, selectedCompId, roles]);
+  }, [isJudgeRole, hasChiefForSelected, selectedCompId, roles]);
 
   return (
     <div>
