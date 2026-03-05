@@ -375,6 +375,18 @@ export default function TicketsHub() {
                     </div>
                   )}
                 </div>
+
+                <Separator />
+
+                {/* Send Action */}
+                <Button
+                  className="w-full"
+                  disabled={sendTicketEmail.isPending}
+                  onClick={() => sendTicketEmail.mutate(selectedTicket.id)}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {sendTicketEmail.isPending ? "Sending…" : "Send Ticket via Email"}
+                </Button>
               </div>
             </>
           )}
