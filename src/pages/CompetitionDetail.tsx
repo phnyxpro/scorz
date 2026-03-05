@@ -14,7 +14,6 @@ import { SponsorsManager } from "@/components/competition/SponsorsManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
-import { StaffInvitationForm } from "@/components/admin/StaffInvitationForm";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
@@ -108,8 +107,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
           <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
           <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
-          <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
-          <TabsTrigger value="invitations" className="flex-shrink-0">Invitations</TabsTrigger>
+          <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
         </TabsList>
 
@@ -239,10 +237,6 @@ export default function CompetitionDetail() {
 
         <TabsContent value="assignments">
           <SubEventAssignments competitionId={id!} />
-        </TabsContent>
-
-        <TabsContent value="invitations">
-          <StaffInvitationForm competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="sponsors">
