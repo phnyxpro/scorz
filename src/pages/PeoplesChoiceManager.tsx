@@ -64,6 +64,22 @@ function SubEventVoteCard({ subEvent, competitionId }: { subEvent: any; competit
   const { data: voteCounts, isLoading } = useVoteCounts(subEvent.id);
   const { data: contestants } = useContestantNames(competitionId);
   const [auditOpen, setAuditOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const toggleSubEventVoting = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { error } = await supabase
+        .from("sub_events")
+        .update({ voting_enabled: enabled })
+        .eq("id", subEvent.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, enabled) => {
+      qc.invalidateQueries({ queryKey: ["competition-sub-events"] });
+      toast({ title: enabled ? "Voting activated for " + subEvent.name : "Voting deactivated for " + subEvent.name });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 
   const ranked = useMemo(() => {
     if (!voteCounts) return [];
