@@ -140,18 +140,19 @@ export default function Dashboard() {
     if (selectedCompId) localStorage.setItem(SELECTED_COMP_KEY, selectedCompId);
   }, [selectedCompId]);
 
+  const selectedComp = assignedComps.find(c => c.id === selectedCompId);
+  const hasChiefForSelected = selectedComp?.hasChiefAssignment ?? false;
+
   const cards = useMemo(() => {
-    // If user is a judge and has a competition selected, show judge-specific cards first
     if (isJudgeRole && selectedCompId) {
-      return buildJudgeCards(selectedCompId, isChief);
+      return buildJudgeCards(selectedCompId, hasChiefForSelected);
     }
 
-    // Otherwise, filter from centralized dashboardCards
     return dashboardCards.filter(card => {
       if (!card.roles) return true;
       return card.roles.some(role => roles.includes(role as AppRole));
     });
-  }, [isJudgeRole, isChief, selectedCompId, roles]);
+  }, [isJudgeRole, hasChiefForSelected, selectedCompId, roles]);
 
   return (
     <div>
