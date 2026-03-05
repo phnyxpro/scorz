@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useCompetition, useUpdateCompetition } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -201,7 +202,13 @@ export default function CompetitionDetail() {
 
         <TabsContent value="rules">
           <Card className="border-border/50 bg-card/80">
-            <CardHeader><CardTitle className="text-base">Competition Rules</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">Competition Rules</CardTitle>
+              </div>
+              <CardDescription>Add an external rules URL or upload a PDF document that contestants and judges can reference.</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground">Competition Rules URL</label>
