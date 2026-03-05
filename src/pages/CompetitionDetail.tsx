@@ -59,6 +59,8 @@ export default function CompetitionDetail() {
       setRulesUrl((comp as any).rules_url || "");
       setSocialLinks((comp as any).social_links || {});
       setVotingEnabled((comp as any).voting_enabled || false);
+      setRulesDocumentUrl((comp as any).rules_document_url || "");
+      setRubricDocumentUrl((comp as any).rubric_document_url || "");
     }
   }, [comp]);
 
