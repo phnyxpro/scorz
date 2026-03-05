@@ -240,19 +240,7 @@ export default function PeoplesChoiceManager() {
               </Select>
             </div>
 
-            {selectedCompId && compFull && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
-                <div className="text-sm font-medium">Audience Voting</div>
-                <Switch
-                  checked={compFull.voting_enabled}
-                  onCheckedChange={(checked) => toggleVoting.mutate(checked)}
-                  disabled={toggleVoting.isPending}
-                />
-                <Badge variant={compFull.voting_enabled ? "default" : "secondary"} className="text-xs">
-                  {compFull.voting_enabled ? "Active" : "Off"}
-                </Badge>
-              </div>
-            )}
+            
           </div>
         </CardContent>
       </Card>

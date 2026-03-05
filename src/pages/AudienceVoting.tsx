@@ -102,8 +102,20 @@ export default function AudienceVoting() {
         </CardContent>
       </Card>
 
-      {selectedSubEventId && (
+      {selectedSubEventId && (() => {
+        const selectedSub = subEvents?.find(se => se.id === selectedSubEventId);
+        const votingOpen = selectedSub?.voting_enabled;
+        return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          {!votingOpen && (
+            <Card className="border-border/50 bg-muted/30">
+              <CardContent className="flex flex-col items-center py-8">
+                <Heart className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-foreground font-medium">Voting is not open yet</p>
+                <p className="text-muted-foreground text-xs mt-1">The organiser has not activated voting for this event.</p>
+              </CardContent>
+            </Card>
+          )}
           {/* Vote counts */}
           {voteCounts && totalVotes > 0 && (
             <Card className="border-border/50 bg-card/80">
