@@ -46,8 +46,7 @@ export default function Competitions() {
   const isAdmin = hasRole("admin");
   const isOrganizer = hasRole("organizer");
   const canManage = isAdmin || isOrganizer;
-  const isJudge = hasRole("judge") || hasRole("chief_judge");
-  const isChiefJudge = hasRole("chief_judge");
+  const isJudge = hasRole("judge");
   const isTabulator = hasRole("tabulator");
   
 
