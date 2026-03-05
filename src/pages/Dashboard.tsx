@@ -68,6 +68,7 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       if (!assignments?.length) { setLoading(false); return; }
 
       const subEventIds = assignments.map(a => a.sub_event_id);
+      const chiefSubEventIds = new Set(assignments.filter((a: any) => a.is_chief).map(a => a.sub_event_id));
 
       // Get level IDs from sub-events
       const { data: subEvents } = await supabase
