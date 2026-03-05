@@ -403,6 +403,16 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/check-in"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CheckInHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
