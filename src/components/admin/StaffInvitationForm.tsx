@@ -61,7 +61,6 @@ export function StaffInvitationForm({ competitionId }: StaffInvitationFormProps)
                                     <SelectItem value="judge">Judge</SelectItem>
                                     <SelectItem value="chief_judge">Chief Judge</SelectItem>
                                     <SelectItem value="tabulator">Tabulator</SelectItem>
-                                    </SelectContent>
                                 </SelectContent>
                             </Select>
                         </div>
