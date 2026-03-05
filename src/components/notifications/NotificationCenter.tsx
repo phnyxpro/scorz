@@ -35,13 +35,13 @@ export function NotificationCenter() {
         queryKey: ["notifications", user?.id],
         enabled: !!user,
         queryFn: async () => {
-            const { data, error } = await (supabase.from("notifications") as any)
+            const { data, error } = await (supabase as any).from("notifications")
                 .select("*")
                 .eq("user_id", user!.id)
                 .order("created_at", { ascending: false })
                 .limit(20);
             if (error) throw error;
-            return data as unknown as Notification[];
+            return data as Notification[];
         },
     });
 
