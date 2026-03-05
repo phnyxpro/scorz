@@ -275,7 +275,7 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
                       </Button>
                     )}
-                    {c.status === "active" && !canManage && !isJudge && !isTabulator && !isWitness && (
+                    {c.status === "active" && !canManage && !isJudge && !isTabulator && (
                       <Button asChild variant="default" size="sm">
                         <Link to={`/competitions/${c.id}/register`}>Register</Link>
                       </Button>
