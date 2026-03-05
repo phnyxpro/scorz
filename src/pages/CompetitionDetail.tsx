@@ -70,6 +70,8 @@ export default function CompetitionDetail() {
   
   const [rulesDocumentUrl, setRulesDocumentUrl] = useState("");
   const [rubricDocumentUrl, setRubricDocumentUrl] = useState("");
+  const [rulesContent, setRulesContent] = useState("");
+  const [rubricContent, setRubricContent] = useState("");
 
   // Scanning state
   const [scanningRules, setScanningRules] = useState(false);
