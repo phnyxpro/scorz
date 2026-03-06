@@ -335,10 +335,19 @@ export default function PublicEventDetail() {
                     <CardContent className="p-6">
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none text-foreground"
-                        dangerouslySetInnerHTML={{ __html: rulesContent.startsWith("&lt;") || rulesContent.includes("&lt;p&gt;") 
-                          ? rulesContent.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
-                          : rulesContent 
-                        }}
+                        dangerouslySetInnerHTML={{ __html: (() => {
+                          // Fix content where HTML tags were stored as escaped text
+                          const text = rulesContent;
+                          // Check if content contains literal HTML tags as visible text (e.g., "&lt;p&gt;" or "<p>" inside a wrapping tag)
+                          const div = document.createElement("div");
+                          div.innerHTML = text;
+                          const innerText = div.textContent || "";
+                          // If the text content starts with <p> or contains </p><p>, the HTML was double-escaped
+                          if (innerText.trimStart().startsWith("<p>") || innerText.includes("</p><p>")) {
+                            return innerText; // The "text" is actually HTML that was escaped
+                          }
+                          return text;
+                        })() }}
                       />
                     </CardContent>
                   </Card>
