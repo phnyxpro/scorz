@@ -41,9 +41,9 @@ export function DocumentUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|doc|docx)$/i)) {
-      toast({ title: "Invalid file", description: "Please upload a PDF or Word document", variant: "destructive" });
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|doc|docx|txt)$/i)) {
+      toast({ title: "Invalid file", description: "Please upload a PDF, Word, or text document", variant: "destructive" });
       return;
     }
 

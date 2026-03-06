@@ -373,8 +373,12 @@ export default function CompetitionDetail() {
                 <DocumentUpload
                   currentUrl={rubricDocumentUrl || null}
                   folder={`rubric/${id}`}
-                  label="Rubric Document (PDF)"
-                  onUploaded={(url) => setRubricDocumentUrl(url)}
+                  label="Rubric Document"
+                  onUploaded={async (url) => {
+                    setRubricDocumentUrl(url);
+                    await supabase.from("competitions").update({ rubric_document_url: url } as any).eq("id", id!);
+                    scanDocument(url, "rubric");
+                  }}
                   onRemoved={() => setRubricDocumentUrl("")}
                 />
 
