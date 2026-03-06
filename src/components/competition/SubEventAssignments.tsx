@@ -236,7 +236,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                         <Button
                           size="sm"
                           onClick={handleAdd}
-                          disabled={!selectedUserId || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending}
+                          disabled={!selectedUserId || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending || isRoleAtLimit(selectedRole)}
                         >
                           <UserPlus className="h-3.5 w-3.5 mr-1" /> Assign
                         </Button>
