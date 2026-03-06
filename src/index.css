@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -70,7 +70,7 @@
     --popover: 220 20% 9%;
     --popover-foreground: 220 15% 90%;
 
-    --primary: var(--brand-charcoal);
+    --primary: var(--brand-orange);
     --primary-foreground: var(--brand-white);
 
     --secondary: 174 50% 35%;
@@ -115,7 +115,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: "JetBrains Mono", monospace;
   }
 }
 
