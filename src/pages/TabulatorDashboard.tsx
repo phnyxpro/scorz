@@ -106,7 +106,8 @@ function SubEventWorkspace({
   const { user } = useAuth();
   const { data: penalties } = usePenaltyRules(competitionId);
 
-  const [performanceDuration, setPerformanceDuration] = useState(0);
+   const [performanceDuration, setPerformanceDuration] = useState(0);
+   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected"), [registrations, subEventId]);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [certifyMode, setCertifyMode] = useState<"tabulator" | "witness">("tabulator");
   const [signature, setSignature] = useState("");
