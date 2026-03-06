@@ -118,7 +118,7 @@ const FAQ = [
   },
   {
     q: "What if I need a custom solution?",
-    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organization's needs, including white-label options, API access, and dedicated support.",
+    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organisation's needs, including white-label options, API access, and dedicated support.",
   },
 ];
 
