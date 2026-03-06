@@ -78,7 +78,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       
       const { error } = await supabase
         .from('sub_events')
-        .update(updateData as any)
+        .update(updateData)
         .eq('id', subEventId);
 
       if (error) {
