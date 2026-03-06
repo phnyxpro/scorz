@@ -115,7 +115,8 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                         <Mail className={`h-4 w-4 ${inv.accepted_at ? "text-secondary" : "text-primary"}`} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-foreground">{inv.email}</p>
+                                        <p className="text-sm font-medium text-foreground">{inv.name || inv.email}</p>
+                                        {inv.name && <p className="text-xs text-muted-foreground">{inv.email}</p>}
                                         <div className="flex items-center gap-2 mt-1">
                                             <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
                                                 {inv.role}
