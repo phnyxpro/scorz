@@ -664,21 +664,15 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
 
 /* ── Sub-Event Badge with name lookup ── */
 function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove: () => void }) {
-  const { data: subEvents } = useSubEvents(undefined);
-  // We'll do a simple query for the name
   const [name, setName] = useState<string | null>(null);
 
-  // Fetch sub-event name
+  // Fetch sub-event name on mount
   useState(() => {
-    const fetchName = async () => {
-      const { data } = await (await import("@/integrations/supabase/client")).supabase
-        .from("sub_events")
-        .select("name")
-        .eq("id", subEventId)
-        .maybeSingle();
+    void (async () => {
+      const { supabase: sb } = await import("@/integrations/supabase/client");
+      const { data } = await sb.from("sub_events").select("name").eq("id", subEventId).maybeSingle();
       if (data) setName(data.name);
-    };
-    fetchName();
+    })();
   });
 
   return (
