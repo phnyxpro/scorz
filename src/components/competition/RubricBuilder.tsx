@@ -305,6 +305,8 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   };
 
   const scaleLabels = form.watch("scaleLabels");
+  const watchedCriteria = form.watch("criteria");
+  const totalWeight = (watchedCriteria || []).reduce((sum, c) => sum + (Number(c.weight_percent) || 0), 0);
 
   if (criteriaLoading) return <Card className="border-border/50 bg-card/80 animate-pulse h-48" />;
 
