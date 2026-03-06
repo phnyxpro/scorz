@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
+import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
@@ -171,6 +172,15 @@ export default function ChiefJudgeDashboard() {
           </Badge>
         )}
       </div>
+
+      {/* Active Scoring Manager */}
+      {comp && (
+        <ActiveScoringManager
+          competitionId={competitionId}
+          activeLevelId={comp?.active_scoring_level_id}
+          activeSubEventId={comp?.active_scoring_sub_event_id}
+        />
+      )}
 
       {/* Sub-event selector */}
       <Card className="border-border/50 bg-card/80 mb-4">

@@ -10,6 +10,7 @@ import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
+import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,15 @@ export default function TabulatorDashboard() {
             <CheckCircle className="h-3 w-3 mr-1" /> Certified
           </Badge>
         )}
+      </div>
+
+      {/* Active scoring manager */}
+      <div className="mb-6">
+        <ActiveScoringManager
+          competitionId={competitionId!}
+          activeLevelId={comp?.active_scoring_level_id}
+          activeSubEventId={comp?.active_scoring_sub_event_id}
+        />
       </div>
 
       {/* Sub-event selector */}

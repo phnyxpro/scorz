@@ -41,6 +41,14 @@ export default function JudgeScoring() {
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
+  // Use active scoring config if available
+  useEffect(() => {
+    if (comp?.active_scoring_level_id && comp?.active_scoring_sub_event_id && !searchParams.get("sub_event")) {
+      setSelectedLevelId(comp.active_scoring_level_id);
+      setSelectedSubEventId(comp.active_scoring_sub_event_id);
+    }
+  }, [comp?.active_scoring_level_id, comp?.active_scoring_sub_event_id, searchParams]);
+
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
   const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
@@ -79,6 +87,7 @@ export default function JudgeScoring() {
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
 
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
@@ -223,30 +232,43 @@ export default function JudgeScoring() {
             <ScrollArea className="flex-1 min-h-0">
               <div className="px-2 pb-3 space-y-0.5">
                 {filteredContestants.map((r, idx) => (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      setSelectedContestant(r.id);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
-                      selectedContestant === r.id
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground/80 hover:bg-muted/50"
-                    )}
-                  >
-                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
-                      {idx + 1}
-                    </span>
-                    <span className="truncate text-xs flex-1">{r.full_name}</span>
-                    {scoreStatusMap.get(r.id) === "certified" && (
-                      <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
-                    )}
-                    {scoreStatusMap.get(r.id) === "scored" && (
-                      <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    )}
-                  </button>
+                  <div key={r.id} className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setSelectedContestant(r.id);
+                        if (isMobile) setSidebarOpen(false);
+                      }}
+                      className={cn(
+                        "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                        selectedContestant === r.id
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-foreground/80 hover:bg-muted/50"
+                      )}
+                    >
+                      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate text-xs flex-1">{r.full_name}</span>
+                      {scoreStatusMap.get(r.id) === "certified" && (
+                        <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                      )}
+                      {scoreStatusMap.get(r.id) === "scored" && (
+                        <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setOnStageContestant(onStageContestant === r.id ? null : r.id)}
+                      className={cn(
+                        "h-6 w-6 rounded flex items-center justify-center transition-colors shrink-0",
+                        onStageContestant === r.id
+                          ? "bg-red-500/30 text-red-600 ring-1 ring-red-500/50"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                      )}
+                      title="On Stage"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-current"></span>
+                    </button>
+                  </div>
                 ))}
                 {filteredContestants.length === 0 && (
                   <p className="text-xs text-muted-foreground px-2 py-4 text-center">No contestants</p>
@@ -275,12 +297,18 @@ export default function JudgeScoring() {
             <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)} className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1 className="text-xl font-bold text-foreground truncate">Judge Scoring</h1>
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
+            {onStageContestant === selectedContestant && (
+              <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
+                <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+                On Stage
+              </Badge>
+            )}
             {selectedContestantName && (
-              <Badge variant="secondary" className="ml-auto shrink-0 gap-1">
+              <Badge variant="secondary" className="shrink-0 gap-1">
                 <User className="h-3 w-3" />
                 <span className="truncate max-w-[120px]">{selectedContestantName}</span>
               </Badge>
@@ -331,7 +359,7 @@ export default function JudgeScoring() {
               <Card className="border-border/50 bg-card/80">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Scoring Card</CardTitle>
-                  <CardDescription>Rate each criterion from 1 to 5</CardDescription>
+                  <CardDescription>Rate each criterion from 1 to 5 (intervals of 0.1)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {rubric?.map(criterion => (

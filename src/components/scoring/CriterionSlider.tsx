@@ -97,6 +97,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
         disabled={disabled}
         className="py-1"
         tabIndex={-1}
+        gradientTrack={true}
       />
 
       {nearestDesc && value > 0 && (

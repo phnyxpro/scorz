@@ -12,6 +12,8 @@ export interface Competition {
   status: string;
   created_by: string;
   created_at: string;
+  active_scoring_level_id?: string | null;
+  active_scoring_sub_event_id?: string | null;
 }
 
 export interface CompetitionLevel {
@@ -230,6 +232,27 @@ export function useUpdateCompetition() {
       qc.invalidateQueries({ queryKey: ["competitions"] });
       qc.invalidateQueries({ queryKey: ["competition", v.id] });
       toast({ title: "Competition updated" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useUpdateActiveScoringConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ competitionId, levelId, subEventId }: { competitionId: string; levelId: string | null; subEventId: string | null }) => {
+      const { error } = await supabase
+        .from("competitions")
+        .update({ 
+          active_scoring_level_id: levelId,
+          active_scoring_sub_event_id: subEventId 
+        })
+        .eq("id", competitionId);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["competition", v.competitionId] });
+      toast({ title: "Active scoring updated" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
