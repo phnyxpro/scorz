@@ -18,12 +18,11 @@ export function ActiveScoringManager({
   activeSubEventId,
 }: ActiveScoringManagerProps) {
   const { data: levels } = useLevels(competitionId);
-  const [selectedLevelIdLocal, setSelectedLevelIdLocal] = useState(activeLevelId || "");
-  const { data: subEvents } = useSubEvents(selectedLevelIdLocal || undefined);
   const updateActive = useUpdateActiveScoringConfig();
 
   const [selectedLevelId, setSelectedLevelId] = useState(activeLevelId || "");
   const [selectedSubEventId, setSelectedSubEventId] = useState(activeSubEventId || "");
+  const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
 
   useEffect(() => {
     setSelectedLevelId(activeLevelId || "");
