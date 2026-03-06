@@ -311,6 +311,16 @@ export default function ChiefJudgeDashboard() {
               />
             </TabsContent>
 
+            <TabsContent value="infractions">
+              <InfractionApplicator
+                competitionId={competitionId!}
+                subEventId={selectedSubEventId}
+                contestantIds={Object.keys(scoresByContestant)}
+                contestantName={contestantName}
+                isCertified={isCertified}
+              />
+            </TabsContent>
+
             <TabsContent value="ties">
               <TieBreaker
                 ties={ties}
