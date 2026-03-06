@@ -330,7 +330,37 @@ export default function PublicEventDetail() {
             {/* Rules Tab */}
             <TabsContent value="rules">
               <div className="max-w-4xl mx-auto space-y-8">
-                {rulesUrl ? (
+                {rulesContent && (
+                  <Card className="border-border/50 bg-card/80 overflow-hidden">
+                    <CardContent className="p-6">
+                      <div
+                        className="prose prose-sm dark:prose-invert max-w-none text-foreground"
+                        dangerouslySetInnerHTML={{ __html: rulesContent }}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {rulesDocumentUrl && (
+                  <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex gap-4 items-center">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg">Rules Document</h3>
+                        <p className="text-sm text-muted-foreground">Download the official rules document</p>
+                      </div>
+                    </div>
+                    <Button asChild size="lg" variant="default" className="w-full sm:w-auto">
+                      <a href={rulesDocumentUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" /> Download
+                      </a>
+                    </Button>
+                  </Card>
+                )}
+
+                {rulesUrl && (
                   <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex gap-4 items-center">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -338,7 +368,7 @@ export default function PublicEventDetail() {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg">Official Rules</h3>
-                        <p className="text-sm text-muted-foreground">Download the full competition handbook</p>
+                        <p className="text-sm text-muted-foreground">View the full competition handbook</p>
                       </div>
                     </div>
                     <Button asChild size="lg" variant="default" className="w-full sm:w-auto">
@@ -347,7 +377,9 @@ export default function PublicEventDetail() {
                       </a>
                     </Button>
                   </Card>
-                ) : (
+                )}
+
+                {!rulesContent && !rulesUrl && !rulesDocumentUrl && (
                   <p className="text-sm text-muted-foreground italic text-center py-8">No official rules document has been published yet.</p>
                 )}
               </div>
