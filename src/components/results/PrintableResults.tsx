@@ -132,21 +132,30 @@ export function PrintableResults({
               <div className="line" />
               <div className="label">Chief Judge</div>
               {certificationDates.chiefJudge && (
-                <div className="date">Signed: {new Date(certificationDates.chiefJudge).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.chiefJudge).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Chief Judge</div>
+                </>
               )}
             </div>
             <div className="cert-item">
               <div className="line" />
               <div className="label">Tabulator</div>
               {certificationDates.tabulator && (
-                <div className="date">Signed: {new Date(certificationDates.tabulator).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.tabulator).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Tabulator</div>
+                </>
               )}
             </div>
             <div className="cert-item">
               <div className="line" />
               <div className="label">Witness</div>
               {certificationDates.witness && (
-                <div className="date">Signed: {new Date(certificationDates.witness).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.witness).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Witness</div>
+                </>
               )}
             </div>
           </div>

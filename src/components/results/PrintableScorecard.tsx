@@ -65,6 +65,10 @@ export function PrintableScorecard({
           .judge-card .score-item .val { font-family: 'Courier New', monospace; }
           .judge-card .meta { font-size: 11px; color: #666; }
           .judge-card .comments { margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 12px; font-style: italic; color: #444; }
+          .sig-stamp { margin-top: 8px; padding: 6px 10px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; font-size: 10px; color: #555; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+          .sig-icon { color: #28a745; font-weight: bold; margin-right: 2px; }
+          .sig-sep { color: #ccc; }
+          .sig-image { margin-top: 6px; }
           .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #ddd; padding-top: 12px; }
           @media print { body { padding: 20px; } }
         </style>
