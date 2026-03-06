@@ -237,7 +237,7 @@ export default function Results() {
                             )}
                           </TableCell>
                           <TableCell className="font-medium">
-                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">
                               {r.name}
                             </Link>
                           </TableCell>
