@@ -94,6 +94,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       phone: staffPhone || undefined,
       role: staffRole as any,
       competitionId,
+      competitionName,
       isChief: staffRole === "judge" ? staffIsChief : false,
     });
     setStaffName("");
