@@ -171,12 +171,7 @@ export function RichTextEditor({
         walk(doc.body);
         return doc.body.innerHTML;
       },
-      transformPastedText(text) {
-        return text
-          .split("\n")
-          .map((line) => `<p>${line || "<br>"}</p>`)
-          .join("");
-      },
+    },
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
