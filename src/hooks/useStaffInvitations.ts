@@ -43,11 +43,13 @@ export function useAddStaffMember() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ email, role, competitionId }: { email: string; role: AppRole; competitionId: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
+          name: name || null,
           email,
+          phone: phone || null,
           role,
           competition_id: competitionId,
           invited_by: user?.id,
