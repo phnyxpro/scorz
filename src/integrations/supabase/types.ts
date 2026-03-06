@@ -153,6 +153,35 @@ export type Database = {
           },
         ]
       }
+      chat_read_cursors: {
+        Row: {
+          competition_id: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_read_cursors_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chief_judge_certifications: {
         Row: {
           chief_judge_id: string

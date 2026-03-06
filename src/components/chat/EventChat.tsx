@@ -6,7 +6,7 @@ import { VoiceRecorder } from "./VoiceRecorder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Paperclip, Loader2, MessageSquare } from "lucide-react";
+import { Send, Paperclip, Loader2, MessageSquare, Bell, BellOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -16,16 +16,35 @@ interface EventChatProps {
 
 export function EventChat({ competitionId }: EventChatProps) {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, uploadFile } = useEventChat(competitionId);
+  const { messages, isLoading, sendMessage, uploadFile, markAsRead } = useEventChat(competitionId);
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    "Notification" in window ? Notification.permission : "denied"
+  );
+
+  // Mark as read when chat is viewed and messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      markAsRead();
+    }
+  }, [messages.length, markAsRead]);
 
   // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const requestNotifications = async () => {
+    if (!("Notification" in window)) return;
+    const perm = await Notification.requestPermission();
+    setNotifPermission(perm);
+    if (perm === "granted") {
+      toast({ title: "Notifications enabled", description: "You'll be alerted when new messages arrive." });
+    }
+  };
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -72,7 +91,6 @@ export function EventChat({ competitionId }: EventChatProps) {
     }
   };
 
-  // Group messages by date
   const dateLabel = (dateStr: string) => {
     const d = new Date(dateStr);
     if (isToday(d)) return "Today";
@@ -88,7 +106,14 @@ export function EventChat({ competitionId }: EventChatProps) {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
         <MessageSquare className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-foreground">Event Chat</span>
-        <span className="text-[10px] text-muted-foreground ml-auto">{messages.length} messages</span>
+        <span className="text-[10px] text-muted-foreground ml-auto mr-1">{messages.length} messages</span>
+        {notifPermission !== "granted" ? (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={requestNotifications} title="Enable notifications">
+            <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        ) : (
+          <Bell className="h-3.5 w-3.5 text-primary" />
+        )}
       </div>
 
       {/* Messages */}
