@@ -49,22 +49,15 @@ const ROLES = [
   {
     icon: Trophy,
     title: "Tabulator",
-    description: "Aggregate scores, audit votes, and prepare official rankings.",
+    description: "Aggregate scores, time performances, audit votes, and verify process integrity.",
     features: [
+      "Time each performance and flag overruns",
       "View side-by-side score comparisons",
       "Audit individual judge votes for discrepancies",
+      "Observe and verify scoring integrity",
       "Generate master score sheets per level",
-      "Certify digital-vs-physical score match",
-    ],
-  },
-  {
-    icon: Eye,
-    title: "Witness",
-    description: "Independently verify the fairness and accuracy of the process.",
-    features: [
-      "Observe scoring in real time",
       "Log observations and flag concerns",
-      "Digitally sign witness certification",
+      "Certify digital-vs-physical score match",
     ],
   },
   {
