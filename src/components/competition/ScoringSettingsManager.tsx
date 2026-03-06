@@ -107,7 +107,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <Settings className="h-5 w-5 text-secondary" />
             Scoring
           </CardTitle>
           <p className="text-sm text-muted-foreground">
