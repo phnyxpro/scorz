@@ -1,4 +1,5 @@
 import { ReactNode, useMemo } from "react";
+import { formatRoleName } from "@/lib/utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
