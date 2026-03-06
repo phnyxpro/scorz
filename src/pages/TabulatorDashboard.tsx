@@ -674,12 +674,6 @@ export default function TabulatorDashboard() {
       {/* Active sub-event workspace */}
       {activeSubEventId && selectedCompId && overview && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">
-              Workspace: {activeSubEvent?.name ?? "Sub-Event"}
-            </h2>
-          </div>
           <SubEventWorkspace
             subEventId={activeSubEventId}
             competitionId={selectedCompId}
