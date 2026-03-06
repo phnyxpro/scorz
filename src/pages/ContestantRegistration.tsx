@@ -22,7 +22,8 @@ import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 const registrationSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
@@ -81,7 +82,8 @@ export function OnBehalfRegistrationForm({
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       ageCategory: "adult",
       rulesAcknowledged: false,
@@ -92,7 +94,7 @@ export function OnBehalfRegistrationForm({
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["fullName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email", "ageCategory", "guardianName"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
@@ -114,7 +116,7 @@ export function OnBehalfRegistrationForm({
     createReg.mutate({
       user_id: registrationUserId,
       competition_id: competitionId,
-      full_name: data.fullName,
+      full_name: `${data.firstName} ${data.lastName}`.trim(),
       email: data.email,
       phone: data.phone,
       location: data.location,
@@ -219,7 +221,8 @@ export default function ContestantRegistration() {
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: isOnBehalf ? "" : (user?.user_metadata?.full_name || ""),
+      firstName: isOnBehalf ? "" : (user?.user_metadata?.full_name?.split(" ")[0] || ""),
+      lastName: isOnBehalf ? "" : (user?.user_metadata?.full_name?.split(" ").slice(1).join(" ") || ""),
       email: isOnBehalf ? "" : (user?.email || ""),
       ageCategory: "adult",
       rulesAcknowledged: false,
@@ -230,7 +233,9 @@ export default function ContestantRegistration() {
   useEffect(() => {
     if (user && !isOnBehalf) {
       methods.setValue("email", user.email || "");
-      methods.setValue("fullName", user.user_metadata?.full_name || "");
+      const fullName = user.user_metadata?.full_name || "";
+      methods.setValue("firstName", fullName.split(" ")[0] || "");
+      methods.setValue("lastName", fullName.split(" ").slice(1).join(" ") || "");
     }
   }, [user, methods, isOnBehalf]);
 
@@ -253,7 +258,7 @@ export default function ContestantRegistration() {
     }
 
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["fullName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email", "ageCategory", "guardianName"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
@@ -282,7 +287,7 @@ export default function ContestantRegistration() {
     createReg.mutate({
       user_id: registrationUserId,
       competition_id: competitionId,
-      full_name: data.fullName,
+      full_name: `${data.firstName} ${data.lastName}`.trim(),
       email: data.email,
       phone: data.phone,
       location: data.location,
@@ -459,10 +464,15 @@ function PersonalStep() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2 col-span-full">
-            <Label>Full Name *</Label>
-            <Input {...register("fullName")} placeholder="Legal Name" />
-            {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
+          <div className="space-y-2">
+            <Label>First Name *</Label>
+            <Input {...register("firstName")} placeholder="First Name" />
+            {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label>Last Name *</Label>
+            <Input {...register("lastName")} placeholder="Last Name" />
+            {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Email *</Label>
