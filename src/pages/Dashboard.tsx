@@ -183,12 +183,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Tabulator Dashboard link */}
-          {isTabulator && (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/tabulator">Tabulator Dashboard</Link>
-            </Button>
-          )}
 
           {/* Competition selector for judges */}
           {isJudgeRole && (
