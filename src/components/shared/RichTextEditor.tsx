@@ -47,6 +47,8 @@ import {
   Merge,
   Split,
   Ruler,
+  IndentIncrease,
+  IndentDecrease,
 } from "lucide-react";
 import { EditorRuler } from "./EditorRuler";
 import { cn } from "@/lib/utils";
