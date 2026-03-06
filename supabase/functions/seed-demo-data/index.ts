@@ -260,7 +260,7 @@ serve(async (req) => {
       for (const a of assignmentRoles) {
         const { error } = await supabaseAdmin
           .from("sub_event_assignments")
-          .insert({ sub_event_id: seId, user_id: a.userId, role: a.role });
+          .insert({ sub_event_id: seId, user_id: a.userId, role: a.role, is_chief: a.is_chief });
         if (error) console.error(`Assignment error: ${error.message}`);
       }
     }
