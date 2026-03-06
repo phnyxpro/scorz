@@ -200,6 +200,20 @@ export default function TabulatorDashboard() {
             </Badge>
           </div>
 
+          {/* Performance Timer */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Timer className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Performance Timer</span>
+              <span className="text-[10px] text-muted-foreground ml-auto font-mono">Space to start/stop</span>
+            </div>
+            <PerformanceTimer
+              timeLimitSeconds={penalties?.[0]?.time_limit_seconds ?? 300}
+              gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
+              onDurationChange={setPerformanceDuration}
+            />
+          </div>
+
           {/* Scoring Progress */}
           <div className="mb-4">
             <ScoringProgressBar allScores={allScores} />
