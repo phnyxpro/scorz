@@ -2,7 +2,7 @@ import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tier
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail } from "lucide-react";
+import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail, BookOpen } from "lucide-react";
 import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -342,6 +342,20 @@ export default function About() {
             ))}
           </Accordion>
         </div>
+      </section>
+
+      {/* ── Help Centre CTA ── */}
+      <section className="border-t border-border/40 py-16 text-center px-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <BookOpen className="h-5 w-5 text-secondary" />
+          <h2 className="text-xl font-bold text-foreground">Need help getting started?</h2>
+        </div>
+        <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+          Browse our Knowledge Base for step-by-step guides, walkthroughs, and video tutorials for every role.
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/help">Browse Knowledge Base <ArrowRight className="h-4 w-4 ml-1" /></Link>
+        </Button>
       </section>
 
       {/* ── Contact ── */}
