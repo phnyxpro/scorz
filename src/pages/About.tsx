@@ -106,7 +106,7 @@ const FAQ = [
   },
   {
     q: "Can the audience participate?",
-    a: "When enabled, audience members can vote for their favorite contestants and purchase event tickets—all through the public event page. No account required for voting.",
+    a: "When enabled, audience members can vote for their favourite contestants and purchase event tickets—all through the public event page. No account required for voting.",
   },
   {
     q: "What happens if there's a tie?",
