@@ -563,6 +563,57 @@ export type Database = {
           },
         ]
       }
+      event_messages: {
+        Row: {
+          competition_id: string
+          content: string | null
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          message_type: string
+          reply_to_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          competition_id: string
+          content?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          message_type?: string
+          reply_to_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          competition_id?: string
+          content?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          message_type?: string
+          reply_to_id?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_messages_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "event_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_tickets: {
         Row: {
           checked_in_at: string | null
@@ -1247,6 +1298,10 @@ export type Database = {
       }
       is_chief_for_sub_event: {
         Args: { _sub_event_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_competition_staff: {
+        Args: { _competition_id: string; _user_id: string }
         Returns: boolean
       }
     }
