@@ -110,8 +110,8 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Tier Limits Progress */}
-      {tierLimits && staffCounts && (
+      {/* Tier Limits Progress — hidden for admins (unlimited) */}
+      {!isAdmin && tierLimits && staffCounts && (
         <Card className="border-border/50 bg-card/80">
           <CardContent className="pt-4 pb-3 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
