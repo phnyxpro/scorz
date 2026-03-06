@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck, MessageSquare } from "lucide-react";
 import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export default function JudgeDashboard() {
