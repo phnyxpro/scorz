@@ -206,21 +206,14 @@ function SubEventWorkspace({
         </Badge>
       </div>
 
-      {/* Performance Timer */}
-      <Card className="border-border/50 bg-card/80">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Timer className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Performance Timer</span>
-            <span className="text-[10px] text-muted-foreground ml-auto font-mono">Space to start/stop</span>
-          </div>
-          <PerformanceTimer
-            timeLimitSeconds={penalties?.[0]?.time_limit_seconds ?? 300}
-            gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
-            onDurationChange={setPerformanceDuration}
-          />
-        </CardContent>
-      </Card>
+      {/* Performance Timer with contestant selector */}
+      <TabulatorTimer
+        subEventId={subEventId}
+        timeLimitSeconds={penalties?.[0]?.time_limit_seconds ?? 300}
+        gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
+        contestants={seContestants}
+        onDurationChange={setPerformanceDuration}
+      />
 
       {/* Scoring Progress + Judge Activity */}
       <div className="space-y-3">
