@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useRubricCriteria, usePenaltyRules, useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
@@ -61,10 +61,12 @@ const STEPS = [
 
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isOnBehalf = searchParams.get("behalf") === "true";
   const navigate = useNavigate();
   const { user, signUp } = useAuth();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
-  const { data: existing, isLoading: regLoading } = useMyRegistration(competitionId);
+  const { data: existing, isLoading: regLoading } = useMyRegistration(isOnBehalf ? undefined : competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
 
@@ -73,15 +75,16 @@ export default function ContestantRegistration() {
   const [authData, setAuthData] = useState({ email: "", password: "", fullName: "" });
 
   const availableSteps = useMemo(() => {
+    if (isOnBehalf) return STEPS.filter(s => s.id !== "account");
     if (user) return STEPS.filter(s => s.id !== "account");
     return STEPS;
-  }, [user]);
+  }, [user, isOnBehalf]);
 
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: user?.user_metadata?.full_name || "",
-      email: user?.email || "",
+      fullName: isOnBehalf ? "" : (user?.user_metadata?.full_name || ""),
+      email: isOnBehalf ? "" : (user?.email || ""),
       ageCategory: "adult",
       rulesAcknowledged: false,
       contestantSig: "",
@@ -89,11 +92,11 @@ export default function ContestantRegistration() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && !isOnBehalf) {
       methods.setValue("email", user.email || "");
       methods.setValue("fullName", user.user_metadata?.full_name || "");
     }
-  }, [user, methods]);
+  }, [user, methods, isOnBehalf]);
 
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
@@ -129,11 +132,22 @@ export default function ContestantRegistration() {
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user || !competitionId) return;
 
-    // Ensure user has contestant role
-    await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    // Determine user_id: for on-behalf, try to find existing user by email, else use organiser's ID
+    let registrationUserId = user.id;
+    if (isOnBehalf) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("email", data.email)
+        .maybeSingle();
+      registrationUserId = existingProfile?.user_id || user.id;
+    } else {
+      // Ensure user has contestant role
+      await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    }
 
     createReg.mutate({
-      user_id: user.id,
+      user_id: registrationUserId,
       competition_id: competitionId,
       full_name: data.fullName,
       email: data.email,
@@ -152,6 +166,7 @@ export default function ContestantRegistration() {
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {
         // Book the selected time slot if one was chosen
@@ -161,8 +176,11 @@ export default function ContestantRegistration() {
             .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
             .eq("id", data.selectedSlotId);
         }
-        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
-        navigate(`/competitions`);
+        const successMsg = isOnBehalf
+          ? "Contestant has been added and auto-approved."
+          : "Your details have been submitted successfully.";
+        toast({ title: "Registration complete", description: successMsg });
+        navigate(isOnBehalf ? `/competitions/${competitionId}` : `/competitions`);
       },
     });
   };
@@ -176,12 +194,16 @@ export default function ContestantRegistration() {
   return (
     <div className="max-w-2xl mx-auto pb-12">
       <header className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/competitions")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(isOnBehalf ? `/competitions/${competitionId}` : "/competitions")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Registration</h1>
-          <p className="text-muted-foreground">{comp?.name}</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isOnBehalf ? "Add Contestant" : "Registration"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isOnBehalf ? `Registering on behalf · ${comp?.name}` : comp?.name}
+          </p>
         </div>
       </header>
 

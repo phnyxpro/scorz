@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const createReg = useCreateRegistration();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
@@ -160,9 +162,14 @@ export function RegistrationsManager({ competitionId }: Props) {
                 {registrations?.length || 0} total · {pendingCount} pending approval
               </p>
             </div>
-            <Button size="sm" onClick={() => setShowWalkIn(true)}>
-              <UserPlus className="h-3.5 w-3.5 mr-1" /> Walk-in Add
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => navigate(`/register/${competitionId}?behalf=true`)}>
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
