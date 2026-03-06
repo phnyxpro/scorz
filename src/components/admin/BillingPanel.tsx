@@ -157,6 +157,9 @@ export default function BillingPanel({ subscription, onRefresh }: BillingPanelPr
       <p className="text-center text-[10px] text-muted-foreground font-mono">
         {USD_DISCLAIMER}
       </p>
+      <p className="text-center text-xs text-muted-foreground max-w-lg mx-auto">
+        Mix and match plans as needed—each credit unlocks one competition at its tier's limits. Buy a Start credit for small events and a Pro credit for larger ones.
+      </p>
 
       {/* Refresh */}
       <div className="text-center">
