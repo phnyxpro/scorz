@@ -220,9 +220,16 @@ export function RegistrationsManager({ competitionId }: Props) {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px]">
-                        {reg.age_category}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[10px]">
+                          {reg.age_category}
+                        </Badge>
+                        {reg.age_category === "minor" && !reg.guardian_name && (
+                          <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
+                            <ShieldAlert className="h-2.5 w-2.5" /> No Guardian
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
