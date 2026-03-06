@@ -538,7 +538,7 @@ export default function TabulatorDashboard() {
                       {levelSubEvents.length === 0 ? (
                         <p className="text-xs text-muted-foreground text-center py-4">No sub-events yet.</p>
                       ) : (
-                        levelSubEvents.map((se) => {
+                        (activeSubEventId ? levelSubEvents.filter((se) => se.id === activeSubEventId) : levelSubEvents).map((se) => {
                           const judges = overview.assignments.filter((a: any) => a.sub_event_id === se.id);
                           const contestants = overview.registrations.filter((r: any) => r.sub_event_id === se.id);
                           const seScores = (overview.scores || []).filter((s) => s.sub_event_id === se.id);
