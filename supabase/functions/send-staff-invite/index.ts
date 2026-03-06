@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Scorz <no-reply@notify.scorz.live>",
+          from: "Scorz <no-reply@scorz.live>",
           to: [email],
           subject: `You've been added as ${roleLabel} — ${competitionLabel}`,
           html,
