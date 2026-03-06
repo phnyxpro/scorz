@@ -116,6 +116,11 @@ export default function ResultsHub() {
               tabulator: tabCert?.signed_at || undefined,
               witness: witnessCert?.signed_at || undefined,
             }}
+            certificationSignatures={{
+              chiefJudge: chiefCert?.chief_judge_signature,
+              tabulator: tabCert?.tabulator_signature,
+              witness: witnessCert?.witness_signature,
+            }}
           />
         )}
       </div>

@@ -136,7 +136,9 @@ export function PrintableResults({
         <div className="certifications">
           <div className="cert-row">
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.chiefJudge && <img src={certificationSignatures.chiefJudge} alt="Chief Judge signature" />}
+              </div>
               <div className="label">Chief Judge</div>
               {certificationDates.chiefJudge && (
                 <>
@@ -146,7 +148,9 @@ export function PrintableResults({
               )}
             </div>
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.tabulator && <img src={certificationSignatures.tabulator} alt="Tabulator signature" />}
+              </div>
               <div className="label">Tabulator</div>
               {certificationDates.tabulator && (
                 <>
@@ -156,7 +160,9 @@ export function PrintableResults({
               )}
             </div>
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.witness && <img src={certificationSignatures.witness} alt="Witness signature" />}
+              </div>
               <div className="label">Witness</div>
               {certificationDates.witness && (
                 <>
