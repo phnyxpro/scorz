@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from "react";
-import { useEventChat } from "@/hooks/useEventChat";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useEventChat, EventMessage } from "@/hooks/useEventChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatMessage } from "./ChatMessage";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Paperclip, Loader2, MessageSquare, Bell, BellOff } from "lucide-react";
+import { Send, Paperclip, Loader2, MessageSquare, Bell, BellOff, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -19,20 +19,25 @@ export function EventChat({ competitionId }: EventChatProps) {
   const { messages, isLoading, sendMessage, uploadFile, markAsRead } = useEventChat(competitionId);
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [replyTo, setReplyTo] = useState<EventMessage | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
     "Notification" in window ? Notification.permission : "denied"
   );
 
-  // Mark as read when chat is viewed and messages change
+  // Build a map for quick reply-to lookups
+  const messageMap = useMemo(() => {
+    const map = new Map<string, EventMessage>();
+    for (const m of messages) map.set(m.id, m);
+    return map;
+  }, [messages]);
+
   useEffect(() => {
-    if (messages.length > 0) {
-      markAsRead();
-    }
+    if (messages.length > 0) markAsRead();
   }, [messages.length, markAsRead]);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -48,8 +53,9 @@ export function EventChat({ competitionId }: EventChatProps) {
 
   const handleSend = () => {
     if (!text.trim()) return;
-    sendMessage.mutate({ content: text.trim() });
+    sendMessage.mutate({ content: text.trim(), replyToId: replyTo?.id });
     setText("");
+    setReplyTo(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -57,6 +63,14 @@ export function EventChat({ competitionId }: EventChatProps) {
       e.preventDefault();
       handleSend();
     }
+    if (e.key === "Escape" && replyTo) {
+      setReplyTo(null);
+    }
+  };
+
+  const handleReply = (msg: EventMessage) => {
+    setReplyTo(msg);
+    inputRef.current?.focus();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +83,8 @@ export function EventChat({ competitionId }: EventChatProps) {
     setUploading(true);
     try {
       const url = await uploadFile(file, "files");
-      sendMessage.mutate({ messageType: "file", fileUrl: url, fileName: file.name });
+      sendMessage.mutate({ messageType: "file", fileUrl: url, fileName: file.name, replyToId: replyTo?.id });
+      setReplyTo(null);
     } catch {
       toast({ title: "Upload failed", variant: "destructive" });
     } finally {
@@ -83,7 +98,8 @@ export function EventChat({ competitionId }: EventChatProps) {
     try {
       const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
       const url = await uploadFile(file, "voice");
-      sendMessage.mutate({ messageType: "voice", fileUrl: url, fileName: file.name });
+      sendMessage.mutate({ messageType: "voice", fileUrl: url, fileName: file.name, replyToId: replyTo?.id });
+      setReplyTo(null);
     } catch {
       toast({ title: "Upload failed", variant: "destructive" });
     } finally {
@@ -96,6 +112,12 @@ export function EventChat({ competitionId }: EventChatProps) {
     if (isToday(d)) return "Today";
     if (isYesterday(d)) return "Yesterday";
     return format(d, "MMM d, yyyy");
+  };
+
+  const replyPreview = (msg: EventMessage) => {
+    if (msg.message_type === "voice") return "🎙️ Voice note";
+    if (msg.message_type === "file") return `📎 ${msg.file_name || "File"}`;
+    return msg.content?.slice(0, 60) || "";
   };
 
   let lastDate = "";
@@ -134,6 +156,7 @@ export function EventChat({ competitionId }: EventChatProps) {
             const msgDate = dateLabel(msg.created_at);
             const showDate = msgDate !== lastDate;
             lastDate = msgDate;
+            const parentMsg = msg.reply_to_id ? messageMap.get(msg.reply_to_id) || null : null;
             return (
               <div key={msg.id}>
                 {showDate && (
@@ -143,13 +166,36 @@ export function EventChat({ competitionId }: EventChatProps) {
                     </span>
                   </div>
                 )}
-                <ChatMessage message={msg} isOwn={msg.sender_id === user?.id} />
+                <ChatMessage
+                  message={msg}
+                  isOwn={msg.sender_id === user?.id}
+                  replyTo={parentMsg}
+                  onReply={handleReply}
+                />
               </div>
             );
           })}
         </div>
         <div ref={bottomRef} />
       </ScrollArea>
+
+      {/* Reply preview bar */}
+      {replyTo && (
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-border/50 bg-primary/5">
+          <div className="w-0.5 h-8 bg-primary rounded-full shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-primary truncate">
+              {replyTo.sender?.full_name || "Unknown"}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {replyPreview(replyTo)}
+            </p>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setReplyTo(null)}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       {/* Input bar */}
       <div className="flex items-center gap-1 px-3 py-2 border-t border-border/50 bg-muted/20">
@@ -172,10 +218,11 @@ export function EventChat({ competitionId }: EventChatProps) {
         </Button>
         <VoiceRecorder onRecorded={handleVoiceRecorded} disabled={uploading} />
         <Input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message…"
+          placeholder={replyTo ? "Reply…" : "Type a message…"}
           className="flex-1 h-8 text-sm bg-background"
           disabled={uploading}
         />
