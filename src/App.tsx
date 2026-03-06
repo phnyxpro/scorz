@@ -101,6 +101,9 @@ const App = () => (
                 <Route path="/events/:id" element={<PublicEventDetail />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/help/:category" element={<HelpCategory />} />
+                <Route path="/help/:category/:slug" element={<HelpArticle />} />
                 <Route path="/welcome" element={<MagicLinkLanding />} />
                 <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
                 <Route path="/audience-events" element={<ProtectedPage><AudienceEvents /></ProtectedPage>} />
