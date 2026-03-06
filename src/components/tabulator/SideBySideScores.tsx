@@ -83,17 +83,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
               })}
               <TableCell className="text-center font-mono text-xs">
                 {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.raw_total, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-center font-mono text-xs text-destructive">
-                {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.time_penalty, 0) / scores.filter(s => s.is_certified).length).toFixed(1)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-center font-mono font-bold">
-                {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.final_score, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
+                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.raw_total, 0) / scores.filter(s => s.is_certified).length).toFixed(1)
                   : "—"}
               </TableCell>
               <TableCell />
