@@ -354,12 +354,12 @@ export default function JudgeScoring() {
                 </Card>
               )}
 
-              {timerVisible && (
-                <PerformanceTimer
+              {timerVisible && subEventId && (
+                <ReadOnlyTimer
+                  subEventId={subEventId}
                   timeLimitSeconds={timeLimitSecs}
                   gracePeriodSeconds={gracePeriodSecs}
-                  onDurationChange={setDuration}
-                  disabled={isCertified}
+                  contestantName={(regId) => filteredContestants.find(r => r.id === regId)?.full_name ?? "Unknown"}
                 />
               )}
 
