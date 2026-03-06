@@ -132,11 +132,22 @@ export default function ContestantRegistration() {
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user || !competitionId) return;
 
-    // Ensure user has contestant role
-    await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    // Determine user_id: for on-behalf, try to find existing user by email, else use organiser's ID
+    let registrationUserId = user.id;
+    if (isOnBehalf) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("email", data.email)
+        .maybeSingle();
+      registrationUserId = existingProfile?.user_id || user.id;
+    } else {
+      // Ensure user has contestant role
+      await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    }
 
     createReg.mutate({
-      user_id: user.id,
+      user_id: registrationUserId,
       competition_id: competitionId,
       full_name: data.fullName,
       email: data.email,
@@ -155,6 +166,7 @@ export default function ContestantRegistration() {
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {
         // Book the selected time slot if one was chosen
@@ -164,8 +176,11 @@ export default function ContestantRegistration() {
             .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
             .eq("id", data.selectedSlotId);
         }
-        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
-        navigate(`/competitions`);
+        const successMsg = isOnBehalf
+          ? "Contestant has been added and auto-approved."
+          : "Your details have been submitted successfully.";
+        toast({ title: "Registration complete", description: successMsg });
+        navigate(isOnBehalf ? `/competitions/${competitionId}` : `/competitions`);
       },
     });
   };
