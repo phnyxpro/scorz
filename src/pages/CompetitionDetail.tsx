@@ -98,6 +98,40 @@ export default function CompetitionDetail() {
   const [scanningRubric, setScanningRubric] = useState(false);
   const [pendingRubricCriteria, setPendingRubricCriteria] = useState<ScannedCriterion[] | null>(null);
 
+  // Auto-save state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadRef = useRef(true);
+
+  const autoSaveContent = useCallback(async (field: "rules_content" | "rubric_content", value: string) => {
+    if (!id) return;
+    setAutoSaveStatus("saving");
+    await supabase.from("competitions").update({ [field]: value } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["competition", id] });
+    setAutoSaveStatus("saved");
+    setTimeout(() => setAutoSaveStatus("idle"), 2000);
+  }, [id, qc]);
+
+  // Auto-save rules content
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveContent("rules_content", rulesContent);
+    }, 2000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [rulesContent, autoSaveContent]);
+
+  // Auto-save rubric content
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveContent("rubric_content", rubricContent);
+    }, 2000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [rubricContent, autoSaveContent]);
+
   useEffect(() => {
     if (comp) {
       setName(comp.name);
