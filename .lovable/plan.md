@@ -1,78 +1,47 @@
 
 
-## Plan: Role-Based Sign Up and Sign In for /auth
+## Fix Blank Rendering in Browser Automation
+
+The app appears blank in headless browser testing due to two compounding issues:
+
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+
+---
+
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
 
 ### Summary
 
-Redesign the Auth page so that:
-- **Sign Up** allows Organizer, Contestant, or Audience (user picks role first)
-- **Sign In** has two paths: password-based for Organizer/Contestant/Audience, and Magic Link for Judge/Tabulator
-- Judge/Tabulator accounts are system-created (via staff invitation) — they never sign up, only sign in via magic link
-
-### Changes
-
-#### 1. `src/contexts/AuthContext.tsx`
-
-- Update `signUp` to accept an optional `role` parameter and store it in `user_metadata` (e.g. `{ full_name, signup_role }`)
-- Add `signInWithMagicLink(email: string)` method that calls `supabase.auth.signInWithOtp({ email })` — no password needed
-- Expose `signInWithMagicLink` in the context type and provider value
-
-After signup, the role self-assignment happens client-side: insert into `user_roles` with the chosen role (existing RLS policy already allows users to self-assign `contestant` or `audience`).
-
-For `organizer` role: the existing RLS only allows self-assign of `contestant`/`audience`. We need a DB migration to also allow self-assigning `organizer`.
-
-#### 2. Database Migration
-
-Update the RLS policy on `user_roles` to allow self-assigning the `organizer` role:
-
-```sql
-DROP POLICY "Users can self-assign contestant or audience role" ON public.user_roles;
-CREATE POLICY "Users can self-assign allowed roles" ON public.user_roles
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    user_id = auth.uid() 
-    AND role = ANY(ARRAY['contestant'::app_role, 'audience'::app_role, 'organizer'::app_role])
-  );
-```
-
-#### 3. `src/pages/Auth.tsx` — Full Rewrite
-
-**Sign Up tab** (renamed from "Organiser Sign Up" to "Sign Up"):
-- Step 1: Role selector — three cards/radio buttons: "Event Organizer", "Contestant", "Audience Member"
-- Step 2: Registration form (name, email, password) with role-specific description text
-- On submit: call `signUp()`, then after email verification + login, auto-insert the chosen role into `user_roles`
-- Post-signup role assignment: add a `useEffect` in Auth or AuthContext that checks `user_metadata.signup_role` and inserts into `user_roles` if no role exists yet
-
-**Sign In tab**:
-- Step 1: Role selector — five options grouped into two categories:
-  - **Password login**: Organizer, Contestant, Audience
-  - **Magic Link**: Judge, Tabulator
-- When Organizer/Contestant/Audience selected: show email + password form (current behavior)
-- When Judge/Tabulator selected: show email-only form + "Send Magic Link" button. Info text explains their account was created when assigned by an organizer
-- Demo accounts accordion remains at the bottom
-
-**UI details**:
-- Role cards use icons: `Briefcase` (Organizer), `Star` (Contestant), `Users` (Audience), `Scale` (Judge), `Calculator` (Tabulator)
-- Selected role highlighted with accent border
-- Card description updates to match: "Sign in to manage events" / "Sign in as a competitor" / etc.
-- For magic link sign-in, show a success state: "Check your email for a login link"
-
-#### 4. Post-Signup Role Assignment
-
-Add logic in `AuthContext` (inside the `onAuthStateChange` handler, on `SIGNED_IN` event):
-- Check `user.user_metadata.signup_role`
-- Query `user_roles` to see if user already has that role
-- If not, insert it (the RLS policy allows self-assignment of organizer/contestant/audience)
-- Clear the metadata flag by calling `supabase.auth.updateUser({ data: { signup_role: null } })`
-
-This handles the case where the user signs up, verifies email, and returns — the role gets assigned on first login.
-
-### Files Modified
-- `src/contexts/AuthContext.tsx` — add `signInWithMagicLink`, update `signUp` signature, add post-signup role assignment
-- `src/pages/Auth.tsx` — full rewrite with role selection UI
-- Database migration — update `user_roles` self-assign RLS policy to include `organizer`
-
-### No Other Changes Needed
-- Staff invitation flow (`StaffInvitationForm`) already handles judge/tabulator account creation separately
-- Existing routing/protected routes work as-is since they check roles from the `user_roles` table
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

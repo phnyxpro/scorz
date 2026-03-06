@@ -32,8 +32,8 @@ export interface SubEvent {
   start_time: string | null;
   end_time: string | null;
   status: string;
-  timer_visible: boolean;
-  comments_visible: boolean;
+  timer_visible?: boolean;
+  comments_visible?: boolean;
 }
 
 export interface RubricCriterion {
@@ -246,7 +246,7 @@ export function useUpdateActiveScoringConfig() {
         .update({ 
           active_scoring_level_id: levelId,
           active_scoring_sub_event_id: subEventId 
-        })
+        } as any)
         .eq("id", competitionId);
       if (error) throw error;
     },

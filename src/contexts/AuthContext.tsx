@@ -27,8 +27,9 @@ interface AuthContextType {
   roles: AppRole[];
   subscription: SubscriptionStatus;
   refreshSubscription: () => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
@@ -87,6 +88,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Post-signup role assignment
+  const assignSignupRole = useCallback(async (currentUser: User) => {
+    const signupRole = currentUser.user_metadata?.signup_role;
+    if (!signupRole) return;
+    const allowedRoles: AppRole[] = ["organizer", "contestant", "audience"];
+    if (!allowedRoles.includes(signupRole as AppRole)) return;
+    try {
+      // Check if role already exists
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("role", signupRole);
+      if (!existing || existing.length === 0) {
+        await supabase.from("user_roles").insert({ user_id: currentUser.id, role: signupRole });
+      }
+      // Clear the signup_role metadata
+      await supabase.auth.updateUser({ data: { signup_role: null } });
+    } catch (err) {
+      console.error("Error assigning signup role:", err);
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -95,6 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           fetchRoles(session.user.id);
+          if (event === "SIGNED_IN") {
+            assignSignupRole(session.user);
+          }
         } else if (event === "SIGNED_OUT") {
           setRoles([]);
           setSubscription(DEFAULT_SUB);
@@ -111,12 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchRoles(session.user.id);
+        assignSignupRole(session.user);
       }
       setLoading(false);
     });
 
     return () => authSub.unsubscribe();
-  }, [fetchRoles]);
+  }, [fetchRoles, assignSignupRole]);
 
   // Check subscription after roles are loaded (need auth token)
   useEffect(() => {
@@ -132,14 +160,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [session?.user?.id, refreshSubscription]);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role?: AppRole) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, ...(role ? { signup_role: role } : {}) },
         emailRedirectTo: window.location.origin,
       },
+    });
+    return { error };
+  };
+
+  const signInWithMagicLink = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
     });
     return { error };
   };
@@ -200,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, loading, roles, subscription, refreshSubscription,
-      signUp, signIn, signOut, resetPassword, signInWithGoogle, hasRole,
+      signUp, signIn, signInWithMagicLink, signOut, resetPassword, signInWithGoogle, hasRole,
       masquerade, startMasquerade, stopMasquerade, isMasquerading,
     }}>
       {children}
