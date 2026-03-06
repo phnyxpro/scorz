@@ -197,7 +197,7 @@ export default function About() {
               Built for every role
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              One platform, seven roles, zero confusion
+              One platform, six roles, zero confusion
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
               From the organizer setting up the event to the audience casting their vote, every participant gets a tailored experience.
