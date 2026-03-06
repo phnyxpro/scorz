@@ -39,6 +39,10 @@ export default function Results() {
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
   const { data: voteCounts } = useVoteCounts(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
+  useWitnessCertificationRealtime(selectedSubEventId || undefined);
 
   const selectedSubEvent = subEvents?.find((se) => se.id === selectedSubEventId);
 

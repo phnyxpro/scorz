@@ -58,6 +58,7 @@ export default function TabulatorDashboard() {
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   useJudgeScoresRealtime(selectedSubEventId || undefined);
   useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
 
   const upsertTab = useUpsertTabulatorCert();
   const certifyTab = useCertifyTabulator();
