@@ -313,6 +313,9 @@ export default function About() {
               </motion.div>
             ))}
           </div>
+          <p className="text-center text-[10px] text-muted-foreground font-mono mt-6">
+            {USD_DISCLAIMER}
+          </p>
         </div>
       </section>
 
