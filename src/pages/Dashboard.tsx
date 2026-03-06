@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { dashboardCards, AppRole } from "@/lib/navigation";
 import { supabase } from "@/integrations/supabase/client";
+import TabulatorDashboard from "@/pages/TabulatorDashboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
