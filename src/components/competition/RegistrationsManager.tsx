@@ -37,11 +37,11 @@ export function RegistrationsManager({ competitionId }: Props) {
   const createReg = useCreateRegistration();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [showAddContestant, setShowAddContestant] = useState(false);
   const [walkInName, setWalkInName] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
