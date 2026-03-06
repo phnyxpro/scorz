@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CreditCard, ExternalLink, Crown, Check, Loader2, Ticket } from "lucide-react";
+import { CreditCard, ExternalLink, Crown, Check, Loader2, Ticket, Users } from "lucide-react";
 
 interface BillingPanelProps {
   subscription?: {
@@ -118,6 +118,11 @@ export default function BillingPanel({ subscription, onRefresh }: BillingPanelPr
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">{tier.description}</p>
+                {/* Staff limits summary */}
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5">
+                  <Users className="h-3 w-3 shrink-0" />
+                  <span>{tier.limits.organizers} org · {tier.limits.judges} judges · {tier.limits.tabulators} tab</span>
+                </div>
                 <ul className="space-y-1.5">
                   {tier.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-foreground">
@@ -151,6 +156,9 @@ export default function BillingPanel({ subscription, onRefresh }: BillingPanelPr
       {/* USD Disclaimer */}
       <p className="text-center text-[10px] text-muted-foreground font-mono">
         {USD_DISCLAIMER}
+      </p>
+      <p className="text-center text-xs text-muted-foreground max-w-lg mx-auto">
+        Mix and match plans as needed—each credit unlocks one competition at its tier's limits. Buy a Start credit for small events and a Pro credit for larger ones.
       </p>
 
       {/* Refresh */}

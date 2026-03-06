@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useSubEventAssignments";
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useStaffInvitations, useInviteStaff, useDeleteInvitation } from "@/hooks/useStaffInvitations";
+import { useCompetitionLimits, useCompetitionStaffCounts } from "@/hooks/useCompetitionLimits";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
 
@@ -34,6 +37,8 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: assignableUsers } = useAssignableUsers();
   const addAssignment = useAddAssignment();
   const removeAssignment = useRemoveAssignment();
+  const { data: tierLimits } = useCompetitionLimits(competitionId);
+  const { data: staffCounts } = useCompetitionStaffCounts(competitionId);
   const inviteStaff = useInviteStaff();
   const deleteInvitation = useDeleteInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
@@ -62,8 +67,20 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
     return new Set(assignments.map((a) => `${a.user_id}:${a.role}`));
   }, [assignments]);
 
+  // Check if a role is at its limit
+  const isRoleAtLimit = (role: string): boolean => {
+    if (!tierLimits || !staffCounts) return false;
+    if (role === "judge") return staffCounts.judges >= tierLimits.judges;
+    if (role === "tabulator") return staffCounts.tabulators >= tierLimits.tabulators;
+    if (role === "organizer") return staffCounts.organizers >= tierLimits.organizers;
+    return false;
+  };
+
   const handleAdd = () => {
     if (!selectedSubEventId || !selectedUserId || !selectedRole) return;
+    if (isRoleAtLimit(selectedRole)) {
+      return; // blocked by UI, but safeguard
+    }
     addAssignment.mutate({
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
@@ -140,6 +157,37 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
               {selectedRole && (
                 <>
+                  {/* Staff limit indicator */}
+                  {tierLimits && staffCounts && (
+                    <div className="space-y-2 p-3 rounded-lg border border-border/50 bg-muted/30">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-medium">
+                          {selectedRole === "judge" ? "Judges" : selectedRole === "tabulator" ? "Tabulators" : "Organizers"} assigned
+                        </span>
+                        <span className="font-mono text-foreground">
+                          {selectedRole === "judge" ? staffCounts.judges : selectedRole === "tabulator" ? staffCounts.tabulators : staffCounts.organizers}
+                          {" / "}
+                          {selectedRole === "judge" ? tierLimits.judges : selectedRole === "tabulator" ? tierLimits.tabulators : tierLimits.organizers}
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          ((selectedRole === "judge" ? staffCounts.judges : selectedRole === "tabulator" ? staffCounts.tabulators : staffCounts.organizers) /
+                          (selectedRole === "judge" ? tierLimits.judges : selectedRole === "tabulator" ? tierLimits.tabulators : tierLimits.organizers)) * 100
+                        }
+                        className="h-1.5"
+                      />
+                      {isRoleAtLimit(selectedRole) && (
+                        <Alert className="border-accent/30 bg-accent/5 py-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-accent" />
+                          <AlertDescription className="text-xs">
+                            {selectedRole} limit reached for this competition's plan. Upgrade to add more.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+
                   {/* Mode toggle */}
                   <Tabs value={mode} onValueChange={(v) => setMode(v as "assign" | "invite")} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
@@ -188,7 +236,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                         <Button
                           size="sm"
                           onClick={handleAdd}
-                          disabled={!selectedUserId || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending}
+                          disabled={!selectedUserId || (selectedRole === "tabulator" && !selectedResponsibility) || addAssignment.isPending || isRoleAtLimit(selectedRole)}
                         >
                           <UserPlus className="h-3.5 w-3.5 mr-1" /> Assign
                         </Button>

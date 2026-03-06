@@ -1,3 +1,9 @@
+export interface TierLimits {
+  organizers: number;
+  judges: number;
+  tabulators: number;
+}
+
 export interface SubscriptionTier {
   name: string;
   priceId: string;
@@ -5,6 +11,7 @@ export interface SubscriptionTier {
   price: number; // in USD
   description: string;
   features: string[];
+  limits: TierLimits;
   highlight?: boolean;
 }
 
@@ -32,12 +39,10 @@ const CURRENCY_APPROX: Record<string, { symbol: string; rate: number; code: stri
 
 export function getLocalCurrencyApprox(usdAmount: number): string | null {
   const locale = navigator.language;
-  // Don't show for US users
   if (locale.startsWith("en-US") || locale === "en") return null;
 
   const match = CURRENCY_APPROX[locale];
   if (!match) {
-    // Try language-region fallback
     const langOnly = locale.split("-")[0];
     const fallback = Object.entries(CURRENCY_APPROX).find(([k]) => k.startsWith(langOnly));
     if (!fallback) return null;
@@ -57,7 +62,11 @@ export const TIERS: SubscriptionTier[] = [
     productId: "prod_U65F5A4sKTnuVF",
     price: 15,
     description: "One competition with all core features—perfect for small events",
+    limits: { organizers: 2, judges: 7, tabulators: 2 },
     features: [
+      "Up to 2 organizers",
+      "Up to 7 judges",
+      "Up to 2 tabulators",
       "Unlimited contestants",
       "Full rubric builder",
       "Digital scoring",
@@ -71,7 +80,11 @@ export const TIERS: SubscriptionTier[] = [
     price: 49,
     description: "One competition with advanced features for serious organizers",
     highlight: true,
+    limits: { organizers: 4, judges: 10, tabulators: 2 },
     features: [
+      "Up to 4 organizers",
+      "Up to 10 judges",
+      "Up to 2 tabulators",
       "Everything in Start",
       "Advanced analytics",
       "Custom branding",
@@ -86,7 +99,11 @@ export const TIERS: SubscriptionTier[] = [
     productId: "prod_U65G1kKSbu9uDM",
     price: 149,
     description: "One premium competition with white-label branding, API access, and dedicated support",
+    limits: { organizers: 15, judges: 20, tabulators: 15 },
     features: [
+      "Up to 15 organizers",
+      "Up to 20 judges",
+      "Up to 15 tabulators",
       "Everything in Pro",
       "White-label branding",
       "API access",
