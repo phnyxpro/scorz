@@ -54,10 +54,6 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(1)}</TableCell>
-                  <TableCell className="text-center font-mono text-xs text-destructive">
-                    {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
-                  </TableCell>
-                  <TableCell className="text-center font-mono font-bold">{s.final_score}</TableCell>
                   <TableCell className="text-center">
                     {s.is_certified ? (
                       <CheckCircle className="h-3.5 w-3.5 text-secondary inline-block" />
