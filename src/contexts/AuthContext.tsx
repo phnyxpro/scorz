@@ -141,9 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          fetchRoles(session.user.id);
+          const loadedRoles = await fetchRoles(session.user.id);
           if (event === "SIGNED_IN") {
-            assignSignupRole(session.user);
+            await assignSignupRole(session.user);
+            const updatedRoles = await fetchRoles(session.user.id);
+            fireWelcomeEmail(session.user, updatedRoles || loadedRoles || []);
           }
         } else if (event === "SIGNED_OUT") {
           setRoles([]);
