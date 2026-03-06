@@ -380,7 +380,7 @@ export default function ChiefJudgeDashboard() {
               </div>
             </div>
 
-            <SignaturePad label="Chief Judge Signature" onSignature={setSignature} />
+            <SignaturePad label="Chief Judge Signature" onSignature={setSignature} signerRole="Chief Judge" />
 
             <div className="flex items-start gap-2">
               <Checkbox

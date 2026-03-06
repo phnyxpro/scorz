@@ -619,13 +619,13 @@ function LegalStep({ competitionId }: { competitionId: string }) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <SignaturePad label="Contestant Signature *" onSignature={v => setValue("contestantSig", v)} />
+            <SignaturePad label="Contestant Signature *" onSignature={v => setValue("contestantSig", v)} signerRole="Contestant" />
             {errors.contestantSig && <p className="text-xs text-destructive">{errors.contestantSig.message}</p>}
           </div>
 
           {isMinor && (
             <div className="space-y-2">
-              <SignaturePad label="Guardian Signature *" onSignature={v => setValue("guardianSig", v)} />
+              <SignaturePad label="Guardian Signature *" onSignature={v => setValue("guardianSig", v)} signerRole="Guardian" />
               {errors.guardianSig && <p className="text-xs text-destructive">{errors.guardianSig.message}</p>}
             </div>
           )}

@@ -236,7 +236,7 @@ export default function WitnessDashboard() {
               </p>
             </div>
 
-            <SignaturePad label="Witness Signature" onSignature={setSignature} />
+            <SignaturePad label="Witness Signature" onSignature={setSignature} signerRole="Witness" />
 
             <div className="flex items-start gap-2">
               <Checkbox

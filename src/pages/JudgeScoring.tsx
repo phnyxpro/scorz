@@ -456,7 +456,7 @@ export default function JudgeScoring() {
                 <span>Final Score</span><span className="font-mono text-primary">{finalScore}</span>
               </div>
             </div>
-            <SignaturePad label="Judge Signature" onSignature={setSignature} />
+            <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
             <Button onClick={handleCertify} disabled={!signature || certify.isPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certify.isPending ? "Certifying…" : "Certify Scorecard"}

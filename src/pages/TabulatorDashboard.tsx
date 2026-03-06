@@ -319,7 +319,7 @@ export default function TabulatorDashboard() {
               </div>
             </div>
 
-            <SignaturePad label="Tabulator Signature" onSignature={setSignature} />
+            <SignaturePad label="Tabulator Signature" onSignature={setSignature} signerRole="Tabulator" />
 
             <div className="flex items-start gap-2">
               <Checkbox
