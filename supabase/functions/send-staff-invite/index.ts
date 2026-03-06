@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
     // Send email via Resend
     if (resendApiKey) {
       const roleLabel =
-        role === "judge" ? "Judge"
+        role === "organizer" ? "Organizer"
+        : role === "judge" ? "Judge"
         : role === "tabulator" ? "Tabulator"
         : role === "chief_judge" ? "Chief Judge"
         : role === "witness" ? "Witness"
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Scorz <onboarding@resend.dev>",
+          from: "Scorz <no-reply@notify.scorz.live>",
           to: [email],
           subject: `You're invited as ${roleLabel} — ${competitionLabel}`,
           html,
