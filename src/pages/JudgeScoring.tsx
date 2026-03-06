@@ -436,7 +436,7 @@ export default function JudgeScoring() {
       </div>
 
       {/* Certify Dialog */}
-      <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
+      <Dialog open={showCertifyDialog} onOpenChange={(open) => { setShowCertifyDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Certify Scorecard</DialogTitle>
