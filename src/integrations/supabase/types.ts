@@ -1127,6 +1127,8 @@ export type Database = {
           id: string
           invited_at: string | null
           invited_by: string
+          name: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["app_role"]
           sub_event_id: string | null
         }
@@ -1138,6 +1140,8 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by: string
+          name?: string | null
+          phone?: string | null
           role: Database["public"]["Enums"]["app_role"]
           sub_event_id?: string | null
         }
@@ -1149,6 +1153,8 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by?: string
+          name?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           sub_event_id?: string | null
         }
