@@ -105,11 +105,9 @@ function SubEventWorkspace({
 }) {
   const { user } = useAuth();
   const { data: penalties } = usePenaltyRules(competitionId);
-  const unreadCount = useChatUnreadCount(competitionId);
 
   const [performanceDuration, setPerformanceDuration] = useState(0);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
   const [certifyMode, setCertifyMode] = useState<"tabulator" | "witness">("tabulator");
   const [signature, setSignature] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
