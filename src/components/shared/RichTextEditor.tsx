@@ -14,7 +14,7 @@ import { Color } from "@tiptap/extension-text-style";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -46,7 +46,9 @@ import {
   Rows,
   Merge,
   Split,
+  Ruler,
 } from "lucide-react";
+import { EditorRuler } from "./EditorRuler";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -100,6 +102,18 @@ export function RichTextEditor({
   editable = true,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [leftMargin, setLeftMargin] = useState(72);
+  const [rightMargin, setRightMargin] = useState(72);
+  const [firstLineIndent, setFirstLineIndent] = useState(0);
+  const [tabStops, setTabStops] = useState<{ id: string; position: number }[]>([]);
+  const [showRuler, setShowRuler] = useState(true);
+
+  const MARGIN_PRESETS = [
+    { label: "Normal (1\")", left: 96, right: 96 },
+    { label: "Narrow (0.5\")", left: 48, right: 48 },
+    { label: "Wide (1.5\")", left: 144, right: 144 },
+    { label: "None", left: 0, right: 0 },
+  ];
 
   const editor = useEditor({
     extensions: [
@@ -647,7 +661,60 @@ export function RichTextEditor({
           >
             <Redo className="h-3.5 w-3.5" />
           </ToolbarButton>
+
+          <Divider />
+
+          {/* Ruler toggle */}
+          <ToolbarButton
+            onClick={() => setShowRuler(!showRuler)}
+            active={showRuler}
+            title="Toggle Ruler"
+          >
+            <Ruler className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          {/* Margin presets */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                title="Page Margins"
+              >
+                Margins
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              {MARGIN_PRESETS.map((p) => (
+                <DropdownMenuItem
+                  key={p.label}
+                  onClick={() => {
+                    setLeftMargin(p.left);
+                    setRightMargin(p.right);
+                  }}
+                >
+                  {p.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      )}
+
+      {/* Ruler */}
+      {editable && showRuler && (
+        <EditorRuler
+          leftMargin={leftMargin}
+          rightMargin={rightMargin}
+          firstLineIndent={firstLineIndent}
+          onLeftMarginChange={setLeftMargin}
+          onRightMarginChange={setRightMargin}
+          onFirstLineIndentChange={setFirstLineIndent}
+          tabStops={tabStops}
+          onTabStopsChange={setTabStops}
+        />
       )}
 
       {/* Floating Bubble Menu on text selection */}
@@ -703,7 +770,19 @@ export function RichTextEditor({
         </BubbleMenu>
       )}
 
-      <EditorContent editor={editor} />
+      {/* Editor content with margins applied */}
+      <style>{`
+        .editor-margins .ProseMirror {
+          padding-left: ${leftMargin}px !important;
+          padding-right: ${rightMargin}px !important;
+        }
+        .editor-margins .ProseMirror p {
+          text-indent: ${firstLineIndent}px;
+        }
+      `}</style>
+      <div className="editor-margins">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }

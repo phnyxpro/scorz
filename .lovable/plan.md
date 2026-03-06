@@ -1,48 +1,47 @@
 
 
-## Add Margins, Ruler, and Tab Controls to the Rich Text Editor
+## Fix Blank Rendering in Browser Automation
 
-### Overview
-Add a Google Docs-style horizontal ruler above the editor content area with draggable margin markers and tab stops. This gives users visual control over document layout — left/right margins, first-line indent, and tab positions.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Approach
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**Single file change: `src/components/shared/RichTextEditor.tsx`**
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-Since TipTap does not have built-in ruler/margin extensions, this will be implemented as a custom UI layer that applies CSS margin/indent styles to the editor content area.
+---
 
-#### 1. Add a `EditorRuler` component (inline in the file)
-- Render a horizontal ruler bar (height ~24px) between the toolbar and the editor content
-- Show inch/cm tick marks across the width
-- Three draggable markers:
-  - **Left margin marker** (triangle on the left) — sets `padding-left` on the editor
-  - **Right margin marker** (triangle on the right) — sets `padding-right` on the editor
-  - **First-line indent marker** (top triangle on left) — sets `text-indent` on paragraphs via a CSS variable
-- Tab stop markers: click on the ruler to add a tab stop (small down-arrow), drag to reposition, drag off to remove
+### Fix 1: Conditionally apply auditorium filter
 
-#### 2. Margin state management
-- Use `useState` for `leftMargin`, `rightMargin`, `firstLineIndent` (in pixels)
-- Default: left=72px (1"), right=72px (1"), indent=0
-- A margin preset dropdown in the toolbar (Normal, Narrow, Wide, Custom)
-- Apply margins as inline `paddingLeft`/`paddingRight` on the editor content wrapper div
-- Apply first-line indent via a `<style>` tag targeting `.ProseMirror p:first-of-type` or a CSS variable
+**File: `src/contexts/ThemeContext.tsx`**
 
-#### 3. Toolbar addition
-- Add a margin/page-layout dropdown button to the toolbar with preset options:
-  - Normal (1" margins)
-  - Narrow (0.5" margins)  
-  - Wide (1.5" margins)
-  - No margins (0)
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-#### 4. Visual design
-- Ruler background: light gray (`bg-muted/50`) with darker tick marks
-- Markers styled as small colored triangles (CSS borders or SVG)
-- Drag interaction via `onPointerDown` + `onPointerMove` + `onPointerUp`
-- Ruler only visible when `editable` is true
+### Fix 2: Remove filter class when at defaults
 
-### Files Changed
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-| File | Change |
-|---|---|
-| `src/components/shared/RichTextEditor.tsx` | Add `EditorRuler` component, margin state, margin preset dropdown, apply margins to editor content wrapper |
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
