@@ -52,6 +52,18 @@ interface ScannedCriterion {
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
+  // Fix content where HTML tags were stored as escaped text (e.g. from bad paste)
+  const fixEscapedHtml = (html: string): string => {
+    if (!html) return html;
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const text = div.textContent || "";
+    if (text.trimStart().startsWith("<p>") || text.includes("</p><p>")) {
+      return text;
+    }
+    return html;
+  };
+
   const { hasRole, loading: authLoading } = useAuth();
   const { data: comp, isLoading } = useCompetition(id);
   const { data: existingCriteria } = useRubricCriteria(id);
