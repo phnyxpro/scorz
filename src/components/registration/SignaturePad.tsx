@@ -132,7 +132,7 @@ export function SignaturePad({
     if (!isDrawing) return;
     setIsDrawing(false);
     const canvas = canvasRef.current;
-    if (canvas && hasDrawn) {
+    if (canvas && hasDrawnRef.current) {
       onSignature(stampSignature(canvas, signerRole));
     }
   };
