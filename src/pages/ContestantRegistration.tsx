@@ -287,7 +287,7 @@ export default function ContestantRegistration() {
     createReg.mutate({
       user_id: registrationUserId,
       competition_id: competitionId,
-      full_name: data.fullName,
+      full_name: `${data.firstName} ${data.lastName}`.trim(),
       email: data.email,
       phone: data.phone,
       location: data.location,
