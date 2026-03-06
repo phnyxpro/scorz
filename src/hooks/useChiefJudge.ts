@@ -113,10 +113,18 @@ export function useCertifySubEvent() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: (_, v) => {
+    onSuccess: async (_, v) => {
       qc.invalidateQueries({ queryKey: ["certification", v.sub_event_id] });
       qc.invalidateQueries({ queryKey: ["all_scores", v.sub_event_id] });
       toast({ title: "Sub-event certified!" });
+      // Fire score alert emails to contestants
+      try {
+        await supabase.functions.invoke("send-score-alert", {
+          body: { sub_event_id: v.sub_event_id },
+        });
+      } catch (err) {
+        console.error("Score alert email error:", err);
+      }
     },
     onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
   });

@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => authSub.unsubscribe();
-  }, [fetchRoles, assignSignupRole]);
+  }, [fetchRoles, assignSignupRole, fireWelcomeEmail]);
 
   // Check subscription after roles are loaded (need auth token)
   useEffect(() => {

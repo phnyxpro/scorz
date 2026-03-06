@@ -23,3 +23,15 @@ verify_jwt = false
 
 [functions.send-staff-invite]
 verify_jwt = false
+
+[functions.send-ticket-email]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-score-alert]
+verify_jwt = false
+
+[functions.send-competition-update]
+verify_jwt = false
