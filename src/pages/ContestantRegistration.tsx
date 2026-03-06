@@ -27,7 +27,7 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
-  ageCategory: z.enum(["adult", "minor"]),
+  ageCategory: z.enum(["adult", "minor"]).optional().default("adult"),
   bio: z.string().optional(),
   videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   guardianName: z.string().optional(),
@@ -39,14 +39,6 @@ const registrationSchema = z.object({
   selectedLevelId: z.string().optional(),
   selectedSubEventId: z.string().optional(),
   selectedSlotId: z.string().optional(),
-}).refine(data => {
-  if (data.ageCategory === "minor") {
-    return !!data.guardianName && !!data.guardianSig;
-  }
-  return true;
-}, {
-  message: "Guardian information and signature are required for minors",
-  path: ["guardianName"],
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
