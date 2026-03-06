@@ -18,6 +18,11 @@ interface PrintableResultsProps {
     tabulator?: string;
     witness?: string;
   };
+  certificationSignatures?: {
+    chiefJudge?: string | null;
+    tabulator?: string | null;
+    witness?: string | null;
+  };
 }
 
 export function PrintableResults({
