@@ -14,7 +14,7 @@ import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
-import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
+import { TabulatorTimer } from "@/components/scoring/TabulatorTimer";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
