@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CreditCard, ExternalLink, Crown, Check, Loader2, Ticket } from "lucide-react";
+import { CreditCard, ExternalLink, Crown, Check, Loader2, Ticket, Users } from "lucide-react";
 
 interface BillingPanelProps {
   subscription?: {
