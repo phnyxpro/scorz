@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, RotateCcw, User, Timer } from "lucide-react";
+import { Play, Pause, RotateCcw, User, Timer, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useInsertTimerEvent,
@@ -157,19 +157,27 @@ export function TabulatorTimer({
           <span className="text-[10px] text-muted-foreground ml-auto font-mono">Space to start/stop</span>
         </div>
 
-        {/* Contestant selector */}
+        {/* Contestant pills */}
         <div>
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Contestant on Stage</label>
-          <Select value={selectedContestantId} onValueChange={setSelectedContestantId} disabled={running}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Select contestant…" />
-            </SelectTrigger>
-            <SelectContent>
-              {contestants.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">Contestant on Stage</label>
+          <div className="flex flex-wrap gap-1.5">
+            {contestants.map((c) => (
+              <button
+                key={c.id}
+                disabled={running && selectedContestantId !== c.id}
+                onClick={() => setSelectedContestantId(selectedContestantId === c.id ? "" : c.id)}
+                className={cn(
+                  "text-xs px-3 py-1.5 rounded-full border transition-all font-medium",
+                  selectedContestantId === c.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-muted/50 text-foreground border-border/50 hover:bg-muted hover:border-border",
+                  running && selectedContestantId !== c.id && "opacity-40 cursor-not-allowed"
+                )}
+              >
+                {c.full_name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {selectedContestantId && (
