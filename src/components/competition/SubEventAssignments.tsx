@@ -49,6 +49,9 @@ interface Props {
 }
 
 export function SubEventAssignments({ competitionId, competitionName }: Props) {
+  const { hasRole, startMasquerade } = useAuth();
+  const navigate = useNavigate();
+  const isAdmin = hasRole("admin");
   const { data: levels } = useLevels(competitionId);
   const { data: assignableUsers } = useAssignableUsers();
   const addAssignment = useAddAssignment();
@@ -62,6 +65,21 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const deleteInvitation = useDeleteInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
   const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
+
+  const handleMasquerade = async (inv: StaffInvitation) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("email", inv.email)
+      .maybeSingle();
+    if (!profile?.user_id) return;
+    await startMasquerade({
+      userId: profile.user_id,
+      email: inv.email,
+      fullName: inv.name || inv.email,
+    });
+    navigate("/dashboard");
+  };
 
   // Staff roster form
   const [staffName, setStaffName] = useState("");
