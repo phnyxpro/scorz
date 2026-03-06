@@ -222,6 +222,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
           <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
+          <TabsTrigger value="chat" className="flex-shrink-0">Chat</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
