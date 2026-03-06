@@ -13,6 +13,7 @@ import {
   useAddStaffSubEvent,
   useRemoveStaffSubEvent,
   useDeleteInvitation,
+  useUpdateStaffInvitation,
   type StaffInvitation,
   type StaffInvitationSubEvent,
 } from "@/hooks/useStaffInvitations";
