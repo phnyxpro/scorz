@@ -22,16 +22,17 @@ export function PublicRoleList({ subEventIds, competitionId, role }: Props) {
           .eq("role", "judge");
         const ids = [...new Set((assignments || []).map(a => a.user_id))];
         if (ids.length === 0) return [];
+        // Use safe public_profiles view (no PII)
         const { data: profiles } = await supabase
-          .from("profiles")
+          .from("public_profiles" as any)
           .select("full_name, avatar_url")
           .in("user_id", ids);
         return profiles || [];
       } else {
+        // Use safe public_contestants view (no PII)
         let query = supabase
-          .from("contestant_registrations")
-          .select("full_name, profile_photo_url, location")
-          .eq("status", "approved");
+          .from("public_contestants" as any)
+          .select("full_name, profile_photo_url, location");
 
         if (competitionId) {
           query = query.eq("competition_id", competitionId);
@@ -41,7 +42,7 @@ export function PublicRoleList({ subEventIds, competitionId, role }: Props) {
 
         const { data: regs } = await query;
 
-        return (regs || []).map(r => ({
+        return (regs || []).map((r: any) => ({
           full_name: r.full_name,
           avatar_url: r.profile_photo_url,
           location: r.location,
@@ -57,7 +58,7 @@ export function PublicRoleList({ subEventIds, competitionId, role }: Props) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      {data.map((person, i) => (
+      {data.map((person: any, i: number) => (
         <Card key={i} className="border-border/50 bg-card/80">
           <CardContent className="p-3 flex items-center gap-3">
             {person.avatar_url ? (
@@ -69,8 +70,8 @@ export function PublicRoleList({ subEventIds, competitionId, role }: Props) {
             )}
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{person.full_name || "Unknown"}</p>
-              {"location" in person && (person as any).location && (
-                <p className="text-xs text-muted-foreground truncate">{(person as any).location}</p>
+              {person.location && (
+                <p className="text-xs text-muted-foreground truncate">{person.location}</p>
               )}
             </div>
           </CardContent>

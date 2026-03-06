@@ -19,14 +19,13 @@ export function useVoteCounts(subEventId: string | undefined) {
     enabled: !!subEventId,
     refetchInterval: 15_000,
     queryFn: async () => {
+      // Use safe RPC function that returns aggregated counts only (no PII)
       const { data, error } = await supabase
-        .from("audience_votes")
-        .select("contestant_registration_id")
-        .eq("sub_event_id", subEventId!);
+        .rpc("get_vote_counts", { _sub_event_id: subEventId! });
       if (error) throw error;
       const counts: Record<string, number> = {};
-      for (const v of data || []) {
-        counts[v.contestant_registration_id] = (counts[v.contestant_registration_id] || 0) + 1;
+      for (const v of (data || []) as any[]) {
+        counts[v.contestant_registration_id] = Number(v.vote_count);
       }
       return counts;
     },

@@ -70,11 +70,11 @@ function useLineup(subEventIds: string[]) {
     queryKey: ["public-lineup", subEventIds],
     enabled: subEventIds.length > 0,
     queryFn: async () => {
+      // Use safe public_contestants view (no PII)
       const { data: contestants, error } = await supabase
-        .from("contestant_registrations")
+        .from("public_contestants" as any)
         .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id")
         .in("sub_event_id", subEventIds)
-        .eq("status", "approved")
         .order("sort_order", { ascending: true });
       if (error) throw error;
 
