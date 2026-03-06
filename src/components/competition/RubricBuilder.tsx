@@ -281,6 +281,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
       const c = values.criteria[i];
       const data = {
         competition_id: competitionId, name: c.name, guidelines: c.guidelines || null, sort_order: i,
+        weight_percent: c.weight_percent ?? 0,
         description_1: c.description_1, description_2: c.description_2, description_3: c.description_3,
         description_4: c.description_4, description_5: c.description_5,
       };
