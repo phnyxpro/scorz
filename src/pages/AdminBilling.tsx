@@ -24,7 +24,7 @@ export default function AdminBilling() {
         <p className="text-muted-foreground text-sm mt-1">Manage subscription tiers and payment settings</p>
       </div>
       <BillingPanel
-        subscription={subscription ? { subscribed: subscription.subscribed, product_id: subscription.productId, price_id: subscription.priceId, subscription_end: subscription.subscriptionEnd } : undefined}
+        subscription={subscription ? { subscribed: subscription.subscribed, product_id: subscription.productId, credits_total: subscription.creditsTotal, credits_used: subscription.creditsUsed, credits_available: subscription.creditsAvailable } : undefined}
         onRefresh={() => refreshSubscription()}
       />
     </div>

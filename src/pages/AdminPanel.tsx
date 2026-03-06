@@ -274,7 +274,7 @@ export default function AdminPanel() {
 
         {/* Billing Tab */}
         <TabsContent value="billing">
-          <BillingPanel subscription={subscription ? { subscribed: subscription.subscribed, product_id: subscription.productId, price_id: subscription.priceId, subscription_end: subscription.subscriptionEnd } : undefined} onRefresh={() => refreshSubscription()} />
+          <BillingPanel subscription={subscription ? { subscribed: subscription.subscribed, product_id: subscription.productId, credits_total: subscription.creditsTotal, credits_used: subscription.creditsUsed, credits_available: subscription.creditsAvailable } : undefined} onRefresh={() => refreshSubscription()} />
         </TabsContent>
       </Tabs>
     </div>

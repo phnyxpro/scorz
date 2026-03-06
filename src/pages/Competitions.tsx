@@ -60,11 +60,9 @@ export default function Competitions() {
 
   // Subscription enforcement for organizers (admins bypass)
   const { user } = useAuth();
-  const myCompetitions = isAdmin ? competitions : competitions?.filter(c => c.created_by === user?.id);
-  const competitionCount = myCompetitions?.length ?? 0;
-  const limit = isAdmin ? -1 : subscription.competitionLimit; // admins have no limit
-  const isAtLimit = limit !== -1 && competitionCount >= limit;
-  const needsSubscription = !isAdmin && !subscription.subscribed;
+  const creditsAvailable = isAdmin ? 999 : subscription.creditsAvailable;
+  const isAtLimit = !isAdmin && creditsAvailable <= 0;
+  const needsSubscription = !isAdmin && subscription.creditsTotal === 0;
 
   const onSubmit = (data: CompetitionFormValues) => {
     if (needsSubscription) {
