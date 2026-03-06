@@ -71,7 +71,7 @@ export default function Competitions() {
     }
 
     if (isAtLimit) {
-      toast.error(`You've reached your plan limit of ${limit} competitions. Upgrade your plan to create more.`);
+      toast.error("You have no competition credits remaining. Purchase more from the billing page.");
       return;
     }
 
