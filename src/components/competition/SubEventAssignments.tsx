@@ -266,6 +266,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                   onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                   onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
+                  onEdit={setEditingInv}
                   sendingInvite={sendInvite.isPending}
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
