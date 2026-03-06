@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -36,11 +37,11 @@ export function RegistrationsManager({ competitionId }: Props) {
   const createReg = useCreateRegistration();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [showAddContestant, setShowAddContestant] = useState(false);
   const [walkInName, setWalkInName] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
@@ -163,7 +164,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => navigate(`/register/${competitionId}?behalf=true`)}>
+              <Button size="sm" onClick={() => setShowAddContestant(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
@@ -336,6 +337,24 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Contestant Sheet */}
+      <Sheet open={showAddContestant} onOpenChange={setShowAddContestant}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Add Contestant</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <OnBehalfRegistrationForm
+              competitionId={competitionId}
+              onComplete={() => {
+                setShowAddContestant(false);
+                qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Contestant Detail Sheet */}
       <ContestantDetailSheet
