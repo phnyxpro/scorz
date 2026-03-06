@@ -178,7 +178,7 @@ export default function About() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
           {[
             { title: "Real-Time Scoring", desc: "Judges score on any device. Results update instantly—no waiting, no manual tallying." },
-            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator, witness—gets exactly the tools they need and nothing more." },
+            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator—gets exactly the tools they need and nothing more." },
             { title: "End-to-End Integrity", desc: "Digital signatures, audit trails, and tie-break protocols ensure every result is defensible." },
           ].map((item, i) => (
             <motion.div key={item.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.12 }}>
