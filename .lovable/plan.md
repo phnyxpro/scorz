@@ -1,47 +1,33 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add 5 Tobago Audition Contestants
 
-The app appears blank in headless browser testing due to two compounding issues:
+### What
+Insert 5 contestant registrations for the Tobago audition sub-event of National Poetry Slam 2026, with guardian details for the 4 minors.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Target
+- **Competition**: National Poetry Slam 2026 (`04b250a2-e4bc-4716-aa56-d0c9c4c3bc35`)
+- **Sub-event**: Tobago Auditions (`ed535ad8-6122-42f4-8d27-9d6d62649c99`)
+- **Owner user_id** (for on-behalf registrations): `b0b252c9-1dfe-473a-b1f4-b0906f36bc8d`
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Contestants to Insert
 
----
+| # | Name | Email | Phone | Age | Guardian | Guardian Contact |
+|---|------|-------|-------|-----|----------|-----------------|
+| 1 | Taraji Davis | tarajidavis28@bhs.edu.tt | (868) 324-5157 | minor | Lisa Melville | 7999750 / lsmelville@gmail.com |
+| 2 | Markus Wylie | debbieannwylie@gmail.com | (868) 778-8087 | minor | Debbie-Ann Thompson-Wylie | 8687788087 / debbieannwylie@gmail.com |
+| 3 | Alessandro Babb | alessandrot.babb@gmail.com | (868) 477-7128 | minor | Atibah Babb | 8687625560 / atibah.babb@gmail.com |
+| 4 | Sebastian Mc Kenna | sebastianmckenna9@gmail.com | (868) 379-2839 | minor | Nicholas Mc Kenna | 3641694 / mckennanicholas3@gmail.com |
+| 5 | Camryn Bruno | cammib2@gmail.com | (868) 751-4451 | adult | — | — |
 
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Implementation
+1. Create a temporary edge function (or use an existing one) that uses the service role key to bulk-insert all 5 records into `contestant_registrations` with:
+   - `status: 'approved'` (on-behalf registration)
+   - `rules_acknowledged: true`
+   - `age_category: 'minor'` for the first 4, `'adult'` for Camryn
+   - Guardian name, email, and phone populated for minors
+   - `location: 'Audio Visual Room, Tobago Library Services'`
+   - Sequential `sort_order` values
+2. Verify the insertions via a read query
+3. Delete the temporary edge function after use
 
