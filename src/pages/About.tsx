@@ -102,7 +102,7 @@ const FAQ = [
   },
   {
     q: "Do contestants need an account to register?",
-    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgment, and optional performance slot selection.",
+    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgement, and optional performance slot selection.",
   },
   {
     q: "Can the audience participate?",
