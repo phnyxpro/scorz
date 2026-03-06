@@ -452,13 +452,14 @@ interface StaffRowProps {
   onAddSubEvent: (subEventId: string) => void;
   onRemoveSubEvent: (id: string) => void;
   onDelete: () => void;
+  onEdit: (inv: StaffInvitation) => void;
   sendingInvite: boolean;
   isAdmin?: boolean;
   onMasquerade?: (inv: StaffInvitation) => void;
   onPreviewEmail?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
