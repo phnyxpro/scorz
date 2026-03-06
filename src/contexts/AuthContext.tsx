@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [masquerade, setMasquerade] = useState<MasqueradeTarget | null>(null);
   const [realRoles, setRealRoles] = useState<AppRole[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus>(DEFAULT_SUB);
+  const welcomeSent = useRef(false);
 
   const fetchRoles = useCallback(async (userId: string) => {
     try {
