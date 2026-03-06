@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
+import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
@@ -23,7 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare, Timer } from "lucide-react";
+import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -39,8 +40,10 @@ export default function TabulatorDashboard() {
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  const { data: penalties } = usePenaltyRules(competitionId);
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [performanceDuration, setPerformanceDuration] = useState(0);
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
@@ -195,6 +198,20 @@ export default function TabulatorDashboard() {
               {isCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
               Tabulator {isCertified ? "Certified" : "Pending"}
             </Badge>
+          </div>
+
+          {/* Performance Timer */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Timer className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Performance Timer</span>
+              <span className="text-[10px] text-muted-foreground ml-auto font-mono">Space to start/stop</span>
+            </div>
+            <PerformanceTimer
+              timeLimitSeconds={penalties?.[0]?.time_limit_seconds ?? 300}
+              gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
+              onDurationChange={setPerformanceDuration}
+            />
           </div>
 
           {/* Scoring Progress */}
