@@ -68,6 +68,16 @@ export interface PenaltyRule {
   penalty_points: number;
 }
 
+export interface Infraction {
+  id: string;
+  competition_id: string;
+  category: "penalty" | "disqualification";
+  title: string;
+  description: string | null;
+  penalty_points: number;
+  sort_order: number;
+}
+
 export function useCompetitions() {
   return useQuery({
     queryKey: ["competitions"],
