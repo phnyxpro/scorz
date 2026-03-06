@@ -68,7 +68,7 @@ export default function CompetitionContestants() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                      <p className="font-semibold text-sm text-foreground truncate group-hover:text-secondary transition-colors">
                         {r.full_name}
                       </p>
                       <Badge variant="outline" className="text-[10px] mt-0.5">{r.age_category}</Badge>

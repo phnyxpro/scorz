@@ -287,7 +287,7 @@ export default function Dashboard() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
+                            <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
                               {comp.name}
                             </h3>
                             <p className="text-xs text-muted-foreground mt-1 capitalize">

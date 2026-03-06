@@ -64,7 +64,7 @@ export function PenaltyReview({ allScores, contestantName, contestantUserId, isC
                 <TableRow key={score.id}>
                   <TableCell className="text-sm">
                     {contestantUserId?.(score.contestant_registration_id) ? (
-                      <Link to={`/profile/${contestantUserId(score.contestant_registration_id)}`} className="hover:text-primary hover:underline transition-colors">
+                      <Link to={`/profile/${contestantUserId(score.contestant_registration_id)}`} className="hover:text-secondary hover:underline transition-colors">
                         {contestantName(score.contestant_registration_id)}
                       </Link>
                     ) : contestantName(score.contestant_registration_id)}

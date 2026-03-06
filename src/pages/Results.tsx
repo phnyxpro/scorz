@@ -279,7 +279,7 @@ export default function Results() {
                         <div key={regId} className="flex items-center gap-3">
                           <span className="font-mono text-xs text-muted-foreground w-6">{i + 1}.</span>
                           <span className="text-sm font-medium text-foreground w-32 truncate">
-                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">
                               {contestantName(regId)}
                             </Link>
                           </span>

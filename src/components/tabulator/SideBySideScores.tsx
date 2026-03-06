@@ -20,7 +20,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
     <div className="space-y-2">
       <h4 className="text-sm font-medium text-foreground">
         {contestantUserId ? (
-          <Link to={`/profile/${contestantUserId}`} className="hover:text-primary hover:underline transition-colors">
+          <Link to={`/profile/${contestantUserId}`} className="hover:text-secondary hover:underline transition-colors">
             {contestantName}
           </Link>
         ) : contestantName}

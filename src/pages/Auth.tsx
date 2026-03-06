@@ -299,7 +299,7 @@ export default function Auth() {
                             key={r.role}
                             type="button"
                             onClick={() => setSignupRole(r.role)}
-                            className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-primary/40 transition-all group"
+                            className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-accent/40 transition-all group"
                           >
                             <r.icon className="h-5 w-5 text-primary shrink-0" />
                             <div>

@@ -110,7 +110,7 @@ function SubEventCard({ subEvent, competitionId, isChief }: { subEvent: any, com
     }, [registrations, subEvent.id]);
 
     return (
-        <Card className="border-border/50 bg-card/80 overflow-hidden hover:border-primary/30 transition-colors">
+        <Card className="border-border/50 bg-card/80 overflow-hidden hover:border-secondary/30 transition-colors">
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div>

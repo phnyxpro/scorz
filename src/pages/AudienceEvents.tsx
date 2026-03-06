@@ -67,7 +67,7 @@ export default function AudienceEvents() {
                     </Badge>
                   </div>
                   <CardContent className="p-4 space-y-2">
-                    <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-accent transition-colors">
                       {comp.name}
                     </h3>
                     {comp.description && (

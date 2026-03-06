@@ -90,7 +90,7 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
               <TableCell className="font-mono text-muted-foreground">{i + 1}</TableCell>
               <TableCell className="font-medium">
                 {contestantUserId ? (
-                  <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                  <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">
                     {r.name}
                   </Link>
                 ) : r.name}
