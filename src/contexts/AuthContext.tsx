@@ -61,10 +61,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("role")
         .eq("user_id", userId);
       if (error) throw error;
-      if (data) setRoles(data.map((r: any) => r.role as AppRole));
+      const loadedRoles = data?.map((r: any) => r.role as AppRole) || [];
+      setRoles(loadedRoles);
+      return loadedRoles;
     } catch (err) {
       console.error("Error fetching roles:", err);
       setRoles([]);
+      return [] as AppRole[];
+    }
+  }, []);
+
+  const fireWelcomeEmail = useCallback(async (currentUser: User, userRoles: AppRole[]) => {
+    if (welcomeSent.current || userRoles.length === 0) return;
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("welcome_email_sent")
+        .eq("user_id", currentUser.id)
+        .single();
+      if ((profile as any)?.welcome_email_sent) { welcomeSent.current = true; return; }
+      welcomeSent.current = true;
+      const userName = currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "there";
+      await supabase.functions.invoke("send-welcome-email", {
+        body: { user_name: userName, primary_role: userRoles[0] },
+      });
+    } catch (err) {
+      console.error("Welcome email error:", err);
     }
   }, []);
 
