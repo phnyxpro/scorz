@@ -1055,6 +1055,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_assigned_competitions: {
         Args: { _user_id: string }
         Returns: {
