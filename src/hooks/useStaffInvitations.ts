@@ -272,6 +272,37 @@ export function useInviteStaff() {
   });
 }
 
+/** Update a staff invitation's details */
+export function useUpdateStaffInvitation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, competitionId, updates }: {
+      id: string;
+      competitionId: string;
+      updates: { name?: string | null; email?: string; phone?: string | null; role?: AppRole; is_chief?: boolean };
+    }) => {
+      const { error } = await (supabase
+        .from("staff_invitations" as any)
+        .update(updates)
+        .eq("id", id) as any);
+
+      if (error) {
+        if (error.code === "23505") throw new Error("A staff member with this email and role already exists.");
+        throw error;
+      }
+      return competitionId;
+    },
+    onSuccess: (competitionId) => {
+      qc.invalidateQueries({ queryKey: ["staff_invitations", competitionId] });
+      toast({ title: "Staff member updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating staff", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useDeleteInvitation() {
   const qc = useQueryClient();
 
