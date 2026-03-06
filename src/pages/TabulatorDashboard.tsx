@@ -11,6 +11,7 @@ import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
+import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
