@@ -209,7 +209,7 @@ export default function ResultsHub() {
                             {i < 3 ? <Medal className={`h-5 w-5 inline ${medalColors[i]}`} /> : i + 1}
                           </TableCell>
                           <TableCell className="font-medium">
-                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">{r.name}</Link>
+                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">{r.name}</Link>
                           </TableCell>
                           {rubricNames.map((n) => (
                             <TableCell key={n} className="text-center font-mono text-xs">{r.criterionAvgs[n] != null ? r.criterionAvgs[n].toFixed(2) : "—"}</TableCell>
