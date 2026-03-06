@@ -150,7 +150,7 @@ export default function LevelMasterSheet() {
   const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
   if (isLoading) {
-    return <div className="text-muted-foreground font-mono text-sm animate-pulse p-8">Loading level master sheet…</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!data?.level) {

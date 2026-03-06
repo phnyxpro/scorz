@@ -93,7 +93,7 @@ export default function Competitions() {
     );
   };
 
-  if (isLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (isLoading) return <CardGridSkeleton cards={3} />;
 
   return (
     <div>

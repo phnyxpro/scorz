@@ -121,8 +121,10 @@ export default function PublicEventDetail() {
   const rulesUrl = (comp as any)?.rules_url as string | undefined;
 
   if (isLoading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+        <DetailPageSkeleton />
+      </div>
     </div>
   );
 

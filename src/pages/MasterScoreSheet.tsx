@@ -148,7 +148,7 @@ export default function MasterScoreSheet() {
   const exportFilename = `master-sheet-${data?.subEvent?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
   if (isLoading) {
-    return <div className="text-muted-foreground font-mono text-sm animate-pulse p-8">Loading master sheet…</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!data?.subEvent) {
