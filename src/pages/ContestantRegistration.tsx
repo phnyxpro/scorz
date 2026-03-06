@@ -22,7 +22,8 @@ import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 const registrationSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
