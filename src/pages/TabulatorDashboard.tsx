@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetitions, usePenaltyRules } from "@/hooks/useCompetitions";
+import { usePenaltyRules } from "@/hooks/useCompetitions";
+import { useStaffView } from "@/hooks/useStaffView";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
@@ -388,11 +389,11 @@ function SubEventWorkspace({
 /* ─── Main Unified Dashboard ─── */
 export default function TabulatorDashboard() {
   const { id: routeCompId } = useParams<{ id: string }>();
-  const { data: competitions, isLoading: compsLoading } = useCompetitions();
+  const { assignedCompetitions, isLoading: compsLoading } = useStaffView("tabulator");
 
   const activeComps = useMemo(
-    () => (competitions || []).filter((c) => c.status === "active" || c.status === "completed"),
-    [competitions]
+    () => (assignedCompetitions || []).filter((c) => c.status === "active" || c.status === "completed"),
+    [assignedCompetitions]
   );
 
   const [searchQuery, setSearchQuery] = useState("");
