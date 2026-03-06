@@ -346,6 +346,21 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
           No staff members added yet. Add judges and tabulators above.
         </p>
       )}
+
+      {/* Edit Staff Dialog */}
+      <EditStaffDialog
+        inv={editingInv}
+        competitionId={competitionId}
+        onClose={() => setEditingInv(null)}
+        onSave={(updates) => {
+          if (editingInv) {
+            updateInvitation.mutate({ id: editingInv.id, competitionId, updates }, {
+              onSuccess: () => setEditingInv(null),
+            });
+          }
+        }}
+        saving={updateInvitation.isPending}
+      />
     </div>
   );
 }
