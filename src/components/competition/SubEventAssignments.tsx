@@ -67,8 +67,20 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
     return new Set(assignments.map((a) => `${a.user_id}:${a.role}`));
   }, [assignments]);
 
+  // Check if a role is at its limit
+  const isRoleAtLimit = (role: string): boolean => {
+    if (!tierLimits || !staffCounts) return false;
+    if (role === "judge") return staffCounts.judges >= tierLimits.judges;
+    if (role === "tabulator") return staffCounts.tabulators >= tierLimits.tabulators;
+    if (role === "organizer") return staffCounts.organizers >= tierLimits.organizers;
+    return false;
+  };
+
   const handleAdd = () => {
     if (!selectedSubEventId || !selectedUserId || !selectedRole) return;
+    if (isRoleAtLimit(selectedRole)) {
+      return; // blocked by UI, but safeguard
+    }
     addAssignment.mutate({
       sub_event_id: selectedSubEventId,
       user_id: selectedUserId,
