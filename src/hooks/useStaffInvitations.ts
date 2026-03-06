@@ -145,7 +145,57 @@ export function useSendStaffInvite() {
   });
 }
 
-/** Assign a staff invitation to a sub-event */
+/** Add a sub-event assignment for a staff invitation */
+export function useAddStaffSubEvent() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ staffInvitationId, subEventId, competitionId }: { staffInvitationId: string; subEventId: string; competitionId: string }) => {
+      const { error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .insert({ staff_invitation_id: staffInvitationId, sub_event_id: subEventId }) as any);
+
+      if (error) {
+        if (error.code === "23505") throw new Error("Already assigned to this sub-event.");
+        throw error;
+      }
+      return competitionId;
+    },
+    onSuccess: (competitionId) => {
+      qc.invalidateQueries({ queryKey: ["staff_invitation_sub_events", competitionId] });
+      toast({ title: "Sub-event assigned" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+/** Remove a sub-event assignment from a staff invitation */
+export function useRemoveStaffSubEvent() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, competitionId }: { id: string; competitionId: string }) => {
+      const { error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .delete()
+        .eq("id", id) as any);
+
+      if (error) throw error;
+      return competitionId;
+    },
+    onSuccess: (competitionId) => {
+      qc.invalidateQueries({ queryKey: ["staff_invitation_sub_events", competitionId] });
+      toast({ title: "Sub-event removed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+/** Legacy: Assign a staff invitation to a sub-event (single) */
 export function useAssignStaffToSubEvent() {
   const qc = useQueryClient();
 
@@ -161,7 +211,6 @@ export function useAssignStaffToSubEvent() {
     },
     onSuccess: (competitionId) => {
       qc.invalidateQueries({ queryKey: ["staff_invitations", competitionId] });
-      toast({ title: "Assignment updated" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
