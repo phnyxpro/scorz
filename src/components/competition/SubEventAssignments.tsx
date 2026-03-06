@@ -663,17 +663,18 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
 }
 
 /* ── Sub-Event Badge with name lookup ── */
+import { useEffect } from "react";
+
 function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove: () => void }) {
   const [name, setName] = useState<string | null>(null);
 
-  // Fetch sub-event name on mount
-  useState(() => {
-    void (async () => {
-      const { supabase: sb } = await import("@/integrations/supabase/client");
-      const { data } = await sb.from("sub_events").select("name").eq("id", subEventId).maybeSingle();
-      if (data) setName(data.name);
-    })();
-  });
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from("sub_events").select("name").eq("id", subEventId).maybeSingle().then(({ data }) => {
+      if (!cancelled && data) setName(data.name);
+    });
+    return () => { cancelled = true; };
+  }, [subEventId]);
 
   return (
     <Badge variant="outline" className="text-[10px] py-0 h-5 gap-1 pr-1">
