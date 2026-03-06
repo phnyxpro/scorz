@@ -255,7 +255,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   }, [form]);
 
   const handleAddCriterion = useCallback(() => {
-    append({ name: "", guidelines: "", description_1: "", description_2: "", description_3: "", description_4: "", description_5: "" });
+    append({ name: "", guidelines: "", weight_percent: 0, description_1: "", description_2: "", description_3: "", description_4: "", description_5: "" });
   }, [append]);
 
   const onSubmit = async (values: RubricFormValues) => {
