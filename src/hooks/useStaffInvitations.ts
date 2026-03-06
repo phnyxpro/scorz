@@ -8,7 +8,9 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 export interface StaffInvitation {
   id: string;
+  name: string | null;
   email: string;
+  phone: string | null;
   role: AppRole;
   competition_id: string;
   sub_event_id: string | null;
