@@ -402,7 +402,7 @@ export default function CompetitionDetail() {
         </TabsContent>
 
         <TabsContent value="assignments">
-          <SubEventAssignments competitionId={id!} />
+          <SubEventAssignments competitionId={id!} competitionName={comp?.name} />
         </TabsContent>
 
         <TabsContent value="scoring">
