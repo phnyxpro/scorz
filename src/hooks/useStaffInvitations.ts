@@ -14,10 +14,43 @@ export interface StaffInvitation {
   role: AppRole;
   competition_id: string;
   sub_event_id: string | null;
+  is_chief: boolean;
   invited_by: string;
   created_at: string;
   accepted_at: string | null;
   invited_at: string | null;
+}
+
+export interface StaffInvitationSubEvent {
+  id: string;
+  staff_invitation_id: string;
+  sub_event_id: string;
+  created_at: string;
+}
+
+export function useStaffInvitationSubEvents(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["staff_invitation_sub_events", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      // Get all invitation IDs for this competition first
+      const { data: invitations } = await (supabase
+        .from("staff_invitations" as any)
+        .select("id")
+        .eq("competition_id", competitionId!) as any);
+
+      if (!invitations?.length) return [] as StaffInvitationSubEvent[];
+
+      const ids = invitations.map((i: any) => i.id);
+      const { data, error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .select("*")
+        .in("staff_invitation_id", ids) as any);
+
+      if (error) throw error;
+      return (data || []) as StaffInvitationSubEvent[];
+    },
+  });
 }
 
 export function useStaffInvitations(competitionId: string | undefined) {
