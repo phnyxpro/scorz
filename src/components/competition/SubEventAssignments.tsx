@@ -546,7 +546,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
-          {isAdmin && inv.accepted_at && onMasquerade && (
+          {isAdmin && onMasquerade && (
             <Button
               variant="ghost"
               size="sm"
