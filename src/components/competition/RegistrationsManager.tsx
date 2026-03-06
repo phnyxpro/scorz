@@ -10,21 +10,74 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
   pending: "bg-primary/20 text-primary border-primary/30",
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
 };
+
+interface SlotTimeCellProps {
+  slot?: { id: string; start_time: string; end_time: string };
+  onUpdate: (slotId: string, startTime: string, endTime: string) => void;
+  formatTime: (time: string) => string;
+}
+
+function SlotTimeCell({ slot, onUpdate, formatTime }: SlotTimeCellProps) {
+  const [editStart, setEditStart] = useState(slot?.start_time?.slice(0, 5) || "");
+  const [editEnd, setEditEnd] = useState(slot?.end_time?.slice(0, 5) || "");
+  const [open, setOpen] = useState(false);
+
+  if (!slot) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  const handleSave = () => {
+    onUpdate(slot.id, editStart + ":00", editEnd + ":00");
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(o) => {
+      if (o) {
+        setEditStart(slot.start_time?.slice(0, 5) || "");
+        setEditEnd(slot.end_time?.slice(0, 5) || "");
+      }
+      setOpen(o);
+    }}>
+      <PopoverTrigger asChild>
+        <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 whitespace-nowrap">
+          <Clock className="h-3 w-3" />
+          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 space-y-3 p-3" align="start">
+        <p className="text-xs font-medium text-foreground">Edit Slot Time</p>
+        <div className="space-y-2">
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Start</Label>
+            <Input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">End</Label>
+            <Input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="h-8 text-sm" />
+          </div>
+        </div>
+        <Button size="sm" className="w-full h-7 text-xs" onClick={handleSave}>Save</Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 interface Props {
   competitionId: string;
@@ -52,6 +105,32 @@ export function RegistrationsManager({ competitionId }: Props) {
   const allLevelIds = levels?.map(l => l.id) || [];
   const firstLevelId = allLevelIds[0];
   const { data: subEventsFirst } = useSubEvents(firstLevelId);
+
+  // Fetch performance slots for all registrations in this competition
+  const regIds = registrations?.map(r => r.id) || [];
+  const { data: slotsData } = useQuery({
+    queryKey: ["performance_slots_for_regs", competitionId, regIds.length],
+    enabled: regIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("id, contestant_registration_id, start_time, end_time, sub_event_id")
+        .in("contestant_registration_id", regIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Map registration id -> slot
+  const slotsByRegId = useMemo(() => {
+    const map: Record<string, { id: string; start_time: string; end_time: string }> = {};
+    slotsData?.forEach(s => {
+      if (s.contestant_registration_id) {
+        map[s.contestant_registration_id] = { id: s.id, start_time: s.start_time, end_time: s.end_time };
+      }
+    });
+    return map;
+  }, [slotsData]);
 
   const filtered = useMemo(() => {
     if (!registrations) return [];
@@ -113,6 +192,28 @@ export function RegistrationsManager({ competitionId }: Props) {
     await supabase.from("contestant_registrations").update({ sort_order: swapOrder } as any).eq("id", filtered[idx].id);
     await supabase.from("contestant_registrations").update({ sort_order: currentOrder } as any).eq("id", filtered[swapIdx].id);
     qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+  };
+
+  const handleSlotTimeUpdate = async (slotId: string, startTime: string, endTime: string) => {
+    const { error } = await supabase
+      .from("performance_slots")
+      .update({ start_time: startTime, end_time: endTime })
+      .eq("id", slotId);
+    if (error) {
+      toast({ title: "Error updating slot", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Slot time updated" });
+      qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+    }
+  };
+
+  const formatSlotTime = (time: string) => {
+    // time is in HH:MM:SS format, display as HH:MM AM/PM
+    const [h, m] = time.split(":");
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${h12}:${m} ${ampm}`;
   };
 
   const handleWalkInAdd = async () => {
@@ -194,6 +295,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                   <TableHead className="text-xs">Name</TableHead>
                   <TableHead className="text-xs">Email</TableHead>
                   <TableHead className="text-xs">Age</TableHead>
+                  <TableHead className="text-xs">Scheduled Slot</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Order</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
@@ -202,7 +304,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
@@ -230,6 +332,13 @@ export function RegistrationsManager({ competitionId }: Props) {
                           </Badge>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <SlotTimeCell
+                        slot={slotsByRegId[reg.id]}
+                        onUpdate={handleSlotTimeUpdate}
+                        formatTime={formatSlotTime}
+                      />
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
