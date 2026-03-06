@@ -189,6 +189,11 @@ export default function TabulatorDashboard() {
             </Badge>
           </div>
 
+          {/* Scoring Progress */}
+          <div className="mb-4">
+            <ScoringProgressBar allScores={allScores} />
+          </div>
+
           {/* Judge activity indicator */}
           <div className="mb-4">
             <JudgeActivityIndicator
