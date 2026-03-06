@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -87,6 +88,7 @@ export default function JudgeScoring() {
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
 
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
@@ -434,7 +436,7 @@ export default function JudgeScoring() {
       </div>
 
       {/* Certify Dialog */}
-      <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
+      <Dialog open={showCertifyDialog} onOpenChange={(open) => { setShowCertifyDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Certify Scorecard</DialogTitle>
@@ -460,8 +462,18 @@ export default function JudgeScoring() {
                 <span>Final Score</span><span className="font-mono text-primary">{finalScore}</span>
               </div>
             </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed all scores and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
             <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
-            <Button onClick={handleCertify} disabled={!signature || certify.isPending} className="w-full">
+            <Button onClick={handleCertify} disabled={!signature || !certifyConfirmed || certify.isPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certify.isPending ? "Certifying…" : "Certify Scorecard"}
             </Button>
