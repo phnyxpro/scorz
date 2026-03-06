@@ -118,6 +118,11 @@ export default function BillingPanel({ subscription, onRefresh }: BillingPanelPr
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">{tier.description}</p>
+                {/* Staff limits summary */}
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5">
+                  <Users className="h-3 w-3 shrink-0" />
+                  <span>{tier.limits.organizers} org · {tier.limits.judges} judges · {tier.limits.tabulators} tab</span>
+                </div>
                 <ul className="space-y-1.5">
                   {tier.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-foreground">
