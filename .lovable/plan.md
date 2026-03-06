@@ -1,47 +1,42 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Merge Sub-Event Assignments into Staff Roster
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Analysis
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+Both tabs manage the same thing — staff assigned to sub-events. Here's what's unique to each:
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+| Feature | Staff Roster | Sub-Event Assignments |
+|---|---|---|
+| Add staff by email/name/phone | Yes | No |
+| Invite / Resend / Delete | Yes | No |
+| Masquerade (View as) | Yes | No |
+| Inline sub-event assignment per person | Yes | No |
+| Status grouping (Not Invited / Pending / Accepted) | Yes | No |
+| Assign existing platform users to sub-event | No | Yes |
+| Tier limits progress bar (judge/tabulator counts) | No | Yes |
+| View assignments filtered by sub-event | No | Yes |
 
----
+### What to do
 
-### Fix 1: Conditionally apply auditorium filter
+**Keep the Staff Roster as the single view** (remove the Tabs wrapper entirely) and add the two missing features:
 
-**File: `src/contexts/ThemeContext.tsx`**
+1. **Tier Limits Display** — Add the staff count progress bar (judges X/Y, tabulators X/Y) at the top of the roster, above the "Add Staff Member" card. This gives visibility into plan limits.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+2. **Remove the "Assign existing platform users" flow** — This is redundant. Staff should be added through the roster (by email), which auto-creates accounts if needed. The inline sub-event assignment on each StaffRow already handles sub-event mapping.
 
-### Fix 2: Remove filter class when at defaults
+   *If you want to keep the ability to assign existing platform users, let me know and I'll add an "Import existing user" option to the Add Staff form instead.*
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+### Technical Changes
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**File: `src/components/competition/SubEventAssignments.tsx`**
+- Remove `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` wrapper
+- Remove the entire "assign" tab content (lines ~367-604)
+- Remove state variables for sub-event assignment form (`selectedLevelId`, `selectedSubEventId`, `selectedUserId`, `selectedRole`, `isChief`, `activeTab`)
+- Remove `useSubEventAssignments`, `useAddAssignment`, `useRemoveAssignment` imports (no longer needed)
+- Remove `useAssignableUsers` import
+- Add tier limits progress section above the "Add Staff Member" card, showing judge and tabulator counts vs limits
+- Keep everything else (StaffRow, SubEventBadge, add staff form, invitation grouping, masquerade)
 
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Component rename is optional but the file can stay as-is for now.
 
