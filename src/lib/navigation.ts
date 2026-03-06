@@ -61,6 +61,8 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-accent", to: "/tickets-hub", roles: ["organizer", "admin"] },
     { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-accent", to: "/check-in", roles: ["organizer", "admin"] },
     { title: "News & Updates", desc: "Post updates for your events", icon: Newspaper, color: "text-secondary", to: "/updates", roles: ["organizer", "admin"] },
+    { title: "Analytics", desc: "Advanced scoring & participation insights", icon: TrendingUp, color: "text-primary", to: "/analytics", roles: ["organizer", "admin"] },
+    { title: "API Access", desc: "Manage API keys for integrations", icon: Key, color: "text-accent", to: "/api-keys", roles: ["organizer", "admin"] },
 
     // Tabulator / Witness
     { title: "Tabulator Dashboard", desc: "Verify scores & certify results", icon: BarChart3, color: "text-secondary", to: "/tabulator", roles: ["tabulator"] },
