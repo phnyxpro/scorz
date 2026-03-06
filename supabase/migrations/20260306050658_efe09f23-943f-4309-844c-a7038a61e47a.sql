@@ -1,0 +1,1 @@
+ALTER TABLE public.rubric_criteria ADD COLUMN weight_percent numeric NOT NULL DEFAULT 0;
