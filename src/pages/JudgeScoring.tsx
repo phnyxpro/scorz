@@ -382,21 +382,9 @@ export default function JudgeScoring() {
 
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4">
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Raw Total</p>
-                      <p className="text-lg font-mono font-bold text-foreground">{rawTotal}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Time Penalty</p>
-                      <p className={`text-lg font-mono font-bold ${timePenalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {timePenalty > 0 ? `-${timePenalty}` : "0"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Final Score</p>
-                      <p className="text-lg font-mono font-bold text-primary">{finalScore}</p>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Raw Total</p>
+                    <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(1)}</p>
                   </div>
                 </CardContent>
               </Card>
