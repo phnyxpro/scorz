@@ -446,7 +446,11 @@ export default function CompetitionDetail() {
 
               {/* Rich text editor for rubric content */}
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Rubric Content</label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-xs text-muted-foreground">Rubric Content</label>
+                  {autoSaveStatus === "saving" && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving…</span>}
+                  {autoSaveStatus === "saved" && <span className="text-[10px] text-secondary flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
+                </div>
                 <RichTextEditor
                   content={rubricContent}
                   onChange={setRubricContent}
