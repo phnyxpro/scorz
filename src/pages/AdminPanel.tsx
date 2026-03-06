@@ -86,7 +86,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
             <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Select role to add..." /></SelectTrigger>
             <SelectContent>
               {availableRoles.map((r) => (
-                <SelectItem key={r} value={r} className="text-xs">{r.replace("_", " ")}</SelectItem>
+                <SelectItem key={r} value={r} className="text-xs">{formatRoleName(r)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
