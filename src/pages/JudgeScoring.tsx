@@ -148,13 +148,17 @@ export default function JudgeScoring() {
 
   const handleCertify = async () => {
     if (!existingScore?.id || !signature) return;
-    await certify.mutateAsync({
-      id: existingScore.id,
-      judge_signature: signature,
-      sub_event_id: subEventId,
-      contestant_registration_id: selectedContestant,
-    });
-    setShowCertifyDialog(false);
+    try {
+      await certify.mutateAsync({
+        id: existingScore.id,
+        judge_signature: signature,
+        sub_event_id: subEventId,
+        contestant_registration_id: selectedContestant,
+      });
+      setShowCertifyDialog(false);
+    } catch (error) {
+      console.error("Certification error:", error);
+    }
   };
 
   const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;

@@ -147,12 +147,16 @@ export default function ChiefJudgeDashboard() {
 
   const handleCertify = async () => {
     if (!certification?.id || !signature) return;
-    await certifySubEvent.mutateAsync({
-      id: certification.id,
-      chief_judge_signature: signature,
-      sub_event_id: selectedSubEventId,
-    });
-    setShowCertifyDialog(false);
+    try {
+      await certifySubEvent.mutateAsync({
+        id: certification.id,
+        chief_judge_signature: signature,
+        sub_event_id: selectedSubEventId,
+      });
+      setShowCertifyDialog(false);
+    } catch (error) {
+      console.error("Certification error:", error);
+    }
   };
 
   return (
