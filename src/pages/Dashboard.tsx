@@ -283,7 +283,7 @@ export default function Dashboard() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {topCompetitions.map((comp) => (
                   <Link key={comp.id} to={`/competitions/${comp.id}`}>
-                    <Card className="border-border/50 bg-card/80 hover:bg-card hover:border-primary/30 transition-colors cursor-pointer group">
+                    <Card className="border-border/50 bg-card/80 hover:bg-card hover:border-accent/30 transition-colors cursor-pointer group">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
