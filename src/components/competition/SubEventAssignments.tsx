@@ -157,6 +157,37 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
               {selectedRole && (
                 <>
+                  {/* Staff limit indicator */}
+                  {tierLimits && staffCounts && (
+                    <div className="space-y-2 p-3 rounded-lg border border-border/50 bg-muted/30">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-medium">
+                          {selectedRole === "judge" ? "Judges" : selectedRole === "tabulator" ? "Tabulators" : "Organizers"} assigned
+                        </span>
+                        <span className="font-mono text-foreground">
+                          {selectedRole === "judge" ? staffCounts.judges : selectedRole === "tabulator" ? staffCounts.tabulators : staffCounts.organizers}
+                          {" / "}
+                          {selectedRole === "judge" ? tierLimits.judges : selectedRole === "tabulator" ? tierLimits.tabulators : tierLimits.organizers}
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          ((selectedRole === "judge" ? staffCounts.judges : selectedRole === "tabulator" ? staffCounts.tabulators : staffCounts.organizers) /
+                          (selectedRole === "judge" ? tierLimits.judges : selectedRole === "tabulator" ? tierLimits.tabulators : tierLimits.organizers)) * 100
+                        }
+                        className="h-1.5"
+                      />
+                      {isRoleAtLimit(selectedRole) && (
+                        <Alert className="border-accent/30 bg-accent/5 py-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-accent" />
+                          <AlertDescription className="text-xs">
+                            {selectedRole} limit reached for this competition's plan. Upgrade to add more.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+
                   {/* Mode toggle */}
                   <Tabs value={mode} onValueChange={(v) => setMode(v as "assign" | "invite")} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
