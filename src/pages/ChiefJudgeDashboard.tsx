@@ -36,6 +36,7 @@ import { motion } from "framer-motion";
 
 export default function ChiefJudgeDashboard() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const unreadCount = useChatUnreadCount(competitionId);
   const navigate = useNavigate();
   const { user } = useAuth();
 
