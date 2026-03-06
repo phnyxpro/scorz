@@ -78,7 +78,7 @@ export const TIERS: SubscriptionTier[] = [
     priceId: "price_1T7t5VERVeYk2KQ9Ul4CAyq7",
     productId: "prod_U65GjQ5kHCWQRe",
     price: 49,
-    description: "One competition with advanced features for serious organizers",
+    description: "One competition with advanced features for serious organisers",
     highlight: true,
     limits: { organizers: 4, judges: 10, tabulators: 4 },
     features: [
