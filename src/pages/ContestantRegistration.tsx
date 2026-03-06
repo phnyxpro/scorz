@@ -27,7 +27,7 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
-  ageCategory: z.enum(["adult", "minor"]),
+  ageCategory: z.enum(["adult", "minor"]).optional().default("adult"),
   bio: z.string().optional(),
   videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   guardianName: z.string().optional(),
@@ -39,14 +39,6 @@ const registrationSchema = z.object({
   selectedLevelId: z.string().optional(),
   selectedSubEventId: z.string().optional(),
   selectedSlotId: z.string().optional(),
-}).refine(data => {
-  if (data.ageCategory === "minor") {
-    return !!data.guardianName && !!data.guardianSig;
-  }
-  return true;
-}, {
-  message: "Guardian information and signature are required for minors",
-  path: ["guardianName"],
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -94,7 +86,7 @@ export function OnBehalfRegistrationForm({
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
@@ -258,7 +250,7 @@ export default function ContestantRegistration() {
     }
 
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
@@ -488,7 +480,7 @@ function PersonalStep() {
             <Input {...register("location")} placeholder="City, State" />
           </div>
           <div className="space-y-2">
-            <Label>Age Category *</Label>
+            <Label>Age Category</Label>
             <select
               {...register("ageCategory")}
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -509,12 +501,12 @@ function PersonalStep() {
               <User className="h-4 w-4 text-secondary" /> Parent / Guardian Info
             </h3>
             <div className="space-y-2">
-              <Label>Guardian Name *</Label>
+              <Label>Guardian Name</Label>
               <Input {...register("guardianName")} placeholder="Full Name" />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Guardian Email *</Label>
+                <Label>Guardian Email</Label>
                 <Input {...register("guardianEmail")} type="email" />
               </div>
               <div className="space-y-2">

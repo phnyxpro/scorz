@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -220,9 +220,16 @@ export function RegistrationsManager({ competitionId }: Props) {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px]">
-                        {reg.age_category}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[10px]">
+                          {reg.age_category}
+                        </Badge>
+                        {reg.age_category === "minor" && !reg.guardian_name && (
+                          <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
+                            <ShieldAlert className="h-2.5 w-2.5" /> No Guardian
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
