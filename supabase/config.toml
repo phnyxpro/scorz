@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.parse-pdf]
 verify_jwt = false
+
+[functions.send-staff-invite]
+verify_jwt = false
