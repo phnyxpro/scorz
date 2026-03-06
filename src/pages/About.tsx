@@ -13,7 +13,7 @@ import scorzLogo from "@/assets/scorz-logo.svg";
 const ROLES = [
   {
     icon: Users,
-    title: "Organizer",
+    title: "Organiser",
     description: "Full control over your competition from creation to results.",
     features: [
       "Create & manage competitions, levels, and sub-events",
