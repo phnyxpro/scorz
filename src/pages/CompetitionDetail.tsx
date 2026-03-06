@@ -310,7 +310,7 @@ export default function CompetitionDetail() {
                 <FileText className="h-5 w-5 text-primary" />
                 <CardTitle className="text-base">Competition Rules</CardTitle>
               </div>
-              <CardDescription>Add an external rules URL or upload a PDF document that contestants and judges can reference.</CardDescription>
+              <CardDescription>Add an external rules URL or upload a document (PDF, DOCX, TXT) that contestants and judges can reference.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
@@ -320,8 +320,13 @@ export default function CompetitionDetail() {
               <DocumentUpload
                 currentUrl={rulesDocumentUrl || null}
                 folder={`rules/${id}`}
-                label="Rules Document (PDF)"
-                onUploaded={(url) => setRulesDocumentUrl(url)}
+                label="Rules Document"
+                onUploaded={async (url) => {
+                  setRulesDocumentUrl(url);
+                  // Auto-save and scan
+                  await supabase.from("competitions").update({ rules_document_url: url } as any).eq("id", id!);
+                  scanDocument(url, "rules");
+                }}
                 onRemoved={() => setRulesDocumentUrl("")}
               />
 
@@ -362,14 +367,18 @@ export default function CompetitionDetail() {
                   <BookOpen className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base">Scoring Rubric</CardTitle>
                 </div>
-                <CardDescription>Upload a rubric PDF or build scoring criteria below for judges to use during evaluation.</CardDescription>
+                <CardDescription>Upload a rubric document (PDF, DOCX, TXT) or build scoring criteria below for judges to use during evaluation.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <DocumentUpload
                   currentUrl={rubricDocumentUrl || null}
                   folder={`rubric/${id}`}
-                  label="Rubric Document (PDF)"
-                  onUploaded={(url) => setRubricDocumentUrl(url)}
+                  label="Rubric Document"
+                  onUploaded={async (url) => {
+                    setRubricDocumentUrl(url);
+                    await supabase.from("competitions").update({ rubric_document_url: url } as any).eq("id", id!);
+                    scanDocument(url, "rubric");
+                  }}
                   onRemoved={() => setRubricDocumentUrl("")}
                 />
 

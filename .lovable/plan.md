@@ -1,62 +1,47 @@
 
 
-## High-Fidelity Document-to-HTML Conversion
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The current `parse-pdf` edge function passes a URL string to the AI model, but the model cannot access external URLs. It returns plain text, not styled HTML. Documents need to be faithfully converted to HTML that preserves the original formatting.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Solution
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Rewrite `supabase/functions/parse-pdf/index.ts`**
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-- Download the file bytes from the storage URL
-- Detect file type from extension
-- **TXT files**: Read as text, wrap lines in `<p>` tags (no AI needed)
-- **DOCX files**: Use `mammoth` npm package (`npm:mammoth`) to convert directly to HTML with styles preserved (headings, bold, italic, lists, tables, images). This is deterministic and high-fidelity.
-- **PDF files**: Send the actual file bytes to Gemini as base64-encoded content in the multimodal message format (`{ type: "image_url", image_url: { url: "data:application/pdf;base64,..." } }`). Instruct Gemini to reproduce the document as faithful HTML with inline styles for colors, fonts, alignment, tables, and layout.
-- For rubric type: still extract criteria via AI tool calls as before, but also return styled `html_content`
-- For rules type: return the HTML as `content`
+---
 
-**2. Update `DocumentUpload.tsx`**
+### Fix 1: Conditionally apply auditorium filter
 
-- Expand accepted file types: `.pdf,.doc,.docx,.txt`
-- Update MIME type validation to include `text/plain`
-- Update label default from "Document" to support broader types
+**File: `src/contexts/ThemeContext.tsx`**
 
-**3. Update `CompetitionDetail.tsx`**
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-- Auto-trigger document scanning immediately after upload completes (no separate "Scan Document" button click needed)
-- Update `onUploaded` callbacks to call `scanDocument()` right after setting the URL
-- Update description text to mention supported file types (PDF, DOCX, TXT)
-- Keep the manual "Scan Document" button as a re-scan option
+### Fix 2: Remove filter class when at defaults
 
-**4. Update edge function prompts for PDF**
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-New system prompt for rules PDF extraction:
-```
-You are a document-to-HTML converter. Convert this PDF into clean, semantic HTML 
-that faithfully reproduces the original document's appearance. Preserve:
-- Headings (h1-h6), bold, italic, underline
-- Colors and highlights using inline styles
-- Tables with borders and cell styling
-- Numbered and bulleted lists
-- Text alignment (center, right, justify)
-- Font sizes using relative em units
-Return ONLY the HTML body content, no <html>/<head> wrapper.
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-### Files Changed
+This ensures no filter is applied when properties are unset, which is the default state.
 
-| File | Change |
-|---|---|
-| `supabase/functions/parse-pdf/index.ts` | Rewrite: download file, use mammoth for DOCX, Gemini multimodal for PDF, plain wrap for TXT |
-| `src/components/shared/DocumentUpload.tsx` | Accept `.pdf,.doc,.docx,.txt`, update validation |
-| `src/pages/CompetitionDetail.tsx` | Auto-scan on upload, update labels/descriptions |
+---
 
-### Technical Notes
+### Summary
 
-- mammoth.js produces clean semantic HTML from DOCX and handles styles, tables, lists, and images well
-- Gemini supports PDF binary input via base64 data URIs in the multimodal content array
-- TXT conversion is trivial and doesn't need AI
-- The resulting HTML loads directly into the TipTap rich text editor and renders on public pages via `dangerouslySetInnerHTML` with prose styling
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
