@@ -1,47 +1,69 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Add E-Signature & Type-to-Sign Options (Keep Draw)
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Overview
+Enhance the existing `SignaturePad` component to offer **two signature methods** via tabs, while keeping the current draw functionality intact. A digital metadata stamp will be appended to all signatures.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Approach
+Modify `SignaturePad.tsx` directly -- no new file needed. Add a `Tabs` toggle between **Draw** and **Type** modes. The "E-Sign" concept (one-click consent with typed name) is folded into the Type tab as the simplest UX. All outputs include a metadata footer stamp.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Component Changes (`src/components/registration/SignaturePad.tsx`)
 
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+**New props:**
+```ts
+interface SignaturePadProps {
+  onSignature: (dataUrl: string) => void;
+  existingSignature?: string | null;
+  label?: string;
+  signerRole?: string; // "Judge", "Chief Judge", etc.
 }
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+**UI structure:**
+```text
+┌──────────────────────────────┐
+│  [Draw]  [Type to Sign]     │  ← Tabs
+├──────────────────────────────┤
+│  Draw: existing canvas       │
+│  -- OR --                    │
+│  Type: text input + cursive  │
+│         preview + confirm    │
+├──────────────────────────────┤
+│  Metadata stamp (rendered    │
+│  onto canvas before export): │
+│  "Signed: Mar 6, 2026 2:30p │
+│   Role: Judge | via Scorz"  │
+└──────────────────────────────┘
+```
 
----
+**Type tab logic:**
+- Text input for full name
+- Live preview in `Dancing Script` cursive font
+- "Confirm Signature" button renders the styled text + metadata stamp onto a hidden canvas, exports as PNG data URL
 
-### Summary
+**Metadata stamping:**
+- Shared `stampSignature()` function takes any canvas, appends a 30px footer with: timestamp, signer role, "Digitally signed via Scorz"
+- Applied to both Draw (on `endDraw`) and Type (on confirm)
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Style Change (`src/index.css`)
+- Add Google Font import: `@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap');`
+
+### Consumer Pages (import swap for `signerRole` prop only)
+All 5 pages keep using `SignaturePad` -- just add `signerRole` prop:
+
+| Page | signerRole |
+|---|---|
+| `JudgeScoring.tsx` | `"Judge"` |
+| `ChiefJudgeDashboard.tsx` | `"Chief Judge"` |
+| `TabulatorDashboard.tsx` | `"Tabulator"` |
+| `WitnessDashboard.tsx` | `"Witness"` |
+| `ContestantRegistration.tsx` | `"Contestant"` |
+
+### Files Changed
+| File | Change |
+|---|---|
+| `src/components/registration/SignaturePad.tsx` | Add Tabs (Draw / Type), metadata stamp |
+| `src/index.css` | Dancing Script font import |
+| 5 consumer pages | Add `signerRole` prop to `<SignaturePad>` |
 
