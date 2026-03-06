@@ -63,7 +63,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       .select("user_id")
       .eq("email", inv.email)
       .maybeSingle();
-    if (!profile?.user_id) return;
+    if (!profile?.user_id) {
+      toast({ title: "This user hasn't signed up yet — masquerade unavailable.", variant: "destructive" });
+      return;
+    }
     await startMasquerade({
       userId: profile.user_id,
       email: inv.email,
