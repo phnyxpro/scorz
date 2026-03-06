@@ -4,12 +4,14 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, FileText } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+import { calculateMethodScore } from "@/lib/scoring-methods";
 
 interface Props {
   scoresByContestant: Record<string, JudgeScore[]>;
   contestantName: (id: string) => string;
   contestantUserId?: (id: string) => string | undefined;
   rubricNames: string[];
+  scoringMethod?: string;
 }
 
 export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames }: Props) {
