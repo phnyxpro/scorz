@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useRubricCriteria, usePenaltyRules, useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
