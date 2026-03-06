@@ -41,11 +41,18 @@ export interface RubricCriterion {
   competition_id: string;
   name: string;
   sort_order: number;
+  guidelines: string | null;
   description_1: string;
   description_2: string;
   description_3: string;
   description_4: string;
   description_5: string;
+}
+
+export interface RubricScaleLabels {
+  min: number;
+  max: number;
+  labels: Record<string, string>;
 }
 
 export interface PenaltyRule {
