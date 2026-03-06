@@ -94,7 +94,7 @@ const FAQ = [
   },
   {
     q: "Can I assign different staff to different events?",
-    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organized and secure.",
+    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organised and secure.",
   },
   {
     q: "Is my scoring data secure?",
