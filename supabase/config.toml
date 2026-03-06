@@ -1,6 +1,8 @@
 project_id = "dwcdxofvxsmpbziosvbo"
 
 [functions]
+  [functions.api-v1]
+    verify_jwt = false
   [functions.auth-email-hook]
     verify_jwt = false
   [functions.check-subscription]
