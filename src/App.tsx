@@ -66,6 +66,7 @@ const App = () => (
               <Route path="/events/:id" element={<PublicEventDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/about" element={<About />} />
+              <Route path="/welcome" element={<MagicLinkLanding />} />
               <Route
                 path="/dashboard"
                 element={

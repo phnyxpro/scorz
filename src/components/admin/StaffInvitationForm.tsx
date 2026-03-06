@@ -26,7 +26,7 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
-        await invite.mutateAsync({ email, role, competitionId });
+        await invite.mutateAsync({ email, role, competitionId, competitionName });
         setEmail("");
     };
 
