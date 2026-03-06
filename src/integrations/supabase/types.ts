@@ -315,6 +315,7 @@ export type Database = {
           rules_content: string | null
           rules_document_url: string | null
           rules_url: string | null
+          scoring_method: string
           show_peoples_choice_to_contestants: boolean
           slug: string
           social_links: Json
@@ -337,6 +338,7 @@ export type Database = {
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
+          scoring_method?: string
           show_peoples_choice_to_contestants?: boolean
           slug: string
           social_links?: Json
@@ -359,6 +361,7 @@ export type Database = {
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
+          scoring_method?: string
           show_peoples_choice_to_contestants?: boolean
           slug?: string
           social_links?: Json

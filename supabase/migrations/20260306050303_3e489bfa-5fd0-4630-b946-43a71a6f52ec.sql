@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions ADD COLUMN scoring_method text NOT NULL DEFAULT 'olympic';
