@@ -440,14 +440,8 @@ export default function JudgeScoring() {
               </p>
             </div>
             <div className="text-sm space-y-1">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Raw Total</span><span className="font-mono">{rawTotal}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Time Penalty</span><span className="font-mono text-destructive">-{timePenalty}</span>
-              </div>
-              <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1">
-                <span>Final Score</span><span className="font-mono text-primary">{finalScore}</span>
+              <div className="flex justify-between font-bold text-foreground">
+                <span>Raw Total</span><span className="font-mono">{rawTotal.toFixed(1)}</span>
               </div>
             </div>
             <div className="flex items-start gap-2">
