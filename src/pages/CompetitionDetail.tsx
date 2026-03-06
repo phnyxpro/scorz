@@ -52,6 +52,18 @@ interface ScannedCriterion {
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
+  // Fix content where HTML tags were stored as escaped text (e.g. from bad paste)
+  const fixEscapedHtml = (html: string): string => {
+    if (!html) return html;
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const text = div.textContent || "";
+    if (text.trimStart().startsWith("<p>") || text.includes("</p><p>")) {
+      return text;
+    }
+    return html;
+  };
+
   const { hasRole, loading: authLoading } = useAuth();
   const { data: comp, isLoading } = useCompetition(id);
   const { data: existingCriteria } = useRubricCriteria(id);
@@ -94,8 +106,8 @@ export default function CompetitionDetail() {
       
       setRulesDocumentUrl((comp as any).rules_document_url || "");
       setRubricDocumentUrl((comp as any).rubric_document_url || "");
-      setRulesContent((comp as any).rules_content || "");
-      setRubricContent((comp as any).rubric_content || "");
+      setRulesContent(fixEscapedHtml((comp as any).rules_content || ""));
+      setRubricContent(fixEscapedHtml((comp as any).rubric_content || ""));
       setShowPeoplesChoice((comp as any).show_peoples_choice_to_contestants || false);
     }
   }, [comp]);
