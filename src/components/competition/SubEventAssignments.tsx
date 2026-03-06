@@ -37,6 +37,8 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: assignableUsers } = useAssignableUsers();
   const addAssignment = useAddAssignment();
   const removeAssignment = useRemoveAssignment();
+  const { data: tierLimits } = useCompetitionLimits(competitionId);
+  const { data: staffCounts } = useCompetitionStaffCounts(competitionId);
   const inviteStaff = useInviteStaff();
   const deleteInvitation = useDeleteInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
