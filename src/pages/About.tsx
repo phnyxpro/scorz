@@ -76,7 +76,7 @@ const ROLES = [
     title: "Audience",
     description: "Engage with the competition through voting and ticketing.",
     features: [
-      "Cast votes for favorite performers",
+      "Cast votes for favourite performers",
       "Purchase event tickets online",
       "Follow live competition updates and news",
     ],
