@@ -14,7 +14,29 @@ import { Color } from "@tiptap/extension-text-style";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
+import { Extension } from "@tiptap/core";
 import { useEffect, useCallback, useRef, useState } from "react";
+
+const IndentExtension = Extension.create({
+  name: "indent",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: {
+          indent: {
+            default: 0,
+            parseHTML: (element) => parseInt(element.style.marginLeft || "0", 10) / 40 || 0,
+            renderHTML: (attributes) => {
+              if (!attributes.indent || attributes.indent <= 0) return {};
+              return { style: `margin-left: ${attributes.indent * 40}px` };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -47,6 +69,8 @@ import {
   Merge,
   Split,
   Ruler,
+  IndentIncrease,
+  IndentDecrease,
 } from "lucide-react";
 import { EditorRuler } from "./EditorRuler";
 import { cn } from "@/lib/utils";
@@ -118,6 +142,7 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      IndentExtension,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -500,6 +525,52 @@ export function RichTextEditor({
             title="Numbered List"
           >
             <ListOrdered className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          {/* Indent / Outdent */}
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().sinkListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent + 1 });
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Increase Indent"
+          >
+            <IndentIncrease className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().liftListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      if (currentIndent > 0) {
+                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent - 1 });
+                      }
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Decrease Indent"
+          >
+            <IndentDecrease className="h-3.5 w-3.5" />
           </ToolbarButton>
 
           <Divider />
