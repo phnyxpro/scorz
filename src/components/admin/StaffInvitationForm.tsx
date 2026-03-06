@@ -44,9 +44,19 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                     <CardDescription>Invite judges and tabulators to your competition</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleInvite} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px] space-y-2">
-                            <Label htmlFor="staff-email">Email Address</Label>
+                    <form onSubmit={handleInvite} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-name">Name</Label>
+                            <Input
+                                id="staff-name"
+                                type="text"
+                                placeholder="John Doe"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-email">Email Address *</Label>
                             <Input
                                 id="staff-email"
                                 type="email"
@@ -54,6 +64,16 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-phone">Phone (optional)</Label>
+                            <Input
+                                id="staff-phone"
+                                type="tel"
+                                placeholder="+1 234 567 8900"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
                             />
                         </div>
                         <div className="w-[180px] space-y-2">
