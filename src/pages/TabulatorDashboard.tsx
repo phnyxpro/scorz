@@ -97,11 +97,12 @@ function useJudgingOverview(competitionId: string | undefined) {
 
 /* ─── Sub-event Workspace ─── */
 function SubEventWorkspace({
-  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount,
+  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
 }: {
   subEventId: string; competitionId: string;
   registrations: any[]; rubricNames: string[];
   onOpenChat: () => void; unreadCount: number;
+  onContestantChange: (id: string) => void;
 }) {
   const { user } = useAuth();
   const { data: penalties } = usePenaltyRules(competitionId);
@@ -213,6 +214,7 @@ function SubEventWorkspace({
         gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
         contestants={seContestants}
         onDurationChange={setPerformanceDuration}
+        onContestantChange={onContestantChange}
       />
 
       {/* Scoring Progress + Judge Activity */}
@@ -398,6 +400,7 @@ export default function TabulatorDashboard() {
   const [activeSubEventId, setActiveSubEventId] = useState("");
   const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [onStageContestantId, setOnStageContestantId] = useState("");
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
 
@@ -607,10 +610,17 @@ export default function TabulatorDashboard() {
                                               const isExpanded = expandedContestant === toggleKey;
                                               return (
                                                 <>
-                                                  <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50"
+                                                  <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
                                                     onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
                                                     <TableCell className="font-mono text-muted-foreground text-xs">{idx + 1}</TableCell>
-                                                    <TableCell className="font-medium text-sm">{c.full_name}</TableCell>
+                                                    <TableCell className="font-medium text-sm">
+                                                      <span className="flex items-center gap-1.5">
+                                                        {c.full_name}
+                                                        {onStageContestantId === c.id && (
+                                                          <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1.5 py-0">On Stage</Badge>
+                                                        )}
+                                                      </span>
+                                                    </TableCell>
                                                     <TableCell className="text-center">
                                                       <Badge variant="outline" className="text-xs">{cScores.length} judge{cScores.length !== 1 ? "s" : ""}</Badge>
                                                     </TableCell>
@@ -676,6 +686,7 @@ export default function TabulatorDashboard() {
             rubricNames={rubricNames}
             onOpenChat={() => setShowChatModal(true)}
             unreadCount={unreadCount}
+            onContestantChange={setOnStageContestantId}
           />
         </div>
       )}

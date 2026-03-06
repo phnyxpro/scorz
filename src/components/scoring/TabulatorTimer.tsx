@@ -20,6 +20,7 @@ interface TabulatorTimerProps {
   gracePeriodSeconds: number;
   contestants: Array<{ id: string; full_name: string }>;
   onDurationChange?: (seconds: number) => void;
+  onContestantChange?: (contestantId: string) => void;
 }
 
 export function TabulatorTimer({
@@ -28,6 +29,7 @@ export function TabulatorTimer({
   gracePeriodSeconds,
   contestants,
   onDurationChange,
+  onContestantChange,
 }: TabulatorTimerProps) {
   const { user } = useAuth();
   const [selectedContestantId, setSelectedContestantId] = useState("");
@@ -123,9 +125,10 @@ export function TabulatorTimer({
     return () => window.removeEventListener("keydown", handleKey);
   }, [start, stop, selectedContestantId]);
 
-  // Reset timer when contestant changes
+  // Reset timer when contestant changes and notify parent
   useEffect(() => {
     reset();
+    onContestantChange?.(selectedContestantId);
   }, [selectedContestantId]);
 
   const graceStart = timeLimitSeconds;
@@ -182,14 +185,15 @@ export function TabulatorTimer({
 
         {selectedContestantId && (
           <>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="gap-1">
+            {/* Green contestant pill + LIVE badge above timer */}
+            <div className="flex items-center justify-center gap-2">
+              <Badge className="gap-1.5 bg-secondary/20 text-secondary border border-secondary/30 px-3 py-1">
                 <User className="h-3 w-3" />
                 {selectedName}
               </Badge>
               {running && (
-                <Badge variant="default" className="gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                  <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
+                <Badge variant="default" className="gap-1 bg-destructive/20 text-destructive border border-destructive/30">
+                  <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
                   LIVE
                 </Badge>
               )}
