@@ -2,23 +2,62 @@ export interface SubscriptionTier {
   name: string;
   priceId: string;
   productId: string;
-  price: number; // in dollars
+  price: number; // in USD
   description: string;
   features: string[];
-  competitionLimit: number;
   highlight?: boolean;
+}
+
+export const USD_DISCLAIMER = "All prices quoted in US Dollars (USD)";
+
+// Static approximation table for major currencies (rates vs USD)
+const CURRENCY_APPROX: Record<string, { symbol: string; rate: number; code: string }> = {
+  "en-GB": { symbol: "£", rate: 0.79, code: "GBP" },
+  "en-ZA": { symbol: "R", rate: 18.2, code: "ZAR" },
+  "de-DE": { symbol: "€", rate: 0.92, code: "EUR" },
+  "fr-FR": { symbol: "€", rate: 0.92, code: "EUR" },
+  "es-ES": { symbol: "€", rate: 0.92, code: "EUR" },
+  "it-IT": { symbol: "€", rate: 0.92, code: "EUR" },
+  "pt-BR": { symbol: "R$", rate: 5.0, code: "BRL" },
+  "ja-JP": { symbol: "¥", rate: 149, code: "JPY" },
+  "en-AU": { symbol: "A$", rate: 1.53, code: "AUD" },
+  "en-CA": { symbol: "C$", rate: 1.36, code: "CAD" },
+  "en-IN": { symbol: "₹", rate: 83.5, code: "INR" },
+  "zh-CN": { symbol: "¥", rate: 7.24, code: "CNY" },
+  "ko-KR": { symbol: "₩", rate: 1320, code: "KRW" },
+  "en-NG": { symbol: "₦", rate: 1550, code: "NGN" },
+  "en-KE": { symbol: "KSh", rate: 153, code: "KES" },
+  "en-GH": { symbol: "GH₵", rate: 15.5, code: "GHS" },
+};
+
+export function getLocalCurrencyApprox(usdAmount: number): string | null {
+  const locale = navigator.language;
+  // Don't show for US users
+  if (locale.startsWith("en-US") || locale === "en") return null;
+
+  const match = CURRENCY_APPROX[locale];
+  if (!match) {
+    // Try language-region fallback
+    const langOnly = locale.split("-")[0];
+    const fallback = Object.entries(CURRENCY_APPROX).find(([k]) => k.startsWith(langOnly));
+    if (!fallback) return null;
+    const [, info] = fallback;
+    const approx = Math.round(usdAmount * info.rate);
+    return `~${info.symbol}${approx.toLocaleString()}`;
+  }
+
+  const approx = Math.round(usdAmount * match.rate);
+  return `~${match.symbol}${approx.toLocaleString()}`;
 }
 
 export const TIERS: SubscriptionTier[] = [
   {
     name: "Start Scorz",
-    priceId: "price_1T6khJERVeYk2KQ9N50SK1w7",
-    productId: "prod_U4uWictdhk1hdd",
+    priceId: "price_1T7t57ERVeYk2KQ9qbilZ1NA",
+    productId: "prod_U65F5A4sKTnuVF",
     price: 15,
-    description: "Create up to 5 competitions per month with all features",
-    competitionLimit: 5,
+    description: "One competition with all core features—perfect for small events",
     features: [
-      "Up to 5 competitions/month",
       "Unlimited contestants",
       "Full rubric builder",
       "Digital scoring",
@@ -27,16 +66,15 @@ export const TIERS: SubscriptionTier[] = [
   },
   {
     name: "Pro Scorz",
-    priceId: "price_1T6kiuERVeYk2KQ98LF9v8Hf",
-    productId: "prod_U4uYMqrEeuSamF",
+    priceId: "price_1T7t5VERVeYk2KQ9Ul4CAyq7",
+    productId: "prod_U65GjQ5kHCWQRe",
     price: 49,
-    description: "Create up to 20 competitions per month with advanced analytics, custom branding, and priority support",
-    competitionLimit: 20,
+    description: "One competition with advanced features for serious organizers",
     highlight: true,
     features: [
-      "Up to 20 competitions/month",
-      "Advanced analytics",
-      "Custom branding",
+      "Everything in Start",
+      "Advanced analytics (coming soon)",
+      "Custom branding (coming soon)",
       "Priority support",
       "Audience voting",
       "Ticketing system",
@@ -44,18 +82,16 @@ export const TIERS: SubscriptionTier[] = [
   },
   {
     name: "Enterprise Scorz",
-    priceId: "price_1T6kjCERVeYk2KQ9PSPBv7AE",
-    productId: "prod_U4uY3GNUMjd54Q",
+    priceId: "price_1T7t5kERVeYk2KQ96rEqSzcF",
+    productId: "prod_U65G1kKSbu9uDM",
     price: 149,
-    description: "Unlimited competitions, white-label branding, API access, dedicated support, and custom integrations",
-    competitionLimit: -1, // unlimited
+    description: "One premium competition with white-label branding, API access, and dedicated support",
     features: [
-      "Unlimited competitions",
-      "White-label branding",
-      "API access",
+      "Everything in Pro",
+      "White-label branding (coming soon)",
+      "API access (coming soon)",
       "Dedicated support",
-      "Custom integrations",
-      "All Pro features",
+      "Custom integrations (coming soon)",
     ],
   },
 ];
