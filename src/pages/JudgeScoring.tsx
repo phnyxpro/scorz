@@ -87,6 +87,7 @@ export default function JudgeScoring() {
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
+  const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
 
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
