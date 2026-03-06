@@ -142,6 +142,7 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      IndentExtension,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
