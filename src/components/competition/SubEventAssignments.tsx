@@ -13,6 +13,7 @@ import {
   useAddStaffSubEvent,
   useRemoveStaffSubEvent,
   useDeleteInvitation,
+  useUpdateStaffInvitation,
   type StaffInvitation,
   type StaffInvitationSubEvent,
 } from "@/hooks/useStaffInvitations";
@@ -27,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
@@ -54,9 +55,11 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const addStaffSubEvent = useAddStaffSubEvent();
   const removeStaffSubEvent = useRemoveStaffSubEvent();
   const deleteInvitation = useDeleteInvitation();
+  const updateInvitation = useUpdateStaffInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
   const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
   const [previewInv, setPreviewInv] = useState<StaffInvitation | null>(null);
+  const [editingInv, setEditingInv] = useState<StaffInvitation | null>(null);
 
   const handleMasquerade = async (inv: StaffInvitation) => {
     const { data: profile } = await supabase
@@ -263,6 +266,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                   onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                   onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
+                  onEdit={setEditingInv}
                   sendingInvite={sendInvite.isPending}
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
@@ -294,6 +298,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                   onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                   onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
+                  onEdit={setEditingInv}
                   sendingInvite={sendInvite.isPending}
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
@@ -324,6 +329,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                   onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                   onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
+                  onEdit={setEditingInv}
                   sendingInvite={false}
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
@@ -340,7 +346,106 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
           No staff members added yet. Add judges and tabulators above.
         </p>
       )}
+
+      {/* Edit Staff Dialog */}
+      <EditStaffDialog
+        inv={editingInv}
+        competitionId={competitionId}
+        onClose={() => setEditingInv(null)}
+        onSave={(updates) => {
+          if (editingInv) {
+            updateInvitation.mutate({ id: editingInv.id, competitionId, updates }, {
+              onSuccess: () => setEditingInv(null),
+            });
+          }
+        }}
+        saving={updateInvitation.isPending}
+      />
     </div>
+  );
+}
+
+/* ── Edit Staff Dialog ── */
+function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
+  inv: StaffInvitation | null;
+  competitionId: string;
+  onClose: () => void;
+  onSave: (updates: { name?: string | null; email?: string; phone?: string | null; role?: any; is_chief?: boolean }) => void;
+  saving: boolean;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("");
+  const [isChief, setIsChief] = useState(false);
+
+  useEffect(() => {
+    if (inv) {
+      setName(inv.name || "");
+      setEmail(inv.email);
+      setPhone(inv.phone || "");
+      setRole(inv.role);
+      setIsChief(inv.is_chief);
+    }
+  }, [inv]);
+
+  if (!inv) return null;
+
+  return (
+    <Dialog open={!!inv} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-sm font-mono">Edit Staff Member</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3 py-2">
+          <div>
+            <Label className="text-xs">Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" placeholder="Full name" />
+          </div>
+          <div>
+            <Label className="text-xs">Email</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} className="h-9 text-sm" type="email" placeholder="Email address" />
+          </div>
+          <div>
+            <Label className="text-xs">Phone</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-9 text-sm" placeholder="Phone (optional)" />
+          </div>
+          <div>
+            <Label className="text-xs">Role</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ASSIGNABLE_ROLES.map(r => (
+                  <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {role === "judge" && (
+            <div className="flex items-center gap-2">
+              <Checkbox id="edit-chief" checked={isChief} onCheckedChange={(c) => setIsChief(!!c)} />
+              <Label htmlFor="edit-chief" className="text-xs">Chief Judge</Label>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={saving || !email.trim()}
+              onClick={() => onSave({
+                name: name.trim() || null,
+                email: email.trim(),
+                phone: phone.trim() || null,
+                role: role as any,
+                is_chief: role === "judge" ? isChief : false,
+              })}
+            >
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -451,13 +556,14 @@ interface StaffRowProps {
   onAddSubEvent: (subEventId: string) => void;
   onRemoveSubEvent: (id: string) => void;
   onDelete: () => void;
+  onEdit: (inv: StaffInvitation) => void;
   sendingInvite: boolean;
   isAdmin?: boolean;
   onMasquerade?: (inv: StaffInvitation) => void;
   onPreviewEmail?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
@@ -537,6 +643,15 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Send className="h-3 w-3 mr-1" /> Resend
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-primary"
+            onClick={() => onEdit(inv)}
+            title="Edit staff member"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
           {!inv.accepted_at && (
             <Button
               variant="ghost"
