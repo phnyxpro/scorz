@@ -462,6 +462,10 @@ export default function CompetitionDetail() {
         <TabsContent value="branding">
           <BrandingManager competitionId={id!} competition={comp} />
         </TabsContent>
+
+        <TabsContent value="chat">
+          <EventChat competitionId={id!} />
+        </TabsContent>
       </Tabs>
 
       {/* Rubric criteria confirmation dialog */}
