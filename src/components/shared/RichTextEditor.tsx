@@ -504,6 +504,52 @@ export function RichTextEditor({
             <ListOrdered className="h-3.5 w-3.5" />
           </ToolbarButton>
 
+          {/* Indent / Outdent */}
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().sinkListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent + 1 });
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Increase Indent"
+          >
+            <IndentIncrease className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().liftListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      if (currentIndent > 0) {
+                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent - 1 });
+                      }
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Decrease Indent"
+          >
+            <IndentDecrease className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
           <Divider />
 
           {/* Table dropdown */}
