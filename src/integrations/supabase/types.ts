@@ -311,6 +311,7 @@ export type Database = {
           name: string
           rubric_content: string | null
           rubric_document_url: string | null
+          rubric_scale_labels: Json
           rules_content: string | null
           rules_document_url: string | null
           rules_url: string | null
@@ -332,6 +333,7 @@ export type Database = {
           name: string
           rubric_content?: string | null
           rubric_document_url?: string | null
+          rubric_scale_labels?: Json
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
@@ -353,6 +355,7 @@ export type Database = {
           name?: string
           rubric_content?: string | null
           rubric_document_url?: string | null
+          rubric_scale_labels?: Json
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
@@ -771,6 +774,7 @@ export type Database = {
           description_3: string
           description_4: string
           description_5: string
+          guidelines: string | null
           id: string
           name: string
           sort_order: number
@@ -784,6 +788,7 @@ export type Database = {
           description_3?: string
           description_4?: string
           description_5?: string
+          guidelines?: string | null
           id?: string
           name: string
           sort_order?: number
@@ -797,6 +802,7 @@ export type Database = {
           description_3?: string
           description_4?: string
           description_5?: string
+          guidelines?: string | null
           id?: string
           name?: string
           sort_order?: number
