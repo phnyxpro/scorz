@@ -6,6 +6,7 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
+import { ReadOnlyTimer } from "@/components/scoring/ReadOnlyTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
 import { SpeechComments } from "@/components/scoring/SpeechComments";
 import { SignaturePad } from "@/components/registration/SignaturePad";
