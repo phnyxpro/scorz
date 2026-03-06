@@ -69,6 +69,8 @@ export default function JudgeScoring() {
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
   const { data: myScores } = useMyScores(subEventId || undefined);
+  const { data: perfDurations } = usePerformanceDurations(subEventId || undefined);
+  useDurationsRealtime(subEventId || undefined);
 
   // Build lookup: contestant_registration_id -> score status
   const scoreStatusMap = useMemo(() => {
