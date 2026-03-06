@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, GripVertical, Wand2, Save } from "lucide-react";
+import { Plus, Trash2, GripVertical, Wand2, Save, BookOpen } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
 
@@ -297,7 +297,10 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base">Scoring Rubric</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-secondary" />
+            Scoring Rubric
+          </CardTitle>
           <div className="flex gap-2">
             {fields.length === 0 && (
               <Button variant="outline" size="sm" onClick={handleLoadDefaults}>
