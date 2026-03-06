@@ -68,12 +68,12 @@ type RubricFormValues = z.infer<typeof rubricSchema>;
 const DEFAULT_SCALE_LABELS = { "1": "Very Weak", "2": "Weak", "3": "Average", "4": "Good", "5": "Excellent" };
 
 const DEFAULT_CRITERIA: Omit<RubricFormValues["criteria"][number], "id">[] = [
-  { name: "Voice & Articulation", guidelines: "-Range of voice\n-Clarity of words (Diction)", description_1: "Inaudible or unintelligible", description_2: "Occasionally unclear", description_3: "Generally clear", description_4: "Clear and expressive", description_5: "Exceptional vocal command" },
-  { name: "Stage Presence", guidelines: "-Confidence\n-Eye contact\n-Movement", description_1: "No engagement", description_2: "Minimal engagement", description_3: "Adequate presence", description_4: "Commanding presence", description_5: "Captivating throughout" },
-  { name: "Dramatic Appropriateness", guidelines: "-Tone\n-Emotional depth\n-Character portrayal", description_1: "Inappropriate tone", description_2: "Inconsistent tone", description_3: "Appropriate tone", description_4: "Strong dramatic choices", description_5: "Masterful interpretation" },
-  { name: "Literary Devices", guidelines: "-Metaphor\n-Imagery\n-Symbolism", description_1: "No literary devices", description_2: "Basic device usage", description_3: "Adequate device usage", description_4: "Effective device usage", description_5: "Exceptional craft" },
-  { name: "Use of Language", guidelines: "-Word choice\n-Grammar\n-Vocabulary range", description_1: "Poor word choice", description_2: "Basic vocabulary", description_3: "Competent language", description_4: "Rich language", description_5: "Extraordinary language" },
-  { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful" },
+  { name: "Voice & Articulation", guidelines: "-Range of voice\n-Clarity of words (Diction)", weight_percent: 17, description_1: "Inaudible or unintelligible", description_2: "Occasionally unclear", description_3: "Generally clear", description_4: "Clear and expressive", description_5: "Exceptional vocal command" },
+  { name: "Stage Presence", guidelines: "-Confidence\n-Eye contact\n-Movement", weight_percent: 17, description_1: "No engagement", description_2: "Minimal engagement", description_3: "Adequate presence", description_4: "Commanding presence", description_5: "Captivating throughout" },
+  { name: "Dramatic Appropriateness", guidelines: "-Tone\n-Emotional depth\n-Character portrayal", weight_percent: 17, description_1: "Inappropriate tone", description_2: "Inconsistent tone", description_3: "Appropriate tone", description_4: "Strong dramatic choices", description_5: "Masterful interpretation" },
+  { name: "Literary Devices", guidelines: "-Metaphor\n-Imagery\n-Symbolism", weight_percent: 17, description_1: "No literary devices", description_2: "Basic device usage", description_3: "Adequate device usage", description_4: "Effective device usage", description_5: "Exceptional craft" },
+  { name: "Use of Language", guidelines: "-Word choice\n-Grammar\n-Vocabulary range", weight_percent: 16, description_1: "Poor word choice", description_2: "Basic vocabulary", description_3: "Competent language", description_4: "Rich language", description_5: "Extraordinary language" },
+  { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", weight_percent: 16, description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful" },
 ];
 
 /* ─── Sortable Table Row (Desktop) ─── */
