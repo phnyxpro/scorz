@@ -183,6 +183,12 @@ function SortableAccordionCard({
               <Textarea {...f} className="text-xs min-h-[40px] resize-none" placeholder="Subtext / guidelines..." rows={2} />
             )} />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Weight %</Label>
+            <Controller control={control} name={`criteria.${index}.weight_percent`} render={({ field: f }) => (
+              <Input {...f} type="number" min={0} max={100} className="h-8 text-xs w-24 font-mono" placeholder="0" />
+            )} />
+          </div>
           {SCALE_POINTS.map((n) => (
             <div key={n} className="space-y-1">
               <Label className="text-xs">
