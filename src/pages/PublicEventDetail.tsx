@@ -194,28 +194,28 @@ export default function PublicEventDetail() {
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <div className="px-4 sm:px-0 overflow-x-auto no-scrollbar">
             <TabsList className="w-full sm:w-auto flex justify-start sm:justify-center mb-6 bg-muted/20 backdrop-blur p-1">
-              <TabsTrigger value="schedule" className="flex-1 sm:flex-none gap-2 px-6">
-                <Calendar className="h-4 w-4" /> Schedule
+              <TabsTrigger value="schedule" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <Calendar className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Schedule</span>
               </TabsTrigger>
-              <TabsTrigger value="contestants" className="flex-1 sm:flex-none gap-2 px-6">
-                <Users className="h-4 w-4" /> Contestants
+              <TabsTrigger value="contestants" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <Users className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Contestants</span>
               </TabsTrigger>
-              <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
-                <Award className="h-4 w-4" /> Judges
+              <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <Award className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Judges</span>
               </TabsTrigger>
               {anyVotingEnabled && (
-                <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
-                  <Heart className="h-4 w-4" /> Voting
+                <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                  <Heart className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Voting</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-2 px-6">
-                <ListOrdered className="h-4 w-4" /> Lineup
+              <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <ListOrdered className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Lineup</span>
               </TabsTrigger>
-              <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-2 px-6">
-                <FileText className="h-4 w-4" /> Rules
+              <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <FileText className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Rules</span>
               </TabsTrigger>
-              <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-2 px-6">
-                <Info className="h-4 w-4" /> Rubric
+              <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                <Info className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Rubric</span>
               </TabsTrigger>
             </TabsList>
           </div>

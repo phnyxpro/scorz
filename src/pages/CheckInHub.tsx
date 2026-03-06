@@ -115,7 +115,7 @@ export default function CheckInHub() {
       {selectedCompetitionId && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Total</CardTitle>
@@ -151,16 +151,16 @@ export default function CheckInHub() {
                   />
                 </div>
                 <Button type="submit" disabled={checkInMutation.isPending}>
-                  <TicketCheck className="h-4 w-4 mr-2" /> Check In
+                  <TicketCheck className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Check In</span>
                 </Button>
               </form>
             </CardContent>
           </Card>
 
           {/* Tickets table */}
-          <Card>
-            <CardContent className="pt-6">
-              <Table>
+           <Card>
+            <CardContent className="pt-6 overflow-x-auto">
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ticket #</TableHead>

@@ -117,7 +117,7 @@ export default function Results() {
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
         {allCertified && leaderboard.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link to={`/competitions/${competitionId}/post-event`}>My Feedback</Link>
             </Button>
@@ -204,7 +204,7 @@ export default function Results() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">Rank</TableHead>
