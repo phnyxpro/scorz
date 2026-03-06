@@ -286,7 +286,7 @@ export default function JudgeScoring() {
 
       {/* Main scoring area */}
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+        <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             {!sidebarOpen && (
