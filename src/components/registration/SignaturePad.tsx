@@ -64,6 +64,7 @@ export function SignaturePad({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const hasDrawnRef = useRef(false);
   const [typedName, setTypedName] = useState("");
   const [mode, setMode] = useState<string>("draw");
 
@@ -124,13 +125,14 @@ export function SignaturePad({
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasDrawn(true);
+    hasDrawnRef.current = true;
   };
 
   const endDraw = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
     const canvas = canvasRef.current;
-    if (canvas && hasDrawn) {
+    if (canvas && hasDrawnRef.current) {
       onSignature(stampSignature(canvas, signerRole));
     }
   };
@@ -142,6 +144,7 @@ export function SignaturePad({
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
+    hasDrawnRef.current = false;
     onSignature("");
   };
 

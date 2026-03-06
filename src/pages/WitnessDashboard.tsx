@@ -104,12 +104,16 @@ export default function WitnessDashboard() {
   const handleCertify = async () => {
     const cert = witnessCert;
     if (!cert?.id || !signature) return;
-    await certifyWitness.mutateAsync({
-      id: cert.id,
-      witness_signature: signature,
-      sub_event_id: selectedSubEventId,
-    });
-    setShowCertifyDialog(false);
+    try {
+      await certifyWitness.mutateAsync({
+        id: cert.id,
+        witness_signature: signature,
+        sub_event_id: selectedSubEventId,
+      });
+      setShowCertifyDialog(false);
+    } catch (error) {
+      console.error("Certification error:", error);
+    }
   };
 
   return (
