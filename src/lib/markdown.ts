@@ -61,23 +61,8 @@ export function markdownToHtml(md: string): string {
   // Horizontal rules
   html = html.replace(/^---$/gm, '<hr class="my-6 border-border" />');
 
-  // Images → figure with placeholder fallback
-  html = html.replace(
-    /!\[([^\]]*)\]\(([^)]+)\)/g,
-    (_match, alt: string, src: string) => {
-      return `<figure class="my-6">
-        <div class="rounded-lg border border-border overflow-hidden bg-muted/30">
-          <div class="aspect-video flex items-center justify-center bg-muted/20">
-            <div class="text-center p-8">
-              <svg class="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" /></svg>
-              <p class="text-xs text-muted-foreground">Screenshot coming soon</p>
-            </div>
-          </div>
-        </div>
-        ${alt ? `<figcaption class="text-xs text-muted-foreground mt-2 text-center">${alt}</figcaption>` : ""}
-      </figure>`;
-    }
-  );
+  // Images → strip out (no placeholder)
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "");
 
   // Bold & italic
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -133,12 +118,7 @@ export function markdownToHtml(md: string): string {
 /** Render a video embed or placeholder */
 export function renderVideoEmbed(url: string): string {
   if (!url) {
-    return `<div class="rounded-lg border border-dashed border-border bg-muted/20 aspect-video flex items-center justify-center my-6">
-      <div class="text-center p-8">
-        <svg class="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-        <p class="text-xs text-muted-foreground">Video walkthrough coming soon</p>
-      </div>
-    </div>`;
+    return "";
   }
 
   // Convert YouTube/Loom URLs to embeddable format
