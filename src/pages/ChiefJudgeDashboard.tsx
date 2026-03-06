@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
+import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -256,7 +257,14 @@ export default function ChiefJudgeDashboard() {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="panel" className="space-y-4">
+          {/* Judge Activity Indicator */}
+          <JudgeActivityIndicator
+            subEventId={selectedSubEventId}
+            allScores={allScores}
+            contestantCount={Object.keys(scoresByContestant).length}
+          />
+
+          <Tabs defaultValue="panel" className="space-y-4 mt-4">
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
