@@ -112,12 +112,16 @@ export default function TabulatorDashboard() {
   const handleCertify = async () => {
     const cert = tabCert;
     if (!cert?.id || !signature) return;
-    await certifyTab.mutateAsync({
-      id: cert.id,
-      tabulator_signature: signature,
-      sub_event_id: selectedSubEventId,
-    });
-    setShowCertifyDialog(false);
+    try {
+      await certifyTab.mutateAsync({
+        id: cert.id,
+        tabulator_signature: signature,
+        sub_event_id: selectedSubEventId,
+      });
+      setShowCertifyDialog(false);
+    } catch (error) {
+      console.error("Certification error:", error);
+    }
   };
 
   return (
