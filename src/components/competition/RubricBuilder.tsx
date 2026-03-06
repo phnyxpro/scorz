@@ -389,9 +389,16 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
           </SortableContext>
         </DndContext>
 
-        <Button variant="outline" size="sm" onClick={handleAddCriterion} className="w-full">
-          <Plus className="h-4 w-4 mr-1" /> Add Criterion
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={handleAddCriterion}>
+            <Plus className="h-4 w-4 mr-1" /> Add Criterion
+          </Button>
+          {fields.length > 0 && (
+            <div className={`text-xs font-mono px-2 py-1 rounded ${totalWeight === 100 ? "bg-primary/10 text-primary" : totalWeight > 0 ? "bg-destructive/10 text-destructive" : "text-muted-foreground"}`}>
+              Weight total: {totalWeight}%{totalWeight > 0 && totalWeight !== 100 && " (should be 100%)"}
+            </div>
+          )}
+        </div>
 
         {form.formState.errors.criteria && typeof form.formState.errors.criteria.message === "string" && (
           <p className="text-xs text-destructive">{form.formState.errors.criteria.message}</p>
