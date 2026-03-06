@@ -151,7 +151,7 @@ export default function CheckInHub() {
                   />
                 </div>
                 <Button type="submit" disabled={checkInMutation.isPending}>
-                  <TicketCheck className="h-4 w-4 mr-2" /> Check In
+                  <TicketCheck className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Check In</span>
                 </Button>
               </form>
             </CardContent>
