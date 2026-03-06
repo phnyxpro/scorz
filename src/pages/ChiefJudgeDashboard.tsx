@@ -21,6 +21,7 @@ import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
+import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
