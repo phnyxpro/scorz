@@ -141,10 +141,10 @@ export default function About() {
           <div className="flex items-center gap-3">
             <InstallPWA />
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/help">Knowledge Base</Link>
+              <Link to="/">Home</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/">Home</Link>
+              <Link to="/help">Knowledge Base</Link>
             </Button>
             <Button size="sm" asChild>
               <Link to="/auth">Get Started</Link>
