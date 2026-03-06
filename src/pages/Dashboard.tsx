@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { JudgingHubContent } from "@/pages/JudgingHub";
+import { Calculator } from "lucide-react";
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
 
 const container = {
