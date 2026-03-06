@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { InstallPWA } from "@/components/shared/InstallPWA";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import scorzLogo from "@/assets/scorz-logo.svg";
