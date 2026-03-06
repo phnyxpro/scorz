@@ -338,6 +338,24 @@ export function RegistrationsManager({ competitionId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Add Contestant Sheet */}
+      <Sheet open={showAddContestant} onOpenChange={setShowAddContestant}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Add Contestant</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <OnBehalfRegistrationForm
+              competitionId={competitionId}
+              onComplete={() => {
+                setShowAddContestant(false);
+                qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Contestant Detail Sheet */}
       <ContestantDetailSheet
         registration={selectedReg}
