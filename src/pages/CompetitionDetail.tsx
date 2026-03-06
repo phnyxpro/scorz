@@ -15,6 +15,7 @@ import { SubEventAssignments } from "@/components/competition/SubEventAssignment
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
+import { BrandingManager } from "@/components/competition/BrandingManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
