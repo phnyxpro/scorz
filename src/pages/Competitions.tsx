@@ -204,18 +204,18 @@ export default function Competitions() {
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && isAtLimit && (
+      {canManage && !isAdmin && subscription.creditsTotal > 0 && isAtLimit && (
         <Alert className="mb-4 border-secondary/30 bg-secondary/5">
           <AlertDescription className="text-sm">
-            You've used {competitionCount}/{limit} competitions on your <strong>{subscription.tier?.name}</strong> plan.{" "}
-            <Link to="/admin" className="text-secondary underline font-medium">Upgrade</Link> for more.
+            You have no competition credits remaining.{" "}
+            <Link to="/admin" className="text-secondary underline font-medium">Purchase more</Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && !isAtLimit && limit !== -1 && (
+      {canManage && !isAdmin && subscription.creditsAvailable > 0 && (
         <p className="text-xs text-muted-foreground mb-4 font-mono">
-          {competitionCount}/{limit} competitions used • {subscription.tier?.name}
+          {subscription.creditsAvailable} competition credit{subscription.creditsAvailable !== 1 ? "s" : ""} available
         </p>
       )}
 
