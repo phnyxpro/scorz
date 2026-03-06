@@ -21,7 +21,7 @@ export function DocumentUpload({
   onRemoved,
   className = "",
   label = "Document",
-  accept = ".pdf,.doc,.docx",
+  accept = ".pdf,.doc,.docx,.txt",
 }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
