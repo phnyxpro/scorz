@@ -59,7 +59,7 @@ export function InfractionApplicator({
     const inf = infractions?.find(i => i.id === selectedInfraction);
     if (!inf) return;
 
-    const currentAdj = (certification?.penalty_adjustments || {}) as Record<string, AppliedInfraction[]>;
+    const currentAdj = ((certification?.penalty_adjustments || {}) as unknown) as Record<string, AppliedInfraction[]>;
     const contestantInfractions = Array.isArray(currentAdj[selectedContestant]) ? [...currentAdj[selectedContestant]] : [];
 
     // Prevent duplicates
