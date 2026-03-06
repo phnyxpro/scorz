@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
