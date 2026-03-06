@@ -819,6 +819,58 @@ export type Database = {
           },
         ]
       }
+      performance_durations: {
+        Row: {
+          contestant_registration_id: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          sub_event_id: string
+          tabulator_id: string
+          updated_at: string
+        }
+        Insert: {
+          contestant_registration_id: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          sub_event_id: string
+          tabulator_id: string
+          updated_at?: string
+        }
+        Update: {
+          contestant_registration_id?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          sub_event_id?: string
+          tabulator_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_durations_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_durations_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_durations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_slots: {
         Row: {
           contestant_registration_id: string | null
@@ -870,6 +922,58 @@ export type Database = {
           },
           {
             foreignKeyName: "performance_slots_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_timer_events: {
+        Row: {
+          contestant_registration_id: string
+          created_at: string
+          elapsed_seconds: number | null
+          event_type: string
+          id: string
+          sub_event_id: string
+          tabulator_id: string
+        }
+        Insert: {
+          contestant_registration_id: string
+          created_at?: string
+          elapsed_seconds?: number | null
+          event_type?: string
+          id?: string
+          sub_event_id: string
+          tabulator_id: string
+        }
+        Update: {
+          contestant_registration_id?: string
+          created_at?: string
+          elapsed_seconds?: number | null
+          event_type?: string
+          id?: string
+          sub_event_id?: string
+          tabulator_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_timer_events_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_timer_events_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_timer_events_sub_event_id_fkey"
             columns: ["sub_event_id"]
             isOneToOne: false
             referencedRelation: "sub_events"
