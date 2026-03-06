@@ -678,8 +678,27 @@ export default function TabulatorDashboard() {
             competitionId={selectedCompId}
             registrations={overview.registrations}
             rubricNames={rubricNames}
+            onOpenChat={() => setShowChatModal(true)}
+            unreadCount={unreadCount}
           />
         </div>
+      )}
+
+      {/* Production Chat Modal */}
+      {selectedCompId && (
+        <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+          <DialogContent className="max-w-lg p-0 gap-0">
+            <DialogHeader className="px-4 pt-4 pb-2">
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4 text-primary" /> Production Chat
+              </DialogTitle>
+            </DialogHeader>
+            <div className="px-4 pb-4">
+              <EventChat competitionId={selectedCompId} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )
       )}
     </div>
   );
