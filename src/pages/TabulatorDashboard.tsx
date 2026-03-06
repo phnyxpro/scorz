@@ -327,22 +327,19 @@ function SubEventWorkspace({
         </Card>
       )}
 
-      {/* Production Chat */}
-      <Collapsible>
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full gap-2 text-xs relative">
-            <MessageSquare className="h-4 w-4" /> Production Chat
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3">
-          <EventChat competitionId={competitionId} />
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Production Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-lg p-0 gap-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <MessageSquare className="h-4 w-4 text-primary" /> Production Chat
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-4 pb-4">
+            <EventChat competitionId={competitionId} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Certify Dialog (shared for tabulator & witness) */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
