@@ -480,7 +480,7 @@ function PersonalStep() {
             <Input {...register("location")} placeholder="City, State" />
           </div>
           <div className="space-y-2">
-            <Label>Age Category *</Label>
+            <Label>Age Category</Label>
             <select
               {...register("ageCategory")}
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -501,12 +501,12 @@ function PersonalStep() {
               <User className="h-4 w-4 text-secondary" /> Parent / Guardian Info
             </h3>
             <div className="space-y-2">
-              <Label>Guardian Name *</Label>
+              <Label>Guardian Name</Label>
               <Input {...register("guardianName")} placeholder="Full Name" />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Guardian Email *</Label>
+                <Label>Guardian Email</Label>
                 <Input {...register("guardianEmail")} type="email" />
               </div>
               <div className="space-y-2">
