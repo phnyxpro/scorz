@@ -406,6 +406,55 @@ export function useDeleteRubricCriterion() {
   });
 }
 
+// Infraction hooks
+export function useInfractions(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["infractions", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_infractions")
+        .select("*")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data as Infraction[];
+    },
+  });
+}
+
+export function useCreateInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Omit<Infraction, "id">) => {
+      const { data, error } = await supabase.from("competition_infractions").insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["infractions", v.competition_id] });
+      toast({ title: "Infraction rule added" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useDeleteInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, competition_id }: { id: string; competition_id: string }) => {
+      const { error } = await supabase.from("competition_infractions").delete().eq("id", id);
+      if (error) throw error;
+      return competition_id;
+    },
+    onSuccess: (cid) => {
+      qc.invalidateQueries({ queryKey: ["infractions", cid] });
+      toast({ title: "Infraction rule deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
 // Penalty mutations
 export function useCreatePenaltyRule() {
   const qc = useQueryClient();
