@@ -125,9 +125,10 @@ export function TabulatorTimer({
     return () => window.removeEventListener("keydown", handleKey);
   }, [start, stop, selectedContestantId]);
 
-  // Reset timer when contestant changes
+  // Reset timer when contestant changes and notify parent
   useEffect(() => {
     reset();
+    onContestantChange?.(selectedContestantId);
   }, [selectedContestantId]);
 
   const graceStart = timeLimitSeconds;
