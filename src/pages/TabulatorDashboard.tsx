@@ -610,10 +610,17 @@ export default function TabulatorDashboard() {
                                               const isExpanded = expandedContestant === toggleKey;
                                               return (
                                                 <>
-                                                  <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50"
+                                                  <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
                                                     onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
                                                     <TableCell className="font-mono text-muted-foreground text-xs">{idx + 1}</TableCell>
-                                                    <TableCell className="font-medium text-sm">{c.full_name}</TableCell>
+                                                    <TableCell className="font-medium text-sm">
+                                                      <span className="flex items-center gap-1.5">
+                                                        {c.full_name}
+                                                        {onStageContestantId === c.id && (
+                                                          <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1.5 py-0">On Stage</Badge>
+                                                        )}
+                                                      </span>
+                                                    </TableCell>
                                                     <TableCell className="text-center">
                                                       <Badge variant="outline" className="text-xs">{cScores.length} judge{cScores.length !== 1 ? "s" : ""}</Badge>
                                                     </TableCell>
