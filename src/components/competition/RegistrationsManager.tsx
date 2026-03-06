@@ -27,6 +27,58 @@ const statusColor: Record<string, string> = {
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
+interface SlotTimeCellProps {
+  slot?: { id: string; start_time: string; end_time: string };
+  onUpdate: (slotId: string, startTime: string, endTime: string) => void;
+  formatTime: (time: string) => string;
+}
+
+function SlotTimeCell({ slot, onUpdate, formatTime }: SlotTimeCellProps) {
+  const [editStart, setEditStart] = useState(slot?.start_time?.slice(0, 5) || "");
+  const [editEnd, setEditEnd] = useState(slot?.end_time?.slice(0, 5) || "");
+  const [open, setOpen] = useState(false);
+
+  if (!slot) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  const handleSave = () => {
+    onUpdate(slot.id, editStart + ":00", editEnd + ":00");
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(o) => {
+      if (o) {
+        setEditStart(slot.start_time?.slice(0, 5) || "");
+        setEditEnd(slot.end_time?.slice(0, 5) || "");
+      }
+      setOpen(o);
+    }}>
+      <PopoverTrigger asChild>
+        <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 whitespace-nowrap">
+          <Clock className="h-3 w-3" />
+          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 space-y-3 p-3" align="start">
+        <p className="text-xs font-medium text-foreground">Edit Slot Time</p>
+        <div className="space-y-2">
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Start</Label>
+            <Input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">End</Label>
+            <Input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="h-8 text-sm" />
+          </div>
+        </div>
+        <Button size="sm" className="w-full h-7 text-xs" onClick={handleSave}>Save</Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface Props {
   competitionId: string;
 }
