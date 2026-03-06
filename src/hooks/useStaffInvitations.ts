@@ -8,7 +8,9 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 export interface StaffInvitation {
   id: string;
+  name: string | null;
   email: string;
+  phone: string | null;
   role: AppRole;
   competition_id: string;
   sub_event_id: string | null;
@@ -41,11 +43,13 @@ export function useAddStaffMember() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ email, role, competitionId }: { email: string; role: AppRole; competitionId: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
+          name: name || null,
           email,
+          phone: phone || null,
           role,
           competition_id: competitionId,
           invited_by: user?.id,
@@ -137,11 +141,13 @@ export function useInviteStaff() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ email, role, competitionId, competitionName }: { email: string; role: AppRole; competitionId: string; competitionName?: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId, competitionName }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; competitionName?: string }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
+          name: name || null,
           email,
+          phone: phone || null,
           role,
           competition_id: competitionId,
           invited_by: user?.id,
