@@ -102,6 +102,18 @@ export function RichTextEditor({
   editable = true,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [leftMargin, setLeftMargin] = useState(72);
+  const [rightMargin, setRightMargin] = useState(72);
+  const [firstLineIndent, setFirstLineIndent] = useState(0);
+  const [tabStops, setTabStops] = useState<{ id: string; position: number }[]>([]);
+  const [showRuler, setShowRuler] = useState(true);
+
+  const MARGIN_PRESETS = [
+    { label: "Normal (1\")", left: 96, right: 96 },
+    { label: "Narrow (0.5\")", left: 48, right: 48 },
+    { label: "Wide (1.5\")", left: 144, right: 144 },
+    { label: "None", left: 0, right: 0 },
+  ];
 
   const editor = useEditor({
     extensions: [
