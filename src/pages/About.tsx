@@ -171,7 +171,7 @@ export default function About() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" asChild>
-              <Link to="/auth">Start Free <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/auth?view=signup">Start Now <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="#roles">Explore Roles</a>
