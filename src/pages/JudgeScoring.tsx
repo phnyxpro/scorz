@@ -27,7 +27,7 @@ export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const isMobile = useIsMobile();
 
   const { data: comp } = useCompetition(competitionId);
