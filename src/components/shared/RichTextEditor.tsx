@@ -14,7 +14,7 @@ import { Color } from "@tiptap/extension-text-style";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Bold,
