@@ -14,7 +14,29 @@ import { Color } from "@tiptap/extension-text-style";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
+import { Extension } from "@tiptap/core";
 import { useEffect, useCallback, useRef, useState } from "react";
+
+const IndentExtension = Extension.create({
+  name: "indent",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: {
+          indent: {
+            default: 0,
+            parseHTML: (element) => parseInt(element.style.marginLeft || "0", 10) / 40 || 0,
+            renderHTML: (attributes) => {
+              if (!attributes.indent || attributes.indent <= 0) return {};
+              return { style: `margin-left: ${attributes.indent * 40}px` };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
 import { Button } from "@/components/ui/button";
 import {
   Bold,
