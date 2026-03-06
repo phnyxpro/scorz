@@ -80,11 +80,11 @@ export const TIERS: SubscriptionTier[] = [
     price: 49,
     description: "One competition with advanced features for serious organizers",
     highlight: true,
-    limits: { organizers: 4, judges: 10, tabulators: 2 },
+    limits: { organizers: 4, judges: 10, tabulators: 4 },
     features: [
       "Up to 4 organizers",
       "Up to 10 judges",
-      "Up to 2 tabulators",
+      "Up to 4 tabulators",
       "Everything in Start",
       "Advanced analytics",
       "Custom branding",
