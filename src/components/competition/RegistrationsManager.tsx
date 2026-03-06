@@ -10,15 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
