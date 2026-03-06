@@ -335,7 +335,10 @@ export default function PublicEventDetail() {
                     <CardContent className="p-6">
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none text-foreground"
-                        dangerouslySetInnerHTML={{ __html: rulesContent }}
+                        dangerouslySetInnerHTML={{ __html: rulesContent.startsWith("&lt;") || rulesContent.includes("&lt;p&gt;") 
+                          ? rulesContent.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+                          : rulesContent 
+                        }}
                       />
                     </CardContent>
                   </Card>
