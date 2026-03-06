@@ -402,6 +402,17 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {isAdmin && onPreviewEmail && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onPreviewEmail(inv)}
+              className="text-xs text-muted-foreground"
+              title="Preview invitation email"
+            >
+              <Eye className="h-3 w-3 mr-1" /> Preview
+            </Button>
+          )}
           {!inv.invited_at && !inv.accepted_at && onSendInvite && (
             <Button
               variant="outline"
