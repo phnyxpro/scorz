@@ -65,6 +65,39 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audience_votes: {
         Row: {
           contestant_registration_id: string
@@ -344,6 +377,10 @@ export type Database = {
       competitions: {
         Row: {
           banner_url: string | null
+          branding_accent_color: string | null
+          branding_font: string | null
+          branding_logo_url: string | null
+          branding_primary_color: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -364,9 +401,14 @@ export type Database = {
           status: string
           updated_at: string
           voting_enabled: boolean
+          white_label: boolean
         }
         Insert: {
           banner_url?: string | null
+          branding_accent_color?: string | null
+          branding_font?: string | null
+          branding_logo_url?: string | null
+          branding_primary_color?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -387,9 +429,14 @@ export type Database = {
           status?: string
           updated_at?: string
           voting_enabled?: boolean
+          white_label?: boolean
         }
         Update: {
           banner_url?: string | null
+          branding_accent_color?: string | null
+          branding_font?: string | null
+          branding_logo_url?: string | null
+          branding_primary_color?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -410,6 +457,7 @@ export type Database = {
           status?: string
           updated_at?: string
           voting_enabled?: boolean
+          white_label?: boolean
         }
         Relationships: []
       }
