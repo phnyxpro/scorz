@@ -175,42 +175,43 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
-          </p>
-        </div>
+      {!isTabulator && (
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
+            </p>
+          </div>
 
-        <div className="flex items-center gap-3">
-
-          {/* Competition selector for judges */}
-          {isJudgeRole && (
-            <div className="w-full sm:w-64">
-              <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1 block">
-                Active Competition
-              </label>
-              {compsLoading ? (
-                <Skeleton className="h-9 w-full" />
-              ) : assignedComps.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No competitions assigned</p>
-              ) : (
-                <Select value={selectedCompId} onValueChange={setSelectedCompId}>
-                  <SelectTrigger className="bg-card/80 border-border/50">
-                    <SelectValue placeholder="Select competition…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assignedComps.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Competition selector for judges */}
+            {isJudgeRole && (
+              <div className="w-full sm:w-64">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1 block">
+                  Active Competition
+                </label>
+                {compsLoading ? (
+                  <Skeleton className="h-9 w-full" />
+                ) : assignedComps.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">No competitions assigned</p>
+                ) : (
+                  <Select value={selectedCompId} onValueChange={setSelectedCompId}>
+                    <SelectTrigger className="bg-card/80 border-border/50">
+                      <SelectValue placeholder="Select competition…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignedComps.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isTabulator ? (
         <TabulatorDashboard />
