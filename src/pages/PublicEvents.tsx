@@ -41,6 +41,7 @@ export default function PublicEvents() {
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-2">
+            <InstallPWA />
             <Button asChild size="sm" variant="ghost">
               <Link to="/about">About</Link>
             </Button>

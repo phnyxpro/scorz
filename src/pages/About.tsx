@@ -146,6 +146,7 @@ export default function About() {
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-3">
+            <InstallPWA />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/">Home</Link>
             </Button>
