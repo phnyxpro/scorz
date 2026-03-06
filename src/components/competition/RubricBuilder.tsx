@@ -3,6 +3,22 @@ import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   useRubricCriteria,
   useCreateRubricCriterion,
   useUpdateRubricCriterion,
@@ -18,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, ArrowUp, ArrowDown, Wand2, Save } from "lucide-react";
+import { Plus, Trash2, GripVertical, Wand2, Save } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
 
@@ -59,6 +75,130 @@ const DEFAULT_CRITERIA: Omit<RubricFormValues["criteria"][number], "id">[] = [
   { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful" },
 ];
 
+/* ─── Sortable Table Row (Desktop) ─── */
+function SortableTableRow({
+  field,
+  index,
+  control,
+  scaleLabels,
+  onRemove,
+}: {
+  field: { id: string };
+  index: number;
+  control: any;
+  scaleLabels: Record<string, string>;
+  onRemove: (i: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className="align-top">
+      <TableCell className="pt-3 cursor-grab" {...attributes} {...listeners}>
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground pt-3">{index + 1}</TableCell>
+      <TableCell className="space-y-1.5">
+        <Controller control={control} name={`criteria.${index}.name`} render={({ field: f, fieldState }) => (
+          <Input {...f} className={`h-8 text-sm font-medium ${fieldState.error ? "border-destructive" : ""}`} placeholder="Criterion title" />
+        )} />
+        <Controller control={control} name={`criteria.${index}.guidelines`} render={({ field: f }) => (
+          <Textarea {...f} className="text-xs min-h-[48px] resize-none" placeholder="Guidelines / subtext..." rows={2} />
+        )} />
+      </TableCell>
+      {SCALE_POINTS.map((n) => (
+        <TableCell key={n}>
+          <Controller control={control} name={`criteria.${index}.description_${n}` as any} render={({ field: f, fieldState }) => (
+            <Textarea {...f} className={`text-xs min-h-[64px] resize-none ${fieldState.error ? "border-destructive" : ""}`} placeholder={`${scaleLabels[String(n)] || n}...`} rows={3} />
+          )} />
+        </TableCell>
+      ))}
+      <TableCell>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onRemove(index)}>
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+/* ─── Sortable Accordion Item (Mobile) ─── */
+function SortableAccordionCard({
+  field,
+  index,
+  control,
+  scaleLabels,
+  nameVal,
+  onRemove,
+}: {
+  field: { id: string };
+  index: number;
+  control: any;
+  scaleLabels: Record<string, string>;
+  nameVal: string;
+  onRemove: (i: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <AccordionItem value={field.id} className="border border-border rounded-lg px-3 bg-muted/20">
+        <div className="flex items-center">
+          <div className="cursor-grab py-3 pr-2 touch-none" {...attributes} {...listeners}>
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <AccordionTrigger className="py-3 text-sm flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground">#{index + 1}</span>
+              <span className="font-medium">{nameVal || "Untitled Criterion"}</span>
+            </div>
+          </AccordionTrigger>
+        </div>
+        <AccordionContent className="space-y-3 pb-4">
+          <div className="space-y-1">
+            <Label className="text-xs">Title</Label>
+            <Controller control={control} name={`criteria.${index}.name`} render={({ field: f, fieldState }) => (
+              <Input {...f} className={`h-8 text-sm ${fieldState.error ? "border-destructive" : ""}`} placeholder="Criterion title" />
+            )} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Guidelines</Label>
+            <Controller control={control} name={`criteria.${index}.guidelines`} render={({ field: f }) => (
+              <Textarea {...f} className="text-xs min-h-[40px] resize-none" placeholder="Subtext / guidelines..." rows={2} />
+            )} />
+          </div>
+          {SCALE_POINTS.map((n) => (
+            <div key={n} className="space-y-1">
+              <Label className="text-xs">
+                <span className="font-mono text-primary mr-1">{n}</span>
+                {scaleLabels[String(n)] || `Point ${n}`}
+              </Label>
+              <Controller control={control} name={`criteria.${index}.description_${n}` as any} render={({ field: f, fieldState }) => (
+                <Textarea {...f} className={`text-xs min-h-[48px] resize-none ${fieldState.error ? "border-destructive" : ""}`} placeholder={`Describe ${scaleLabels[String(n)] || n}...`} rows={2} />
+              )} />
+            </div>
+          ))}
+          <div className="flex justify-end pt-2">
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => onRemove(index)}>
+              <Trash2 className="h-3 w-3 mr-1" /> Delete
+            </Button>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </div>
+  );
+}
+
+/* ─── Main Component ─── */
 export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const isMobile = useIsMobile();
   const { data: criteria, isLoading: criteriaLoading } = useRubricCriteria(competitionId);
@@ -72,15 +212,16 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
 
   const form = useForm<RubricFormValues>({
     resolver: zodResolver(rubricSchema),
-    defaultValues: {
-      scaleLabels: DEFAULT_SCALE_LABELS,
-      criteria: [],
-    },
+    defaultValues: { scaleLabels: DEFAULT_SCALE_LABELS, criteria: [] },
   });
 
   const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "criteria" });
 
-  // Sync DB data into form when loaded
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   useEffect(() => {
     if (existingScaleLabels?.labels) {
       form.setValue("scaleLabels", existingScaleLabels.labels as any);
@@ -89,19 +230,22 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
 
   useEffect(() => {
     if (criteria && criteria.length > 0) {
-      const mapped = criteria.map((c) => ({
-        id: c.id,
-        name: c.name,
-        guidelines: c.guidelines || "",
-        description_1: c.description_1,
-        description_2: c.description_2,
-        description_3: c.description_3,
-        description_4: c.description_4,
-        description_5: c.description_5,
-      }));
-      form.setValue("criteria", mapped);
+      form.setValue("criteria", criteria.map((c) => ({
+        id: c.id, name: c.name, guidelines: c.guidelines || "",
+        description_1: c.description_1, description_2: c.description_2, description_3: c.description_3,
+        description_4: c.description_4, description_5: c.description_5,
+      })));
     }
   }, [criteria]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((f) => f.id === active.id);
+      const newIndex = fields.findIndex((f) => f.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex);
+    }
+  }, [fields, move]);
 
   const handleLoadDefaults = useCallback(() => {
     form.setValue("scaleLabels", DEFAULT_SCALE_LABELS);
@@ -109,69 +253,37 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   }, [form]);
 
   const handleAddCriterion = useCallback(() => {
-    append({
-      name: "",
-      guidelines: "",
-      description_1: "",
-      description_2: "",
-      description_3: "",
-      description_4: "",
-      description_5: "",
-    });
+    append({ name: "", guidelines: "", description_1: "", description_2: "", description_3: "", description_4: "", description_5: "" });
   }, [append]);
 
   const onSubmit = async (values: RubricFormValues) => {
-    // Build JSON payload
     const payload = {
       scale: { min: 1, max: 5, labels: values.scaleLabels },
       criteria: values.criteria.map((c, i) => ({
-        title: c.name,
-        guidelines: c.guidelines || "",
-        sort_order: i,
-        descriptions: {
-          "1": c.description_1,
-          "2": c.description_2,
-          "3": c.description_3,
-          "4": c.description_4,
-          "5": c.description_5,
-        },
+        title: c.name, guidelines: c.guidelines || "", sort_order: i,
+        descriptions: { "1": c.description_1, "2": c.description_2, "3": c.description_3, "4": c.description_4, "5": c.description_5 },
       })),
     };
     console.log("Rubric Schema JSON:", JSON.stringify(payload, null, 2));
 
-    // Save scale labels to competition
     updateCompetition.mutate({ id: competitionId, rubric_scale_labels: values.scaleLabels } as any);
 
-    // Sync criteria to DB: delete removed, update existing, create new
     const existingIds = new Set(criteria?.map((c) => c.id) || []);
     const formIds = new Set(values.criteria.map((c) => c.id).filter(Boolean));
 
-    // Delete removed criteria
     for (const c of criteria || []) {
-      if (!formIds.has(c.id)) {
-        deleteCriterion.mutate({ id: c.id, competition_id: competitionId });
-      }
+      if (!formIds.has(c.id)) deleteCriterion.mutate({ id: c.id, competition_id: competitionId });
     }
 
-    // Upsert criteria
     for (let i = 0; i < values.criteria.length; i++) {
       const c = values.criteria[i];
-      const payload = {
-        competition_id: competitionId,
-        name: c.name,
-        guidelines: c.guidelines || null,
-        sort_order: i,
-        description_1: c.description_1,
-        description_2: c.description_2,
-        description_3: c.description_3,
-        description_4: c.description_4,
-        description_5: c.description_5,
+      const data = {
+        competition_id: competitionId, name: c.name, guidelines: c.guidelines || null, sort_order: i,
+        description_1: c.description_1, description_2: c.description_2, description_3: c.description_3,
+        description_4: c.description_4, description_5: c.description_5,
       };
-      if (c.id && existingIds.has(c.id)) {
-        updateCriterion.mutate({ id: c.id, ...payload });
-      } else {
-        createCriterion.mutate(payload as any);
-      }
+      if (c.id && existingIds.has(c.id)) updateCriterion.mutate({ id: c.id, ...data });
+      else createCriterion.mutate(data as any);
     }
 
     toast({ title: "Rubric saved", description: `${values.criteria.length} criteria saved successfully.` });
@@ -179,9 +291,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
 
   const scaleLabels = form.watch("scaleLabels");
 
-  if (criteriaLoading) {
-    return <Card className="border-border/50 bg-card/80 animate-pulse h-48" />;
-  }
+  if (criteriaLoading) return <Card className="border-border/50 bg-card/80 animate-pulse h-48" />;
 
   return (
     <Card className="border-border/50 bg-card/80">
@@ -208,159 +318,61 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
             {SCALE_POINTS.map((n) => (
               <div key={n} className="space-y-1">
                 <Label className="text-xs font-mono text-muted-foreground">Point {n}</Label>
-                <Controller
-                  control={form.control}
-                  name={`scaleLabels.${n}`}
-                  render={({ field, fieldState }) => (
-                    <Input {...field} className={`h-8 text-sm ${fieldState.error ? "border-destructive" : ""}`} placeholder={`Label for ${n}`} />
-                  )}
-                />
+                <Controller control={form.control} name={`scaleLabels.${n}`} render={({ field, fieldState }) => (
+                  <Input {...field} className={`h-8 text-sm ${fieldState.error ? "border-destructive" : ""}`} placeholder={`Label for ${n}`} />
+                )} />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Criteria — Desktop Grid */}
-        {!isMobile && fields.length > 0 && (
-          <div className="overflow-x-auto rounded-md border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead className="w-10">#</TableHead>
-                  <TableHead className="min-w-[180px]">Criterion</TableHead>
-                  {SCALE_POINTS.map((n) => (
-                    <TableHead key={n} className="min-w-[140px] text-center">
-                      <div className="font-mono text-xs text-primary">{n}</div>
-                      <div className="text-xs text-muted-foreground truncate">{scaleLabels[n] || `Point ${n}`}</div>
-                    </TableHead>
-                  ))}
-                  <TableHead className="w-24 text-center">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.map((field, index) => (
-                  <TableRow key={field.id} className="align-top">
-                    <TableCell className="font-mono text-xs text-muted-foreground pt-3">{index + 1}</TableCell>
-                    <TableCell className="space-y-1.5">
-                      <Controller
-                        control={form.control}
-                        name={`criteria.${index}.name`}
-                        render={({ field: f, fieldState }) => (
-                          <Input {...f} className={`h-8 text-sm font-medium ${fieldState.error ? "border-destructive" : ""}`} placeholder="Criterion title" />
-                        )}
-                      />
-                      <Controller
-                        control={form.control}
-                        name={`criteria.${index}.guidelines`}
-                        render={({ field: f }) => (
-                          <Textarea {...f} className="text-xs min-h-[48px] resize-none" placeholder="Guidelines / subtext..." rows={2} />
-                        )}
-                      />
-                    </TableCell>
-                    {SCALE_POINTS.map((n) => (
-                      <TableCell key={n}>
-                        <Controller
-                          control={form.control}
-                          name={`criteria.${index}.description_${n}` as any}
-                          render={({ field: f, fieldState }) => (
-                            <Textarea {...f} className={`text-xs min-h-[64px] resize-none ${fieldState.error ? "border-destructive" : ""}`} placeholder={`${scaleLabels[n] || n}...`} rows={3} />
-                          )}
-                        />
-                      </TableCell>
+        {/* Criteria — Desktop Grid with DnD */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+            {!isMobile && fields.length > 0 && (
+              <div className="overflow-x-auto rounded-md border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40">
+                      <TableHead className="w-10" />
+                      <TableHead className="w-10">#</TableHead>
+                      <TableHead className="min-w-[180px]">Criterion</TableHead>
+                      {SCALE_POINTS.map((n) => (
+                        <TableHead key={n} className="min-w-[140px] text-center">
+                          <div className="font-mono text-xs text-primary">{n}</div>
+                          <div className="text-xs text-muted-foreground truncate">{scaleLabels[String(n)] || `Point ${n}`}</div>
+                        </TableHead>
+                      ))}
+                      <TableHead className="w-12" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.map((field, index) => (
+                      <SortableTableRow key={field.id} field={field} index={index} control={form.control} scaleLabels={scaleLabels} onRemove={remove} />
                     ))}
-                    <TableCell>
-                      <div className="flex flex-col items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={() => move(index, index - 1)}>
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)}>
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove(index)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
-        {/* Criteria — Mobile Accordion */}
-        {isMobile && fields.length > 0 && (
-          <Accordion type="multiple" className="space-y-2">
-            {fields.map((field, index) => {
-              const nameVal = form.watch(`criteria.${index}.name`);
-              return (
-                <AccordionItem key={field.id} value={field.id} className="border border-border rounded-lg px-3 bg-muted/20">
-                  <AccordionTrigger className="py-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">#{index + 1}</span>
-                      <span className="font-medium">{nameVal || "Untitled Criterion"}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pb-4">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Title</Label>
-                      <Controller
-                        control={form.control}
-                        name={`criteria.${index}.name`}
-                        render={({ field: f, fieldState }) => (
-                          <Input {...f} className={`h-8 text-sm ${fieldState.error ? "border-destructive" : ""}`} placeholder="Criterion title" />
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Guidelines</Label>
-                      <Controller
-                        control={form.control}
-                        name={`criteria.${index}.guidelines`}
-                        render={({ field: f }) => (
-                          <Textarea {...f} className="text-xs min-h-[40px] resize-none" placeholder="Subtext / guidelines..." rows={2} />
-                        )}
-                      />
-                    </div>
-                    {SCALE_POINTS.map((n) => (
-                      <div key={n} className="space-y-1">
-                        <Label className="text-xs">
-                          <span className="font-mono text-primary mr-1">{n}</span>
-                          {scaleLabels[n] || `Point ${n}`}
-                        </Label>
-                        <Controller
-                          control={form.control}
-                          name={`criteria.${index}.description_${n}` as any}
-                          render={({ field: f, fieldState }) => (
-                            <Textarea {...f} className={`text-xs min-h-[48px] resize-none ${fieldState.error ? "border-destructive" : ""}`} placeholder={`Describe ${scaleLabels[n] || n}...`} rows={2} />
-                          )}
-                        />
-                      </div>
-                    ))}
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" disabled={index === 0} onClick={() => move(index, index - 1)}>
-                        <ArrowUp className="h-3 w-3 mr-1" /> Up
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-7 text-xs" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)}>
-                        <ArrowDown className="h-3 w-3 mr-1" /> Down
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive ml-auto" onClick={() => remove(index)}>
-                        <Trash2 className="h-3 w-3 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        )}
+            {/* Criteria — Mobile Accordion with DnD */}
+            {isMobile && fields.length > 0 && (
+              <Accordion type="multiple" className="space-y-2">
+                {fields.map((field, index) => {
+                  const nameVal = form.watch(`criteria.${index}.name`);
+                  return (
+                    <SortableAccordionCard key={field.id} field={field} index={index} control={form.control} scaleLabels={scaleLabels} nameVal={nameVal || ""} onRemove={remove} />
+                  );
+                })}
+              </Accordion>
+            )}
+          </SortableContext>
+        </DndContext>
 
-        {/* Add Criterion */}
         <Button variant="outline" size="sm" onClick={handleAddCriterion} className="w-full">
           <Plus className="h-4 w-4 mr-1" /> Add Criterion
         </Button>
 
-        {/* Validation errors summary */}
         {form.formState.errors.criteria && typeof form.formState.errors.criteria.message === "string" && (
           <p className="text-xs text-destructive">{form.formState.errors.criteria.message}</p>
         )}
