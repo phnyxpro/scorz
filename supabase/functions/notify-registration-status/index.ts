@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
           Hi ${reg.full_name}, unfortunately your registration for <strong style="color:#1a1b25;">${compName}</strong> was <strong style="color:#dc2626;">not approved</strong> at this time.
         </p>
         <p style="color:#52525b;font-size:15px;line-height:1.6;">
-          If you believe this was in error, please contact the competition organizer for more information.
+          If you believe this was in error, please contact the competition organiser for more information.
         </p>
       `;
 

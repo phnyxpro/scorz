@@ -46,7 +46,7 @@ const ROLE_CONFIG: Record<string, { label: string; message: string; cta: string;
   },
   audience: {
     label: "Audience Member",
-    message: "Follow competitions, vote for your favorites, and stay updated with live results.",
+    message: "Follow competitions, vote for your favourites, and stay updated with live results.",
     cta: "Browse Events",
     path: "/events",
   },

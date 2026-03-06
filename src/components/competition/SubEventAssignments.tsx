@@ -287,7 +287,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                           <TableCell>
                             <div className="flex items-center gap-1.5">
                               <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
-                                {a.role.replace("_", " ")}
+                                {formatRoleName(a.role)}
                               </Badge>
                               {(a as any).is_chief && (
                                 <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">

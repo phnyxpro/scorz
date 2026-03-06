@@ -69,7 +69,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
                   <span key={r} className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    {r.replace("_", " ")}
+                    {formatRoleName(r)}
                   </span>
                 ))}
               </div>

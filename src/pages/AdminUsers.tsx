@@ -167,7 +167,7 @@ export default function AdminUsers() {
                       <div className="flex flex-wrap gap-1">
                         {u.roles.length === 0 && <span className="text-xs text-muted-foreground italic">none</span>}
                         {u.roles.map((r) => (
-                          <Badge key={r} variant="outline" className={`${roleBadgeColor[r] || ""} text-[10px]`}>{r.replace("_", " ")}</Badge>
+                          <Badge key={r} variant="outline" className={`${roleBadgeColor[r] || ""} text-[10px]`}>{formatRoleName(r)}</Badge>
                         ))}
                       </div>
                     </TableCell>
