@@ -222,7 +222,7 @@ export default function Dashboard() {
       ) : (
         <>
           {/* Admin platform stats */}
-          {isAdmin && adminStats && (
+          {isAdmin && stats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
                 { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
