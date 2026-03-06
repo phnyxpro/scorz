@@ -20,7 +20,7 @@ export function SocialLinks({ links }: { links: Record<string, string> }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-border/50 text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors text-xs font-bold"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-border/50 text-muted-foreground hover:text-accent hover:border-accent/50 transition-colors text-xs font-bold"
           title={platform}
         >
           {platformIcons[platform] || platform[0].toUpperCase()}

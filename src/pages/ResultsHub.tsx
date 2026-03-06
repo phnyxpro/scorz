@@ -209,7 +209,7 @@ export default function ResultsHub() {
                             {i < 3 ? <Medal className={`h-5 w-5 inline ${medalColors[i]}`} /> : i + 1}
                           </TableCell>
                           <TableCell className="font-medium">
-                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">{r.name}</Link>
+                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">{r.name}</Link>
                           </TableCell>
                           {rubricNames.map((n) => (
                             <TableCell key={n} className="text-center font-mono text-xs">{r.criterionAvgs[n] != null ? r.criterionAvgs[n].toFixed(2) : "—"}</TableCell>
@@ -242,7 +242,7 @@ export default function ResultsHub() {
                         <div key={regId} className="flex items-center gap-3">
                           <span className="font-mono text-xs text-muted-foreground w-6">{i + 1}.</span>
                           <span className="text-sm font-medium text-foreground w-32 truncate">
-                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-primary hover:underline transition-colors">{contestantName(regId)}</Link>
+                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">{contestantName(regId)}</Link>
                           </span>
                           <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
                             <div className="h-full bg-primary/60 rounded-full transition-all" style={{ width: `${pct}%` }} />

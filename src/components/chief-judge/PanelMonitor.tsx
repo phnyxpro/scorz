@@ -105,7 +105,7 @@ export function PanelMonitor({ scoresByContestant, judgeIds, contestantName, con
                     <TableRow key={regId} className="hover:bg-muted/20 transition-colors">
                       <TableCell className="text-sm font-semibold truncate max-w-[150px]">
                         {contestantUserId?.(regId) ? (
-                          <Link to={`/profile/${contestantUserId(regId)}`} className="hover:text-primary transition-colors">
+                          <Link to={`/profile/${contestantUserId(regId)}`} className="hover:text-secondary transition-colors">
                             {contestantName(regId)}
                           </Link>
                         ) : contestantName(regId)}

@@ -234,7 +234,7 @@ export default function MasterScoreSheet() {
                       <TableCell className="font-medium text-sm">
                         <Link
                           to={`/profile/${r.userId}`}
-                          className="hover:text-primary hover:underline transition-colors"
+                          className="hover:text-secondary hover:underline transition-colors"
                         >
                           {r.name}
                         </Link>

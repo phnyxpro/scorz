@@ -46,7 +46,7 @@ export default function AudienceEvents() {
               transition={{ delay: i * 0.05 }}
             >
               <Link to={`/events/${comp.slug || comp.id}`}>
-                <Card className="group border-border/50 bg-card/80 hover:border-primary/50 transition-all overflow-hidden h-full">
+                <Card className="group border-border/50 bg-card/80 hover:border-accent/50 transition-all overflow-hidden h-full">
                   <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
                     {comp.banner_url ? (
                       <img
@@ -67,7 +67,7 @@ export default function AudienceEvents() {
                     </Badge>
                   </div>
                   <CardContent className="p-4 space-y-2">
-                    <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-accent transition-colors">
                       {comp.name}
                     </h3>
                     {comp.description && (
