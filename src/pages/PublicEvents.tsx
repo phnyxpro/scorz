@@ -93,7 +93,7 @@ export default function PublicEvents() {
                 transition={{ delay: i * 0.1 }}
               >
                 <Link to={`/events/${(comp as any).slug || comp.id}`}>
-                  <Card className="group border-border/50 bg-card/80 hover:border-primary/50 transition-all overflow-hidden h-full">
+                  <Card className="group border-border/50 bg-card/80 hover:border-accent/50 transition-all overflow-hidden h-full">
                     {/* Banner */}
                     <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
                       {comp.banner_url ? (
