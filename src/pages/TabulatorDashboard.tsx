@@ -297,8 +297,13 @@ export default function TabulatorDashboard() {
       {/* Production Chat */}
       <Collapsible className="mt-4">
         <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full gap-2 text-xs">
+          <Button variant="outline" className="w-full gap-2 text-xs relative">
             <MessageSquare className="h-4 w-4" /> Production Chat
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3">
