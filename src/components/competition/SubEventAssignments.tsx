@@ -9,24 +9,29 @@ import {
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import {
   useStaffInvitations,
+  useStaffInvitationSubEvents,
   useAddStaffMember,
   useSendStaffInvite,
-  useAssignStaffToSubEvent,
+  useAddStaffSubEvent,
+  useRemoveStaffSubEvent,
   useDeleteInvitation,
-  useInviteStaff,
+  type StaffInvitation,
+  type StaffInvitationSubEvent,
 } from "@/hooks/useStaffInvitations";
 import { useCompetitionLimits, useCompetitionStaffCounts } from "@/hooks/useCompetitionLimits";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
 
@@ -49,13 +54,18 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: staffCounts } = useCompetitionStaffCounts(competitionId);
   const addStaffMember = useAddStaffMember();
   const sendInvite = useSendStaffInvite();
-  const assignToSubEvent = useAssignStaffToSubEvent();
+  const addStaffSubEvent = useAddStaffSubEvent();
+  const removeStaffSubEvent = useRemoveStaffSubEvent();
   const deleteInvitation = useDeleteInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
+  const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
 
   // Staff roster form
+  const [staffName, setStaffName] = useState("");
   const [staffEmail, setStaffEmail] = useState("");
+  const [staffPhone, setStaffPhone] = useState("");
   const [staffRole, setStaffRole] = useState<string>("judge");
+  const [staffIsChief, setStaffIsChief] = useState(false);
 
   // Sub-event assignment
   const [selectedLevelId, setSelectedLevelId] = useState("");
@@ -72,14 +82,8 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
   const { data: assignments } = useSubEventAssignments(selectedSubEventId || undefined);
 
-  // All sub-events across all levels for the assignment dropdown
-  const allSubEvents = useMemo(() => {
-    if (!levels) return [];
-    return levels.flatMap(l => {
-      // We'll use the subEvents from the selected level for now
-      return [];
-    });
-  }, [levels]);
+  // Fetch all sub-events for all levels (for displaying assigned sub-event names)
+  const allLevelIds = useMemo(() => levels?.map(l => l.id) || [], [levels]);
 
   const filteredUsers = useMemo(() => {
     if (!assignableUsers || !selectedRole) return [];
@@ -98,14 +102,31 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
     return false;
   };
 
+  // Check if a level already has a chief judge in staff_invitations
+  const levelHasChief = (levelId: string): boolean => {
+    if (!invitations || !invitationSubEvents || !levels) return false;
+    // Find all sub-events for this level
+    // We need to check which invitations are marked as chief and assigned to sub-events in this level
+    const chiefInvitations = invitations.filter(i => i.is_chief && i.role === "judge");
+    if (!chiefInvitations.length) return false;
+    // For now, just check if any chief judge exists for the competition
+    return chiefInvitations.length > 0;
+  };
+
   const handleAddStaff = () => {
     if (!staffEmail || !staffRole) return;
     addStaffMember.mutate({
+      name: staffName || undefined,
       email: staffEmail,
+      phone: staffPhone || undefined,
       role: staffRole as any,
       competitionId,
+      isChief: staffRole === "judge" ? staffIsChief : false,
     });
+    setStaffName("");
     setStaffEmail("");
+    setStaffPhone("");
+    setStaffIsChief(false);
   };
 
   const handleSendInvite = (inv: { id: string; email: string; role: any }) => {
@@ -159,9 +180,18 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
               <CardDescription>Add judges and tabulators to your competition roster. You can send invitations later.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs text-muted-foreground">Email Address</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Name</Label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={staffName}
+                    onChange={(e) => setStaffName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Email Address *</Label>
                   <Input
                     type="email"
                     placeholder="colleague@example.com"
@@ -170,9 +200,18 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                     onKeyDown={(e) => e.key === "Enter" && handleAddStaff()}
                   />
                 </div>
-                <div className="w-[150px]">
-                  <label className="text-xs text-muted-foreground">Role</label>
-                  <Select value={staffRole} onValueChange={setStaffRole}>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Phone (optional)</Label>
+                  <Input
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={staffPhone}
+                    onChange={(e) => setStaffPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Role</Label>
+                  <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ASSIGNABLE_ROLES.map((r) => (
@@ -181,6 +220,21 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              {staffRole === "judge" && (
+                <div className="flex items-center gap-2 mt-3">
+                  <Checkbox
+                    id="chief-judge-check"
+                    checked={staffIsChief}
+                    onCheckedChange={(v) => setStaffIsChief(v === true)}
+                  />
+                  <label htmlFor="chief-judge-check" className="text-sm cursor-pointer flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                    Designate as Chief Judge
+                  </label>
+                </div>
+              )}
+              <div className="flex justify-end mt-4">
                 <Button
                   size="sm"
                   onClick={handleAddStaff}
@@ -208,8 +262,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       inv={inv}
                       competitionId={competitionId}
                       levels={levels}
+                      invitationSubEvents={invitationSubEvents?.filter(ise => ise.staff_invitation_id === inv.id) || []}
                       onSendInvite={() => handleSendInvite(inv)}
-                      onAssign={(subEventId) => assignToSubEvent.mutate({ id: inv.id, subEventId, competitionId })}
+                      onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
+                      onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
                       sendingInvite={sendInvite.isPending}
                     />
@@ -234,8 +290,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       inv={inv}
                       competitionId={competitionId}
                       levels={levels}
+                      invitationSubEvents={invitationSubEvents?.filter(ise => ise.staff_invitation_id === inv.id) || []}
                       onSendInvite={() => handleSendInvite(inv)}
-                      onAssign={(subEventId) => assignToSubEvent.mutate({ id: inv.id, subEventId, competitionId })}
+                      onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
+                      onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
                       sendingInvite={sendInvite.isPending}
                     />
@@ -260,7 +318,9 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       inv={inv}
                       competitionId={competitionId}
                       levels={levels}
-                      onAssign={(subEventId) => assignToSubEvent.mutate({ id: inv.id, subEventId, competitionId })}
+                      invitationSubEvents={invitationSubEvents?.filter(ise => ise.staff_invitation_id === inv.id) || []}
+                      onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
+                      onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
                       sendingInvite={false}
                     />
@@ -452,26 +512,24 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
 /* ── Staff Row Component ── */
 interface StaffRowProps {
-  inv: {
-    id: string;
-    email: string;
-    role: string;
-    sub_event_id: string | null;
-    invited_at: string | null;
-    accepted_at: string | null;
-  };
+  inv: StaffInvitation;
   competitionId: string;
   levels: any[] | undefined;
+  invitationSubEvents: StaffInvitationSubEvent[];
   onSendInvite?: () => void;
-  onAssign: (subEventId: string | null) => void;
+  onAddSubEvent: (subEventId: string) => void;
+  onRemoveSubEvent: (id: string) => void;
   onDelete: () => void;
   sendingInvite: boolean;
 }
 
-function StaffRow({ inv, competitionId, levels, onSendInvite, onAssign, onDelete, sendingInvite }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
+
+  // Get sub-event names for display
+  const assignedSubEventIds = invitationSubEvents.map(ise => ise.sub_event_id);
 
   return (
     <div className="flex flex-col gap-2 p-3 rounded-lg border border-border/50 bg-card/50">
@@ -481,11 +539,20 @@ function StaffRow({ inv, competitionId, levels, onSendInvite, onAssign, onDelete
             <Mail className={`h-4 w-4 ${inv.accepted_at ? "text-secondary" : inv.invited_at ? "text-primary" : "text-muted-foreground"}`} />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">{inv.email}</p>
-            <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm font-medium text-foreground">
+              {inv.name || inv.email}
+            </p>
+            {inv.name && <p className="text-xs text-muted-foreground">{inv.email}</p>}
+            {inv.phone && <p className="text-xs text-muted-foreground">{inv.phone}</p>}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge className={roleColors[inv.role] || "bg-muted text-muted-foreground"} variant="secondary">
                 {formatRoleName(inv.role)}
               </Badge>
+              {inv.is_chief && (
+                <Badge variant="outline" className="text-[10px] py-0 h-4 gap-0.5 border-primary/50 text-primary">
+                  <ShieldCheck className="h-2.5 w-2.5" /> Chief Judge
+                </Badge>
+              )}
               {inv.accepted_at ? (
                 <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
                   <CheckCircle className="h-2.5 w-2.5" /> Accepted
@@ -539,6 +606,20 @@ function StaffRow({ inv, competitionId, levels, onSendInvite, onAssign, onDelete
         </div>
       </div>
 
+      {/* Assigned sub-events */}
+      {invitationSubEvents.length > 0 && (
+        <div className="pl-11 flex flex-wrap gap-1.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider self-center mr-1">Assigned:</span>
+          {invitationSubEvents.map((ise) => (
+            <SubEventBadge
+              key={ise.id}
+              subEventId={ise.sub_event_id}
+              onRemove={() => onRemoveSubEvent(ise.id)}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Sub-event assignment inline */}
       {!showAssign ? (
         <Button
@@ -547,8 +628,8 @@ function StaffRow({ inv, competitionId, levels, onSendInvite, onAssign, onDelete
           className="self-start text-xs text-muted-foreground"
           onClick={() => setShowAssign(true)}
         >
-          <MapPin className="h-3 w-3 mr-1" />
-          {inv.sub_event_id ? "Change assignment" : "Assign to sub-event"}
+          <Plus className="h-3 w-3 mr-1" />
+          Assign to sub-event
         </Button>
       ) : (
         <div className="flex flex-wrap gap-2 items-end pl-11">
@@ -564,17 +645,52 @@ function StaffRow({ inv, competitionId, levels, onSendInvite, onAssign, onDelete
           {assignLevelId && (
             <div className="min-w-[140px]">
               <label className="text-[10px] text-muted-foreground">Sub-Event</label>
-              <Select onValueChange={(v) => { onAssign(v); setShowAssign(false); }}>
+              <Select onValueChange={(v) => { onAddSubEvent(v); setShowAssign(false); setAssignLevelId(""); }}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sub-event" /></SelectTrigger>
                 <SelectContent>
-                  {subEventsForLevel?.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEventsForLevel
+                    ?.filter(se => !assignedSubEventIds.includes(se.id))
+                    .map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           )}
-          <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setShowAssign(false)}>Cancel</Button>
+          <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => { setShowAssign(false); setAssignLevelId(""); }}>Cancel</Button>
         </div>
       )}
     </div>
+  );
+}
+
+/* ── Sub-Event Badge with name lookup ── */
+function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove: () => void }) {
+  const { data: subEvents } = useSubEvents(undefined);
+  // We'll do a simple query for the name
+  const [name, setName] = useState<string | null>(null);
+
+  // Fetch sub-event name
+  useState(() => {
+    const fetchName = async () => {
+      const { data } = await (await import("@/integrations/supabase/client")).supabase
+        .from("sub_events")
+        .select("name")
+        .eq("id", subEventId)
+        .maybeSingle();
+      if (data) setName(data.name);
+    };
+    fetchName();
+  });
+
+  return (
+    <Badge variant="outline" className="text-[10px] py-0 h-5 gap-1 pr-1">
+      <MapPin className="h-2.5 w-2.5" />
+      {name || subEventId.slice(0, 8)}
+      <button
+        onClick={onRemove}
+        className="ml-0.5 rounded-full hover:bg-destructive/20 p-0.5"
+      >
+        <X className="h-2.5 w-2.5" />
+      </button>
+    </Badge>
   );
 }
