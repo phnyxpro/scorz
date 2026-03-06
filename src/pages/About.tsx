@@ -200,7 +200,7 @@ export default function About() {
               One platform, six roles, zero confusion
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
-              From the organizer setting up the event to the audience casting their vote, every participant gets a tailored experience.
+              From the organiser setting up the event to the audience casting their vote, every participant gets a tailored experience.
             </p>
           </motion.div>
 
