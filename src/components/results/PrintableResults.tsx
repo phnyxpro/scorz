@@ -63,6 +63,8 @@ export function PrintableResults({
           .cert-item .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
           .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; }
           .cert-item .date { font-size: 10px; color: #888; }
+          .cert-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; font-size: 9px; color: #28a745; }
+          .cert-stamp .check { font-weight: bold; }
           .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #aaa; }
           @media print { body { padding: 20px; } }
         </style>
