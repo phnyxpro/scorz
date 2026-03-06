@@ -878,6 +878,13 @@ export function RichTextEditor({
           >
             <Heading3 className="h-3.5 w-3.5" />
           </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            active={editor.isActive("paragraph")}
+            title="Paragraph"
+          >
+            <Pilcrow className="h-3.5 w-3.5" />
+          </ToolbarButton>
           <Divider />
           <ToolbarButton
             onClick={() => {
