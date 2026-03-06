@@ -164,7 +164,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => navigate(`/register/${competitionId}?behalf=true`)}>
+              <Button size="sm" onClick={() => setShowAddContestant(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
