@@ -696,6 +696,17 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
+          {isAdmin && inv.accepted_at && onMasquerade && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs gap-1 text-muted-foreground hover:text-primary"
+              onClick={() => onMasquerade(inv)}
+              title={`View as ${inv.name || inv.email}`}
+            >
+              <Eye className="h-3.5 w-3.5" /> View as
+            </Button>
+          )}
         </div>
       </div>
 
