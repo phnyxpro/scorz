@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { User, Bell, Shield, Palette, Sun, Moon, Save, KeyRound, Trash2 } from "lucide-react";
 
 export default function Settings() {
-  const { user, roles } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const { isDark, toggleTheme, brightness, setBrightness, contrast, setContrast } = useTheme();
   const queryClient = useQueryClient();
 
