@@ -1,47 +1,28 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Fix Judge Scoring Layout to Match Dashboard Pages
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+The scoring page's sidebar + content area is nested inside AppLayout's `container` wrapper with padding, but the content area is further constrained to `max-w-2xl` (line 289). The sidebar doesn't extend full height, and the layout doesn't match the full-width feel of dashboard pages.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Solution
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**File: `src/pages/JudgeScoring.tsx`**
 
----
+1. **Remove `max-w-2xl` constraint** on the main content area — let it fill the available space alongside the sidebar, matching how Dashboard fills the container width
+2. **Set proper height** on the outer wrapper: use `min-h-[calc(100vh-theme(spacing.14))]` (minus header height) so the sidebar stretches full page height instead of only as tall as its content
+3. **Use negative margins** (`-mx-3 sm:-mx-6 -mt-4 sm:-mt-6`) on the outer flex wrapper to break out of AppLayout's container padding, giving the sidebar a flush edge-to-edge feel
+4. **Keep scoring content padded** — the main content area retains comfortable `px-6 py-4` padding matching dashboard pages
+5. **Adjust sidebar width** to be consistent with typical sidebar widths and properly bordered
 
-### Fix 1: Conditionally apply auditorium filter
+### Changes Summary
 
-**File: `src/contexts/ThemeContext.tsx`**
+| Area | Before | After |
+|---|---|---|
+| Outer wrapper | `flex h-full min-h-0` | Full viewport height, negative margin bleed |
+| Content area | `max-w-2xl mx-auto px-4 py-4` | `px-3 sm:px-6 py-4 sm:py-6` (matches AppLayout container padding) |
+| Sidebar height | Content-driven | Full viewport height |
+| Overall feel | Narrow card centered | Full-width layout matching Dashboard |
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Single file change: `src/pages/JudgeScoring.tsx`
 
