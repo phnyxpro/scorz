@@ -33,7 +33,7 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Handshake className="h-5 w-5 text-primary" />
+          <Handshake className="h-5 w-5 text-secondary" />
           <CardTitle className="text-base">Sponsors</CardTitle>
         </div>
         <CardDescription>Add sponsor logos and links that will be displayed on the public event page.</CardDescription>
