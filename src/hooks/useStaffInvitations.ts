@@ -38,7 +38,7 @@ export function useInviteStaff() {
     const { user } = useAuth();
 
     return useMutation({
-        mutationFn: async ({ email, role, competitionId }: { email: string; role: AppRole; competitionId: string }) => {
+        mutationFn: async ({ email, role, competitionId, competitionName }: { email: string; role: AppRole; competitionId: string; competitionName?: string }) => {
             const { data, error } = await (supabase
                 .from("staff_invitations" as any)
                 .insert({
@@ -56,6 +56,21 @@ export function useInviteStaff() {
                 }
                 throw error;
             }
+
+            // Send invitation email with magic link
+            try {
+                await supabase.functions.invoke("send-staff-invite", {
+                    body: {
+                        email,
+                        role,
+                        competition_name: competitionName || "",
+                        competition_id: competitionId,
+                    },
+                });
+            } catch (emailErr) {
+                console.error("Failed to send invitation email:", emailErr);
+            }
+
             return data;
         },
         onSuccess: (_, variables) => {

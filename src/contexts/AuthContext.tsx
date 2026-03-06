@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getTierByProductId, type SubscriptionTier } from "@/lib/stripe-tiers";
 
-type AppRole = "admin" | "organizer" | "judge" | "tabulator" | "contestant" | "audience";
+type AppRole = "admin" | "organizer" | "judge" | "chief_judge" | "tabulator" | "witness" | "contestant" | "audience";
 
 interface MasqueradeTarget {
   userId: string;
@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithMagicLink = async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      options: { emailRedirectTo: `${window.location.origin}/welcome` },
     });
     return { error };
   };

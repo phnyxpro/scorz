@@ -1,62 +1,47 @@
 
 
-## Plan: Magic Link Landing Page + Staff Invitation Email
+## Fix Blank Rendering in Browser Automation
 
-### 1. New Page: `src/pages/MagicLinkLanding.tsx`
+The app appears blank in headless browser testing due to two compounding issues:
 
-A welcome page that authenticated judges/tabulators land on after clicking a magic link. It will:
-- Check auth state via `useAuth()`
-- Display a branded welcome message with the user's name and detected role (judge/tabulator)
-- Show a brief "Welcome aboard" message explaining their role
-- Auto-redirect to the appropriate dashboard after 3 seconds (or on button click):
-  - Judge → `/judge-dashboard`
-  - Tabulator → `/tabulator` (or `/dashboard` as fallback)
-  - Default → `/dashboard`
-- If not authenticated, redirect to `/auth`
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### 2. Route Registration: `src/App.tsx`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-Add a new route `/welcome` pointing to `MagicLinkLanding`. This will be a protected route wrapped in `AppLayout`.
+---
 
-### 3. Update Magic Link Redirect URL: `src/contexts/AuthContext.tsx`
+### Fix 1: Conditionally apply auditorium filter
 
-Change `signInWithMagicLink` to redirect to `/welcome` instead of `/dashboard`:
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
-emailRedirectTo: `${window.location.origin}/welcome`
-```
 
-### 4. New Edge Function: `supabase/functions/send-staff-invite/index.ts`
+This ensures no filter is applied when properties are unset, which is the default state.
 
-Create an edge function that:
-- Accepts `{ email, role, competition_name, competition_id }` 
-- Uses the Supabase Admin API (`supabase.auth.admin.generateLink`) to generate a magic link for the invited user
-- If the user doesn't exist yet, creates them via `supabase.auth.admin.createUser` first (with a random password, since they'll use magic links)
-- Sends a branded HTML email via Resend with:
-  - Competition name and assigned role
-  - A prominent "Sign In to Scorz" button linking to the magic link
-  - Brief instructions about their role
-- Falls back to a generic sign-in URL (`/auth`) if magic link generation fails
+---
 
-### 5. Update `src/hooks/useStaffInvitations.ts`
+### Summary
 
-Modify `useInviteStaff` mutation to call the new `send-staff-invite` edge function after inserting the invitation record, passing the email, role, and competition name so the invitation email is sent automatically.
-
-### 6. Update `src/components/admin/StaffInvitationForm.tsx`
-
-Pass competition name to the invite mutation so the email can reference it. This requires the parent component to provide the competition name as a prop.
-
-### Files
-
-| File | Action |
-|------|--------|
-| `src/pages/MagicLinkLanding.tsx` | Create — welcome/redirect page |
-| `src/App.tsx` | Edit — add `/welcome` route |
-| `src/contexts/AuthContext.tsx` | Edit — update magic link redirect URL |
-| `supabase/functions/send-staff-invite/index.ts` | Create — email with magic link |
-| `src/hooks/useStaffInvitations.ts` | Edit — call edge function on invite |
-| `src/components/admin/StaffInvitationForm.tsx` | Edit — pass competition name prop |
-
-### No database changes required
-
-The existing `staff_invitations` table and RLS policies are sufficient.
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
