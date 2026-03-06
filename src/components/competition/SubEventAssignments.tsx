@@ -55,9 +55,11 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const addStaffSubEvent = useAddStaffSubEvent();
   const removeStaffSubEvent = useRemoveStaffSubEvent();
   const deleteInvitation = useDeleteInvitation();
+  const updateInvitation = useUpdateStaffInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
   const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
   const [previewInv, setPreviewInv] = useState<StaffInvitation | null>(null);
+  const [editingInv, setEditingInv] = useState<StaffInvitation | null>(null);
 
   const handleMasquerade = async (inv: StaffInvitation) => {
     const { data: profile } = await supabase
