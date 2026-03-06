@@ -1,87 +1,47 @@
 
 
-## Event Chat — Real-time Messaging for Competition Staff
+## Fix Blank Rendering in Browser Automation
 
-### Overview
+The app appears blank in headless browser testing due to two compounding issues:
 
-Add a WhatsApp/Telegram-style chat panel to each competition where organizers, judges, and tabulators can communicate in real-time. Supports text messages, voice notes, and file attachments. Two-way communication — all assigned staff can send and receive.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Database
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**New table: `event_messages`**
-- `id` uuid PK
-- `competition_id` uuid NOT NULL (FK to competitions)
-- `sender_id` uuid NOT NULL (references auth.users)
-- `message_type` text NOT NULL DEFAULT 'text' — values: `text`, `voice`, `file`
-- `content` text — text body (nullable for voice/file-only)
-- `file_url` text — storage URL for voice notes or file attachments
-- `file_name` text — original filename
-- `reply_to_id` uuid — optional, for threaded replies
-- `created_at` timestamptz DEFAULT now()
+---
 
-**RLS policies:**
-- SELECT: user must be admin, organizer, or assigned to any sub-event in this competition (judge/tabulator/witness)
-- INSERT: same check + `sender_id = auth.uid()`
-- No UPDATE/DELETE (messages are immutable, or allow sender to delete own)
+### Fix 1: Conditionally apply auditorium filter
 
-**Realtime:** Add `event_messages` to `supabase_realtime` publication.
+**File: `src/contexts/ThemeContext.tsx`**
 
-**Storage:** Create a `chat-attachments` bucket (public) for voice notes and file uploads.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### New Components
+### Fix 2: Remove filter class when at defaults
 
-**`src/components/chat/EventChat.tsx`** — Main chat component:
-- Takes `competitionId` prop
-- Scrollable message list with sender name, avatar, timestamp
-- Text input with send button
-- Attachment button (files up to 10MB)
-- Voice note recorder (MediaRecorder API → upload as webm/ogg)
-- Real-time subscription to new messages via Supabase Realtime
-- Messages grouped by date, newest at bottom, auto-scroll
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-**`src/components/chat/ChatMessage.tsx`** — Single message bubble:
-- Shows sender name, avatar, timestamp
-- Text content or audio player (for voice notes) or file download link
-- Different alignment for own vs. others' messages (WhatsApp-style)
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-**`src/components/chat/VoiceRecorder.tsx`** — Voice note recording:
-- Hold-to-record or toggle button
-- Shows recording duration
-- Uploads to `chat-attachments` bucket on release
+### Fix 3: Update CSS to use filter only when properties exist
 
-**`src/hooks/useEventChat.ts`** — Hook for:
-- Fetching messages (paginated, newest first)
-- Sending messages (text/file/voice)
-- Real-time subscription for new messages
-- Joining sender profile data
+**File: `src/index.css`**
 
-### Integration Points
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
 
-Add a collapsible chat panel (slide-out drawer or tab) to:
-- **CompetitionDetail** (organizer view) — as a new tab "Chat"
-- **JudgeDashboard** — floating chat button or panel per competition
-- **TabulatorDashboard** — same floating chat button
-- **ChiefJudgeDashboard** — same
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
 
-The chat panel will be a consistent `<EventChat competitionId={id} />` component embedded in each dashboard.
+This ensures no filter is applied when properties are unset, which is the default state.
 
-### Files to Create/Edit
+---
 
-| Action | File |
-|--------|------|
-| Create | `src/components/chat/EventChat.tsx` |
-| Create | `src/components/chat/ChatMessage.tsx` |
-| Create | `src/components/chat/VoiceRecorder.tsx` |
-| Create | `src/hooks/useEventChat.ts` |
-| Migration | New table `event_messages`, storage bucket `chat-attachments`, realtime publication |
-| Edit | `src/pages/CompetitionDetail.tsx` — add Chat tab |
-| Edit | `src/pages/JudgeDashboard.tsx` — add chat panel |
-| Edit | `src/pages/TabulatorDashboard.tsx` — add chat panel |
-| Edit | `src/pages/ChiefJudgeDashboard.tsx` — add chat panel |
+### Summary
 
-### Security
-
-- RLS ensures only competition-assigned staff can read/write messages
-- A security-definer function `is_competition_staff(user_id, competition_id)` checks if user is admin, organizer, or has any `sub_event_assignments` entry for that competition
-- File uploads restricted to 10MB, audio files to 2 minutes
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

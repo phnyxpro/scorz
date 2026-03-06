@@ -23,7 +23,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Calculator, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { EventChat } from "@/components/chat/EventChat";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { motion } from "framer-motion";
 
 export default function TabulatorDashboard() {
@@ -289,6 +291,18 @@ export default function TabulatorDashboard() {
           )}
         </motion.div>
       )}
+
+      {/* Production Chat */}
+      <Collapsible className="mt-4">
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full gap-2 text-xs">
+            <MessageSquare className="h-4 w-4" /> Production Chat
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <EventChat competitionId={competitionId!} />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Certify Dialog */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>

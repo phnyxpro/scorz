@@ -16,6 +16,7 @@ import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { BrandingManager } from "@/components/competition/BrandingManager";
+import { EventChat } from "@/components/chat/EventChat";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -222,6 +223,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
           <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
+          <TabsTrigger value="chat" className="flex-shrink-0">Chat</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -460,6 +462,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="branding">
           <BrandingManager competitionId={id!} competition={comp} />
+        </TabsContent>
+
+        <TabsContent value="chat">
+          <EventChat competitionId={id!} />
         </TabsContent>
       </Tabs>
 

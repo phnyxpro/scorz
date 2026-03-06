@@ -5,7 +5,9 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck } from "lucide-react";
+import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck, MessageSquare } from "lucide-react";
+import { EventChat } from "@/components/chat/EventChat";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");
@@ -99,6 +101,18 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                     );
                 })}
             </div>
+
+            {/* Event Chat */}
+            <Collapsible>
+                <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full gap-2 text-xs">
+                        <MessageSquare className="h-4 w-4" /> Production Chat
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                    <EventChat competitionId={competition.id} />
+                </CollapsibleContent>
+            </Collapsible>
         </div>
     );
 }
