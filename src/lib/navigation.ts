@@ -9,7 +9,7 @@ import { LucideIcon } from "lucide-react";
  * Defines the comprehensive set of roles a user can hold within the Scorz platform context.
  * 
  * - `admin`: Platform-wide administrative privileges. Can view/edit all data globally.
- * - `organizer`: The creator/owner of a competition. Manages event settings, registration, and staffing.
+ * - `organizer`: The creator/owner of a competition. Manages event settings, registration, and staffing. (Display: "Organiser")
  * - `chief_judge`: Oversees a judging panel. Can score, monitor other judges, and certify final event results.
  * - `judge`: Assigned to sub-events to provide scores to contestants based on defined rubrics.
  * - `tabulator`: Reviews certified scores, calculates aggregate results, and manages publication.
