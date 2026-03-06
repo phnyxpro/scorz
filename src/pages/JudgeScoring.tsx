@@ -462,8 +462,18 @@ export default function JudgeScoring() {
                 <span>Final Score</span><span className="font-mono text-primary">{finalScore}</span>
               </div>
             </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed all scores and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
             <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
-            <Button onClick={handleCertify} disabled={!signature || certify.isPending} className="w-full">
+            <Button onClick={handleCertify} disabled={!signature || !certifyConfirmed || certify.isPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certify.isPending ? "Certifying…" : "Certify Scorecard"}
             </Button>
