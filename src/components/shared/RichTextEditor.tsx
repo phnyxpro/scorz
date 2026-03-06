@@ -59,6 +59,7 @@ import {
   AlignJustify,
   Highlighter,
   Palette,
+  Pilcrow,
   TableIcon,
   Plus,
   Trash2,
