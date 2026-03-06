@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useSubEventAssignments";
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useStaffInvitations, useInviteStaff, useDeleteInvitation } from "@/hooks/useStaffInvitations";
+import { useCompetitionLimits, useCompetitionStaffCounts } from "@/hooks/useCompetitionLimits";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
 
