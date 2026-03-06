@@ -679,6 +679,7 @@ export default function TabulatorDashboard() {
             rubricNames={rubricNames}
             onOpenChat={() => setShowChatModal(true)}
             unreadCount={unreadCount}
+            onContestantChange={setOnStageContestantId}
           />
         </div>
       )}
