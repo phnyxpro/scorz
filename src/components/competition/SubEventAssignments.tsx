@@ -27,9 +27,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye } from "lucide-react";
 
-const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
+const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
 const roleColors: Record<string, string> = {
+  organizer: "bg-accent/20 text-accent-foreground",
   judge: "bg-primary/20 text-primary",
   tabulator: "bg-secondary/20 text-secondary-foreground",
 };
