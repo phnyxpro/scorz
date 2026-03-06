@@ -224,7 +224,7 @@ export function useInviteStaff() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, email, phone, role, competitionId, competitionName }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; competitionName?: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId, competitionName, isChief }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; competitionName?: string; isChief?: boolean }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
@@ -235,6 +235,7 @@ export function useInviteStaff() {
           competition_id: competitionId,
           invited_by: user?.id,
           invited_at: new Date().toISOString(),
+          is_chief: isChief || false,
         })
         .select()
         .single() as any);
