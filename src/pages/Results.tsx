@@ -7,6 +7,7 @@ import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } f
 import { useTabulatorCertification, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
 import { useWitnessCertification, useWitnessCertificationRealtime } from "@/hooks/useWitness";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
+import { useVoteCounts } from "@/hooks/useAudienceVoting";
 import { PrintableResults } from "@/components/results/PrintableResults";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
