@@ -98,7 +98,7 @@ const FAQ = [
   },
   {
     q: "Is my scoring data secure?",
-    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organizers only see their own competitions, and all certifications are digitally signed and timestamped.",
+    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organisers only see their own competitions, and all certifications are digitally signed and timestamped.",
   },
   {
     q: "Do contestants need an account to register?",

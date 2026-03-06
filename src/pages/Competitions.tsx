@@ -193,7 +193,7 @@ export default function Competitions() {
         )}
       </div>
 
-      {/* Subscription warnings for organizers */}
+      {/* Subscription warnings for organisers */}
       {canManage && !isAdmin && needsSubscription && (
         <Alert className="mb-4 border-accent/30 bg-accent/5">
           <Lock className="h-4 w-4 text-accent" />

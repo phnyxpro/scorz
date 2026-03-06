@@ -188,7 +188,7 @@ export default function PeoplesChoiceManager() {
     if (rolesLoading || !userRoles) return;
     const allowed = userRoles.some(r => r === "admin" || r === "organizer");
     if (!allowed) {
-      toast({ title: "Access denied", description: "Only admins and organizers can manage People's Choice.", variant: "destructive" });
+      toast({ title: "Access denied", description: "Only admins and organisers can manage People's Choice.", variant: "destructive" });
       navigate("/dashboard", { replace: true });
     }
   }, [userRoles, rolesLoading, navigate]);
