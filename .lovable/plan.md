@@ -1,47 +1,68 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Mobile Responsiveness Improvements
 
-The app appears blank in headless browser testing due to two compounding issues:
-
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
-
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+After reviewing all major pages and components, here are the specific mobile issues and fixes needed, organized by priority.
 
 ---
 
-### Fix 1: Conditionally apply auditorium filter
+### Issues Found
 
-**File: `src/contexts/ThemeContext.tsx`**
+**1. CheckInHub — Table not scrollable on mobile**
+The tickets table has 6 columns with no horizontal scroll wrapper. On 390px screens, columns get crushed.
+- Fix: Wrap the table in `overflow-x-auto` and add responsive card-style stats grid.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**2. CheckInHub — Stats grid uses `grid-cols-3` always**
+The 3-column stat cards don't stack on very narrow screens.
+- Fix: Change to `grid-cols-1 sm:grid-cols-3`.
 
-### Fix 2: Remove filter class when at defaults
+**3. CompetitionDetail — Tab overflow**
+10 tabs in a row with `flex` but no explicit horizontal scroll on small screens. `TabsList` uses `w-full flex overflow-x-auto no-scrollbar` which is good, but the tabs don't have `min-w-0` and can compress text.
+- Fix: Already using `flex-shrink-0` — this is mostly fine. Add `gap-1` for breathing room.
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**4. PublicEventDetail — Tab bar text hidden on small screens**
+7 tabs with icons + text. On 390px, tabs compress badly.
+- Fix: Hide tab text on mobile, show only icons. Add `sm:inline` to text spans.
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**5. Results — Leaderboard table not mobile-friendly**
+The results table has Rank + Name + N rubric columns + Judges + Final = potentially 8+ columns with no card fallback.
+- Fix: Already has `overflow-x-auto` — acceptable. Add `min-w-[600px]` to the table for consistent behavior.
 
-### Fix 3: Update CSS to use filter only when properties exist
+**6. Results — Header buttons overflow on mobile**
+"My Feedback" + Print buttons in the header can wrap awkwardly.
+- Fix: Stack vertically on mobile with `flex-col sm:flex-row`.
 
-**File: `src/index.css`**
+**7. AppLayout — Header actions cramped on mobile**
+Role badges are hidden on mobile (good), but the remaining 3-4 icon buttons still crowd the header on 390px.
+- Fix: This is already well-handled with `hidden sm:inline-flex` on the settings button. No change needed.
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+**8. Auth page — Demo accounts section cramped**
+The demo account email addresses are truncated on mobile. The role badges + email + copy icon compete for space.
+- Fix: Stack badge above email on mobile using `flex-col sm:flex-row`.
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
+**9. Dashboard — Stat grid goes to 6 columns on large screens but 2 on mobile**
+Already using `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6` — this is correct.
 
-This ensures no filter is applied when properties are unset, which is the default state.
+**10. PublicEventDetail — Ticket form sub-event cards**
+The sub-event cards use `flex-col sm:flex-row` — already responsive. Good.
+
+**11. ContestantRegistration — Step indicator overflow**
+The step pills use `overflow-x-auto` with `shrink-0` — already scrollable. Good.
+
+**12. CheckInHub — Scan form button text**
+"Check In" button with icon can be tight on mobile.
+- Fix: Hide text on mobile, show icon only.
 
 ---
 
-### Summary
+### Implementation Plan
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+| File | Change |
+|------|--------|
+| `src/pages/CheckInHub.tsx` | Wrap table in `overflow-x-auto`, change stats to `grid-cols-1 sm:grid-cols-3`, responsive scan button |
+| `src/pages/PublicEventDetail.tsx` | Icon-only tabs on mobile (hide text below `sm`), tighter tab padding |
+| `src/pages/Results.tsx` | Add `min-w-[600px]` to results table, stack header buttons on mobile |
+| `src/pages/Auth.tsx` | Stack demo account row items on smallest screens |
+
+These are focused, surgical fixes — no architectural changes. The app is already well-built for mobile with `sm:` breakpoints, `flex-wrap`, `overflow-x-auto`, and the bottom nav. These fixes address the remaining edge cases where content overflows or compresses on 390px viewports.
 
