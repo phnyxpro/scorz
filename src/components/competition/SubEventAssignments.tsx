@@ -664,8 +664,6 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
 }
 
 /* ── Sub-Event Badge with name lookup ── */
-import { useEffect } from "react";
-
 function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove: () => void }) {
   const [name, setName] = useState<string | null>(null);
 
