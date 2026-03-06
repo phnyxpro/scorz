@@ -661,6 +661,45 @@ export function RichTextEditor({
           >
             <Redo className="h-3.5 w-3.5" />
           </ToolbarButton>
+
+          <Divider />
+
+          {/* Ruler toggle */}
+          <ToolbarButton
+            onClick={() => setShowRuler(!showRuler)}
+            active={showRuler}
+            title="Toggle Ruler"
+          >
+            <Ruler className="h-3.5 w-3.5" />
+          </ToolbarButton>
+
+          {/* Margin presets */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                title="Page Margins"
+              >
+                Margins
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              {MARGIN_PRESETS.map((p) => (
+                <DropdownMenuItem
+                  key={p.label}
+                  onClick={() => {
+                    setLeftMargin(p.left);
+                    setRightMargin(p.right);
+                  }}
+                >
+                  {p.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
