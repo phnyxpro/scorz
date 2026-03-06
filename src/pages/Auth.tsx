@@ -8,13 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, ArrowLeft, Mail, Copy, Check } from "lucide-react";
+import { Zap, ArrowLeft, Copy, Check, Briefcase, Star, Users, Scale, Calculator, Mail, ChevronLeft } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-
 import scorzLogo from "@/assets/scorz-logo.svg";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
+
+type SignupRole = "organizer" | "contestant" | "audience";
+type SigninRole = "organizer" | "contestant" | "audience" | "judge" | "tabulator";
+
+const SIGNUP_ROLES: { role: SignupRole; label: string; desc: string; icon: typeof Briefcase }[] = [
+  { role: "organizer", label: "Event Organiser", desc: "Create & manage competitions", icon: Briefcase },
+  { role: "contestant", label: "Contestant", desc: "Register & compete in events", icon: Star },
+  { role: "audience", label: "Audience Member", desc: "Vote & attend events", icon: Users },
+];
+
+const SIGNIN_ROLES: { role: SigninRole; label: string; desc: string; icon: typeof Briefcase; magicLink: boolean }[] = [
+  { role: "organizer", label: "Organiser", desc: "Manage your events", icon: Briefcase, magicLink: false },
+  { role: "contestant", label: "Contestant", desc: "Access your profile", icon: Star, magicLink: false },
+  { role: "audience", label: "Audience", desc: "View & vote", icon: Users, magicLink: false },
+  { role: "judge", label: "Judge", desc: "Sign in via email link", icon: Scale, magicLink: true },
+  { role: "tabulator", label: "Tabulator", desc: "Sign in via email link", icon: Calculator, magicLink: true },
+];
 
 const DEMO_ACCOUNTS = [
   { role: "Organizer", email: "organizer@demo.scorz.app", password: "demo1234", color: "bg-primary/10 text-primary" },
@@ -27,7 +43,7 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function Auth() {
-  const { signIn, signUp, resetPassword, signInWithGoogle } = useAuth();
+  const { signIn, signUp, resetPassword, signInWithGoogle, signInWithMagicLink } = useAuth();
   const { brightness, contrast } = useTheme();
   const needsFilter = brightness !== 100 || contrast !== 100;
   const navigate = useNavigate();
@@ -35,14 +51,18 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-
-  // Signup state
+  // Sign Up state
+  const [signupRole, setSignupRole] = useState<SignupRole | null>(null);
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
+
+  // Sign In state
+  const [signinRole, setSigninRole] = useState<SigninRole | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +78,9 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!signupRole) return;
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    const { error } = await signUp(signupEmail, signupPassword, signupName, signupRole);
     setLoading(false);
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
@@ -68,14 +89,21 @@ export default function Auth() {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    const { error } = await signInWithMagicLink(magicLinkEmail);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setMagicLinkSent(true);
+    }
+  };
+
+  const handleResetPassword = async () => {
     if (!loginEmail) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email to reset password.",
-        variant: "destructive",
-      });
+      toast({ title: "Email required", description: "Please enter your email to reset password.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -100,31 +128,25 @@ export default function Auth() {
   const fillDemoCredentials = (email: string, password: string) => {
     setLoginEmail(email);
     setLoginPassword(password);
+    setSigninRole("organizer"); // show password form
     setCopiedEmail(email);
     setTimeout(() => setCopiedEmail(null), 1500);
   };
 
+  const isMagicLinkRole = signinRole === "judge" || signinRole === "tabulator";
+
   return (
     <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen flex items-center justify-center bg-background p-4 relative`}>
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate("/")}
-        >
+        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/")}>
           <ArrowLeft className="h-4 w-4" /> Back to Home
         </Button>
         <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
           <Link to="/about">About</Link>
         </Button>
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
             <img src={scorzLogo} alt="Scorz" className="h-8 w-8" />
@@ -135,116 +157,125 @@ export default function Auth() {
         <Card className="border-border/50 bg-card/80 backdrop-blur">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg text-card-foreground">Access Port</CardTitle>
-            <CardDescription>Sign in to manage your events or create an organiser account</CardDescription>
+            <CardDescription>Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Organiser Sign Up</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
+              {/* ─── SIGN IN ─── */}
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleResetPassword}
-                      className="text-xs text-primary hover:underline font-medium"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in…" : "Sign In"}
-                  </Button>
-                </form>
+                <AnimatePresence mode="wait">
+                  {!signinRole ? (
+                    <motion.div key="role-select" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <p className="text-xs text-muted-foreground mb-3">Select your role to sign in:</p>
+                      <div className="space-y-2">
+                        {SIGNIN_ROLES.map((r) => (
+                          <button
+                            key={r.role}
+                            type="button"
+                            onClick={() => setSigninRole(r.role)}
+                            className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-primary/40 transition-all group"
+                          >
+                            <r.icon className="h-5 w-5 text-primary shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">{r.label}</p>
+                              <p className="text-[11px] text-muted-foreground">{r.desc}</p>
+                            </div>
+                            {r.magicLink && (
+                              <Badge variant="outline" className="text-[9px] shrink-0 border-accent/40 text-accent">
+                                <Mail className="h-2.5 w-2.5 mr-1" />Magic Link
+                              </Badge>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ) : isMagicLinkRole ? (
+                    <motion.div key="magic-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <button type="button" onClick={() => { setSigninRole(null); setMagicLinkSent(false); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                        <ChevronLeft className="h-3 w-3" /> Back to role selection
+                      </button>
+                      {magicLinkSent ? (
+                        <div className="text-center py-6">
+                          <Mail className="h-10 w-10 text-primary mx-auto mb-3" />
+                          <h3 className="text-base font-semibold text-foreground mb-1">Check your email</h3>
+                          <p className="text-sm text-muted-foreground">We sent a sign-in link to <span className="font-mono text-foreground">{magicLinkEmail}</span></p>
+                          <Button variant="ghost" size="sm" className="mt-4" onClick={() => setMagicLinkSent(false)}>Send again</Button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleMagicLink} className="space-y-4">
+                          <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                            {signinRole === "judge" ? "Judge" : "Tabulator"} accounts are created when you are assigned to a competition. Enter your email to receive a sign-in link.
+                          </p>
+                          <div className="space-y-2">
+                            <Label htmlFor="magic-email">Email</Label>
+                            <Input id="magic-email" type="email" value={magicLinkEmail} onChange={(e) => setMagicLinkEmail(e.target.value)} required placeholder="you@example.com" />
+                          </div>
+                          <Button type="submit" className="w-full gap-2" disabled={loading}>
+                            <Mail className="h-4 w-4" />
+                            {loading ? "Sending…" : "Send Magic Link"}
+                          </Button>
+                        </form>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div key="password-login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <button type="button" onClick={() => setSigninRole(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                        <ChevronLeft className="h-3 w-3" /> Back to role selection
+                      </button>
+                      <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email">Email</Label>
+                          <Input id="login-email" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required placeholder="you@example.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="login-password">Password</Label>
+                          <Input id="login-password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required placeholder="••••••••" />
+                        </div>
+                        <div className="flex justify-end">
+                          <button type="button" onClick={handleResetPassword} className="text-xs text-primary hover:underline font-medium">Forgot password?</button>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? "Signing in…" : "Sign In"}
+                        </Button>
+                      </form>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                  </div>
-                </div>
+                      <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                      </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2 border-border/50 hover:bg-muted"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  <svg
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                    focusable="false"
-                    data-prefix="fab"
-                    data-icon="google"
-                    role="img"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 488 512"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
-                    ></path>
-                  </svg>
-                  Google
-                </Button>
+                      <Button type="button" variant="outline" className="w-full gap-2 border-border/50 hover:bg-muted" onClick={handleGoogleSignIn} disabled={loading}>
+                        <svg className="h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                          <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+                        </svg>
+                        Google
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* Demo Accounts Accordion */}
+                {/* Demo Accounts */}
                 <Accordion type="single" collapsible className="mt-6">
                   <AccordionItem value="demo-accounts" className="border-border/30">
                     <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline py-3">
-                      <span className="flex items-center gap-2">
-                        <Zap className="h-3 w-3" />
-                        Demo Accounts — Try every role
-                      </span>
+                      <span className="flex items-center gap-2"><Zap className="h-3 w-3" /> Demo Accounts — Try every role</span>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-2">
                         {DEMO_ACCOUNTS.map((acc) => (
-                          <button
-                            key={acc.email}
-                            type="button"
-                            onClick={() => fillDemoCredentials(acc.email, acc.password)}
-                            className="w-full flex items-center justify-between gap-2 rounded-md border border-border/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors group"
-                          >
+                          <button key={acc.email} type="button" onClick={() => fillDemoCredentials(acc.email, acc.password)} className="w-full flex items-center justify-between gap-2 rounded-md border border-border/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors group">
                             <div className="flex items-center gap-2 min-w-0">
-                              <Badge variant="secondary" className={`text-[10px] shrink-0 ${acc.color}`}>
-                                {acc.role}
-                              </Badge>
+                              <Badge variant="secondary" className={`text-[10px] shrink-0 ${acc.color}`}>{acc.role}</Badge>
                               <span className="text-xs text-muted-foreground truncate font-mono">{acc.email}</span>
                             </div>
-                            {copiedEmail === acc.email ? (
-                              <Check className="h-3 w-3 text-green-500 shrink-0" />
-                            ) : (
-                              <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                            )}
+                            {copiedEmail === acc.email ? <Check className="h-3 w-3 text-green-500 shrink-0" /> : <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />}
                           </button>
                         ))}
                         <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">
@@ -256,49 +287,60 @@ export default function Auth() {
                 </Accordion>
               </TabsContent>
 
+              {/* ─── SIGN UP ─── */}
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
-                      required
-                      placeholder="Jane Doe"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      required
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account…" : "Create Organiser Account"}
-                  </Button>
-                </form>
-                <p className="text-[10px] text-muted-foreground mt-4 text-center leading-relaxed">
-                  By creating an organiser account, you can create, manage, and promote your own competitions.
-                  Judges and staff will be invited directly to the platform.
-                </p>
+                <AnimatePresence mode="wait">
+                  {!signupRole ? (
+                    <motion.div key="role-select" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <p className="text-xs text-muted-foreground mb-3">I want to join as:</p>
+                      <div className="space-y-2">
+                        {SIGNUP_ROLES.map((r) => (
+                          <button
+                            key={r.role}
+                            type="button"
+                            onClick={() => setSignupRole(r.role)}
+                            className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-primary/40 transition-all group"
+                          >
+                            <r.icon className="h-5 w-5 text-primary shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{r.label}</p>
+                              <p className="text-[11px] text-muted-foreground">{r.desc}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/60 mt-4 text-center">
+                        Judges & Tabulators are invited by organisers and sign in via Magic Link.
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="signup-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <button type="button" onClick={() => setSignupRole(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                        <ChevronLeft className="h-3 w-3" /> Choose a different role
+                      </button>
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-md bg-primary/5 border border-primary/20">
+                        {(() => { const R = SIGNUP_ROLES.find(r => r.role === signupRole)!; return <><R.icon className="h-4 w-4 text-primary" /><span className="text-sm font-medium text-foreground">{R.label}</span></>; })()}
+                      </div>
+                      <form onSubmit={handleSignup} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-name">Full Name</Label>
+                          <Input id="signup-name" value={signupName} onChange={(e) => setSignupName(e.target.value)} required placeholder="Jane Doe" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email">Email</Label>
+                          <Input id="signup-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required placeholder="you@example.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">Password</Label>
+                          <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? "Creating account…" : "Create Account"}
+                        </Button>
+                      </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </TabsContent>
             </Tabs>
           </CardContent>
