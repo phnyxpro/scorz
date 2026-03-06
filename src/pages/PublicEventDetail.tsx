@@ -120,6 +120,8 @@ export default function PublicEventDetail() {
 
   const socialLinks = (comp as any)?.social_links as Record<string, string> | undefined;
   const rulesUrl = (comp as any)?.rules_url as string | undefined;
+  const rulesContent = (comp as any)?.rules_content as string | undefined;
+  const rulesDocumentUrl = (comp as any)?.rules_document_url as string | undefined;
 
   if (isLoading) return (
     <div className="min-h-screen bg-background">
