@@ -1097,6 +1097,57 @@ export type Database = {
           },
         ]
       }
+      staff_invitations: {
+        Row: {
+          accepted_at: string | null
+          competition_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_at: string | null
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          sub_event_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          competition_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          sub_event_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          competition_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          sub_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitations_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invitations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_event_assignments: {
         Row: {
           created_at: string
