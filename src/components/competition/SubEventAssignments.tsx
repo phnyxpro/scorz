@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,7 +64,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       .select("user_id")
       .eq("email", inv.email)
       .maybeSingle();
-    if (!profile?.user_id) return;
+    if (!profile?.user_id) {
+      toast({ title: "This user hasn't signed up yet — masquerade unavailable.", variant: "destructive" });
+      return;
+    }
     await startMasquerade({
       userId: profile.user_id,
       email: inv.email,
@@ -543,7 +547,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
-          {isAdmin && inv.accepted_at && onMasquerade && (
+          {isAdmin && onMasquerade && (
             <Button
               variant="ghost"
               size="sm"
