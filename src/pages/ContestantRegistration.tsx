@@ -92,11 +92,11 @@ export default function ContestantRegistration() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && !isOnBehalf) {
       methods.setValue("email", user.email || "");
       methods.setValue("fullName", user.user_metadata?.full_name || "");
     }
-  }, [user, methods]);
+  }, [user, methods, isOnBehalf]);
 
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
