@@ -58,7 +58,7 @@ export default function Competitions() {
     defaultValues: { name: "", slug: "", description: "", startDate: "", endDate: "" },
   });
 
-  // Subscription enforcement for organizers (admins bypass)
+  // Subscription enforcement for organisers (admins bypass)
   const { user } = useAuth();
   const creditsAvailable = isAdmin ? 999 : subscription.creditsAvailable;
   const isAtLimit = !isAdmin && creditsAvailable <= 0;
