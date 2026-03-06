@@ -398,6 +398,7 @@ export default function TabulatorDashboard() {
   const [activeSubEventId, setActiveSubEventId] = useState("");
   const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [onStageContestantId, setOnStageContestantId] = useState("");
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
 
