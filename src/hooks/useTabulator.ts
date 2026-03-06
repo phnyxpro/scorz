@@ -1,6 +1,26 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+
+/** Subscribe to realtime changes on tabulator_certifications */
+export function useTabulatorCertificationRealtime(subEventId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`tab_cert_${subEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tabulator_certifications", filter: `sub_event_id=eq.${subEventId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["tabulator_certification", subEventId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, qc]);
+}
 
 export interface TabulatorCertification {
   id: string;

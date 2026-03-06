@@ -3,9 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
-import { useTabulatorCertification } from "@/hooks/useTabulator";
-import { useWitnessCertification } from "@/hooks/useWitness";
+import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
+import { useTabulatorCertification, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
+import { useWitnessCertification, useWitnessCertificationRealtime } from "@/hooks/useWitness";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useVoteCounts } from "@/hooks/useAudienceVoting";
 import { PrintableResults } from "@/components/results/PrintableResults";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,6 +39,10 @@ export default function Results() {
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
   const { data: voteCounts } = useVoteCounts(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
+  useWitnessCertificationRealtime(selectedSubEventId || undefined);
 
   const selectedSubEvent = subEvents?.find((se) => se.id === selectedSubEventId);
 

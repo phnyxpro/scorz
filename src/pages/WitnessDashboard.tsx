@@ -4,9 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
-import { useTabulatorCertification } from "@/hooks/useTabulator";
-import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness } from "@/hooks/useWitness";
+import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
+import { useTabulatorCertification, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
+import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWitnessCertificationRealtime } from "@/hooks/useWitness";
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,6 +53,10 @@ export default function WitnessDashboard() {
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
+  useWitnessCertificationRealtime(selectedSubEventId || undefined);
 
   const upsertWitness = useUpsertWitnessCert();
   const certifyWitness = useCertifyWitness();
