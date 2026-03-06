@@ -75,6 +75,8 @@ export default function CompetitionDetail() {
 
   const canConfigure = hasRole("admin") || hasRole("organizer");
 
+  // Competition is locked when active or completed — core fields can't be edited
+  const isLocked = comp ? (comp.status === "active" || comp.status === "completed") : false;
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
