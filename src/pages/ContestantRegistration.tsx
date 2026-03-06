@@ -59,6 +59,142 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
+// Reusable on-behalf registration form (used in modal from RegistrationsManager)
+export function OnBehalfRegistrationForm({
+  competitionId,
+  onComplete,
+}: {
+  competitionId: string;
+  onComplete: () => void;
+}) {
+  const { user } = useAuth();
+  const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
+  const createReg = useCreateRegistration();
+  const { toast } = useToast();
+
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const availableSteps = useMemo(() => {
+    return STEPS.filter(s => s.id !== "account");
+  }, []);
+
+  const methods = useForm<RegistrationFormData>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      ageCategory: "adult",
+      rulesAcknowledged: false,
+      contestantSig: "",
+    },
+  });
+
+  const handleNext = async () => {
+    const stepId = availableSteps[currentStep].id;
+    let fieldsToValidate: (keyof RegistrationFormData)[] = [];
+    if (stepId === "personal") fieldsToValidate = ["fullName", "email", "ageCategory", "guardianName"];
+    if (stepId === "bio") fieldsToValidate = ["videoUrl"];
+    if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
+    if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
+
+    const isValid = await methods.trigger(fieldsToValidate);
+    if (isValid) setCurrentStep(s => s + 1);
+  };
+
+  const onSubmit = async (data: RegistrationFormData) => {
+    if (!user || !competitionId) return;
+
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("email", data.email)
+      .maybeSingle();
+    const registrationUserId = existingProfile?.user_id || user.id;
+
+    createReg.mutate({
+      user_id: registrationUserId,
+      competition_id: competitionId,
+      full_name: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      location: data.location,
+      age_category: data.ageCategory,
+      bio: data.bio,
+      performance_video_url: data.videoUrl,
+      guardian_name: data.guardianName,
+      guardian_email: data.guardianEmail,
+      guardian_phone: data.guardianPhone,
+      rules_acknowledged: data.rulesAcknowledged,
+      rules_acknowledged_at: new Date().toISOString(),
+      contestant_signature: data.contestantSig,
+      contestant_signed_at: new Date().toISOString(),
+      guardian_signature: data.guardianSig,
+      guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
+      sub_event_id: data.selectedSubEventId,
+      status: "approved",
+    } as any, {
+      onSuccess: async (createdReg: any) => {
+        if (data.selectedSlotId && createdReg?.id) {
+          await supabase
+            .from("performance_slots")
+            .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
+            .eq("id", data.selectedSlotId);
+        }
+        toast({ title: "Contestant added", description: "Registration has been created and auto-approved." });
+        onComplete();
+      },
+    });
+  };
+
+  if (compLoading) return <LoadingSpinner />;
+
+  return (
+    <div className="pb-4">
+      <StepIndicator steps={availableSteps} currentStep={currentStep} />
+
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={availableSteps[currentStep].id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {availableSteps[currentStep].id === "personal" && <PersonalStep />}
+              {availableSteps[currentStep].id === "bio" && <BioStep />}
+              {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId} />}
+              {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
+              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId} />}
+            </motion.div>
+          </AnimatePresence>
+
+          <footer className="flex justify-between pt-4 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={currentStep === 0}
+              onClick={() => setCurrentStep(s => s - 1)}
+            >
+              Back
+            </Button>
+            {currentStep < availableSteps.length - 1 ? (
+              <Button type="button" onClick={handleNext}>
+                Continue <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={createReg.isPending}>
+                {createReg.isPending ? "Adding…" : "Add & Approve"}
+              </Button>
+            )}
+          </footer>
+        </form>
+      </FormProvider>
+    </div>
+  );
+}
+
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -116,7 +252,6 @@ export default function ContestantRegistration() {
       toast({ title: "Account Created", description: "Verification email sent. You can now complete your registration." });
     }
 
-    // Partial validation for the current step
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
     if (stepId === "personal") fieldsToValidate = ["fullName", "email", "ageCategory", "guardianName"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
@@ -132,7 +267,6 @@ export default function ContestantRegistration() {
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user || !competitionId) return;
 
-    // Determine user_id: for on-behalf, try to find existing user by email, else use organiser's ID
     let registrationUserId = user.id;
     if (isOnBehalf) {
       const { data: existingProfile } = await supabase
@@ -142,7 +276,6 @@ export default function ContestantRegistration() {
         .maybeSingle();
       registrationUserId = existingProfile?.user_id || user.id;
     } else {
-      // Ensure user has contestant role
       await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
     }
 
@@ -169,7 +302,6 @@ export default function ContestantRegistration() {
       status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {
-        // Book the selected time slot if one was chosen
         if (data.selectedSlotId && createdReg?.id) {
           await supabase
             .from("performance_slots")
