@@ -1,33 +1,47 @@
 
 
-## PWA Icon with Gradient Background
+## Fix Blank Rendering in Browser Automation
 
-The current PWA uses `logo.png` (white Scorz logo) directly, which looks invisible on white backgrounds. We need to create proper PWA icons with the theme orange-to-green gradient as the background.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Approach
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-1. **Create a script/HTML page** that generates PWA icons as PNGs using Canvas API with:
-   - Gradient from brand orange (`hsl(38, 92%, 50%)` → `#F59E0B`) to brand teal/green (`hsl(174, 60%, 40%)` → `#29A38B`)
-   - White Scorz logo centered on top
-   - Generate both 192x192 and 512x512 sizes
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-2. Since we can't run Canvas in the build, the practical approach is to **create SVG icons** with the gradient background embedded, then reference them in the manifest. SVG is supported as a PWA icon with `purpose: "any"`.
+---
 
-3. **Create two new files**:
-   - `public/pwa-icon-192.svg` — 192x192 SVG with orange→green gradient background + white logo
-   - `public/pwa-icon-512.svg` — 512x512 SVG (same design)
+### Fix 1: Conditionally apply auditorium filter
 
-4. **Update `vite.config.ts`** manifest icons to reference the new SVG files and update `background_color` to match the gradient start color.
+**File: `src/contexts/ThemeContext.tsx`**
 
-5. **Update `index.html`** `apple-touch-icon` to use the new icon.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### Icon Design
-- Rounded rectangle or circle background with linear gradient: top-left orange `#F59E0B` → bottom-right teal `#29A38B`
-- White Scorz SVG logo centered (from `src/assets/scorz-logo.svg`)
-- Proper padding around the logo
+### Fix 2: Remove filter class when at defaults
 
-### Files Changed
-- **Create** `public/pwa-icon-192.svg` and `public/pwa-icon-512.svg`
-- **Edit** `vite.config.ts` — update manifest icons array
-- **Edit** `index.html` — update apple-touch-icon href
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

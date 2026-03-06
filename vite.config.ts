@@ -73,19 +73,21 @@ export default defineConfig(({ mode }) => ({
         name: 'Scorz',
         short_name: 'Scorz',
         description: 'Live competition management, real-time scoring, and audience engagement — all in one platform.',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#F59E0B',
+        background_color: '#29A38B',
         display: 'standalone',
         icons: [
           {
-            src: 'logo.png',
+            src: 'pwa-icon-192.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml',
+            purpose: 'any'
           },
           {
-            src: 'logo.png',
+            src: 'pwa-icon-512.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ]
       }
