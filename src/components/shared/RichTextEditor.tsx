@@ -534,6 +534,31 @@ export function RichTextEditor({
           >
             <ListOrdered className="h-3.5 w-3.5" />
           </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              // Toggle alpha list: insert ordered list then set type attribute
+              if (editor.isActive("orderedList")) {
+                // Check if it's already alpha — if so, lift it; otherwise switch to alpha
+                const { $from } = editor.state.selection;
+                const listNode = $from.node(-1)?.type.name === "orderedList" ? $from.node(-1) : $from.node(-2);
+                if (listNode && listNode.attrs?.HTMLAttributes?.class === "list-alpha") {
+                  editor.chain().focus().toggleOrderedList().run();
+                } else {
+                  // Convert current ordered list to alpha
+                  editor.chain().focus().updateAttributes("orderedList", { HTMLAttributes: { class: "list-alpha" } }).run();
+                }
+              } else {
+                editor.chain().focus().toggleOrderedList().run();
+                // Set alpha class after toggling
+                setTimeout(() => {
+                  editor.chain().focus().updateAttributes("orderedList", { HTMLAttributes: { class: "list-alpha" } }).run();
+                }, 0);
+              }
+            }}
+            title="Alphabet List (a, b, c)"
+          >
+            <span className="text-[10px] font-bold leading-none">A.</span>
+          </ToolbarButton>
 
           {/* Indent / Outdent */}
           <ToolbarButton
