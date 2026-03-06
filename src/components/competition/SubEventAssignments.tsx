@@ -27,9 +27,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye } from "lucide-react";
 
-const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
+const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
 const roleColors: Record<string, string> = {
+  organizer: "bg-accent/20 text-accent-foreground",
   judge: "bg-primary/20 text-primary",
   tabulator: "bg-secondary/20 text-secondary-foreground",
 };
@@ -109,8 +110,8 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Tier Limits Progress */}
-      {tierLimits && staffCounts && (
+      {/* Tier Limits Progress — hidden for admins (unlimited) */}
+      {!isAdmin && tierLimits && staffCounts && (
         <Card className="border-border/50 bg-card/80">
           <CardContent className="pt-4 pb-3 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
