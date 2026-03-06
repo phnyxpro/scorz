@@ -40,8 +40,10 @@ export default function TabulatorDashboard() {
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  const { data: penalties } = usePenaltyRules(competitionId);
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
+  const [performanceDuration, setPerformanceDuration] = useState(0);
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [signature, setSignature] = useState("");
