@@ -177,7 +177,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
           <CardTitle className="text-base flex items-center gap-2">
             <UserPlus className="h-4 w-4" /> Add Staff Member
           </CardTitle>
-          <CardDescription>Add judges and tabulators to your competition roster. You can send invitations later.</CardDescription>
+          <CardDescription>Add judges and tabulators to your competition roster. An account will be created automatically and they'll receive a notification email with a magic link to sign in.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
