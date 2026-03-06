@@ -31,6 +31,7 @@ export function PrintableResults({
   leaderboard,
   rubricNames,
   certificationDates,
+  certificationSignatures,
 }: PrintableResultsProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
