@@ -225,6 +225,14 @@ export default function CompetitionDetail() {
         </TabsList>
 
         <TabsContent value="general">
+          {isLocked && (
+            <Alert className="mb-4 border-accent/30 bg-accent/5">
+              <Lock className="h-4 w-4 text-accent" />
+              <AlertDescription className="text-sm">
+                This competition is <strong>{status}</strong>. Core fields (name, dates, description) are locked and cannot be changed.
+              </AlertDescription>
+            </Alert>
+          )}
           <Card className="border-border/50 bg-card/80">
             <CardHeader><CardTitle className="text-base">Competition Details</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -241,25 +249,26 @@ export default function CompetitionDetail() {
                   qc.invalidateQueries({ queryKey: ["competition", id] });
                 }}
               />
-              <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={isLocked} />
               <div>
                 <label className="text-xs text-muted-foreground">URL Slug</label>
                 <Input
                   placeholder="e.g. my-competition-2026"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  disabled={isLocked}
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">Public URL: /events/{slug || '...'}</p>
               </div>
-              <Textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} disabled={isLocked} />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Start Date</label>
-                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={isLocked} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">End Date</label>
-                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={isLocked} />
                 </div>
               </div>
               <div>
