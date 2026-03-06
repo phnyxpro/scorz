@@ -82,7 +82,7 @@ export const TIERS: SubscriptionTier[] = [
     highlight: true,
     limits: { organizers: 4, judges: 10, tabulators: 4 },
     features: [
-      "Up to 4 organizers",
+      "Up to 4 organisers",
       "Up to 10 judges",
       "Up to 4 tabulators",
       "Everything in Start",
