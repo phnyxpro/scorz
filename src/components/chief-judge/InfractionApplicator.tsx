@@ -40,7 +40,7 @@ export function InfractionApplicator({
 
   // Parse applied infractions from certification penalty_adjustments
   const appliedInfractions = useMemo(() => {
-    const adj = (certification?.penalty_adjustments || {}) as Record<string, AppliedInfraction[]>;
+    const adj = ((certification?.penalty_adjustments || {}) as unknown) as Record<string, AppliedInfraction[]>;
     const result: { contestantId: string; infraction: AppliedInfraction }[] = [];
     for (const [cId, items] of Object.entries(adj)) {
       if (Array.isArray(items)) {
