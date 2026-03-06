@@ -194,12 +194,16 @@ export default function ContestantRegistration() {
   return (
     <div className="max-w-2xl mx-auto pb-12">
       <header className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/competitions")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(isOnBehalf ? `/competitions/${competitionId}` : "/competitions")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Registration</h1>
-          <p className="text-muted-foreground">{comp?.name}</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isOnBehalf ? "Add Contestant" : "Registration"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isOnBehalf ? `Registering on behalf · ${comp?.name}` : comp?.name}
+          </p>
         </div>
       </header>
 
