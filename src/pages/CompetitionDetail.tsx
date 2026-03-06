@@ -320,8 +320,13 @@ export default function CompetitionDetail() {
               <DocumentUpload
                 currentUrl={rulesDocumentUrl || null}
                 folder={`rules/${id}`}
-                label="Rules Document (PDF)"
-                onUploaded={(url) => setRulesDocumentUrl(url)}
+                label="Rules Document"
+                onUploaded={async (url) => {
+                  setRulesDocumentUrl(url);
+                  // Auto-save and scan
+                  await supabase.from("competitions").update({ rules_document_url: url } as any).eq("id", id!);
+                  scanDocument(url, "rules");
+                }}
                 onRemoved={() => setRulesDocumentUrl("")}
               />
 
