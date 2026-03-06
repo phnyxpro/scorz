@@ -86,7 +86,7 @@ export function OnBehalfRegistrationForm({
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
