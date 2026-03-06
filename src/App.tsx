@@ -49,6 +49,7 @@ import CheckInHub from "./pages/CheckInHub";
 import TicketsHub from "./pages/TicketsHub";
 import UpdatesHub from "./pages/UpdatesHub";
 import ContestantFeedback from "./pages/ContestantFeedback";
+import MagicLinkLanding from "./pages/MagicLinkLanding";
 const queryClient = new QueryClient();
 
 const App = () => (
