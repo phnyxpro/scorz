@@ -118,12 +118,7 @@ export function markdownToHtml(md: string): string {
 /** Render a video embed or placeholder */
 export function renderVideoEmbed(url: string): string {
   if (!url) {
-    return `<div class="rounded-lg border border-dashed border-border bg-muted/20 aspect-video flex items-center justify-center my-6">
-      <div class="text-center p-8">
-        <svg class="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-        <p class="text-xs text-muted-foreground">Video walkthrough coming soon</p>
-      </div>
-    </div>`;
+    return "";
   }
 
   // Convert YouTube/Loom URLs to embeddable format
