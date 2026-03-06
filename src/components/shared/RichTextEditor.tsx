@@ -46,7 +46,9 @@ import {
   Rows,
   Merge,
   Split,
+  Ruler,
 } from "lucide-react";
+import { EditorRuler } from "./EditorRuler";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
