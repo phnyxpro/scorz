@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { InstallPWA } from "@/components/shared/InstallPWA";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import scorzLogo from "@/assets/scorz-logo.svg";
@@ -40,6 +41,7 @@ export default function PublicEvents() {
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-2">
+            <InstallPWA />
             <Button asChild size="sm" variant="ghost">
               <Link to="/about">About</Link>
             </Button>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Eye, Mic, Heart, HelpCircle, Mail } from "lucide-react";
+import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -145,6 +146,7 @@ export default function About() {
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
           <div className="flex items-center gap-3">
+            <InstallPWA />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/">Home</Link>
             </Button>
