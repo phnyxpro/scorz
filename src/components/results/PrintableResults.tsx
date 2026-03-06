@@ -67,7 +67,8 @@ export function PrintableResults({
           .cert-row { display: flex; justify-content: space-between; margin: 16px 0; }
           .cert-item { text-align: center; flex: 1; }
           .cert-item .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
-          .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; }
+          .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; min-height: 50px; display: flex; align-items: flex-end; justify-content: center; }
+          .cert-item .line img { max-height: 45px; max-width: 180px; opacity: 0.85; display: block; margin-bottom: 2px; }
           .cert-item .date { font-size: 10px; color: #888; }
           .cert-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; font-size: 9px; color: #28a745; }
           .cert-stamp .check { font-weight: bold; }
