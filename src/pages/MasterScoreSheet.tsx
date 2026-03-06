@@ -115,6 +115,7 @@ export default function MasterScoreSheet() {
   // Build rows: one per contestant, with each judge's final score
   const rows = useMemo(() => {
     if (!data) return [];
+    const method = data.scoringMethod || "olympic";
     return (data.registrations || [])
       .map((reg) => {
         const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
@@ -123,8 +124,14 @@ export default function MasterScoreSheet() {
           judgeScores[s.judge_id] = { final: s.final_score, certified: s.is_certified };
         }
         const certifiedScores = regScores.filter((s) => s.is_certified);
+        const rawTotals = certifiedScores.map((s) => s.raw_total);
+        const avgPenalty = certifiedScores.length > 0
+          ? certifiedScores.reduce((a, s) => a + s.time_penalty, 0) / certifiedScores.length
+          : 0;
         const total = certifiedScores.reduce((a, s) => a + s.final_score, 0);
-        const avgFinal = certifiedScores.length > 0 ? total / certifiedScores.length : 0;
+        const avgFinal = certifiedScores.length > 0
+          ? calculateMethodScore(method, rawTotals, avgPenalty)
+          : 0;
         const allCertified = regScores.length > 0 && regScores.every((s) => s.is_certified);
         return {
           regId: reg.id,
