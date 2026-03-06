@@ -282,10 +282,13 @@ export function RegistrationsManager({ competitionId }: Props) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
-                        {reg.status}
-                      </Badge>
+                      <SlotTimeCell
+                        slot={slotsByRegId[reg.id]}
+                        onUpdate={handleSlotTimeUpdate}
+                        formatTime={formatSlotTime}
+                      />
                     </TableCell>
+                    <TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
