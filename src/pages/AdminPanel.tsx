@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
 import { useQuery } from "@tanstack/react-query";

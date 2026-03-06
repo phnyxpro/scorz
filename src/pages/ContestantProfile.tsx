@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ProfileSkeleton } from "@/components/shared/PageSkeletons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {

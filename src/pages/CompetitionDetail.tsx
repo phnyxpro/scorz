@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { DetailPageSkeleton } from "@/components/shared/PageSkeletons";
 import { useCompetition, useUpdateCompetition, useCreateRubricCriterion, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";

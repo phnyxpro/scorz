@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { Link } from "react-router-dom";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
