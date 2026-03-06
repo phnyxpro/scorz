@@ -126,17 +126,17 @@ export default function Dashboard() {
   const { stats, loading: statsLoading } = useDashboardStats();
   const isAdmin = hasRole("admin");
   const isTabulator = hasRole("tabulator");
-  const { data: adminStats } = useQuery({
-    queryKey: ["admin-platform-stats"],
+  const { data: topCompetitions } = useQuery({
+    queryKey: ["top-competitions"],
     enabled: isAdmin,
     queryFn: async () => {
-      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("competitions").select("*", { count: "exact", head: true }),
-        supabase.from("competitions").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("contestant_registrations").select("*", { count: "exact", head: true }),
-      ]);
-      return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0 };
+      const { data } = await supabase
+        .from("competitions")
+        .select("id, name, status, created_at")
+        .in("status", ["active", "draft"])
+        .order("created_at", { ascending: false })
+        .limit(2);
+      return data || [];
     },
   });
   const isJudgeRole = roles.includes("judge");
@@ -257,7 +257,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-6"
+              className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-6"
             >
               {statsLoading
                 ? Array.from({ length: 3 }).map((_, i) => (
@@ -273,6 +273,34 @@ export default function Dashboard() {
                   </Link>
                 ))}
             </motion.div>
+          )}
+
+          {/* Top Competitions Quick Access */}
+          {isAdmin && topCompetitions && topCompetitions.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-foreground mb-3">Quick Access</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {topCompetitions.map((comp) => (
+                  <Link key={comp.id} to={`/competitions/${comp.id}`}>
+                    <Card className="border-border/50 bg-card/80 hover:bg-card hover:border-primary/30 transition-colors cursor-pointer group">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
+                              {comp.name}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1 capitalize">
+                              {comp.status} • Created {new Date(comp.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Trophy className="h-5 w-5 text-primary/60 group-hover:text-primary transition-colors" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
 
           <motion.div

@@ -30,6 +30,8 @@ export interface SubEvent {
   start_time: string | null;
   end_time: string | null;
   status: string;
+  timer_visible: boolean;
+  comments_visible: boolean;
 }
 
 export interface RubricCriterion {
@@ -111,6 +113,35 @@ export function useSubEvents(levelId: string | undefined) {
         .select("*")
         .eq("level_id", levelId!)
         .order("event_date");
+      if (error) throw error;
+      return data as SubEvent[];
+    },
+  });
+}
+
+export function useAllSubEvents(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["all_sub_events", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      // First get all levels for the competition
+      const { data: levels, error: levelsError } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .eq("competition_id", competitionId!);
+
+      if (levelsError) throw levelsError;
+
+      if (!levels || levels.length === 0) return [];
+
+      // Then get all sub-events for those levels
+      const levelIds = levels.map(l => l.id);
+      const { data, error } = await supabase
+        .from("sub_events")
+        .select("*")
+        .in("level_id", levelIds)
+        .order("event_date");
+
       if (error) throw error;
       return data as SubEvent[];
     },

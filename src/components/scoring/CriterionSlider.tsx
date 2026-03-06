@@ -38,8 +38,8 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
   const handleNumberInput = (raw: string) => {
     const num = parseFloat(raw);
     if (isNaN(num)) return;
-    // Clamp to 0.5–5 and round to nearest 0.5
-    const clamped = Math.min(5, Math.max(0.5, Math.round(num * 2) / 2));
+    // Clamp to 0.1–5 and round to nearest 0.1
+    const clamped = Math.min(5, Math.max(0.1, Math.round(num * 10) / 10));
     onChange(clamped);
   };
 
@@ -75,9 +75,9 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
           )}
           <Input
             type="number"
-            min={0.5}
+            min={0.1}
             max={5}
-            step={0.5}
+            step={0.1}
             value={value > 0 ? value : ""}
             onChange={(e) => handleNumberInput(e.target.value)}
             disabled={disabled}
@@ -89,10 +89,10 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
       </div>
 
       <Slider
-        min={0.5}
+        min={0.1}
         max={5}
-        step={0.5}
-        value={[value || 0.5]}
+        step={0.1}
+        value={[value || 0.1]}
         onValueChange={([v]) => onChange(v)}
         disabled={disabled}
         className="py-1"

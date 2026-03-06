@@ -51,6 +51,10 @@ export default function JudgeScoring() {
     return allSubEvents.filter((se) => assignedIds.has(se.id));
   }, [allSubEvents, myAssignments]);
 
+  const selectedSubEvent = subEvents.find(se => se.id === selectedSubEventId);
+  const timerVisible = selectedSubEvent?.timer_visible ?? true;
+  const commentsVisible = selectedSubEvent?.comments_visible ?? true;
+
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
   const { data: myScores } = useMyScores(subEventId || undefined);
@@ -315,12 +319,14 @@ export default function JudgeScoring() {
                 </Card>
               )}
 
-              <PerformanceTimer
-                timeLimitSeconds={timeLimitSecs}
-                gracePeriodSeconds={gracePeriodSecs}
-                onDurationChange={setDuration}
-                disabled={isCertified}
-              />
+              {timerVisible && (
+                <PerformanceTimer
+                  timeLimitSeconds={timeLimitSecs}
+                  gracePeriodSeconds={gracePeriodSecs}
+                  onDurationChange={setDuration}
+                  disabled={isCertified}
+                />
+              )}
 
               <Card className="border-border/50 bg-card/80">
                 <CardHeader className="pb-3">
@@ -361,11 +367,13 @@ export default function JudgeScoring() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border/50 bg-card/80">
-                <CardContent className="pt-4">
-                  <SpeechComments value={comments} onChange={setComments} disabled={isCertified} />
-                </CardContent>
-              </Card>
+              {commentsVisible && (
+                <Card className="border-border/50 bg-card/80">
+                  <CardContent className="pt-4">
+                    <SpeechComments value={comments} onChange={setComments} disabled={isCertified} />
+                  </CardContent>
+                </Card>
+              )}
 
               {!isCertified && (
                 <div className="flex gap-2">

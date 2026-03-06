@@ -39,13 +39,38 @@ export function useDashboardStats() {
           .from("contestant_registrations")
           .select("id", { count: "exact", head: true })
           .eq("status", "pending");
-        results.push({ label: "Pending Registrations", value: pendingRegs ?? 0, to: "/competitions" });
+        results.push({ label: "Pending Registrations", value: pendingRegs ?? 0, to: "/registrations" });
 
         const { count: totalContestants } = await supabase
           .from("contestant_registrations")
           .select("id", { count: "exact", head: true })
           .eq("status", "approved");
-        results.push({ label: "Approved Contestants", value: totalContestants ?? 0, to: "/competitions" });
+        results.push({ label: "Approved Contestants", value: totalContestants ?? 0, to: "/contestants" });
+
+        // Total judges
+        const { count: totalJudges } = await supabase
+          .from("sub_event_assignments")
+          .select("user_id", { count: "exact", head: true });
+        results.push({ label: "Total Judges", value: totalJudges ?? 0, to: "/staff" });
+
+        // Recent registrations (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const { count: recentRegs } = await supabase
+          .from("contestant_registrations")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", sevenDaysAgo.toISOString());
+        results.push({ label: "Recent Registrations", value: recentRegs ?? 0, to: "/registrations" });
+
+        // Upcoming events (next 30 days)
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        const { count: upcomingEvents } = await supabase
+          .from("sub_events")
+          .select("id", { count: "exact", head: true })
+          .gte("event_date", new Date().toISOString().split('T')[0])
+          .lte("event_date", thirtyDaysFromNow.toISOString().split('T')[0]);
+        results.push({ label: "Upcoming Events", value: upcomingEvents ?? 0, to: "/competitions" });
       }
 
       if (isJudge) {

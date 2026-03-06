@@ -12,6 +12,7 @@ import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
+import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -195,6 +196,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+          <TabsTrigger value="scoring" className="flex-shrink-0">Scoring Settings</TabsTrigger>
           <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
           <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
@@ -400,6 +402,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="assignments">
           <SubEventAssignments competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="scoring">
+          <ScoringSettingsManager competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="sponsors">
