@@ -23,8 +23,8 @@ import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
-import { useState, useEffect } from "react";
-import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,40 @@ export default function CompetitionDetail() {
   const [scanningRubric, setScanningRubric] = useState(false);
   const [pendingRubricCriteria, setPendingRubricCriteria] = useState<ScannedCriterion[] | null>(null);
 
+  // Auto-save state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadRef = useRef(true);
+
+  const autoSaveContent = useCallback(async (field: "rules_content" | "rubric_content", value: string) => {
+    if (!id) return;
+    setAutoSaveStatus("saving");
+    await supabase.from("competitions").update({ [field]: value } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["competition", id] });
+    setAutoSaveStatus("saved");
+    setTimeout(() => setAutoSaveStatus("idle"), 2000);
+  }, [id, qc]);
+
+  // Auto-save rules content
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveContent("rules_content", rulesContent);
+    }, 2000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [rulesContent, autoSaveContent]);
+
+  // Auto-save rubric content
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveContent("rubric_content", rubricContent);
+    }, 2000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [rubricContent, autoSaveContent]);
+
   useEffect(() => {
     if (comp) {
       setName(comp.name);
@@ -114,6 +148,14 @@ export default function CompetitionDetail() {
       setRulesContent(fixEscapedHtml((comp as any).rules_content || ""));
       setRubricContent(fixEscapedHtml((comp as any).rubric_content || ""));
       setShowPeoplesChoice((comp as any).show_peoples_choice_to_contestants || false);
+    }
+  }, [comp]);
+
+  // Mark initial load complete after first comp data arrives
+  useEffect(() => {
+    if (comp && initialLoadRef.current) {
+      // Delay to let state settle from the comp useEffect above
+      setTimeout(() => { initialLoadRef.current = false; }, 500);
     }
   }, [comp]);
 
@@ -348,7 +390,11 @@ export default function CompetitionDetail() {
 
               {/* Rich text editor for rules content */}
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Rules Content</label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-xs text-muted-foreground">Rules Content</label>
+                  {autoSaveStatus === "saving" && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving…</span>}
+                  {autoSaveStatus === "saved" && <span className="text-[10px] text-secondary flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
+                </div>
                 <RichTextEditor
                   content={rulesContent}
                   onChange={setRulesContent}
@@ -400,7 +446,11 @@ export default function CompetitionDetail() {
 
               {/* Rich text editor for rubric content */}
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Rubric Content</label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-xs text-muted-foreground">Rubric Content</label>
+                  {autoSaveStatus === "saving" && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving…</span>}
+                  {autoSaveStatus === "saved" && <span className="text-[10px] text-secondary flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
+                </div>
                 <RichTextEditor
                   content={rubricContent}
                   onChange={setRubricContent}

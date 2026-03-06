@@ -1,28 +1,47 @@
 
 
-# Plan: Rules Editor Enhancements
+## Fix Blank Rendering in Browser Automation
 
-## 1. Auto-save for Rules Editor
-- In `CompetitionDetail.tsx`, add a debounced auto-save (e.g. 2-second delay) that fires whenever `rulesContent` or `rubricContent` changes
-- Use a `useRef` timer pattern: on each change, clear the previous timeout and set a new one that writes to the database
-- Show a subtle "Saving..." / "Saved" indicator near the editor label
-- Remove the need to click the main Save button for rules/rubric content changes
+The app appears blank in headless browser testing due to two compounding issues:
 
-## 2. Paragraph Style Button (after H3 in toolbar)
-- In `RichTextEditor.tsx`, add a "Paragraph" toolbar button after the H3 button (both in the main toolbar and bubble menu)
-- Clicking it calls `editor.chain().focus().setParagraph().run()` to reset the block back to a normal paragraph
-- Use the `Pilcrow` icon from lucide-react
-- Show it as active when the current node is a paragraph (not a heading)
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-## 3. Alphabet List (after Numbered List)
-- Add an alphabetical ordered list button after the numbered list button in the toolbar
-- TipTap's `orderedList` supports a `type` attribute via HTML `<ol type="a">`
-- Create a small helper that toggles an ordered list with `type="a"` by using `editor.chain().focus().toggleOrderedList().run()` then updating the list node's attributes to set `HTMLAttributes: { type: 'a' }`
-- Alternatively, use a custom CSS class approach: insert a regular ordered list and add a CSS `list-style-type: lower-alpha` style
-- Use the `ListOrdered` icon with an "A" label or the `ALargeSmall` icon from lucide-react
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-### Files Changed
-- `src/pages/CompetitionDetail.tsx` — add debounced auto-save for rulesContent/rubricContent
-- `src/components/shared/RichTextEditor.tsx` — add Paragraph button + Alphabet list button to toolbar and bubble menu
-- `src/index.css` — add `.list-alpha` style for `list-style-type: lower-alpha` if needed
+---
+
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
