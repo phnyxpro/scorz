@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck, MessageSquare } from "lucide-react";
 import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export default function JudgeDashboard() {
@@ -58,6 +59,7 @@ export default function JudgeDashboard() {
 }
 
 function CompetitionAssignmentSection({ competition, subEventDetails, myAssignments }: { competition: any, subEventDetails: any[], myAssignments: any[] }) {
+    const unreadCount = useChatUnreadCount(competition.id);
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
@@ -105,8 +107,13 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
             {/* Event Chat */}
             <Collapsible>
                 <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full gap-2 text-xs">
+                    <Button variant="outline" className="w-full gap-2 text-xs relative">
                         <MessageSquare className="h-4 w-4" /> Production Chat
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                        )}
                     </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-3">

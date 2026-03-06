@@ -1,7 +1,8 @@
 import { EventMessage } from "@/hooks/useEventChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessageProps {
   message: EventMessage;
@@ -15,6 +16,9 @@ export function ChatMessage({ message, isOwn }: ChatMessageProps) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const readByNames = message.readBy || [];
+  const hasBeenRead = readByNames.length > 0;
 
   return (
     <div className={`flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
@@ -56,9 +60,27 @@ export function ChatMessage({ message, isOwn }: ChatMessageProps) {
             </a>
           )}
         </div>
-        <p className={`text-[9px] text-muted-foreground px-1 ${isOwn ? "text-right" : ""}`}>
-          {format(new Date(message.created_at), "h:mm a")}
-        </p>
+        <div className={`flex items-center gap-1 px-1 ${isOwn ? "justify-end" : ""}`}>
+          <p className="text-[9px] text-muted-foreground">
+            {format(new Date(message.created_at), "h:mm a")}
+          </p>
+          {isOwn && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CheckCheck
+                  className={`h-3 w-3 ${
+                    hasBeenRead ? "text-primary" : "text-muted-foreground/40"
+                  }`}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-[10px]">
+                {hasBeenRead
+                  ? `Seen by ${readByNames.join(", ")}`
+                  : "Not seen yet"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
     </div>
   );
