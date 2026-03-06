@@ -1,4 +1,4 @@
-import { TIERS } from "@/lib/stripe-tiers";
+import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tiers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,11 +120,11 @@ const FAQ = [
     a: "The Chief Judge can break ties using criterion-level analysis—comparing specific rubric scores to determine the winner. All tie-break decisions are logged with notes for full transparency.",
   },
   {
-    q: "Can I upgrade or downgrade my plan?",
-    a: "Yes. You can change your plan at any time from your billing settings. Changes take effect immediately, and billing is prorated.",
+    q: "Can I buy multiple competition credits?",
+    a: "Yes. Each purchase unlocks one competition at the selected tier. You can buy as many credits as you need, and they never expire.",
   },
   {
-    q: "What if I need more than the Enterprise plan offers?",
+    q: "What if I need a custom solution?",
     a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organization's needs, including white-label options, API access, and dedicated support.",
   },
 ];
@@ -284,8 +284,14 @@ export default function About() {
                     <CardTitle className="text-base font-mono">{tier.name}</CardTitle>
                     <div className="flex items-baseline gap-1 mt-2">
                       <span className="text-4xl font-bold text-foreground">${tier.price}</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
+                      <span className="text-sm text-muted-foreground">/competition</span>
                     </div>
+                    {(() => {
+                      const localApprox = getLocalCurrencyApprox(tier.price);
+                      return localApprox ? (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{localApprox} approx.</p>
+                      ) : null;
+                    })()}
                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{tier.description}</p>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
@@ -293,7 +299,7 @@ export default function About() {
                       {tier.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm">
                           <Check className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{f}</span>
+                          <span className={`text-muted-foreground ${f.includes("coming soon") ? "italic" : ""}`}>{f}</span>
                         </li>
                       ))}
                     </ul>
@@ -307,6 +313,9 @@ export default function About() {
               </motion.div>
             ))}
           </div>
+          <p className="text-center text-[10px] text-muted-foreground font-mono mt-6">
+            {USD_DISCLAIMER}
+          </p>
         </div>
       </section>
 

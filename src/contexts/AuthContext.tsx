@@ -15,9 +15,10 @@ export interface SubscriptionStatus {
   subscribed: boolean;
   productId?: string;
   priceId?: string;
-  subscriptionEnd?: string;
   tier?: SubscriptionTier;
-  competitionLimit: number; // -1 = unlimited, 0 = none
+  creditsTotal: number;
+  creditsUsed: number;
+  creditsAvailable: number;
 }
 
 interface AuthContextType {
@@ -40,7 +41,7 @@ interface AuthContextType {
   isMasquerading: boolean;
 }
 
-const DEFAULT_SUB: SubscriptionStatus = { subscribed: false, competitionLimit: 0 };
+const DEFAULT_SUB: SubscriptionStatus = { subscribed: false, creditsTotal: 0, creditsUsed: 0, creditsAvailable: 0 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -94,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
       if (error) {
-        // Silently fail — don't log errors for expired sessions
         setSubscription(DEFAULT_SUB);
         return;
       }
@@ -103,26 +103,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSubscription({
           subscribed: data.subscribed,
           productId: data.product_id,
-          priceId: data.price_id,
-          subscriptionEnd: data.subscription_end,
           tier,
-          competitionLimit: tier ? tier.competitionLimit : 0,
+          creditsTotal: data.credits_total ?? 0,
+          creditsUsed: data.credits_used ?? 0,
+          creditsAvailable: data.credits_available ?? 0,
         });
       }
     } catch {
-      // Silently fail
       setSubscription(DEFAULT_SUB);
     }
   }, []);
 
-  // Post-signup role assignment
   const assignSignupRole = useCallback(async (currentUser: User) => {
     const signupRole = currentUser.user_metadata?.signup_role;
     if (!signupRole) return;
     const allowedRoles: AppRole[] = ["organizer", "contestant", "audience"];
     if (!allowedRoles.includes(signupRole as AppRole)) return;
     try {
-      // Check if role already exists
       const { data: existing } = await supabase
         .from("user_roles")
         .select("id")
@@ -131,7 +128,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!existing || existing.length === 0) {
         await supabase.from("user_roles").insert({ user_id: currentUser.id, role: signupRole });
       }
-      // Clear the signup_role metadata
       await supabase.auth.updateUser({ data: { signup_role: null } });
     } catch (err) {
       console.error("Error assigning signup role:", err);
@@ -143,14 +139,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Skip INITIAL_SESSION — getSession() handles it below
         if (event === "INITIAL_SESSION") return;
 
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fire-and-forget: don't block the callback
           fetchRoles(session.user.id);
 
           if (event === "SIGNED_IN") {
@@ -169,7 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Single source of truth for initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (initialSessionHandled) return;
       initialSessionHandled = true;
@@ -187,14 +180,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => authSub.unsubscribe();
   }, [fetchRoles, assignSignupRole, fireWelcomeEmail]);
 
-  // Check subscription after roles are loaded (need auth token)
   useEffect(() => {
     if (session?.user) {
       refreshSubscription();
     }
   }, [session?.user?.id, refreshSubscription]);
 
-  // Periodic refresh every 60s
   useEffect(() => {
     if (!session?.user) return;
     const interval = setInterval(refreshSubscription, 60_000);

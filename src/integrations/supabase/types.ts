@@ -177,6 +177,47 @@ export type Database = {
           },
         ]
       }
+      competition_credits: {
+        Row: {
+          competition_id: string | null
+          created_at: string
+          id: string
+          purchased_at: string
+          stripe_session_id: string | null
+          tier_product_id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competition_id?: string | null
+          created_at?: string
+          id?: string
+          purchased_at?: string
+          stripe_session_id?: string | null
+          tier_product_id: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competition_id?: string | null
+          created_at?: string
+          id?: string
+          purchased_at?: string
+          stripe_session_id?: string | null
+          tier_product_id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_credits_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_levels: {
         Row: {
           banner_url: string | null

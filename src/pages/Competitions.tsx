@@ -60,11 +60,9 @@ export default function Competitions() {
 
   // Subscription enforcement for organizers (admins bypass)
   const { user } = useAuth();
-  const myCompetitions = isAdmin ? competitions : competitions?.filter(c => c.created_by === user?.id);
-  const competitionCount = myCompetitions?.length ?? 0;
-  const limit = isAdmin ? -1 : subscription.competitionLimit; // admins have no limit
-  const isAtLimit = limit !== -1 && competitionCount >= limit;
-  const needsSubscription = !isAdmin && !subscription.subscribed;
+  const creditsAvailable = isAdmin ? 999 : subscription.creditsAvailable;
+  const isAtLimit = !isAdmin && creditsAvailable <= 0;
+  const needsSubscription = !isAdmin && subscription.creditsTotal === 0;
 
   const onSubmit = (data: CompetitionFormValues) => {
     if (needsSubscription) {
@@ -73,7 +71,7 @@ export default function Competitions() {
     }
 
     if (isAtLimit) {
-      toast.error(`You've reached your plan limit of ${limit} competitions. Upgrade your plan to create more.`);
+      toast.error("You have no competition credits remaining. Purchase more from the billing page.");
       return;
     }
 
@@ -206,18 +204,18 @@ export default function Competitions() {
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && isAtLimit && (
+      {canManage && !isAdmin && subscription.creditsTotal > 0 && isAtLimit && (
         <Alert className="mb-4 border-secondary/30 bg-secondary/5">
           <AlertDescription className="text-sm">
-            You've used {competitionCount}/{limit} competitions on your <strong>{subscription.tier?.name}</strong> plan.{" "}
-            <Link to="/admin" className="text-secondary underline font-medium">Upgrade</Link> for more.
+            You have no competition credits remaining.{" "}
+            <Link to="/admin" className="text-secondary underline font-medium">Purchase more</Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && !isAtLimit && limit !== -1 && (
+      {canManage && !isAdmin && subscription.creditsAvailable > 0 && (
         <p className="text-xs text-muted-foreground mb-4 font-mono">
-          {competitionCount}/{limit} competitions used • {subscription.tier?.name}
+          {subscription.creditsAvailable} competition credit{subscription.creditsAvailable !== 1 ? "s" : ""} available
         </p>
       )}
 
