@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
     // Send email via Resend
     if (resendApiKey) {
       const roleLabel =
-        role === "judge" ? "Judge"
+        role === "organizer" ? "Organizer"
+        : role === "judge" ? "Judge"
         : role === "tabulator" ? "Tabulator"
         : role === "chief_judge" ? "Chief Judge"
         : role === "witness" ? "Witness"
