@@ -1,40 +1,47 @@
 
 
-## Plan: Add Masquerade Links to Staff Roster
+## Fix Blank Rendering in Browser Automation
 
-### What
-Add a "View as" (masquerade) button to each staff member row in the competition's Staff Roster tab, allowing admins to quickly impersonate a staff member's dashboard. This complements the existing masquerade feature in AdminUsers.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Approach
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Update `StaffRow` component in `SubEventAssignments.tsx`**
-- Accept the current user's admin status and the `startMasquerade` function (from `useAuth`)
-- For staff who have **accepted** their invitation (meaning they have a platform account), show an `Eye` icon button in the action area
-- Clicking it calls `startMasquerade` with the staff member's email and name, then navigates to `/dashboard`
-- Need to resolve the staff member's `user_id` — query profiles by email to get `user_id`, or look it up from `sub_event_assignments` data
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. Resolve user_id for accepted staff**
-- Accepted staff have joined the platform. We can look up their `user_id` from the `profiles` table by matching `email`
-- Add a small lookup: when an admin clicks "View as", fetch the profile by email to get the `user_id`, then call `startMasquerade`
-- Alternatively, store/cache user_ids from assignable users already fetched
+---
 
-**3. Wire up in `SubEventAssignments`**
-- Import `useAuth` and `useNavigate` at the component level
-- Pass `hasRole("admin")`, `startMasquerade`, and `navigate` down to `StaffRow`
-- Only show the masquerade button for admins and only for accepted staff (who have platform accounts)
+### Fix 1: Conditionally apply auditorium filter
 
-**4. UI placement**
-- Add the `Eye` button next to the existing Invite/Resend/Delete buttons in each `StaffRow`
-- Style consistently with the existing masquerade button in `AdminUsers.tsx`
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Technical Details
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-- **File**: `src/components/competition/SubEventAssignments.tsx`
-  - Import `useAuth` from `@/contexts/AuthContext`, `useNavigate` from `react-router-dom`, `Eye` from `lucide-react`
-  - In the main component, get `hasRole, startMasquerade` from `useAuth()` and `navigate` from `useNavigate()`
-  - Extend `StaffRowProps` with `isAdmin`, `onMasquerade` callback
-  - In `StaffRow`, for accepted invitations, add an Eye button that triggers a profile lookup by email → then calls `onMasquerade({ userId, email, fullName })` → then navigates to `/dashboard`
-  - The lookup can use `supabase.from("profiles").select("user_id").eq("email", inv.email).maybeSingle()` inline on click
+### Fix 2: Remove filter class when at defaults
 
-No database changes required — this uses the existing masquerade infrastructure and profile data.
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

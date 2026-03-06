@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatRoleName } from "@/lib/utils";
 import {
   useSubEventAssignments,
@@ -32,7 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["judge", "tabulator"] as const;
 
@@ -47,6 +49,9 @@ interface Props {
 }
 
 export function SubEventAssignments({ competitionId, competitionName }: Props) {
+  const { hasRole, startMasquerade } = useAuth();
+  const navigate = useNavigate();
+  const isAdmin = hasRole("admin");
   const { data: levels } = useLevels(competitionId);
   const { data: assignableUsers } = useAssignableUsers();
   const addAssignment = useAddAssignment();
@@ -60,6 +65,21 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const deleteInvitation = useDeleteInvitation();
   const { data: invitations } = useStaffInvitations(competitionId);
   const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
+
+  const handleMasquerade = async (inv: StaffInvitation) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("email", inv.email)
+      .maybeSingle();
+    if (!profile?.user_id) return;
+    await startMasquerade({
+      userId: profile.user_id,
+      email: inv.email,
+      fullName: inv.name || inv.email,
+    });
+    navigate("/dashboard");
+  };
 
   // Staff roster form
   const [staffName, setStaffName] = useState("");
@@ -268,8 +288,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                       onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
-                      sendingInvite={sendInvite.isPending}
-                    />
+                       sendingInvite={sendInvite.isPending}
+                       isAdmin={isAdmin}
+                       onMasquerade={handleMasquerade}
+                     />
                   ))}
                 </div>
               </CardContent>
@@ -296,8 +318,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                       onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
-                      sendingInvite={sendInvite.isPending}
-                    />
+                       sendingInvite={sendInvite.isPending}
+                       isAdmin={isAdmin}
+                       onMasquerade={handleMasquerade}
+                     />
                   ))}
                 </div>
               </CardContent>
@@ -323,8 +347,10 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                       onAddSubEvent={(subEventId) => addStaffSubEvent.mutate({ staffInvitationId: inv.id, subEventId, competitionId })}
                       onRemoveSubEvent={(id) => removeStaffSubEvent.mutate({ id, competitionId })}
                       onDelete={() => deleteInvitation.mutate({ id: inv.id, competitionId })}
-                      sendingInvite={false}
-                    />
+                       sendingInvite={false}
+                       isAdmin={isAdmin}
+                       onMasquerade={handleMasquerade}
+                     />
                   ))}
                 </div>
               </CardContent>
@@ -592,9 +618,11 @@ interface StaffRowProps {
   onRemoveSubEvent: (id: string) => void;
   onDelete: () => void;
   sendingInvite: boolean;
+  isAdmin?: boolean;
+  onMasquerade?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite, isAdmin, onMasquerade }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
@@ -672,6 +700,17 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {isAdmin && inv.accepted_at && onMasquerade && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs gap-1 text-muted-foreground hover:text-primary"
+              onClick={() => onMasquerade(inv)}
+              title={`View as ${inv.name || inv.email}`}
+            >
+              <Eye className="h-3.5 w-3.5" /> View as
             </Button>
           )}
         </div>
