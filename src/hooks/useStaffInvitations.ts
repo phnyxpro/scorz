@@ -70,13 +70,16 @@ export function useStaffInvitations(competitionId: string | undefined) {
   });
 }
 
-/** Add staff member to roster without sending invite */
+/** Add staff member to roster, auto-create account, and send notification */
 export function useAddStaffMember() {
   const qc = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, email, phone, role, competitionId, isChief }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; isChief?: boolean }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId, competitionName, isChief, levelName, subEventNames }: {
+      name?: string; email: string; phone?: string; role: AppRole; competitionId: string;
+      competitionName?: string; isChief?: boolean; levelName?: string; subEventNames?: string[];
+    }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
@@ -87,6 +90,7 @@ export function useAddStaffMember() {
           competition_id: competitionId,
           invited_by: user?.id,
           is_chief: isChief || false,
+          invited_at: new Date().toISOString(),
         })
         .select()
         .single() as any);
@@ -97,11 +101,28 @@ export function useAddStaffMember() {
         }
         throw error;
       }
+
+      // Auto-create account and send notification email
+      try {
+        await supabase.functions.invoke("send-staff-invite", {
+          body: {
+            email,
+            role,
+            competition_name: competitionName || "",
+            competition_id: competitionId,
+            level_name: levelName || "",
+            sub_event_names: subEventNames || [],
+          },
+        });
+      } catch (emailErr) {
+        console.error("Failed to send staff notification:", emailErr);
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["staff_invitations", variables.competitionId] });
-      toast({ title: "Staff added", description: `${variables.email} added as ${variables.role}` });
+      toast({ title: "Staff added & notified", description: `${variables.email} added as ${variables.role} and notification sent.` });
     },
     onError: (error: any) => {
       toast({ title: "Error adding staff", description: error.message, variant: "destructive" });
