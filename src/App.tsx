@@ -56,6 +56,9 @@ const UpdatesHub = lazy(() => import("./pages/UpdatesHub"));
 const ContestantFeedback = lazy(() => import("./pages/ContestantFeedback"));
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
 const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const HelpCategory = lazy(() => import("./pages/HelpCategory"));
+const HelpArticle = lazy(() => import("./pages/HelpArticle"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -98,6 +101,9 @@ const App = () => (
                 <Route path="/events/:id" element={<PublicEventDetail />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/help/:category" element={<HelpCategory />} />
+                <Route path="/help/:category/:slug" element={<HelpArticle />} />
                 <Route path="/welcome" element={<MagicLinkLanding />} />
                 <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
                 <Route path="/audience-events" element={<ProtectedPage><AudienceEvents /></ProtectedPage>} />

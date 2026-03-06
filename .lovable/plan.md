@@ -1,108 +1,47 @@
 
 
-# Knowledge Base — Public Help Centre
+## Fix Blank Rendering in Browser Automation
 
-## Overview
-Create a public, no-login-required Knowledge Base at `/help` with documentation rendered from `.md` files, organized by role and workflow. Each article supports screenshot placeholders and embedded video sections. A search bar and sidebar navigation let visitors find content quickly.
+The app appears blank in headless browser testing due to two compounding issues:
 
-## Structure
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-```text
-/help                  → Knowledge Base landing (category grid)
-/help/:category/:slug  → Individual article page
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-src/
-  content/
-    help/
-      getting-started/
-        platform-overview.md
-        creating-an-account.md
-        choosing-your-role.md
-      organiser/
-        creating-a-competition.md
-        managing-registrations.md
-        building-rubrics.md
-        assigning-staff.md
-        ticketing-and-voting.md
-      judge/
-        scoring-a-performance.md
-        using-the-timer.md
-        certifying-scorecards.md
-      tabulator/
-        tabulator-dashboard.md
-        timing-performances.md
-        certifying-results.md
-      contestant/
-        registering-for-events.md
-        managing-your-profile.md
-        viewing-feedback.md
-      audience/
-        browsing-events.md
-        buying-tickets.md
-        peoples-choice-voting.md
-```
-
-Each `.md` file uses front-matter for metadata:
-```markdown
----
-title: "Creating a Competition"
-category: "Organiser"
-order: 1
-video: ""  # paste YouTube/Loom URL when ready
 ---
 
-## Step 1: Navigate to Events
-![Step 1 screenshot](/help-images/organiser/create-comp-step1.png)
-...
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-## Pages & Components
+This ensures no filter is applied when properties are unset, which is the default state.
 
-1. **`/help` — HelpCenter.tsx** (public route, no `ProtectedPage` wrapper)
-   - Hero section with search input
-   - Category grid cards (Getting Started, Organiser, Judge, Tabulator, Contestant, Audience)
-   - Each card links to `/help/:category`
-   - Footer link from the landing page
+---
 
-2. **`/help/:category/:slug` — HelpArticle.tsx**
-   - Sidebar listing all articles in category (with active highlight)
-   - Markdown rendered to HTML via a lightweight parser (use existing prose styling)
-   - Screenshot images rendered as bordered, rounded figures with captions
-   - Video embed section: if `video` front-matter is set, render responsive iframe; otherwise show a "Video coming soon" placeholder
-   - Prev/Next article navigation at bottom
+### Summary
 
-3. **`/help/:category` — HelpCategory.tsx**
-   - Lists all articles in that category as cards with title + excerpt
-   - Redirects to first article or shows the list
-
-4. **Markdown rendering utility** (`src/lib/markdown.ts`)
-   - Parse front-matter (title, category, order, video)
-   - Convert markdown to HTML (simple regex-based or use existing tiptap prose styling)
-   - Image tags get wrapped in `<figure>` with placeholder fallback
-
-5. **Search** — client-side filter across all article titles and content
-
-## Routing Changes (App.tsx)
-Add three public routes (no `ProtectedPage` wrapper, similar to `/about`):
-```
-/help          → HelpCenter
-/help/:category → HelpCategory  
-/help/:category/:slug → HelpArticle
-```
-
-## Navigation
-- Add "Help" link to the public landing page header/footer
-- Add a `BookOpen` icon link in the app sidebar (visible to all roles)
-
-## Media Approach
-- Create `public/help-images/` directory with subdirectories per category
-- Markdown `![alt](path)` tags render as styled figures with rounded borders and captions
-- Empty/missing images show a grey placeholder with "Screenshot coming soon"
-- Video front-matter renders as a responsive 16:9 iframe embed, or a styled placeholder card
-
-## File Count
-- ~6 new page/component files
-- ~18 markdown content files (starter docs with placeholder content)
-- 1 markdown parser utility
-- Route + nav updates
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
