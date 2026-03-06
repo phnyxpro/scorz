@@ -33,7 +33,7 @@ const SIGNIN_ROLES: { role: SigninRole; label: string; desc: string; icon: typeo
 ];
 
 const DEMO_ACCOUNTS = [
-  { role: "Organizer", email: "organizer@demo.scorz.app", password: "demo1234", color: "bg-primary/10 text-primary" },
+  { role: "Organiser", email: "organizer@demo.scorz.app", password: "demo1234", color: "bg-primary/10 text-primary" },
   { role: "Chief Judge", email: "chief_judge@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
   { role: "Judge", email: "judge@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },
   { role: "Tabulator", email: "tabulator@demo.scorz.app", password: "demo1234", color: "bg-accent/10 text-accent" },

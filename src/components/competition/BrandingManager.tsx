@@ -70,7 +70,7 @@ export function BrandingManager({ competitionId, competition }: BrandingManagerP
             <Palette className="h-5 w-5 text-primary" />
             <CardTitle className="text-base">Custom Branding</CardTitle>
           </div>
-          <CardDescription>Customize colors, fonts, and logo for this competition's public event page.</CardDescription>
+          <CardDescription>Customise colours, fonts, and logo for this competition's public event page.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Competition Logo */}

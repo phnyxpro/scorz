@@ -249,7 +249,7 @@ export default function About() {
               Simple, transparent pricing
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              Plans for every organizer
+              Plans for every organiser
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Whether you're running a local talent show or a national championship, Scorz scales with you.

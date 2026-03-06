@@ -101,7 +101,7 @@ export const TIERS: SubscriptionTier[] = [
     description: "One premium competition with white-label branding, API access, and dedicated support",
     limits: { organizers: 15, judges: 20, tabulators: 15 },
     features: [
-      "Up to 15 organizers",
+      "Up to 15 organisers",
       "Up to 20 judges",
       "Up to 15 tabulators",
       "Everything in Pro",
