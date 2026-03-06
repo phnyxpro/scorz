@@ -93,7 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSubscription = useCallback(async () => {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
+      if (error) {
+        // Silently fail — don't log errors for expired sessions
+        setSubscription(DEFAULT_SUB);
+        return;
+      }
       if (data) {
         const tier = data.product_id ? getTierByProductId(data.product_id) : undefined;
         setSubscription({
@@ -105,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           competitionLimit: tier ? tier.competitionLimit : 0,
         });
       }
-    } catch (err) {
-      console.error("Error checking subscription:", err);
+    } catch {
+      // Silently fail
       setSubscription(DEFAULT_SUB);
     }
   }, []);
