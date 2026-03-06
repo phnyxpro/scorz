@@ -1,47 +1,42 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add General Penalties and Disqualification Rules
 
-The app appears blank in headless browser testing due to two compounding issues:
+The current system only supports time-based penalty tiers (stored in `penalty_rules`). We need a new table for general penalties/disqualifications that are not time-related — things like "Using Props: -20 pts" or "Plagiarism: Disqualification".
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Database Change
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**New table: `competition_infractions`**
 
----
+| Column | Type | Default |
+|---|---|---|
+| id | uuid | gen_random_uuid() |
+| competition_id | uuid | NOT NULL |
+| category | text | 'penalty' | — `penalty` or `disqualification` |
+| title | text | NOT NULL |
+| description | text | NULL |
+| penalty_points | numeric | 0 | — points deducted (0 for disqualifications) |
+| sort_order | integer | 0 |
+| created_at | timestamptz | now() |
+| updated_at | timestamptz | now() |
 
-### Fix 1: Conditionally apply auditorium filter
+RLS: Same pattern as `penalty_rules` — admins/organizers can manage, anyone can view.
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Code Changes
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**1. `src/hooks/useCompetitions.ts`**
+- Add `Infraction` interface, `useInfractions` query hook, `useCreateInfraction`, `useUpdateInfraction`, `useDeleteInfraction` mutations.
 
-### Fix 2: Remove filter class when at defaults
+**2. `src/components/competition/PenaltyConfig.tsx`**
+- Below the existing time penalty tiers, add two new sections: **General Penalties** and **Disqualification Rules**.
+- Each section lists existing rules with delete buttons and has an "Add" form (title, description, points for penalties / title+description for disqualifications).
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**3. `src/pages/PenaltiesPage.tsx`**
+- Expand the public-facing penalties page to show three sections: Time Penalties (existing), General Penalties, and Disqualification Rules, each in its own card.
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**4. `src/components/public/PublicRubric.tsx`** (if infractions are shown there)
+- No changes needed — the standalone Penalties page handles display.
 
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### No scoring engine changes needed
+These infractions are applied manually by the chief judge (via the existing penalty adjustment flow or future infraction-tracking UI) rather than auto-calculated like time penalties.
 
