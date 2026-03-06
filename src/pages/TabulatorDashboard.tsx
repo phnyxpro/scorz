@@ -10,6 +10,7 @@ import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator,
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
+import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
@@ -185,6 +186,15 @@ export default function TabulatorDashboard() {
               {isCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
               Tabulator {isCertified ? "Certified" : "Pending"}
             </Badge>
+          </div>
+
+          {/* Judge activity indicator */}
+          <div className="mb-4">
+            <JudgeActivityIndicator
+              subEventId={selectedSubEventId}
+              allScores={allScores}
+              contestantCount={Object.keys(scoresByContestant).length}
+            />
           </div>
 
           <Tabs defaultValue="summary" className="space-y-4">
