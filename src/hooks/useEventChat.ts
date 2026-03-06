@@ -141,11 +141,14 @@ export function useEventChat(competitionId: string | undefined) {
           qc.invalidateQueries({ queryKey });
           qc.invalidateQueries({ queryKey: ["chat-unread", competitionId] });
 
-          // Browser notification for messages from others
+          // Sound + browser notification for messages from others
           const newMsg = payload.new;
-          if (newMsg && newMsg.sender_id !== user?.id && "Notification" in window && Notification.permission === "granted") {
-            const body = newMsg.message_type === "text" ? newMsg.content : newMsg.message_type === "voice" ? "🎙️ Voice note" : `📎 ${newMsg.file_name || "File"}`;
-            new Notification("New message in Event Chat", { body: body || "New message", icon: "/logo.png", tag: `chat-${newMsg.id}` });
+          if (newMsg && newMsg.sender_id !== user?.id) {
+            playNotificationSound();
+            if ("Notification" in window && Notification.permission === "granted") {
+              const body = newMsg.message_type === "text" ? newMsg.content : newMsg.message_type === "voice" ? "🎙️ Voice note" : `📎 ${newMsg.file_name || "File"}`;
+              new Notification("New message in Event Chat", { body: body || "New message", icon: "/logo.png", tag: `chat-${newMsg.id}` });
+            }
           }
         }
       )
