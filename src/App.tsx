@@ -54,7 +54,8 @@ const CheckInHub = lazy(() => import("./pages/CheckInHub"));
 const TicketsHub = lazy(() => import("./pages/TicketsHub"));
 const UpdatesHub = lazy(() => import("./pages/UpdatesHub"));
 const ContestantFeedback = lazy(() => import("./pages/ContestantFeedback"));
-
+const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
+const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
