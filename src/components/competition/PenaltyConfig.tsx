@@ -45,7 +45,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-primary" />
+          <ShieldAlert className="h-5 w-5 text-secondary" />
           <CardTitle className="text-base">Penalty Configuration</CardTitle>
         </div>
         <CardDescription>Define time limits and penalty tiers for contestants who exceed their allotted performance time.</CardDescription>
