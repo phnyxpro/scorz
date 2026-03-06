@@ -544,6 +544,15 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Send className="h-3 w-3 mr-1" /> Resend
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-primary"
+            onClick={() => onEdit(inv)}
+            title="Edit staff member"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
           {!inv.accepted_at && (
             <Button
               variant="ghost"
