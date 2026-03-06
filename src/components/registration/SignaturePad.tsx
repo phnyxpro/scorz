@@ -125,6 +125,7 @@ export function SignaturePad({
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasDrawn(true);
+    hasDrawnRef.current = true;
   };
 
   const endDraw = () => {
