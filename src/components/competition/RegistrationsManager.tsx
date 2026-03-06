@@ -162,9 +162,14 @@ export function RegistrationsManager({ competitionId }: Props) {
                 {registrations?.length || 0} total · {pendingCount} pending approval
               </p>
             </div>
-            <Button size="sm" onClick={() => setShowWalkIn(true)}>
-              <UserPlus className="h-3.5 w-3.5 mr-1" /> Walk-in Add
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => navigate(`/register/${competitionId}?behalf=true`)}>
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
