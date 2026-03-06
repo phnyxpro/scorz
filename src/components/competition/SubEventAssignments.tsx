@@ -451,56 +451,126 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                     </>
                   )}
 
-                  {/* Current assignments table */}
-                  {assignments && assignments.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Assignments</h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead className="w-12" />
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {assignments.map((a) => (
-                            <TableRow key={a.id}>
-                              <TableCell className="text-sm">{userName(a.user_id)}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-1.5">
-                                  <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
-                                    {formatRoleName(a.role)}
+                  {/* Current assignments table — platform users + roster staff */}
+                  {(() => {
+                    const rosterForSubEvent = (invitations || []).filter(inv => {
+                      const ises = (invitationSubEvents || []).filter(ise => ise.staff_invitation_id === inv.id);
+                      return ises.some(ise => ise.sub_event_id === selectedSubEventId);
+                    });
+                    const hasAssignments = (assignments && assignments.length > 0) || rosterForSubEvent.length > 0;
+
+                    if (!hasAssignments) {
+                      return (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          No users assigned to this sub-event yet.
+                        </p>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-2 pt-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Assignments</h3>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>User</TableHead>
+                              <TableHead>Role</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="w-12" />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {assignments?.map((a) => (
+                              <TableRow key={a.id}>
+                                <TableCell className="text-sm">{userName(a.user_id)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
+                                      {formatRoleName(a.role)}
+                                    </Badge>
+                                    {(a as any).is_chief && (
+                                      <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
+                                        <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
+                                    <CheckCircle className="h-2.5 w-2.5" /> Active
                                   </Badge>
-                                  {(a as any).is_chief && (
-                                    <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
-                                      <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive"
+                                    onClick={() => removeAssignment.mutate({ id: a.id, sub_event_id: a.sub_event_id })}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            {rosterForSubEvent.map((inv) => (
+                              <TableRow key={`roster-${inv.id}`} className="opacity-80">
+                                <TableCell className="text-sm">
+                                  <div>
+                                    <span>{inv.name || inv.email}</span>
+                                    {inv.name && <span className="text-xs text-muted-foreground ml-1.5">({inv.email})</span>}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge className={roleColors[inv.role] || "bg-muted text-muted-foreground"}>
+                                      {formatRoleName(inv.role)}
+                                    </Badge>
+                                    {inv.is_chief && (
+                                      <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">
+                                        <ShieldCheck className="h-2.5 w-2.5" /> Chief
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {inv.accepted_at ? (
+                                    <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
+                                      <CheckCircle className="h-2.5 w-2.5" /> Accepted
+                                    </Badge>
+                                  ) : inv.invited_at ? (
+                                    <Badge variant="outline" className="text-[10px] py-0 h-4 gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400">
+                                      <Clock className="h-2.5 w-2.5" /> Invited
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] py-0 h-4 gap-1 text-muted-foreground">
+                                      Not Invited
                                     </Badge>
                                   )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive"
-                                  onClick={() => removeAssignment.mutate({ id: a.id, sub_event_id: a.sub_event_id })}
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-
-                  {assignments && assignments.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      No users assigned to this sub-event yet.
-                    </p>
-                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {(() => {
+                                    const ise = (invitationSubEvents || []).find(
+                                      i => i.staff_invitation_id === inv.id && i.sub_event_id === selectedSubEventId
+                                    );
+                                    return ise ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-destructive"
+                                        onClick={() => removeStaffSubEvent.mutate({ id: ise.id, competitionId })}
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </Button>
+                                    ) : null;
+                                  })()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </CardContent>
