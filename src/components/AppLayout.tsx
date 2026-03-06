@@ -76,6 +76,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             <AuditoriumControls />
             <NotificationCenter />
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base">
+              <BookOpen className="h-4 w-4" />
+            </Button>
             {hasRole("admin") && (
               <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
                 <Shield className="h-4 w-4" />
