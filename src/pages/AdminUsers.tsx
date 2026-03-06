@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatRoleName } from "@/lib/utils";
 import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
