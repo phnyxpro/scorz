@@ -213,6 +213,7 @@ function SubEventWorkspace({
         gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
         contestants={seContestants}
         onDurationChange={setPerformanceDuration}
+        onContestantChange={onContestantChange}
       />
 
       {/* Scoring Progress + Judge Activity */}
