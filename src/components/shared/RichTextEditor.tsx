@@ -703,6 +703,20 @@ export function RichTextEditor({
         </div>
       )}
 
+      {/* Ruler */}
+      {editable && showRuler && (
+        <EditorRuler
+          leftMargin={leftMargin}
+          rightMargin={rightMargin}
+          firstLineIndent={firstLineIndent}
+          onLeftMarginChange={setLeftMargin}
+          onRightMarginChange={setRightMargin}
+          onFirstLineIndentChange={setFirstLineIndent}
+          tabStops={tabStops}
+          onTabStopsChange={setTabStops}
+        />
+      )}
+
       {/* Floating Bubble Menu on text selection */}
       {editor && editable && (
         <BubbleMenu
@@ -756,7 +770,18 @@ export function RichTextEditor({
         </BubbleMenu>
       )}
 
-      <EditorContent editor={editor} />
-    </div>
+      {/* Editor content with margins applied */}
+      <style>{`
+        .editor-margins .ProseMirror {
+          padding-left: ${leftMargin}px !important;
+          padding-right: ${rightMargin}px !important;
+        }
+        .editor-margins .ProseMirror p {
+          text-indent: ${firstLineIndent}px;
+        }
+      `}</style>
+      <div className="editor-margins">
+        <EditorContent editor={editor} />
+      </div>
   );
 }
