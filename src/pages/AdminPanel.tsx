@@ -72,7 +72,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
           {user.roles.length === 0 && <span className="text-xs text-muted-foreground italic">No roles assigned</span>}
           {user.roles.map((role) => (
             <Badge key={role} variant="outline" className={`${roleBadgeColor[role] || ""} text-xs gap-1`}>
-              {role.replace("_", " ")}
+              {role.replace("_", " ").replace("organizer", "organiser")}
               <button onClick={() => handleRevoke(role)} disabled={busy} className="ml-0.5 hover:text-destructive transition-colors" title={`Revoke ${role}`}>
                 <X className="h-3 w-3" />
               </button>
