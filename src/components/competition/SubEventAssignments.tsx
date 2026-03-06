@@ -150,7 +150,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                   <SelectContent>
                     {ASSIGNABLE_ROLES.map((r) => (
-                      <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>
+                      <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
