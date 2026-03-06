@@ -2,7 +2,7 @@ import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tier
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Eye, Mic, Heart, HelpCircle, Mail } from "lucide-react";
+import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail } from "lucide-react";
 import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -49,22 +49,15 @@ const ROLES = [
   {
     icon: Trophy,
     title: "Tabulator",
-    description: "Aggregate scores, audit votes, and prepare official rankings.",
+    description: "Aggregate scores, time performances, audit votes, and verify process integrity.",
     features: [
+      "Time each performance and flag overruns",
       "View side-by-side score comparisons",
       "Audit individual judge votes for discrepancies",
+      "Observe and verify scoring integrity",
       "Generate master score sheets per level",
-      "Certify digital-vs-physical score match",
-    ],
-  },
-  {
-    icon: Eye,
-    title: "Witness",
-    description: "Independently verify the fairness and accuracy of the process.",
-    features: [
-      "Observe scoring in real time",
       "Log observations and flag concerns",
-      "Digitally sign witness certification",
+      "Certify digital-vs-physical score match",
     ],
   },
   {
@@ -101,7 +94,7 @@ const FAQ = [
   },
   {
     q: "Can I assign different staff to different events?",
-    a: "Absolutely. You can assign judges, chief judges, tabulators, and witnesses per sub-event. Each person only sees the events they're assigned to, keeping things organized and secure.",
+    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organized and secure.",
   },
   {
     q: "Is my scoring data secure?",
@@ -185,7 +178,7 @@ export default function About() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
           {[
             { title: "Real-Time Scoring", desc: "Judges score on any device. Results update instantly—no waiting, no manual tallying." },
-            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator, witness—gets exactly the tools they need and nothing more." },
+            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator—gets exactly the tools they need and nothing more." },
             { title: "End-to-End Integrity", desc: "Digital signatures, audit trails, and tie-break protocols ensure every result is defensible." },
           ].map((item, i) => (
             <motion.div key={item.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.12 }}>
@@ -204,7 +197,7 @@ export default function About() {
               Built for every role
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              One platform, seven roles, zero confusion
+              One platform, six roles, zero confusion
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
               From the organizer setting up the event to the audience casting their vote, every participant gets a tailored experience.

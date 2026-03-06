@@ -13,7 +13,6 @@ import { LucideIcon } from "lucide-react";
  * - `chief_judge`: Oversees a judging panel. Can score, monitor other judges, and certify final event results.
  * - `judge`: Assigned to sub-events to provide scores to contestants based on defined rubrics.
  * - `tabulator`: Reviews certified scores, calculates aggregate results, and manages publication.
- * - `witness`: An independent observer assigned to monitor the integrity of the event. Read-only access.
  * - `contestant`: A participant registered for one or more events.
  * - `audience`: A general user who can view public events and participate in voting.
  */
