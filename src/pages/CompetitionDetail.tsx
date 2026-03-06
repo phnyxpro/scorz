@@ -151,6 +151,14 @@ export default function CompetitionDetail() {
     }
   }, [comp]);
 
+  // Mark initial load complete after first comp data arrives
+  useEffect(() => {
+    if (comp && initialLoadRef.current) {
+      // Delay to let state settle from the comp useEffect above
+      setTimeout(() => { initialLoadRef.current = false; }, 500);
+    }
+  }, [comp]);
+
   const handleSave = async () => {
     if (!id) return;
     update.mutate({ id, name, description, start_date: startDate || undefined, end_date: endDate || undefined, status });
