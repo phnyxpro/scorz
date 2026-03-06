@@ -12,10 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { User, Bell, Shield, Palette, Sun, Moon, Save, KeyRound } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { User, Bell, Shield, Palette, Sun, Moon, Save, KeyRound, Trash2 } from "lucide-react";
 
 export default function Settings() {
-  const { user, roles } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const { isDark, toggleTheme, brightness, setBrightness, contrast, setContrast } = useTheme();
   const queryClient = useQueryClient();
 
@@ -266,6 +267,53 @@ export default function Settings() {
                 </div>
                 <Badge variant="outline" className="text-[10px]">Current</Badge>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Danger Zone ── */}
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-lg text-destructive">Danger Zone</CardTitle>
+              <CardDescription>Permanently delete your account and all associated data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                This will permanently delete your profile, registrations, scores, tickets, assignments, and certifications. This action cannot be undone.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-1.5">
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete My Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your account and all your data including scores, registrations, tickets, and certifications. This action cannot be reversed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase.rpc("delete_user_account", { _user_id: user!.id });
+                          if (error) throw error;
+                          toast({ title: "Account deleted", description: "Your data has been permanently removed." });
+                          await signOut();
+                        } catch (e: any) {
+                          toast({ title: "Error", description: e.message, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Delete Everything
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </TabsContent>
