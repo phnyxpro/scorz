@@ -233,7 +233,9 @@ export default function ContestantRegistration() {
   useEffect(() => {
     if (user && !isOnBehalf) {
       methods.setValue("email", user.email || "");
-      methods.setValue("fullName", user.user_metadata?.full_name || "");
+      const fullName = user.user_metadata?.full_name || "";
+      methods.setValue("firstName", fullName.split(" ")[0] || "");
+      methods.setValue("lastName", fullName.split(" ").slice(1).join(" ") || "");
     }
   }, [user, methods, isOnBehalf]);
 
