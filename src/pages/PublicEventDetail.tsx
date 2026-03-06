@@ -151,8 +151,17 @@ export default function PublicEventDetail() {
       <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></span>
+            {(comp as any).white_label && (comp as any).branding_logo_url ? (
+              <>
+                <img src={(comp as any).branding_logo_url} alt={comp.name} className="h-7 w-7 rounded" />
+                <span className="font-bold tracking-tight text-foreground text-lg">{comp.name}</span>
+              </>
+            ) : (
+              <>
+                <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+                <span className="font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></span>
+              </>
+            )}
           </Link>
           <div className="flex items-center gap-2">
             {socialLinks && <SocialLinks links={socialLinks} />}
