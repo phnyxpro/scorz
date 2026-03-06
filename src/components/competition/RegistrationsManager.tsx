@@ -54,6 +54,32 @@ export function RegistrationsManager({ competitionId }: Props) {
   const firstLevelId = allLevelIds[0];
   const { data: subEventsFirst } = useSubEvents(firstLevelId);
 
+  // Fetch performance slots for all registrations in this competition
+  const regIds = registrations?.map(r => r.id) || [];
+  const { data: slotsData } = useQuery({
+    queryKey: ["performance_slots_for_regs", competitionId, regIds.length],
+    enabled: regIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("id, contestant_registration_id, start_time, end_time, sub_event_id")
+        .in("contestant_registration_id", regIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Map registration id -> slot
+  const slotsByRegId = useMemo(() => {
+    const map: Record<string, { id: string; start_time: string; end_time: string }> = {};
+    slotsData?.forEach(s => {
+      if (s.contestant_registration_id) {
+        map[s.contestant_registration_id] = { id: s.id, start_time: s.start_time, end_time: s.end_time };
+      }
+    });
+    return map;
+  }, [slotsData]);
+
   const filtered = useMemo(() => {
     if (!registrations) return [];
     let list = [...registrations];
