@@ -218,6 +218,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
+          <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
