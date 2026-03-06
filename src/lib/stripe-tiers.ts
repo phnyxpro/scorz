@@ -73,8 +73,8 @@ export const TIERS: SubscriptionTier[] = [
     highlight: true,
     features: [
       "Everything in Start",
-      "Advanced analytics (coming soon)",
-      "Custom branding (coming soon)",
+      "Advanced analytics",
+      "Custom branding",
       "Priority support",
       "Audience voting",
       "Ticketing system",
@@ -88,10 +88,10 @@ export const TIERS: SubscriptionTier[] = [
     description: "One premium competition with white-label branding, API access, and dedicated support",
     features: [
       "Everything in Pro",
-      "White-label branding (coming soon)",
-      "API access (coming soon)",
+      "White-label branding",
+      "API access",
       "Dedicated support",
-      "Custom integrations (coming soon)",
+      "Custom integrations",
     ],
   },
 ];
