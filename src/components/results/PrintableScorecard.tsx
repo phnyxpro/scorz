@@ -147,6 +147,7 @@ export function PrintableScorecard({
               </div>
               <div className="meta">
                 Raw: {score.raw_total.toFixed(1)}
+                {score.time_penalty > 0 && ` • Penalty: -${score.time_penalty}`}
               </div>
               {score.comments && <div className="comments">"{score.comments}"</div>}
               {score.is_certified && (

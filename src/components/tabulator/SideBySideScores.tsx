@@ -34,6 +34,8 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                 <TableHead key={n} className="text-center text-xs">{n}</TableHead>
               ))}
               <TableHead className="text-center">Raw</TableHead>
+              <TableHead className="text-center">Penalty</TableHead>
+              <TableHead className="text-center font-bold">Final</TableHead>
               <TableHead className="text-center">Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -54,6 +56,10 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(1)}</TableCell>
+                  <TableCell className="text-center font-mono text-xs text-destructive">
+                    {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
+                  </TableCell>
+                  <TableCell className="text-center font-mono font-bold">{s.final_score}</TableCell>
                   <TableCell className="text-center">
                     {s.is_certified ? (
                       <CheckCircle className="h-3.5 w-3.5 text-secondary inline-block" />
@@ -83,7 +89,17 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
               })}
               <TableCell className="text-center font-mono text-xs">
                 {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.raw_total, 0) / scores.filter(s => s.is_certified).length).toFixed(1)
+                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.raw_total, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
+                  : "—"}
+              </TableCell>
+              <TableCell className="text-center font-mono text-xs text-destructive">
+                {scores.filter(s => s.is_certified).length > 0
+                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.time_penalty, 0) / scores.filter(s => s.is_certified).length).toFixed(1)
+                  : "—"}
+              </TableCell>
+              <TableCell className="text-center font-mono font-bold">
+                {scores.filter(s => s.is_certified).length > 0
+                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.final_score, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
                   : "—"}
               </TableCell>
               <TableCell />
