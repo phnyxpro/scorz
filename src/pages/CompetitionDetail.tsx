@@ -367,7 +367,7 @@ export default function CompetitionDetail() {
                   <BookOpen className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base">Scoring Rubric</CardTitle>
                 </div>
-                <CardDescription>Upload a rubric PDF or build scoring criteria below for judges to use during evaluation.</CardDescription>
+                <CardDescription>Upload a rubric document (PDF, DOCX, TXT) or build scoring criteria below for judges to use during evaluation.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <DocumentUpload
