@@ -1,47 +1,49 @@
 
 
-## Fix Blank Rendering in Browser Automation
+# Fix: Active Scoring Control and Judge Card Sections
 
-The app appears blank in headless browser testing due to two compounding issues:
+## Root Cause
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+The database schema is missing columns that the UI components rely on. The code uses `as any` type casts to bypass TypeScript, but the actual database columns don't exist, so all updates silently fail.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**Missing from `competitions` table:**
+- `active_scoring_level_id` (UUID, nullable, FK to `competition_levels`)
+- `active_scoring_sub_event_id` (UUID, nullable, FK to `sub_events`)
 
----
+**Missing from `sub_events` table:**
+- `timer_visible` (boolean, default true)
+- `comments_visible` (boolean, default true)
 
-### Fix 1: Conditionally apply auditorium filter
+## Plan
 
-**File: `src/contexts/ThemeContext.tsx`**
+### 1. Database migration — add missing columns
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+Single migration adding all four columns:
 
-### Fix 2: Remove filter class when at defaults
+```sql
+ALTER TABLE public.competitions
+  ADD COLUMN active_scoring_level_id UUID REFERENCES public.competition_levels(id) ON DELETE SET NULL,
+  ADD COLUMN active_scoring_sub_event_id UUID REFERENCES public.sub_events(id) ON DELETE SET NULL;
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+ALTER TABLE public.sub_events
+  ADD COLUMN timer_visible BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN comments_visible BOOLEAN NOT NULL DEFAULT true;
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+### 2. Remove `as any` casts in code
 
----
+Once the types regenerate with the new columns, remove the `as any` casts in:
+- `ScoringSettingsManager.tsx` (lines updating `timer_visible` / `comments_visible`)
+- `useCompetitions.ts` (line 255-258, updating `active_scoring_level_id` / `active_scoring_sub_event_id`)
+- `CompetitionDetail.tsx` (where `comp?.active_scoring_level_id` is accessed — ensure the `Competition` interface in `useCompetitions.ts` already has these optional fields, which it does)
 
-### Summary
+### 3. Fix forwardRef warning
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+The console warning "Function components cannot be given refs" is from Radix TabsContent trying to forward a ref to `ScoringSettingsManager`. This is a non-breaking warning but can be silenced by wrapping it in a `<div>` inside `TabsContent`, which is already the pattern for other tabs. The current scoring tab content at lines 498-507 just needs a wrapper div.
+
+### Files changed
+- **Migration SQL** — add 4 columns
+- `src/components/competition/ScoringSettingsManager.tsx` — remove `as any` casts
+- `src/hooks/useCompetitions.ts` — remove `as any` cast on active scoring update
+- `src/pages/CompetitionDetail.tsx` — wrap scoring tab content in a `<div>`
 
