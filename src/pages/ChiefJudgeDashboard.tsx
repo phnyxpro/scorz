@@ -283,6 +283,7 @@ export default function ChiefJudgeDashboard() {
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
+              <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
             </TabsList>
 
