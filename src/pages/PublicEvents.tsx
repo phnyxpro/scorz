@@ -43,6 +43,9 @@ export default function PublicEvents() {
           <div className="flex items-center gap-2">
             <InstallPWA />
             <Button asChild size="sm" variant="ghost">
+              <Link to="/help">Knowledge Base</Link>
+            </Button>
+            <Button asChild size="sm" variant="ghost">
               <Link to="/about">About</Link>
             </Button>
             {user ? (

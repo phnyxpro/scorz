@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, Eye, X } from "lucide-react";
+import { LogOut, User, Shield, Eye, X, BookOpen } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { mainNavItems } from "@/lib/navigation";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -76,6 +76,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             <AuditoriumControls />
             <NotificationCenter />
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base">
+              <BookOpen className="h-4 w-4" />
+            </Button>
             {hasRole("admin") && (
               <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
                 <Shield className="h-4 w-4" />
