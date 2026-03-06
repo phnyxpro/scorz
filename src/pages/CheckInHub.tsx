@@ -158,9 +158,9 @@ export default function CheckInHub() {
           </Card>
 
           {/* Tickets table */}
-          <Card>
-            <CardContent className="pt-6">
-              <Table>
+           <Card>
+            <CardContent className="pt-6 overflow-x-auto">
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ticket #</TableHead>

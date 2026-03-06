@@ -271,8 +271,8 @@ export default function Auth() {
                       <div className="space-y-2">
                         {DEMO_ACCOUNTS.map((acc) => (
                           <button key={acc.email} type="button" onClick={() => fillDemoCredentials(acc.email, acc.password)} className="w-full flex items-center justify-between gap-2 rounded-md border border-border/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors group">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Badge variant="secondary" className={`text-[10px] shrink-0 ${acc.color}`}>{acc.role}</Badge>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+                              <Badge variant="secondary" className={`text-[10px] shrink-0 w-fit ${acc.color}`}>{acc.role}</Badge>
                               <span className="text-xs text-muted-foreground truncate font-mono">{acc.email}</span>
                             </div>
                             {copiedEmail === acc.email ? <Check className="h-3 w-3 text-green-500 shrink-0" /> : <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />}
