@@ -75,9 +75,10 @@ export default function ContestantRegistration() {
   const [authData, setAuthData] = useState({ email: "", password: "", fullName: "" });
 
   const availableSteps = useMemo(() => {
+    if (isOnBehalf) return STEPS.filter(s => s.id !== "account");
     if (user) return STEPS.filter(s => s.id !== "account");
     return STEPS;
-  }, [user]);
+  }, [user, isOnBehalf]);
 
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
