@@ -390,7 +390,14 @@ export function RichTextEditor({
             active={editor.isActive("heading", { level: 3 })}
             title="Heading 3"
           >
-            <Heading3 className="h-3.5 w-3.5" />
+          <Heading3 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            active={editor.isActive("paragraph")}
+            title="Paragraph"
+          >
+            <Pilcrow className="h-3.5 w-3.5" />
           </ToolbarButton>
 
           <Divider />
