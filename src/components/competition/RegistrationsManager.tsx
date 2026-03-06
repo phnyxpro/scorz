@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
