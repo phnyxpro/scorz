@@ -112,6 +112,13 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Email Preview Dialog */}
+      <EmailPreviewDialog
+        inv={previewInv}
+        competitionName={competitionName}
+        onClose={() => setPreviewInv(null)}
+      />
+
       {/* Tier Limits Progress — hidden for admins (unlimited) */}
       {!isAdmin && tierLimits && staffCounts && (
         <Card className="border-border/50 bg-card/80">
