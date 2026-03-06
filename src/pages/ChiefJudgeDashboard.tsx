@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText, MessageSquare } from "lucide-react";
 import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { motion } from "framer-motion";
 
