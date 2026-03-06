@@ -353,6 +353,18 @@ export default function ChiefJudgeDashboard() {
         </motion.div>
       )}
 
+      {/* Production Chat */}
+      <Collapsible className="mt-4">
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full gap-2 text-xs">
+            <MessageSquare className="h-4 w-4" /> Production Chat
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <EventChat competitionId={competitionId!} />
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Certify Dialog */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
         <DialogContent>

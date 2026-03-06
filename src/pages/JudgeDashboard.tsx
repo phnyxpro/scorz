@@ -101,6 +101,18 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                     );
                 })}
             </div>
+
+            {/* Event Chat */}
+            <Collapsible>
+                <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full gap-2 text-xs">
+                        <MessageSquare className="h-4 w-4" /> Production Chat
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                    <EventChat competitionId={competition.id} />
+                </CollapsibleContent>
+            </Collapsible>
         </div>
     );
 }
