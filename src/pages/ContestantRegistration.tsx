@@ -625,7 +625,7 @@ function LegalStep({ competitionId }: { competitionId: string }) {
 
           {isMinor && (
             <div className="space-y-2">
-              <SignaturePad label="Guardian Signature *" onSignature={v => setValue("guardianSig", v)} />
+              <SignaturePad label="Guardian Signature *" onSignature={v => setValue("guardianSig", v)} signerRole="Guardian" />
               {errors.guardianSig && <p className="text-xs text-destructive">{errors.guardianSig.message}</p>}
             </div>
           )}
