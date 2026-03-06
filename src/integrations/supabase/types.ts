@@ -405,6 +405,8 @@ export type Database = {
       }
       competitions: {
         Row: {
+          active_scoring_level_id: string | null
+          active_scoring_sub_event_id: string | null
           banner_url: string | null
           branding_accent_color: string | null
           branding_font: string | null
@@ -433,6 +435,8 @@ export type Database = {
           white_label: boolean
         }
         Insert: {
+          active_scoring_level_id?: string | null
+          active_scoring_sub_event_id?: string | null
           banner_url?: string | null
           branding_accent_color?: string | null
           branding_font?: string | null
@@ -461,6 +465,8 @@ export type Database = {
           white_label?: boolean
         }
         Update: {
+          active_scoring_level_id?: string | null
+          active_scoring_sub_event_id?: string | null
           banner_url?: string | null
           branding_accent_color?: string | null
           branding_font?: string | null
@@ -488,7 +494,22 @@ export type Database = {
           voting_enabled?: boolean
           white_label?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitions_active_scoring_level_id_fkey"
+            columns: ["active_scoring_level_id"]
+            isOneToOne: false
+            referencedRelation: "competition_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_active_scoring_sub_event_id_fkey"
+            columns: ["active_scoring_sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contestant_registrations: {
         Row: {
@@ -1186,6 +1207,7 @@ export type Database = {
       sub_events: {
         Row: {
           banner_url: string | null
+          comments_visible: boolean
           created_at: string
           end_time: string | null
           event_date: string | null
@@ -1198,11 +1220,13 @@ export type Database = {
           status: string
           ticket_price: number | null
           ticketing_type: string
+          timer_visible: boolean
           updated_at: string
           voting_enabled: boolean
         }
         Insert: {
           banner_url?: string | null
+          comments_visible?: boolean
           created_at?: string
           end_time?: string | null
           event_date?: string | null
@@ -1215,11 +1239,13 @@ export type Database = {
           status?: string
           ticket_price?: number | null
           ticketing_type?: string
+          timer_visible?: boolean
           updated_at?: string
           voting_enabled?: boolean
         }
         Update: {
           banner_url?: string | null
+          comments_visible?: boolean
           created_at?: string
           end_time?: string | null
           event_date?: string | null
@@ -1232,6 +1258,7 @@ export type Database = {
           status?: string
           ticket_price?: number | null
           ticketing_type?: string
+          timer_visible?: boolean
           updated_at?: string
           voting_enabled?: boolean
         }

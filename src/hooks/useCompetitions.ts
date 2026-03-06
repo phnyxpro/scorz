@@ -255,7 +255,7 @@ export function useUpdateActiveScoringConfig() {
         .update({ 
           active_scoring_level_id: levelId,
           active_scoring_sub_event_id: subEventId 
-        } as any)
+        })
         .eq("id", competitionId);
       if (error) throw error;
     },
