@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -93,7 +94,7 @@ export default function Competitions() {
     );
   };
 
-  if (isLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (isLoading) return <CardGridSkeleton cards={3} />;
 
   return (
     <div>

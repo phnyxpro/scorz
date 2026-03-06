@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,7 +86,7 @@ export default function FinanceDashboard() {
     });
 
     if (isLoading) {
-        return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading financial data...</div>;
+        return <DashboardSkeleton />;
     }
 
     const { totalRevenue, totalRegistrations, monthlyData, recentTransactions } = stats || { totalRevenue: 0, totalRegistrations: 0, monthlyData: [], recentTransactions: [] };

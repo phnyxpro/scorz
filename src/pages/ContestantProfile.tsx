@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ProfileSkeleton } from "@/components/shared/PageSkeletons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -92,11 +93,7 @@ export default function ContestantProfile() {
       : 0;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!registrations || registrations.length === 0) {

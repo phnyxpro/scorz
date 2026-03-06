@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,7 +139,7 @@ export default function AdminUsers() {
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           {loading ? (
-            <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-mono">Loading users…</div>
+            <TableSkeleton rows={5} cols={4} />
           ) : (
             <Table>
               <TableHeader>

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -148,7 +149,7 @@ export default function MasterScoreSheet() {
   const exportFilename = `master-sheet-${data?.subEvent?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
   if (isLoading) {
-    return <div className="text-muted-foreground font-mono text-sm animate-pulse p-8">Loading master sheet…</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!data?.subEvent) {

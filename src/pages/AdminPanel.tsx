@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
 import { useQuery } from "@tanstack/react-query";
@@ -191,7 +192,7 @@ export default function AdminPanel() {
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {loading ? (
-                <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-mono">Loading users…</div>
+                <TableSkeleton rows={5} cols={5} />
               ) : (
                 <Table>
                   <TableHeader>

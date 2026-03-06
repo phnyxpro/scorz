@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { DetailPageSkeleton } from "@/components/shared/PageSkeletons";
 import { useCompetition, useUpdateCompetition, useCreateRubricCriterion, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -175,7 +176,7 @@ export default function CompetitionDetail() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (isLoading || authLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (isLoading || authLoading) return <DetailPageSkeleton />;
   if (!comp) return <div className="text-muted-foreground">Competition not found</div>;
 
   return (

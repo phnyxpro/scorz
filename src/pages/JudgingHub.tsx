@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { Link } from "react-router-dom";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
@@ -122,7 +123,7 @@ export function JudgingHubContent() {
     [overview?.rubric]
   );
 
-  if (compsLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (compsLoading) return <CardGridSkeleton cards={3} />;
 
   return (
     <div className="space-y-6">
