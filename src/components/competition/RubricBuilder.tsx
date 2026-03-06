@@ -110,6 +110,12 @@ function SortableTableRow({
         <Controller control={control} name={`criteria.${index}.guidelines`} render={({ field: f }) => (
           <Textarea {...f} className="text-xs min-h-[48px] resize-none" placeholder="Guidelines / subtext..." rows={2} />
         )} />
+        <Controller control={control} name={`criteria.${index}.weight_percent`} render={({ field: f }) => (
+          <div className="flex items-center gap-1.5">
+            <Input {...f} type="number" min={0} max={100} className="h-7 text-xs w-20 font-mono" placeholder="0" />
+            <span className="text-[10px] text-muted-foreground">% weight</span>
+          </div>
+        )} />
       </TableCell>
       {SCALE_POINTS.map((n) => (
         <TableCell key={n}>
