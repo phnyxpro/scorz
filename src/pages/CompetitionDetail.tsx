@@ -24,7 +24,7 @@ import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
