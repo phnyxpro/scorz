@@ -55,7 +55,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                       {mapped[n] != null ? mapped[n] : "—"}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center font-mono text-xs">{s.raw_total}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(1)}</TableCell>
                   <TableCell className="text-center font-mono text-xs text-destructive">
                     {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                   </TableCell>
