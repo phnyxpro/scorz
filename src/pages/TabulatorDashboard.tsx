@@ -698,7 +698,6 @@ export default function TabulatorDashboard() {
             </div>
           </DialogContent>
         </Dialog>
-      )
       )}
     </div>
   );
