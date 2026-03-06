@@ -496,14 +496,16 @@ export default function CompetitionDetail() {
         </TabsContent>
 
         <TabsContent value="scoring">
-          {comp && (
-            <ActiveScoringManager
-              competitionId={id!}
-              activeLevelId={comp?.active_scoring_level_id}
-              activeSubEventId={comp?.active_scoring_sub_event_id}
-            />
-          )}
-          <ScoringSettingsManager competitionId={id!} />
+          <div className="space-y-6">
+            {comp && (
+              <ActiveScoringManager
+                competitionId={id!}
+                activeLevelId={comp?.active_scoring_level_id}
+                activeSubEventId={comp?.active_scoring_sub_event_id}
+              />
+            )}
+            <ScoringSettingsManager competitionId={id!} />
+          </div>
         </TabsContent>
 
         <TabsContent value="sponsors">

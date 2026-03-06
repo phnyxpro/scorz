@@ -52,7 +52,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     try {
       const { error } = await supabase
         .from("competitions")
-        .update({ scoring_method: value } as any)
+        .update({ scoring_method: value })
         .eq("id", competitionId);
       if (error) {
         setScoringMethod(prev);
