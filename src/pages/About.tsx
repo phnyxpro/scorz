@@ -344,6 +344,20 @@ export default function About() {
         </div>
       </section>
 
+      {/* ── Help Centre CTA ── */}
+      <section className="border-t border-border/40 py-16 text-center px-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <BookOpen className="h-5 w-5 text-secondary" />
+          <h2 className="text-xl font-bold text-foreground">Need help getting started?</h2>
+        </div>
+        <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+          Browse our Knowledge Base for step-by-step guides, walkthroughs, and video tutorials for every role.
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/help">Browse Knowledge Base <ArrowRight className="h-4 w-4 ml-1" /></Link>
+        </Button>
+      </section>
+
       {/* ── Contact ── */}
       <section className="border-t border-border/40 py-16 text-center px-4">
         <div className="flex items-center justify-center gap-2 mb-2">
