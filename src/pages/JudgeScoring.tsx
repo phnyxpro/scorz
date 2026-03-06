@@ -115,6 +115,14 @@ export default function JudgeScoring() {
     }
   }, [existingScore]);
 
+  // Auto-populate duration from tabulator recordings (avg across tabulators)
+  useEffect(() => {
+    if (selectedContestant && perfDurations && !existingScore?.performance_duration_seconds) {
+      const avg = getAvgDuration(perfDurations, selectedContestant);
+      if (avg > 0) setDuration(avg);
+    }
+  }, [selectedContestant, perfDurations, existingScore?.performance_duration_seconds]);
+
   const calculatePenalty = useCallback((durationSecs: number): number => {
     if (!penalties?.length) return 0;
     let totalPenalty = 0;
