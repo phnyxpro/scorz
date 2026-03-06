@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     }
 
     // Generate magic link
-    const siteUrl = req.headers.get("origin") || "https://scorz.lovable.app";
+    const siteUrl = "https://scorz.lovable.app";
     let magicLinkUrl = `${siteUrl}/auth`;
 
     try {
