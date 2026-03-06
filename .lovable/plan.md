@@ -1,47 +1,82 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Billing Model Change: Per-Competition Pricing
 
-The app appears blank in headless browser testing due to two compounding issues:
+### What changes
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+**1. Pricing model shift** — from "per month" to "per competition"
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+| Tier | Old | New |
+|---|---|---|
+| Start Scorz | $15/month (5 comps) | $15/competition |
+| Pro Scorz | $49/month (20 comps) | $49/competition |
+| Enterprise Scorz | $149/month (unlimited) | $149/competition |
 
----
+The `competitionLimit` field becomes irrelevant with per-competition pricing. Instead, each purchase unlocks one competition. The Stripe products will need to be changed from `mode: "subscription"` to `mode: "payment"` (one-off) in the checkout flow.
 
-### Fix 1: Conditionally apply auditorium filter
+**2. USD disclaimer** — Add "All prices quoted in USD" subtext beneath the pricing grids on both the About page and the BillingPanel.
 
-**File: `src/contexts/ThemeContext.tsx`**
+**3. Geolocation currency display** — Use the browser's `navigator.language` or `Intl` API to detect locale and show an approximate local currency equivalent (e.g., "~€14" or "~R275") next to the USD price. This is display-only; actual charges remain in USD via Stripe.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**4. Feature audit against platform** — Evaluate each listed feature per tier against what's actually built:
 
-### Fix 2: Remove filter class when at defaults
+| Feature | Tier | Implemented? |
+|---|---|---|
+| Unlimited contestants | Start | Yes — no cap enforced |
+| Full rubric builder | Start | Yes — `RubricBuilder.tsx` |
+| Digital scoring | Start | Yes — `JudgeScoring.tsx` |
+| Basic analytics | Start | Partial — dashboard stats exist but no dedicated analytics page |
+| Advanced analytics | Pro | Not implemented — no analytics beyond basic dashboard |
+| Custom branding | Pro | Partial — banner upload exists, no per-competition branding controls |
+| Priority support | Pro | Not implemented (operational, not code) |
+| Audience voting | Pro | Yes — `PublicVotingForm.tsx`, `useAudienceVoting.ts` |
+| Ticketing system | Pro | Yes — `TicketsHub.tsx`, `AudienceTicketForm.tsx` |
+| White-label branding | Enterprise | Not implemented |
+| API access | Enterprise | Not implemented |
+| Dedicated support | Enterprise | Not implemented (operational) |
+| Custom integrations | Enterprise | Not implemented |
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+### Files to update
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**`src/lib/stripe-tiers.ts`**
+- Remove `competitionLimit` from the interface
+- Change descriptions from "/month" to "/competition"
+- Update feature lists to reflect per-competition model and flag unimplemented features with "(coming soon)"
+- Add a helper constant for the USD disclaimer text
 
-### Fix 3: Update CSS to use filter only when properties exist
+**`src/components/admin/BillingPanel.tsx`**
+- Change `/month` label to `/competition`
+- Add USD disclaimer below the tier grid
+- Add approximate local currency using `Intl.NumberFormat` with the user's locale
+- Change checkout `mode` from `"subscription"` to `"payment"` — or keep as-is if Stripe products are still set to recurring (this depends on how Stripe products are configured)
 
-**File: `src/index.css`**
+**`src/pages/About.tsx`**
+- Change `/month` to `/competition` in the pricing section
+- Add USD disclaimer
+- Add locale-based currency approximation
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+**`supabase/functions/create-checkout/index.ts`**
+- Change `mode: "subscription"` to `mode: "payment"` for one-off per-competition purchases
+- Remove the "already has active subscription" check since users can buy multiple times
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
+**`supabase/functions/check-subscription/index.ts`**
+- Adapt to check for completed payments/charges rather than active subscriptions, or track purchased competition credits in a database table
 
-This ensures no filter is applied when properties are unset, which is the default state.
+**`src/contexts/AuthContext.tsx`**
+- Remove `competitionLimit` from `SubscriptionStatus`
+- Replace with a credit-based or purchase-count model
 
----
+**`src/pages/Competitions.tsx`**
+- Update the enforcement logic from "subscription limit" to "purchased credits remaining"
 
-### Summary
+### Important consideration
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Switching from subscriptions to one-off payments is a significant architectural change. The current Stripe products are configured as recurring subscriptions. New Stripe products/prices would need to be created as one-time prices, or the existing ones reconfigured. This also means the `check-subscription` function needs to be rethought — instead of checking for active subscriptions, it would need to track how many competitions a user has purchased vs. created.
+
+A simple approach: add a `competition_credits` table that tracks purchased credits and deducts when a competition is created.
+
+### Technical details
+
+- Currency approximation: Use `fetch("https://open.er-api.com/v6/latest/USD")` or a similar free exchange rate API from an edge function, cached daily. Fallback: show USD only.
+- Alternatively, use `Intl.NumberFormat(navigator.language, { style: "currency", currency: detectedCurrency })` with a static approximation table for major currencies to avoid an external API dependency.
 
