@@ -64,7 +64,7 @@ export const TIERS: SubscriptionTier[] = [
     description: "One competition with all core features—perfect for small events",
     limits: { organizers: 2, judges: 7, tabulators: 2 },
     features: [
-      "Up to 2 organizers",
+      "Up to 2 organisers",
       "Up to 7 judges",
       "Up to 2 tabulators",
       "Unlimited contestants",
