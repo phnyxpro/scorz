@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { JudgingHubContent } from "@/pages/JudgingHub";
+import { ActivityFeed } from "@/components/shared/ActivityFeed";
 
 const container = {
   hidden: { opacity: 0 },
@@ -300,6 +301,13 @@ export default function Dashboard() {
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Activity Feed for admins/organizers */}
+          {(isAdmin || hasRole("organizer")) && (
+            <div className="mb-6">
+              <ActivityFeed />
             </div>
           )}
 
