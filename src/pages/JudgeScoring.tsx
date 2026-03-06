@@ -6,6 +6,8 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
+import { ReadOnlyTimer } from "@/components/scoring/ReadOnlyTimer";
+import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
 import { SpeechComments } from "@/components/scoring/SpeechComments";
 import { SignaturePad } from "@/components/registration/SignaturePad";
@@ -67,6 +69,8 @@ export default function JudgeScoring() {
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
   const { data: myScores } = useMyScores(subEventId || undefined);
+  const { data: perfDurations } = usePerformanceDurations(subEventId || undefined);
+  useDurationsRealtime(subEventId || undefined);
 
   // Build lookup: contestant_registration_id -> score status
   const scoreStatusMap = useMemo(() => {
@@ -110,6 +114,14 @@ export default function JudgeScoring() {
       setComments("");
     }
   }, [existingScore]);
+
+  // Auto-populate duration from tabulator recordings (avg across tabulators)
+  useEffect(() => {
+    if (selectedContestant && perfDurations && !existingScore?.performance_duration_seconds) {
+      const avg = getAvgDuration(perfDurations, selectedContestant);
+      if (avg > 0) setDuration(avg);
+    }
+  }, [selectedContestant, perfDurations, existingScore?.performance_duration_seconds]);
 
   const calculatePenalty = useCallback((durationSecs: number): number => {
     if (!penalties?.length) return 0;
@@ -353,12 +365,12 @@ export default function JudgeScoring() {
                 </Card>
               )}
 
-              {timerVisible && (
-                <PerformanceTimer
+              {timerVisible && subEventId && (
+                <ReadOnlyTimer
+                  subEventId={subEventId}
                   timeLimitSeconds={timeLimitSecs}
                   gracePeriodSeconds={gracePeriodSecs}
-                  onDurationChange={setDuration}
-                  disabled={isCertified}
+                  contestantName={(regId) => filteredContestants.find(r => r.id === regId)?.full_name ?? "Unknown"}
                 />
               )}
 
