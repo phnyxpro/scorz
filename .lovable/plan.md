@@ -1,47 +1,31 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Problem
 
-The app appears blank in headless browser testing due to two compounding issues:
+The `--primary` color is set to `var(--brand-charcoal)` (dark gray) in both light and dark modes. When used as a hover color (`hover:text-primary`, `group-hover:text-primary`), it blends into the dark background in dark mode, creating poor contrast — as visible in the uploaded screenshot where card titles on hover become nearly invisible.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+## Solution
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+Replace all `hover:text-primary` and `group-hover:text-primary` instances on text/links with `hover:text-accent` (orange) or `hover:text-secondary` (green), following the existing color-coding convention:
 
----
+- **Public-facing / event cards / general links**: use `hover:text-accent` (orange) — matches the brand accent already used for the "Z" in SCORZ and action CTAs
+- **Competition operations links** (contestant profiles, score sheets, results): use `hover:text-secondary` (green) — aligns with the dashboard color-coding for competition/operations items
 
-### Fix 1: Conditionally apply auditorium filter
+### Files to update (~18 files, ~105 occurrences)
 
-**File: `src/contexts/ThemeContext.tsx`**
+| Context | Hover color | Files |
+|---|---|---|
+| Public event cards, audience pages | `text-accent` | `PublicEvents.tsx`, `AudienceEvents.tsx`, `PublicEventDetail.tsx` |
+| Dashboard cards | `text-accent` | `Dashboard.tsx` |
+| Contestant profile links | `text-secondary` | `CompetitionContestants.tsx`, `ContestantProfilesHub.tsx` |
+| Score/results links | `text-secondary` | `Results.tsx`, `ResultsHub.tsx`, `MasterScoreSheet.tsx`, `LevelMasterSheet.tsx` |
+| Tabulator/chief-judge links | `text-secondary` | `SideBySideScores.tsx`, `ScoreSummaryTable.tsx`, `PanelMonitor.tsx`, `PenaltyReview.tsx` |
+| Upload/document hover | `text-accent` | `DocumentUpload.tsx` |
+| Misc (NotFound, etc.) | `text-accent` | `NotFound.tsx` |
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+### Implementation
 
-### Fix 2: Remove filter class when at defaults
+A global find-and-replace of `hover:text-primary` → `hover:text-accent` and `group-hover:text-primary` → `group-hover:text-accent` as the default, then selectively switch competition/operations links to `hover:text-secondary` / `group-hover:text-secondary` per the table above. Border hovers like `hover:border-primary/50` will also be updated to match (`hover:border-accent/50`).
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+No CSS variable changes needed — this is purely a Tailwind class swap.
 
