@@ -310,7 +310,7 @@ export default function CompetitionDetail() {
                 <FileText className="h-5 w-5 text-primary" />
                 <CardTitle className="text-base">Competition Rules</CardTitle>
               </div>
-              <CardDescription>Add an external rules URL or upload a PDF document that contestants and judges can reference.</CardDescription>
+              <CardDescription>Add an external rules URL or upload a document (PDF, DOCX, TXT) that contestants and judges can reference.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
