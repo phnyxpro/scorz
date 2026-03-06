@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, Eye, X } from "lucide-react";
+import { LogOut, User, Shield, Eye, X, BookOpen } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { mainNavItems } from "@/lib/navigation";
 import { GlobalSearch } from "@/components/GlobalSearch";
