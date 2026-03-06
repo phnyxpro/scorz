@@ -304,6 +304,13 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Activity Feed for admins/organizers */}
+          {(isAdmin || hasRole("organizer")) && (
+            <div className="mb-6">
+              <ActivityFeed />
+            </div>
+          )}
+
           <motion.div
             variants={container}
             initial="hidden"
