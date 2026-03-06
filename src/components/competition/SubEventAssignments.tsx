@@ -378,6 +378,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
   const [isChief, setIsChief] = useState(false);
+  const [confirmingEmailChange, setConfirmingEmailChange] = useState(false);
 
   useEffect(() => {
     if (inv) {
@@ -386,64 +387,95 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
       setPhone(inv.phone || "");
       setRole(inv.role);
       setIsChief(inv.is_chief);
+      setConfirmingEmailChange(false);
     }
   }, [inv]);
 
   if (!inv) return null;
 
+  const emailChanged = email.trim().toLowerCase() !== inv.email.toLowerCase();
+
+  const handleSave = () => {
+    if (emailChanged && !confirmingEmailChange) {
+      setConfirmingEmailChange(true);
+      return;
+    }
+    setConfirmingEmailChange(false);
+    onSave({
+      name: name.trim() || null,
+      email: email.trim(),
+      phone: phone.trim() || null,
+      role: role as any,
+      is_chief: role === "judge" ? isChief : false,
+    });
+  };
+
   return (
-    <Dialog open={!!inv} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog open={!!inv} onOpenChange={(open) => { if (!open) { setConfirmingEmailChange(false); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-sm font-mono">Edit Staff Member</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3 py-2">
-          <div>
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" placeholder="Full name" />
-          </div>
-          <div>
-            <Label className="text-xs">Email</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} className="h-9 text-sm" type="email" placeholder="Email address" />
-          </div>
-          <div>
-            <Label className="text-xs">Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-9 text-sm" placeholder="Phone (optional)" />
-          </div>
-          <div>
-            <Label className="text-xs">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ASSIGNABLE_ROLES.map(r => (
-                  <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {role === "judge" && (
-            <div className="flex items-center gap-2">
-              <Checkbox id="edit-chief" checked={isChief} onCheckedChange={(c) => setIsChief(!!c)} />
-              <Label htmlFor="edit-chief" className="text-xs">Chief Judge</Label>
+
+        {confirmingEmailChange ? (
+          <div className="grid gap-3 py-2">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Changing the email from <strong>{inv.email}</strong> to <strong>{email.trim()}</strong> will affect authentication and any pending invitations. The previous invitation link will no longer work. Are you sure?
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setConfirmingEmailChange(false)} disabled={saving}>Back</Button>
+              <Button variant="destructive" size="sm" disabled={saving} onClick={handleSave}>
+                {saving ? "Saving…" : "Confirm Change"}
+              </Button>
             </div>
-          )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button
-              size="sm"
-              disabled={saving || !email.trim()}
-              onClick={() => onSave({
-                name: name.trim() || null,
-                email: email.trim(),
-                phone: phone.trim() || null,
-                role: role as any,
-                is_chief: role === "judge" ? isChief : false,
-              })}
-            >
-              {saving ? "Saving…" : "Save Changes"}
-            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="grid gap-3 py-2">
+            <div>
+              <Label className="text-xs">Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" placeholder="Full name" />
+            </div>
+            <div>
+              <Label className="text-xs">Email</Label>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} className="h-9 text-sm" type="email" placeholder="Email address" />
+              {emailChanged && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Changing email requires confirmation
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs">Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-9 text-sm" placeholder="Phone (optional)" />
+            </div>
+            <div>
+              <Label className="text-xs">Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map(r => (
+                    <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {role === "judge" && (
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-chief" checked={isChief} onCheckedChange={(c) => setIsChief(!!c)} />
+                <Label htmlFor="edit-chief" className="text-xs">Chief Judge</Label>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button size="sm" disabled={saving || !email.trim()} onClick={handleSave}>
+                {saving ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
