@@ -59,6 +59,7 @@ export default function JudgeDashboard() {
 }
 
 function CompetitionAssignmentSection({ competition, subEventDetails, myAssignments }: { competition: any, subEventDetails: any[], myAssignments: any[] }) {
+    const unreadCount = useChatUnreadCount(competition.id);
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
