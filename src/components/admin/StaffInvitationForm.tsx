@@ -17,7 +17,9 @@ interface StaffInvitationFormProps {
 }
 
 export function StaffInvitationForm({ competitionId, competitionName }: StaffInvitationFormProps) {
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [role, setRole] = useState<AppRole>("judge");
     const { data: invitations, isLoading } = useStaffInvitations(competitionId);
     const invite = useInviteStaff();
@@ -26,8 +28,10 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
-        await invite.mutateAsync({ email, role, competitionId, competitionName });
+        await invite.mutateAsync({ name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName });
+        setName("");
         setEmail("");
+        setPhone("");
     };
 
     return (
