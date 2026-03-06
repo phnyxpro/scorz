@@ -142,6 +142,28 @@ export function RegistrationsManager({ competitionId }: Props) {
     qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
   };
 
+  const handleSlotTimeUpdate = async (slotId: string, startTime: string, endTime: string) => {
+    const { error } = await supabase
+      .from("performance_slots")
+      .update({ start_time: startTime, end_time: endTime })
+      .eq("id", slotId);
+    if (error) {
+      toast({ title: "Error updating slot", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Slot time updated" });
+      qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+    }
+  };
+
+  const formatSlotTime = (time: string) => {
+    // time is in HH:MM:SS format, display as HH:MM AM/PM
+    const [h, m] = time.split(":");
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${h12}:${m} ${ampm}`;
+  };
+
   const handleWalkInAdd = async () => {
     if (!walkInName || !walkInEmail || !user) return;
     // For walk-ins, the organizer creates the registration on behalf
