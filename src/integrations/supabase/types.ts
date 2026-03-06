@@ -1118,6 +1118,42 @@ export type Database = {
           },
         ]
       }
+      staff_invitation_sub_events: {
+        Row: {
+          created_at: string
+          id: string
+          staff_invitation_id: string
+          sub_event_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          staff_invitation_id: string
+          sub_event_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          staff_invitation_id?: string
+          sub_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitation_sub_events_staff_invitation_id_fkey"
+            columns: ["staff_invitation_id"]
+            isOneToOne: false
+            referencedRelation: "staff_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invitation_sub_events_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_invitations: {
         Row: {
           accepted_at: string | null
@@ -1127,6 +1163,7 @@ export type Database = {
           id: string
           invited_at: string | null
           invited_by: string
+          is_chief: boolean
           name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
@@ -1140,6 +1177,7 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by: string
+          is_chief?: boolean
           name?: string | null
           phone?: string | null
           role: Database["public"]["Enums"]["app_role"]
@@ -1153,6 +1191,7 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by?: string
+          is_chief?: boolean
           name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
