@@ -225,10 +225,10 @@ export default function Dashboard() {
           {isAdmin && stats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
-                { label: "Total Users", value: adminStats.users, icon: Users, color: "text-primary" },
-                { label: "Competitions", value: adminStats.competitions, icon: Trophy, color: "text-primary" },
-                { label: "Active Events", value: adminStats.active, icon: BarChart3, color: "text-primary" },
-                { label: "Registrations", value: adminStats.registrations, icon: UserPlus, color: "text-primary" },
+                { label: "Total Users", value: stats.find(s => s.label === "Users")?.value ?? 0, icon: Users, color: "text-primary" },
+                { label: "Competitions", value: stats.find(s => s.label === "Competitions")?.value ?? 0, icon: Trophy, color: "text-primary" },
+                { label: "Active Events", value: stats.find(s => s.label === "Active")?.value ?? 0, icon: BarChart3, color: "text-primary" },
+                { label: "Registrations", value: stats.find(s => s.label === "Registrations")?.value ?? 0, icon: UserPlus, color: "text-primary" },
               ].map((s) => (
                 <Card key={s.label} className="border-border/50 bg-card/80">
                   <CardContent className="pt-4 pb-3 flex items-center gap-3">
