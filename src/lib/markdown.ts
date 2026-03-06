@@ -61,8 +61,11 @@ export function markdownToHtml(md: string): string {
   // Horizontal rules
   html = html.replace(/^---$/gm, '<hr class="my-6 border-border" />');
 
-  // Images → strip out (no placeholder)
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "");
+  // Images → render as styled figures
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt: string, src: string) => {
+    const caption = alt ? `<figcaption class="px-4 py-2.5 text-xs text-center border-t border-border bg-muted/30 text-muted-foreground">${alt}</figcaption>` : "";
+    return `<figure class="my-6 rounded-xl overflow-hidden border border-border shadow-sm bg-card"><img src="${src}" alt="${alt}" class="w-full h-auto block" loading="lazy" />${caption}</figure>`;
+  });
 
   // Bold & italic
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
