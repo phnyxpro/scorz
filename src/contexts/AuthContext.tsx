@@ -148,6 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchRoles(session.user.id);
 
           if (event === "SIGNED_IN") {
+            // Mark any pending staff invitations as accepted
+            supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(() => {});
+
             assignSignupRole(session.user).then(() =>
               fetchRoles(session.user!.id).then((r) =>
                 fireWelcomeEmail(session.user!, r || [])
