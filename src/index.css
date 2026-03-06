@@ -179,27 +179,10 @@
   font-weight: 600;
 }
 
-/* Preserve inline margin-left from editor indentation */
-.prose [style*="margin-left"] {
-  margin-left: var(--tw-prose-body) !important;
-}
-.prose p,
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
-  /* Allow inline style margin-left to take effect */
-}
-.prose p[style],
-.prose h1[style],
-.prose h2[style],
-.prose h3[style],
-.prose h4[style],
-.prose h5[style],
-.prose h6[style] {
-  margin-left: unset;
+/* Preserve inline styles from editor (indentation, text-indent) */
+.prose :where(p, h1, h2, h3, h4, h5, h6, li, ul, ol)[style] {
+  margin-left: revert;
+  text-indent: revert;
 }
 
 /* Paragraph & line spacing to match editor */
