@@ -83,8 +83,8 @@ export default function ContestantRegistration() {
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: user?.user_metadata?.full_name || "",
-      email: user?.email || "",
+      fullName: isOnBehalf ? "" : (user?.user_metadata?.full_name || ""),
+      email: isOnBehalf ? "" : (user?.email || ""),
       ageCategory: "adult",
       rulesAcknowledged: false,
       contestantSig: "",
