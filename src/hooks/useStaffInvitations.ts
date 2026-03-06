@@ -14,10 +14,43 @@ export interface StaffInvitation {
   role: AppRole;
   competition_id: string;
   sub_event_id: string | null;
+  is_chief: boolean;
   invited_by: string;
   created_at: string;
   accepted_at: string | null;
   invited_at: string | null;
+}
+
+export interface StaffInvitationSubEvent {
+  id: string;
+  staff_invitation_id: string;
+  sub_event_id: string;
+  created_at: string;
+}
+
+export function useStaffInvitationSubEvents(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["staff_invitation_sub_events", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      // Get all invitation IDs for this competition first
+      const { data: invitations } = await (supabase
+        .from("staff_invitations" as any)
+        .select("id")
+        .eq("competition_id", competitionId!) as any);
+
+      if (!invitations?.length) return [] as StaffInvitationSubEvent[];
+
+      const ids = invitations.map((i: any) => i.id);
+      const { data, error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .select("*")
+        .in("staff_invitation_id", ids) as any);
+
+      if (error) throw error;
+      return (data || []) as StaffInvitationSubEvent[];
+    },
+  });
 }
 
 export function useStaffInvitations(competitionId: string | undefined) {
@@ -43,7 +76,7 @@ export function useAddStaffMember() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, email, phone, role, competitionId }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId, isChief }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; isChief?: boolean }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
@@ -53,6 +86,7 @@ export function useAddStaffMember() {
           role,
           competition_id: competitionId,
           invited_by: user?.id,
+          is_chief: isChief || false,
         })
         .select()
         .single() as any);
@@ -111,7 +145,57 @@ export function useSendStaffInvite() {
   });
 }
 
-/** Assign a staff invitation to a sub-event */
+/** Add a sub-event assignment for a staff invitation */
+export function useAddStaffSubEvent() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ staffInvitationId, subEventId, competitionId }: { staffInvitationId: string; subEventId: string; competitionId: string }) => {
+      const { error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .insert({ staff_invitation_id: staffInvitationId, sub_event_id: subEventId }) as any);
+
+      if (error) {
+        if (error.code === "23505") throw new Error("Already assigned to this sub-event.");
+        throw error;
+      }
+      return competitionId;
+    },
+    onSuccess: (competitionId) => {
+      qc.invalidateQueries({ queryKey: ["staff_invitation_sub_events", competitionId] });
+      toast({ title: "Sub-event assigned" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+/** Remove a sub-event assignment from a staff invitation */
+export function useRemoveStaffSubEvent() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, competitionId }: { id: string; competitionId: string }) => {
+      const { error } = await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .delete()
+        .eq("id", id) as any);
+
+      if (error) throw error;
+      return competitionId;
+    },
+    onSuccess: (competitionId) => {
+      qc.invalidateQueries({ queryKey: ["staff_invitation_sub_events", competitionId] });
+      toast({ title: "Sub-event removed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+/** Legacy: Assign a staff invitation to a sub-event (single) */
 export function useAssignStaffToSubEvent() {
   const qc = useQueryClient();
 
@@ -127,7 +211,6 @@ export function useAssignStaffToSubEvent() {
     },
     onSuccess: (competitionId) => {
       qc.invalidateQueries({ queryKey: ["staff_invitations", competitionId] });
-      toast({ title: "Assignment updated" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -141,7 +224,7 @@ export function useInviteStaff() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, email, phone, role, competitionId, competitionName }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; competitionName?: string }) => {
+    mutationFn: async ({ name, email, phone, role, competitionId, competitionName, isChief }: { name?: string; email: string; phone?: string; role: AppRole; competitionId: string; competitionName?: string; isChief?: boolean }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
         .insert({
@@ -152,6 +235,7 @@ export function useInviteStaff() {
           competition_id: competitionId,
           invited_by: user?.id,
           invited_at: new Date().toISOString(),
+          is_chief: isChief || false,
         })
         .select()
         .single() as any);
