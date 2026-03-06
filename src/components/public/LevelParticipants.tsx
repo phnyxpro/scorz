@@ -18,11 +18,11 @@ export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
       let judges: { full_name: string | null }[] = [];
       if (judgeIds.length > 0) {
         // Use safe public_profiles view (no PII)
-        const { data: profiles } = await supabase
+        const { data: profiles } = await (supabase
           .from("public_profiles" as any)
           .select("full_name")
-          .in("user_id", judgeIds);
-        judges = profiles || [];
+          .in("user_id", judgeIds) as any);
+        judges = (profiles || []) as { full_name: string | null }[];
       }
 
       // Use safe public_contestants view (no PII)

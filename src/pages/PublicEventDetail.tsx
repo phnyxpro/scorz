@@ -71,11 +71,11 @@ function useLineup(subEventIds: string[]) {
     enabled: subEventIds.length > 0,
     queryFn: async () => {
       // Use safe public_contestants view (no PII)
-      const { data: contestants, error } = await supabase
+      const { data: contestants, error } = await (supabase
         .from("public_contestants" as any)
         .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id")
         .in("sub_event_id", subEventIds)
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true }) as any);
       if (error) throw error;
 
       // Fetch booked slots to show scheduled times
