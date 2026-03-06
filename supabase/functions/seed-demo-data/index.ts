@@ -251,10 +251,10 @@ serve(async (req) => {
 
     // 10. Create sub-event assignments
     const assignmentRoles = [
-      { userId: userIds.judge, role: "judge" },
-      { userId: userIds.chief_judge, role: "chief_judge" },
-      { userId: userIds.tabulator, role: "tabulator" },
-      { userId: userIds.witness, role: "witness" },
+      { userId: userIds.judge, role: "judge", is_chief: false },
+      { userId: userIds.chief_judge, role: "judge", is_chief: true },
+      { userId: userIds.tabulator, role: "tabulator", is_chief: false },
+      { userId: userIds.witness, role: "witness", is_chief: false },
     ];
     for (const seId of subEventIds) {
       for (const a of assignmentRoles) {
