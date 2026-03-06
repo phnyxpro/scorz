@@ -172,7 +172,6 @@ export function RichTextEditor({
         return doc.body.innerHTML;
       },
     },
-    },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
