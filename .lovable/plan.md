@@ -1,47 +1,50 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Unified Tabulator Dashboard
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Current State
+The tabulator experience is fragmented across three views:
+1. **Dashboard** -- shows `JudgingHubContent` (competition table, levels, judges, contestants with expandable scorecards) plus a "Tabulator Dashboard" button in the header
+2. **TabulatorDashboard** (`/competitions/:id/tabulator`) -- requires navigating to a specific competition first, then selecting level/sub-event to access timer, score summary, side-by-side detail, vote audit, certification, and chat
+3. **WitnessDashboard** -- still exists separately but witness role is now merged into tabulator
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+Tabulators currently bounce between the Dashboard (to see the overview) and the Tabulator Dashboard (to use tools). The goal is one unified page.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Plan
 
----
+**Rebuild `src/pages/TabulatorDashboard.tsx`** into a single cohesive dashboard that combines everything:
 
-### Fix 1: Conditionally apply auditorium filter
+1. **Top section -- Competition selector** (from JudgingHub pattern): searchable competition table showing active/completed competitions. Clicking a competition loads the overview.
 
-**File: `src/contexts/ThemeContext.tsx`**
+2. **Level tabs + Sub-event cards** (from JudgingHub): tabbed levels with sub-event cards showing judges, contestants, status. Each sub-event card gets a "Select" button to activate it as the working sub-event.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+3. **Active sub-event workspace** (when a sub-event is selected): a prominent panel below the overview containing:
+   - Active Scoring Manager banner
+   - Certification chain badges (Chief Judge, Tabulator)
+   - Performance Timer (prominent, with spacebar hint)
+   - Scoring Progress bar + Judge Activity indicator
+   - Tabbed content: Score Summary | Side-by-Side Detail | Vote Audit
+   - Physical match verification + certification controls
+   - Production Chat (collapsible)
 
-### Fix 2: Remove filter class when at defaults
+4. **Certify dialog** -- unchanged
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**Update `src/pages/Dashboard.tsx`**: For tabulators, instead of showing `JudgingHubContent`, show a simple welcome message with a prominent link to the unified Tabulator Dashboard. Remove the separate "Tabulator Dashboard" button from the header since the dashboard itself will redirect tabulators.
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**Update route in `src/App.tsx`**: Add a `/tabulator` route that renders the unified `TabulatorDashboard` (no competition ID required -- the competition selector is built in). Keep the `/competitions/:id/tabulator` route as well for direct linking.
 
-### Fix 3: Update CSS to use filter only when properties exist
+**Remove `src/pages/WitnessDashboard.tsx`** references from routes since witness is merged into tabulator.
 
-**File: `src/index.css`**
+### Technical Approach
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+- Extract `useJudgingOverview` from JudgingHub into a shared hook or import it directly (it's already exported)
+- The unified page will manage two layers of state: competition selection (top) and sub-event selection (workspace)
+- When a sub-event is clicked from the overview cards, it auto-populates the workspace section
+- All existing hooks (realtime subscriptions, certification, scores) remain unchanged
+- The page will be self-contained -- no need to navigate to a separate competition first
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files Changed
+- `src/pages/TabulatorDashboard.tsx` -- major rewrite to unify all features
+- `src/pages/Dashboard.tsx` -- simplify tabulator section
+- `src/App.tsx` -- update `/tabulator` route to render unified dashboard directly
 
