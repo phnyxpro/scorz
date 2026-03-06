@@ -19,6 +19,13 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
     queryKey: ["master_sheet", competitionId, subEventId],
     enabled: !!competitionId && !!subEventId,
     queryFn: async () => {
+      // Competition info (for scoring_method)
+      const { data: competition } = await supabase
+        .from("competitions")
+        .select("scoring_method")
+        .eq("id", competitionId!)
+        .single();
+
       // Sub-event info
       const { data: subEvent } = await supabase
         .from("sub_events")
@@ -64,6 +71,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
         : { data: [] as any[] };
 
       return {
+        scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvent,
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
