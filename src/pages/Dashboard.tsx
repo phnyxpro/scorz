@@ -304,7 +304,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Activity Feed for admins/organizers */}
+          {/* Activity Feed for admins/organisers */}
           {(isAdmin || hasRole("organizer")) && (
             <div className="mb-6">
               <ActivityFeed />

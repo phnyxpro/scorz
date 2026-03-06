@@ -58,7 +58,7 @@ export default function Competitions() {
     defaultValues: { name: "", slug: "", description: "", startDate: "", endDate: "" },
   });
 
-  // Subscription enforcement for organizers (admins bypass)
+  // Subscription enforcement for organisers (admins bypass)
   const { user } = useAuth();
   const creditsAvailable = isAdmin ? 999 : subscription.creditsAvailable;
   const isAtLimit = !isAdmin && creditsAvailable <= 0;
@@ -193,7 +193,7 @@ export default function Competitions() {
         )}
       </div>
 
-      {/* Subscription warnings for organizers */}
+      {/* Subscription warnings for organisers */}
       {canManage && !isAdmin && needsSubscription && (
         <Alert className="mb-4 border-accent/30 bg-accent/5">
           <Lock className="h-4 w-4 text-accent" />

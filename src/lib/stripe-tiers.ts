@@ -64,7 +64,7 @@ export const TIERS: SubscriptionTier[] = [
     description: "One competition with all core features—perfect for small events",
     limits: { organizers: 2, judges: 7, tabulators: 2 },
     features: [
-      "Up to 2 organizers",
+      "Up to 2 organisers",
       "Up to 7 judges",
       "Up to 2 tabulators",
       "Unlimited contestants",
@@ -78,11 +78,11 @@ export const TIERS: SubscriptionTier[] = [
     priceId: "price_1T7t5VERVeYk2KQ9Ul4CAyq7",
     productId: "prod_U65GjQ5kHCWQRe",
     price: 49,
-    description: "One competition with advanced features for serious organizers",
+    description: "One competition with advanced features for serious organisers",
     highlight: true,
     limits: { organizers: 4, judges: 10, tabulators: 4 },
     features: [
-      "Up to 4 organizers",
+      "Up to 4 organisers",
       "Up to 10 judges",
       "Up to 4 tabulators",
       "Everything in Start",
@@ -101,7 +101,7 @@ export const TIERS: SubscriptionTier[] = [
     description: "One premium competition with white-label branding, API access, and dedicated support",
     limits: { organizers: 15, judges: 20, tabulators: 15 },
     features: [
-      "Up to 15 organizers",
+      "Up to 15 organisers",
       "Up to 20 judges",
       "Up to 15 tabulators",
       "Everything in Pro",

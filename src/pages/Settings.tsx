@@ -323,7 +323,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Theme</CardTitle>
-              <CardDescription>Customize your visual experience</CardDescription>
+              <CardDescription>Customise your visual experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="flex items-center justify-between">

@@ -9,7 +9,7 @@ import { LucideIcon } from "lucide-react";
  * Defines the comprehensive set of roles a user can hold within the Scorz platform context.
  * 
  * - `admin`: Platform-wide administrative privileges. Can view/edit all data globally.
- * - `organizer`: The creator/owner of a competition. Manages event settings, registration, and staffing.
+ * - `organizer`: The creator/owner of a competition. Manages event settings, registration, and staffing. (Display: "Organiser")
  * - `chief_judge`: Oversees a judging panel. Can score, monitor other judges, and certify final event results.
  * - `judge`: Assigned to sub-events to provide scores to contestants based on defined rubrics.
  * - `tabulator`: Reviews certified scores, calculates aggregate results, and manages publication.
@@ -56,7 +56,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     { title: "My Profile", desc: "View your contestant profile", icon: Users, color: "text-secondary", to: "/profile", roles: ["contestant"] },
     { title: "Payments", desc: "View ticket sales & revenue", icon: CreditCard, color: "text-accent", to: "/finance", roles: ["organizer", "admin"] },
     { title: "People's Choice", desc: "Manage audience voting", icon: Mic, color: "text-secondary", to: "/peoples-choice", roles: ["organizer", "admin"] },
-    { title: "People's Choice", desc: "Vote for your favorites", icon: Mic, color: "text-secondary", to: "/competitions", roles: ["audience"] },
+    { title: "People's Choice", desc: "Vote for your favourites", icon: Mic, color: "text-secondary", to: "/competitions", roles: ["audience"] },
     { title: "Tickets", desc: "View all ticket sales & details", icon: TicketCheck, color: "text-accent", to: "/tickets-hub", roles: ["organizer", "admin"] },
     { title: "Ticket Check-In", desc: "Check in patrons at events", icon: TicketCheck, color: "text-accent", to: "/check-in", roles: ["organizer", "admin"] },
     { title: "News & Updates", desc: "Post updates for your events", icon: Newspaper, color: "text-secondary", to: "/updates", roles: ["organizer", "admin"] },

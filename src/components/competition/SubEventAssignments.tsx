@@ -162,7 +162,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                     <div className="space-y-2 p-3 rounded-lg border border-border/50 bg-muted/30">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground font-medium">
-                          {selectedRole === "judge" ? "Judges" : selectedRole === "tabulator" ? "Tabulators" : "Organizers"} assigned
+                          {selectedRole === "judge" ? "Judges" : selectedRole === "tabulator" ? "Tabulators" : "Organisers"} assigned
                         </span>
                         <span className="font-mono text-foreground">
                           {selectedRole === "judge" ? staffCounts.judges : selectedRole === "tabulator" ? staffCounts.tabulators : staffCounts.organizers}

@@ -301,7 +301,7 @@ function PersonalStep() {
     <Card className="border-border/50 bg-card/80 backdrop-blur">
       <CardHeader>
         <CardTitle>About You</CardTitle>
-        <CardDescription>Basic details for the competition organizers.</CardDescription>
+        <CardDescription>Basic details for the competition organisers.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">

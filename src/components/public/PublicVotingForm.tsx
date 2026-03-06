@@ -97,7 +97,7 @@ export function PublicVotingForm({ competitionId, levels }: PublicVotingFormProp
       <div className="text-center mb-4">
         <Heart className="h-10 w-10 text-primary mx-auto mb-3" />
         <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-        <p className="text-muted-foreground text-sm mt-1">Vote for your favorite contestant!</p>
+        <p className="text-muted-foreground text-sm mt-1">Vote for your favourite contestant!</p>
       </div>
 
       {/* Level / Sub-event selector */}

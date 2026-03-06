@@ -187,7 +187,7 @@ export default function CompetitionDetail() {
 
   useEffect(() => {
     if (!authLoading && !canConfigure) {
-      toast({ title: "Unauthorized", description: "You don't have permission to access this page.", variant: "destructive" });
+      toast({ title: "Unauthorised", description: "You don't have permission to access this page.", variant: "destructive" });
     }
   }, [authLoading, canConfigure]);
 

@@ -13,7 +13,7 @@ import scorzLogo from "@/assets/scorz-logo.svg";
 const ROLES = [
   {
     icon: Users,
-    title: "Organizer",
+    title: "Organiser",
     description: "Full control over your competition from creation to results.",
     features: [
       "Create & manage competitions, levels, and sub-events",
@@ -76,7 +76,7 @@ const ROLES = [
     title: "Audience",
     description: "Engage with the competition through voting and ticketing.",
     features: [
-      "Cast votes for favorite performers",
+      "Cast votes for favourite performers",
       "Purchase event tickets online",
       "Follow live competition updates and news",
     ],
@@ -90,23 +90,23 @@ const FAQ = [
   },
   {
     q: "How does digital scoring work?",
-    a: "Judges score each contestant using a customizable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
+    a: "Judges score each contestant using a customisable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
   },
   {
     q: "Can I assign different staff to different events?",
-    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organized and secure.",
+    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organised and secure.",
   },
   {
     q: "Is my scoring data secure?",
-    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organizers only see their own competitions, and all certifications are digitally signed and timestamped.",
+    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organisers only see their own competitions, and all certifications are digitally signed and timestamped.",
   },
   {
     q: "Do contestants need an account to register?",
-    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgment, and optional performance slot selection.",
+    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgement, and optional performance slot selection.",
   },
   {
     q: "Can the audience participate?",
-    a: "When enabled, audience members can vote for their favorite contestants and purchase event tickets—all through the public event page. No account required for voting.",
+    a: "When enabled, audience members can vote for their favourite contestants and purchase event tickets—all through the public event page. No account required for voting.",
   },
   {
     q: "What happens if there's a tie?",
@@ -118,7 +118,7 @@ const FAQ = [
   },
   {
     q: "What if I need a custom solution?",
-    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organization's needs, including white-label options, API access, and dedicated support.",
+    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organisation's needs, including white-label options, API access, and dedicated support.",
   },
 ];
 
@@ -200,7 +200,7 @@ export default function About() {
               One platform, six roles, zero confusion
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
-              From the organizer setting up the event to the audience casting their vote, every participant gets a tailored experience.
+              From the organiser setting up the event to the audience casting their vote, every participant gets a tailored experience.
             </p>
           </motion.div>
 
@@ -249,7 +249,7 @@ export default function About() {
               Simple, transparent pricing
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              Plans for every organizer
+              Plans for every organiser
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Whether you're running a local talent show or a national championship, Scorz scales with you.
