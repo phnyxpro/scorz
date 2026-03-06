@@ -5,7 +5,9 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck } from "lucide-react";
+import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck, MessageSquare } from "lucide-react";
+import { EventChat } from "@/components/chat/EventChat";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");
