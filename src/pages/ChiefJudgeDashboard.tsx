@@ -258,6 +258,11 @@ export default function ChiefJudgeDashboard() {
             </CardContent>
           </Card>
 
+          {/* Scoring Progress */}
+          <div className="mb-4">
+            <ScoringProgressBar allScores={allScores} />
+          </div>
+
           {/* Judge Activity Indicator */}
           <JudgeActivityIndicator
             subEventId={selectedSubEventId}
