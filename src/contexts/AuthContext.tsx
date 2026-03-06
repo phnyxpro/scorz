@@ -135,37 +135,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        // Skip INITIAL_SESSION — getSession() handles it below
+        if (event === "INITIAL_SESSION") return;
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          const loadedRoles = await fetchRoles(session.user.id);
+          // Fire-and-forget: don't block the callback
+          fetchRoles(session.user.id);
+
           if (event === "SIGNED_IN") {
-            await assignSignupRole(session.user);
-            const updatedRoles = await fetchRoles(session.user.id);
-            fireWelcomeEmail(session.user, updatedRoles || loadedRoles || []);
+            assignSignupRole(session.user).then(() =>
+              fetchRoles(session.user!.id).then((r) =>
+                fireWelcomeEmail(session.user!, r || [])
+              )
+            );
           }
         } else if (event === "SIGNED_OUT") {
           setRoles([]);
           setSubscription(DEFAULT_SUB);
         }
 
-        if (event !== "INITIAL_SESSION") {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Single source of truth for initial load
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (initialSessionHandled) return;
+      initialSessionHandled = true;
+
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        fetchRoles(session.user.id).then((r) => {
-          assignSignupRole(session.user!);
-        });
+        await fetchRoles(session.user.id);
       }
+
       setLoading(false);
     });
 

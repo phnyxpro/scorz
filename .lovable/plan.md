@@ -1,31 +1,47 @@
 
 
-## Problem
+## Fix Blank Rendering in Browser Automation
 
-The auth initialization in `AuthContext.tsx` has a race condition causing slow loading:
+The app appears blank in headless browser testing due to two compounding issues:
 
-1. **`onAuthStateChange` with `INITIAL_SESSION`** fires but explicitly skips `setLoading(false)` (line 155-157), while also running expensive `await fetchRoles()` and `await assignSignupRole()` inside the callback — blocking subsequent auth events.
-2. **`getSession()`** also runs in parallel and calls `fetchRoles` + `assignSignupRole` — duplicating work.
-3. The `refreshSubscription()` edge function call fires on every session change, adding network latency before the UI becomes interactive.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-Result: `loading` stays `true` longer than necessary, showing the "Loading..." fallback or skeletons across all protected pages.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-## Plan
+---
 
-**1. Fix auth initialization in `AuthContext.tsx`**
+### Fix 1: Conditionally apply auditorium filter
 
-- Make `getSession()` the single source-of-truth for initial load. Set `loading = false` immediately after session is resolved and roles are fetched — no duplication.
-- In `onAuthStateChange`: remove `await` from the callback body. Use fire-and-forget (`fetchRoles(...).then(...)`) for non-blocking role/welcome-email updates on subsequent events (SIGNED_IN, TOKEN_REFRESHED). Skip processing for `INITIAL_SESSION` entirely since `getSession` handles it.
-- Move `assignSignupRole` to only fire on `SIGNED_IN` events (not on every page load).
+**File: `src/contexts/ThemeContext.tsx`**
 
-**2. Defer subscription check**
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-- Don't block the loading state on `refreshSubscription()`. It already runs in a separate `useEffect` — just ensure it doesn't contribute to perceived load time by confirming it's fully decoupled from the `loading` flag (it already is, but the duplicate role-fetch delays everything).
+### Fix 2: Remove filter class when at defaults
 
-**3. Summary of changes**
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-Single file change: `src/contexts/AuthContext.tsx`
-- Restructure the `useEffect` to avoid awaiting inside `onAuthStateChange`
-- Remove duplicate `fetchRoles` call from `getSession` path vs `onAuthStateChange` path
-- Set `loading = false` as early as possible after `getSession` resolves
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
