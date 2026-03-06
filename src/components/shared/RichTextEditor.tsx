@@ -783,5 +783,6 @@ export function RichTextEditor({
       <div className="editor-margins">
         <EditorContent editor={editor} />
       </div>
+    </div>
   );
 }
