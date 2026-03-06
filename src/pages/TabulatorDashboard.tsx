@@ -97,10 +97,11 @@ function useJudgingOverview(competitionId: string | undefined) {
 
 /* ─── Sub-event Workspace ─── */
 function SubEventWorkspace({
-  subEventId, competitionId, registrations, rubricNames,
+  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount,
 }: {
   subEventId: string; competitionId: string;
   registrations: any[]; rubricNames: string[];
+  onOpenChat: () => void; unreadCount: number;
 }) {
   const { user } = useAuth();
   const { data: penalties } = usePenaltyRules(competitionId);
