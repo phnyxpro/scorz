@@ -181,7 +181,7 @@ export default function JudgeScoring() {
   const selectedContestantName = filteredContestants.find(r => r.id === selectedContestant)?.full_name;
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex -mx-3 sm:-mx-6 -mt-4 sm:-mt-6 min-h-[calc(100vh-theme(spacing.14))]">
       {/* Left sidebar / panel */}
       <aside
         className={cn(
@@ -286,7 +286,7 @@ export default function JudgeScoring() {
 
       {/* Main scoring area */}
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+        <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             {!sidebarOpen && (
