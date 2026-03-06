@@ -14,7 +14,7 @@ interface Props {
   scoringMethod?: string;
 }
 
-export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames }: Props) {
+export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, scoringMethod = "olympic" }: Props) {
   const rows = useMemo(() => {
     return Object.entries(scoresByContestant)
       .map(([regId, scores]) => {
@@ -36,15 +36,15 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
           }
         }
 
-        const avgFinal =
-          certifiedScores.length > 0
-            ? certifiedScores.reduce((a, s) => a + s.final_score, 0) / certifiedScores.length
-            : 0;
-
+        // Use scoring method for final aggregation
+        const rawTotals = certifiedScores.map((s) => s.raw_total);
         const avgPenalty =
           certifiedScores.length > 0
             ? certifiedScores.reduce((a, s) => a + s.time_penalty, 0) / certifiedScores.length
             : 0;
+        const avgFinal = certifiedScores.length > 0
+          ? calculateMethodScore(scoringMethod, rawTotals, avgPenalty)
+          : 0;
 
         return {
           regId,
@@ -58,7 +58,7 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal);
-  }, [scoresByContestant, contestantName]);
+  }, [scoresByContestant, contestantName, scoringMethod]);
 
   if (rows.length === 0) {
     return (

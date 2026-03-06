@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
+import { calculateMethodScore } from "@/lib/scoring-methods";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import type { SheetRow } from "@/lib/export-utils";
 
