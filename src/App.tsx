@@ -54,7 +54,8 @@ const CheckInHub = lazy(() => import("./pages/CheckInHub"));
 const TicketsHub = lazy(() => import("./pages/TicketsHub"));
 const UpdatesHub = lazy(() => import("./pages/UpdatesHub"));
 const ContestantFeedback = lazy(() => import("./pages/ContestantFeedback"));
-
+const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
+const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -136,6 +137,8 @@ const App = () => (
                 <Route path="/updates" element={<ProtectedPage><UpdatesHub /></ProtectedPage>} />
                 <Route path="/check-in" element={<ProtectedPage><CheckInHub /></ProtectedPage>} />
                 <Route path="/feedback" element={<ProtectedPage><ContestantFeedback /></ProtectedPage>} />
+                <Route path="/analytics" element={<ProtectedPage><AnalyticsDashboard /></ProtectedPage>} />
+                <Route path="/api-keys" element={<ProtectedPage><ApiKeysPage /></ProtectedPage>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

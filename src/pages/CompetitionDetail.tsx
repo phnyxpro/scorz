@@ -15,6 +15,7 @@ import { SubEventAssignments } from "@/components/competition/SubEventAssignment
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
+import { BrandingManager } from "@/components/competition/BrandingManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -217,6 +218,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
           <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
+          <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -442,6 +444,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="sponsors">
           <SponsorsManager competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="branding">
+          <BrandingManager competitionId={id!} competition={comp} />
         </TabsContent>
       </Tabs>
 
