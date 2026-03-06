@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { formatRoleName } from "@/lib/utils";
 import {
   useSubEventAssignments,
