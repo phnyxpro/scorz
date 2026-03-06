@@ -289,6 +289,10 @@ export function RegistrationsManager({ competitionId }: Props) {
                       />
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
+                        {reg.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
