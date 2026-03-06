@@ -461,10 +461,15 @@ function PersonalStep() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2 col-span-full">
-            <Label>Full Name *</Label>
-            <Input {...register("fullName")} placeholder="Legal Name" />
-            {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
+          <div className="space-y-2">
+            <Label>First Name *</Label>
+            <Input {...register("firstName")} placeholder="First Name" />
+            {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label>Last Name *</Label>
+            <Input {...register("lastName")} placeholder="Last Name" />
+            {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Email *</Label>
