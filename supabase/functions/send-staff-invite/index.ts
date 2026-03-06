@@ -47,28 +47,45 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check if user exists
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    let targetUser = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
+    // Try to create user first; if they already exist, look them up
+    let targetUser: any = null;
+    const randomPassword = crypto.randomUUID() + crypto.randomUUID();
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password: randomPassword,
+      email_confirm: true,
+      user_metadata: { full_name: email.split("@")[0] },
+    });
 
-    // Create user if they don't exist
-    if (!targetUser) {
-      const randomPassword = crypto.randomUUID() + crypto.randomUUID();
-      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email,
-        password: randomPassword,
-        email_confirm: true,
-        user_metadata: { full_name: email.split("@")[0] },
-      });
-      if (createError) {
+    if (createError) {
+      if (createError.message?.includes("already been registered") || (createError as any).code === "email_exists") {
+        // User exists — look them up
+        const { data: listData } = await adminClient.auth.admin.listUsers({ perPage: 1, page: 1 });
+        // listUsers doesn't support email filter, so query profiles instead
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("user_id")
+          .eq("email", email.toLowerCase())
+          .maybeSingle();
+        if (profile?.user_id) {
+          const { data: userData } = await adminClient.auth.admin.getUserById(profile.user_id);
+          targetUser = userData?.user ?? null;
+        }
+        if (!targetUser) {
+          // Fallback: page through users (up to 1000)
+          const { data: allUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+          targetUser = allUsers?.users?.find(
+            (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+          ) ?? null;
+        }
+      } else {
         console.error("Error creating user:", createError);
         return new Response(JSON.stringify({ error: "Failed to create user account" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    } else {
       targetUser = newUser.user;
     }
 
