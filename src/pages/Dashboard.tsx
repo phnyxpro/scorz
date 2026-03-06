@@ -212,22 +212,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tabulator: prompt to go to unified dashboard */}
       {isTabulator ? (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="py-8 text-center space-y-4">
-            <CalcIcon className="h-10 w-10 mx-auto text-primary" />
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Tabulator Workspace</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Access your unified dashboard with scoring tools, timers, and certification controls.
-              </p>
-            </div>
-            <Button asChild size="lg">
-              <Link to="/tabulator">Open Tabulator Dashboard</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <TabulatorDashboard />
       ) : (
         <>
           {/* Admin platform stats */}
