@@ -54,6 +54,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "audience_votes_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "audience_votes_sub_event_id_fkey"
             columns: ["sub_event_id"]
             isOneToOne: false
@@ -524,6 +531,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "judge_scores_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "judge_scores_sub_event_id_fkey"
             columns: ["sub_event_id"]
             isOneToOne: false
@@ -619,6 +633,13 @@ export type Database = {
             columns: ["contestant_registration_id"]
             isOneToOne: false
             referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_slots_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
             referencedColumns: ["id"]
           },
           {
@@ -951,9 +972,112 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_contestants: {
+        Row: {
+          age_category: string | null
+          bio: string | null
+          competition_id: string | null
+          full_name: string | null
+          id: string | null
+          location: string | null
+          performance_video_url: string | null
+          profile_photo_url: string | null
+          social_handles: Json | null
+          sort_order: number | null
+          status: string | null
+          sub_event_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          age_category?: string | null
+          bio?: string | null
+          competition_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          location?: string | null
+          performance_video_url?: string | null
+          profile_photo_url?: string | null
+          social_handles?: Json | null
+          sort_order?: number | null
+          status?: string | null
+          sub_event_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          age_category?: string | null
+          bio?: string | null
+          competition_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          location?: string | null
+          performance_video_url?: string | null
+          profile_photo_url?: string | null
+          social_handles?: Json | null
+          sort_order?: number | null
+          status?: string | null
+          sub_event_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contestant_registrations_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contestant_registrations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_assigned_competitions: {
+        Args: { _user_id: string }
+        Returns: {
+          assignment_role: Database["public"]["Enums"]["app_role"]
+          competition_banner_url: string
+          competition_id: string
+          competition_name: string
+          competition_slug: string
+          competition_status: string
+          is_chief: boolean
+          level_id: string
+          level_name: string
+          sub_event_id: string
+          sub_event_name: string
+        }[]
+      }
+      get_vote_counts: {
+        Args: { _sub_event_id: string }
+        Returns: {
+          contestant_registration_id: string
+          vote_count: number
+        }[]
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
