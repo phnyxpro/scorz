@@ -63,6 +63,8 @@ export function PrintableResults({
           .cert-item .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
           .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; }
           .cert-item .date { font-size: 10px; color: #888; }
+          .cert-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; font-size: 9px; color: #28a745; }
+          .cert-stamp .check { font-weight: bold; }
           .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #aaa; }
           @media print { body { padding: 20px; } }
         </style>
@@ -130,21 +132,30 @@ export function PrintableResults({
               <div className="line" />
               <div className="label">Chief Judge</div>
               {certificationDates.chiefJudge && (
-                <div className="date">Signed: {new Date(certificationDates.chiefJudge).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.chiefJudge).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Chief Judge</div>
+                </>
               )}
             </div>
             <div className="cert-item">
               <div className="line" />
               <div className="label">Tabulator</div>
               {certificationDates.tabulator && (
-                <div className="date">Signed: {new Date(certificationDates.tabulator).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.tabulator).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Tabulator</div>
+                </>
               )}
             </div>
             <div className="cert-item">
               <div className="line" />
               <div className="label">Witness</div>
               {certificationDates.witness && (
-                <div className="date">Signed: {new Date(certificationDates.witness).toLocaleDateString()}</div>
+                <>
+                  <div className="date">Signed: {new Date(certificationDates.witness).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
+                  <div className="cert-stamp"><span className="check">✓</span> Digitally signed via Scorz · Role: Witness</div>
+                </>
               )}
             </div>
           </div>
