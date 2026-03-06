@@ -34,8 +34,6 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                 <TableHead key={n} className="text-center text-xs">{n}</TableHead>
               ))}
               <TableHead className="text-center">Raw</TableHead>
-              <TableHead className="text-center">Penalty</TableHead>
-              <TableHead className="text-center font-bold">Final</TableHead>
               <TableHead className="text-center">Status</TableHead>
             </TableRow>
           </TableHeader>
