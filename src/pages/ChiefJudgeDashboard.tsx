@@ -257,7 +257,14 @@ export default function ChiefJudgeDashboard() {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="panel" className="space-y-4">
+          {/* Judge Activity Indicator */}
+          <JudgeActivityIndicator
+            subEventId={selectedSubEventId}
+            allScores={allScores}
+            contestantCount={Object.keys(scoresByContestant).length}
+          />
+
+          <Tabs defaultValue="panel" className="space-y-4 mt-4">
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
