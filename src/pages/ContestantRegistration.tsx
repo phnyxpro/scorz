@@ -82,7 +82,8 @@ export function OnBehalfRegistrationForm({
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       ageCategory: "adult",
       rulesAcknowledged: false,
