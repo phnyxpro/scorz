@@ -612,9 +612,11 @@ interface StaffRowProps {
   onRemoveSubEvent: (id: string) => void;
   onDelete: () => void;
   sendingInvite: boolean;
+  isAdmin?: boolean;
+  onMasquerade?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, sendingInvite, isAdmin, onMasquerade }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
