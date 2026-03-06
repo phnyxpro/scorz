@@ -18,6 +18,11 @@ interface PrintableResultsProps {
     tabulator?: string;
     witness?: string;
   };
+  certificationSignatures?: {
+    chiefJudge?: string | null;
+    tabulator?: string | null;
+    witness?: string | null;
+  };
 }
 
 export function PrintableResults({
@@ -26,6 +31,7 @@ export function PrintableResults({
   leaderboard,
   rubricNames,
   certificationDates,
+  certificationSignatures,
 }: PrintableResultsProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +67,8 @@ export function PrintableResults({
           .cert-row { display: flex; justify-content: space-between; margin: 16px 0; }
           .cert-item { text-align: center; flex: 1; }
           .cert-item .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
-          .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; }
+          .cert-item .line { border-bottom: 1px solid #333; margin: 20px auto 4px; width: 200px; min-height: 50px; display: flex; align-items: flex-end; justify-content: center; }
+          .cert-item .line img { max-height: 45px; max-width: 180px; opacity: 0.85; display: block; margin-bottom: 2px; }
           .cert-item .date { font-size: 10px; color: #888; }
           .cert-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; font-size: 9px; color: #28a745; }
           .cert-stamp .check { font-weight: bold; }
@@ -129,7 +136,9 @@ export function PrintableResults({
         <div className="certifications">
           <div className="cert-row">
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.chiefJudge && <img src={certificationSignatures.chiefJudge} alt="Chief Judge signature" />}
+              </div>
               <div className="label">Chief Judge</div>
               {certificationDates.chiefJudge && (
                 <>
@@ -139,7 +148,9 @@ export function PrintableResults({
               )}
             </div>
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.tabulator && <img src={certificationSignatures.tabulator} alt="Tabulator signature" />}
+              </div>
               <div className="label">Tabulator</div>
               {certificationDates.tabulator && (
                 <>
@@ -149,7 +160,9 @@ export function PrintableResults({
               )}
             </div>
             <div className="cert-item">
-              <div className="line" />
+              <div className="line">
+                {certificationSignatures?.witness && <img src={certificationSignatures.witness} alt="Witness signature" />}
+              </div>
               <div className="label">Witness</div>
               {certificationDates.witness && (
                 <>
