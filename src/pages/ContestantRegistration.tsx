@@ -61,10 +61,12 @@ const STEPS = [
 
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isOnBehalf = searchParams.get("behalf") === "true";
   const navigate = useNavigate();
   const { user, signUp } = useAuth();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
-  const { data: existing, isLoading: regLoading } = useMyRegistration(competitionId);
+  const { data: existing, isLoading: regLoading } = useMyRegistration(isOnBehalf ? undefined : competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
 
