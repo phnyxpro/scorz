@@ -129,7 +129,7 @@ const App = () => (
                 <Route path="/competitions/:id/penalties" element={<ProtectedPage><PenaltiesPage /></ProtectedPage>} />
                 <Route path="/competitions/:id/contestants" element={<ProtectedPage><CompetitionContestants /></ProtectedPage>} />
                 <Route path="/chief-judge" element={<ProtectedPage><Competitions /></ProtectedPage>} />
-                <Route path="/tabulator" element={<ProtectedPage><Competitions /></ProtectedPage>} />
+                <Route path="/tabulator" element={<ProtectedPage><TabulatorDashboard /></ProtectedPage>} />
                 <Route path="/registrations" element={<ProtectedPage><RegistrationsHub /></ProtectedPage>} />
                 <Route path="/contestant-profiles" element={<ProtectedPage><ContestantProfilesHub /></ProtectedPage>} />
                 <Route path="/results-hub" element={<ProtectedPage><ResultsHub /></ProtectedPage>} />

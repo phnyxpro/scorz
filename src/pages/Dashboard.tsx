@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon, UserPlus
+  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { JudgingHubContent } from "@/pages/JudgingHub";
+// Calculator icon imported above as CalcIcon
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
 
 const container = {
@@ -183,12 +183,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Tabulator Dashboard link */}
-          {isTabulator && (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/tabulator">Tabulator Dashboard</Link>
-            </Button>
-          )}
 
           {/* Competition selector for judges */}
           {isJudgeRole && (
@@ -217,9 +211,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tabulator: show Judging Hub content instead of stats/cards */}
+      {/* Tabulator: prompt to go to unified dashboard */}
       {isTabulator ? (
-        <JudgingHubContent />
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-8 text-center space-y-4">
+            <CalcIcon className="h-10 w-10 mx-auto text-primary" />
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Tabulator Workspace</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Access your unified dashboard with scoring tools, timers, and certification controls.
+              </p>
+            </div>
+            <Button asChild size="lg">
+              <Link to="/tabulator">Open Tabulator Dashboard</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {/* Admin platform stats */}
