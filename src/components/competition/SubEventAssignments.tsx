@@ -82,6 +82,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       email: inviteEmail,
       role: selectedRole as any,
       competitionId,
+      competitionName,
     });
     setInviteEmail("");
   };
