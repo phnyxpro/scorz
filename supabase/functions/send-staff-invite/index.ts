@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { buildEmail, ctaButton } from "../_shared/email-html.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -39,7 +38,6 @@ Deno.serve(async (req) => {
     }
 
     const { email, role, competition_name, competition_id } = await req.json();
-
     if (!email || !role || !competition_id) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
@@ -112,40 +110,32 @@ Deno.serve(async (req) => {
 
     // Send email via Resend
     if (resendApiKey) {
-      const roleLabel = role === "judge" ? "Judge" : role === "tabulator" ? "Tabulator" : role === "chief_judge" ? "Chief Judge" : role;
+      const roleLabel =
+        role === "judge" ? "Judge"
+        : role === "tabulator" ? "Tabulator"
+        : role === "chief_judge" ? "Chief Judge"
+        : role === "witness" ? "Witness"
+        : role;
       const competitionLabel = competition_name || "a competition";
 
-      const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
-  <div style="max-width:480px;margin:40px auto;padding:32px;">
-    <div style="text-align:center;margin-bottom:32px;">
-      <h2 style="color:#1a1a2e;margin:0;font-size:24px;">You're Invited to Scorz</h2>
-    </div>
-    <p style="color:#555;font-size:15px;line-height:1.6;">
-      You've been assigned as a <strong style="color:#1a1a2e;">${roleLabel}</strong> for <strong style="color:#1a1a2e;">${competitionLabel}</strong>.
-    </p>
-    <p style="color:#555;font-size:15px;line-height:1.6;">
-      Click the button below to sign in and access your dashboard. No password needed — this is a secure one-time link.
-    </p>
-    <div style="text-align:center;margin:32px 0;">
-      <a href="${magicLinkUrl}" style="display:inline-block;background:hsl(243,75%,59%);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">
-        Sign In to Scorz
-      </a>
-    </div>
-    <p style="color:#999;font-size:12px;text-align:center;">
-      If the button doesn't work, copy and paste this link into your browser:<br/>
-      <a href="${magicLinkUrl}" style="color:#6366f1;word-break:break-all;">${magicLinkUrl}</a>
-    </p>
-    <hr style="border:none;border-top:1px solid #eee;margin:32px 0;" />
-    <p style="color:#bbb;font-size:11px;text-align:center;">
-      Scorz — Competition Scoring Platform
-    </p>
-  </div>
-</body>
-</html>`;
+      const html = buildEmail({
+        preheader: `You've been invited as ${roleLabel} for ${competitionLabel}`,
+        body: `
+          <h1 style="font-size:22px;margin:0 0 8px;color:#1a1b25;">You're Invited</h1>
+          <p style="color:#52525b;font-size:15px;line-height:1.6;">
+            You've been assigned as <strong style="color:#1a1b25;">${roleLabel}</strong> for
+            <strong style="color:#1a1b25;">${competitionLabel}</strong>.
+          </p>
+          <p style="color:#52525b;font-size:15px;line-height:1.6;">
+            Click the button below to sign in and access your dashboard. No password needed — this is a secure one-time link.
+          </p>
+          ${ctaButton("Sign In to Scorz", magicLinkUrl)}
+          <p style="color:#a1a1aa;font-size:12px;word-break:break-all;">
+            If the button doesn't work, copy and paste this link:<br/>
+            <a href="${magicLinkUrl}" style="color:#f59e0b;">${magicLinkUrl}</a>
+          </p>
+        `,
+      });
 
       const resendRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -157,7 +147,7 @@ Deno.serve(async (req) => {
           from: "Scorz <onboarding@resend.dev>",
           to: [email],
           subject: `You're invited as ${roleLabel} — ${competitionLabel}`,
-          html: htmlBody,
+          html,
         }),
       });
 
