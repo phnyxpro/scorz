@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
@@ -97,14 +97,14 @@ function useJudgingOverview(competitionId: string | undefined) {
 
 /* ─── Sub-event Workspace ─── */
 function SubEventWorkspace({
-  subEventId, competitionId, registrations, rubricNames,
+  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount,
 }: {
   subEventId: string; competitionId: string;
   registrations: any[]; rubricNames: string[];
+  onOpenChat: () => void; unreadCount: number;
 }) {
   const { user } = useAuth();
   const { data: penalties } = usePenaltyRules(competitionId);
-  const unreadCount = useChatUnreadCount(competitionId);
 
   const [performanceDuration, setPerformanceDuration] = useState(0);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
@@ -327,22 +327,6 @@ function SubEventWorkspace({
         </Card>
       )}
 
-      {/* Production Chat */}
-      <Collapsible>
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full gap-2 text-xs relative">
-            <MessageSquare className="h-4 w-4" /> Production Chat
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3">
-          <EventChat competitionId={competitionId} />
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Certify Dialog (shared for tabulator & witness) */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
@@ -419,6 +403,7 @@ export default function TabulatorDashboard() {
   const [selectedCompId, setSelectedCompId] = useState(routeCompId || "");
   const [activeSubEventId, setActiveSubEventId] = useState("");
   const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
 
@@ -438,6 +423,8 @@ export default function TabulatorDashboard() {
     () => (overview?.rubric || []).map((r: any) => r.name), [overview?.rubric]
   );
 
+  const unreadCount = useChatUnreadCount(selectedCompId || "");
+
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
 
   if (compsLoading) return <CardGridSkeleton cards={3} />;
@@ -445,13 +432,25 @@ export default function TabulatorDashboard() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-          <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Select a competition, then choose a sub-event to open the workspace.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Select a competition, then choose a sub-event to open the workspace.
+          </p>
+        </div>
+        {activeSubEventId && selectedCompId && (
+          <Button variant="outline" size="sm" className="relative gap-2" onClick={() => setShowChatModal(true)}>
+            <MessageSquare className="h-4 w-4" /> Chat
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Competition selector */}
@@ -676,19 +675,31 @@ export default function TabulatorDashboard() {
       {/* Active sub-event workspace */}
       {activeSubEventId && selectedCompId && overview && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">
-              Workspace: {activeSubEvent?.name ?? "Sub-Event"}
-            </h2>
-          </div>
           <SubEventWorkspace
             subEventId={activeSubEventId}
             competitionId={selectedCompId}
             registrations={overview.registrations}
             rubricNames={rubricNames}
+            onOpenChat={() => setShowChatModal(true)}
+            unreadCount={unreadCount}
           />
         </div>
+      )}
+
+      {/* Production Chat Modal */}
+      {selectedCompId && (
+        <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+          <DialogContent className="max-w-lg p-0 gap-0">
+            <DialogHeader className="px-4 pt-4 pb-2">
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4 text-primary" /> Production Chat
+              </DialogTitle>
+            </DialogHeader>
+            <div className="px-4 pb-4">
+              <EventChat competitionId={selectedCompId} />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
