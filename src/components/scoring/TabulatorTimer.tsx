@@ -29,6 +29,7 @@ export function TabulatorTimer({
   gracePeriodSeconds,
   contestants,
   onDurationChange,
+  onContestantChange,
 }: TabulatorTimerProps) {
   const { user } = useAuth();
   const [selectedContestantId, setSelectedContestantId] = useState("");
