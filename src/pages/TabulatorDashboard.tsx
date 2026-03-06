@@ -423,6 +423,8 @@ export default function TabulatorDashboard() {
     () => (overview?.rubric || []).map((r: any) => r.name), [overview?.rubric]
   );
 
+  const unreadCount = useChatUnreadCount(selectedCompId || "");
+
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
 
   if (compsLoading) return <CardGridSkeleton cards={3} />;
