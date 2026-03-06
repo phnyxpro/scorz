@@ -150,6 +150,7 @@ export default function CompetitionDetail() {
       createCriterion.mutate({
         competition_id: id,
         name: c.name,
+        guidelines: null,
         sort_order: startOrder + i,
         description_1: c.description_1,
         description_2: c.description_2,
