@@ -188,6 +188,15 @@ export default function TabulatorDashboard() {
             </Badge>
           </div>
 
+          {/* Judge activity indicator */}
+          <div className="mb-4">
+            <JudgeActivityIndicator
+              subEventId={selectedSubEventId}
+              allScores={allScores}
+              contestantCount={Object.keys(scoresByContestant).length}
+            />
+          </div>
+
           <Tabs defaultValue="summary" className="space-y-4">
             <TabsList>
               <TabsTrigger value="summary">Score Summary</TabsTrigger>
