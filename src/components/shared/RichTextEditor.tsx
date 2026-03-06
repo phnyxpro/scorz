@@ -125,6 +125,58 @@ export function RichTextEditor({
         class:
           "prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[200px] px-4 py-3 text-foreground",
       },
+      transformPastedHTML(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const walk = (el: Element) => {
+          const style = (el as HTMLElement).style;
+          if (style) {
+            // Map color inline style to TipTap Color extension attribute
+            if (style.color) {
+              el.setAttribute("style", `color: ${style.color}`);
+            }
+            // Map background-color to <mark> highlight
+            const bg = style.backgroundColor;
+            if (bg) {
+              const mark = doc.createElement("mark");
+              mark.setAttribute("data-color", bg);
+              mark.style.backgroundColor = bg;
+              while (el.firstChild) mark.appendChild(el.firstChild);
+              el.appendChild(mark);
+            }
+            // Map font-weight bold to <strong>
+            const fw = style.fontWeight;
+            if (fw === "bold" || fw === "700" || fw === "800" || fw === "900") {
+              const strong = doc.createElement("strong");
+              while (el.firstChild) strong.appendChild(el.firstChild);
+              el.appendChild(strong);
+            }
+            // Map font-style italic to <em>
+            if (style.fontStyle === "italic") {
+              const em = doc.createElement("em");
+              while (el.firstChild) em.appendChild(el.firstChild);
+              el.appendChild(em);
+            }
+            // Map text-decoration underline to <u>
+            if (style.textDecoration?.includes("underline")) {
+              const u = doc.createElement("u");
+              while (el.firstChild) u.appendChild(el.firstChild);
+              el.appendChild(u);
+            }
+          }
+          Array.from(el.children).forEach(walk);
+        };
+
+        walk(doc.body);
+        return doc.body.innerHTML;
+      },
+      transformPastedText(text) {
+        return text
+          .split("\n")
+          .map((line) => `<p>${line || "<br>"}</p>`)
+          .join("");
+      },
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
