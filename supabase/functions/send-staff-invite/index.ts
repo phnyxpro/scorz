@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     }
 
     // Generate magic link
-    const siteUrl = req.headers.get("origin") || "https://scorz.lovable.app";
+    const siteUrl = "https://scorz.lovable.app";
     let magicLinkUrl = `${siteUrl}/auth`;
 
     try {
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
         await adminClient.auth.admin.generateLink({
           type: "magiclink",
           email,
-          options: { redirectTo: `${siteUrl}/welcome` },
+          options: { redirectTo: `${siteUrl}/dashboard` },
         });
 
       if (!linkError && linkData?.properties?.action_link) {
