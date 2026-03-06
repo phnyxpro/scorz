@@ -430,13 +430,25 @@ export default function TabulatorDashboard() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-          <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Select a competition, then choose a sub-event to open the workspace.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Select a competition, then choose a sub-event to open the workspace.
+          </p>
+        </div>
+        {activeSubEventId && selectedCompId && (
+          <Button variant="outline" size="sm" className="relative gap-2" onClick={() => setShowChatModal(true)}>
+            <MessageSquare className="h-4 w-4" /> Chat
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Competition selector */}
