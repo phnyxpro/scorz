@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
+import { calculateMethodScore } from "@/lib/scoring-methods";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import type { SheetRow } from "@/lib/export-utils";
 
@@ -18,6 +19,13 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
     queryKey: ["master_sheet", competitionId, subEventId],
     enabled: !!competitionId && !!subEventId,
     queryFn: async () => {
+      // Competition info (for scoring_method)
+      const { data: competition } = await supabase
+        .from("competitions")
+        .select("scoring_method")
+        .eq("id", competitionId!)
+        .single();
+
       // Sub-event info
       const { data: subEvent } = await supabase
         .from("sub_events")
@@ -63,6 +71,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
         : { data: [] as any[] };
 
       return {
+        scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvent,
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
@@ -106,6 +115,7 @@ export default function MasterScoreSheet() {
   // Build rows: one per contestant, with each judge's final score
   const rows = useMemo(() => {
     if (!data) return [];
+    const method = data.scoringMethod || "olympic";
     return (data.registrations || [])
       .map((reg) => {
         const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
@@ -114,8 +124,14 @@ export default function MasterScoreSheet() {
           judgeScores[s.judge_id] = { final: s.final_score, certified: s.is_certified };
         }
         const certifiedScores = regScores.filter((s) => s.is_certified);
+        const rawTotals = certifiedScores.map((s) => s.raw_total);
+        const avgPenalty = certifiedScores.length > 0
+          ? certifiedScores.reduce((a, s) => a + s.time_penalty, 0) / certifiedScores.length
+          : 0;
         const total = certifiedScores.reduce((a, s) => a + s.final_score, 0);
-        const avgFinal = certifiedScores.length > 0 ? total / certifiedScores.length : 0;
+        const avgFinal = certifiedScores.length > 0
+          ? calculateMethodScore(method, rawTotals, avgPenalty)
+          : 0;
         const allCertified = regScores.length > 0 && regScores.every((s) => s.is_certified);
         return {
           regId: reg.id,

@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { useAllSubEvents, useLevels } from "@/hooks/useCompetitions";
+import { useAllSubEvents, useLevels, useCompetition } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Clock, MessageSquare, Settings } from "lucide-react";
+import { Clock, MessageSquare, Settings, Calculator } from "lucide-react";
+import { SCORING_METHODS } from "@/lib/scoring-methods";
 
 interface ScoringSettingsManagerProps {
   competitionId: string;
@@ -15,9 +17,18 @@ interface ScoringSettingsManagerProps {
 
 export function ScoringSettingsManager({ competitionId }: ScoringSettingsManagerProps) {
   const { data: levels } = useLevels(competitionId);
+  const { data: competition } = useCompetition(competitionId);
   const qc = useQueryClient();
 
+  const [scoringMethod, setScoringMethod] = useState<string>("olympic");
   const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean }>>({});
+
+  // Sync scoring method from competition data
+  useEffect(() => {
+    if (competition?.scoring_method) {
+      setScoringMethod(competition.scoring_method);
+    }
+  }, [competition?.scoring_method]);
 
   // Load all sub-events for the competition
   const { data: allSubEvents } = useAllSubEvents(competitionId);
@@ -35,18 +46,33 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     }
   }, [allSubEvents]);
 
+  const updateScoringMethod = async (value: string) => {
+    const prev = scoringMethod;
+    setScoringMethod(value);
+    try {
+      const { error } = await supabase
+        .from("competitions")
+        .update({ scoring_method: value } as any)
+        .eq("id", competitionId);
+      if (error) {
+        setScoringMethod(prev);
+        toast({ title: "Failed to update scoring method", description: error.message, variant: "destructive" });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["competition", competitionId] });
+      toast({ title: "Scoring method updated" });
+    } catch {
+      setScoringMethod(prev);
+    }
+  };
+
   const updateSubEventSetting = async (subEventId: string, field: 'timer_visible' | 'comments_visible', value: boolean) => {
     try {
-      // Update the state optimistically first
       setSubEventSettings(prev => ({
         ...prev,
-        [subEventId]: {
-          ...prev[subEventId],
-          [field]: value,
-        },
+        [subEventId]: { ...prev[subEventId], [field]: value },
       }));
 
-      // Build the update object with explicit type
       const updateData: Record<string, boolean> = {};
       updateData[field] = value;
       
@@ -56,34 +82,19 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
         .eq('id', subEventId);
 
       if (error) {
-        // Check if it's a schema cache issue
         const errorMsg = error.message || '';
         if (errorMsg.includes('schema cache') || errorMsg.includes('timer_visible') || errorMsg.includes('comments_visible')) {
-          toast({ 
-            title: "Database schema needs update", 
-            description: "Please run the migration SQL in your Supabase dashboard. Check MIGRATION_SQL.sql in the project root.", 
-            variant: "destructive" 
-          });
+          toast({ title: "Database schema needs update", description: "Please run the migration SQL in your Supabase dashboard. Check MIGRATION_SQL.sql in the project root.", variant: "destructive" });
         } else {
-          toast({ 
-            title: "Failed to update setting", 
-            description: error.message || "An error occurred", 
-            variant: "destructive" 
-          });
+          toast({ title: "Failed to update setting", description: error.message || "An error occurred", variant: "destructive" });
         }
-        
-        // Revert on error
         setSubEventSettings(prev => ({
           ...prev,
-          [subEventId]: {
-            ...prev[subEventId],
-            [field]: !value,
-          },
+          [subEventId]: { ...prev[subEventId], [field]: !value },
         }));
         throw error;
       }
 
-      // Invalidate all relevant queries
       qc.invalidateQueries({ queryKey: ['sub_events'] });
       qc.invalidateQueries({ queryKey: ['all_sub_events'] });
       toast({ title: "Setting updated" });
@@ -96,6 +107,8 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
   }
 
+  const selectedMeta = SCORING_METHODS.find(m => m.value === scoringMethod) || SCORING_METHODS[0];
+
   // Group sub-events by level
   const subEventsByLevel = levels.map(level => ({
     level,
@@ -104,11 +117,59 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   return (
     <div className="space-y-6">
+      {/* Scoring Method Selector */}
+      <Card className="border-border/50 bg-card/80">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-primary" />
+            Scoring Method
+          </CardTitle>
+          <CardDescription>
+            Choose how judge scores are aggregated into a contestant's final ranking
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="max-w-sm">
+            <Select value={scoringMethod} onValueChange={updateScoringMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SCORING_METHODS.map(m => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-lg border border-border/40 bg-muted/30 p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs font-mono">
+                {selectedMeta.value}
+              </Badge>
+              <span className="text-sm font-medium text-foreground">{selectedMeta.label}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">{selectedMeta.description}</p>
+            <p className="text-xs font-mono text-muted-foreground/80 bg-muted/50 rounded px-2 py-1 inline-block">
+              {selectedMeta.formula}
+            </p>
+            {scoringMethod === "weighted" && (
+              <p className="text-xs text-amber-500 mt-1">
+                ⚠ Configure criterion weights in the Rubric tab (coming soon).
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-sub-event visibility toggles */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Settings className="h-5 w-5 text-secondary" />
-            Scoring
+            Judge Card Sections
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             Control which sections appear on judge scoring cards for each sub-event

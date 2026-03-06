@@ -14,6 +14,7 @@ export interface Competition {
   created_at: string;
   active_scoring_level_id?: string | null;
   active_scoring_sub_event_id?: string | null;
+  scoring_method?: string;
 }
 
 export interface CompetitionLevel {
