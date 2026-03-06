@@ -536,23 +536,25 @@ export function RichTextEditor({
           </ToolbarButton>
           <ToolbarButton
             onClick={() => {
-              // Toggle alpha list: insert ordered list then set type attribute
               if (editor.isActive("orderedList")) {
-                // Check if it's already alpha — if so, lift it; otherwise switch to alpha
-                const { $from } = editor.state.selection;
-                const listNode = $from.node(-1)?.type.name === "orderedList" ? $from.node(-1) : $from.node(-2);
-                if (listNode && listNode.attrs?.HTMLAttributes?.class === "list-alpha") {
-                  editor.chain().focus().toggleOrderedList().run();
+                // If currently in an ordered list, check if it's alpha
+                const domEl = editor.view.domAtPos(editor.state.selection.from);
+                const ol = (domEl.node as HTMLElement).closest?.("ol") || (domEl.node.parentElement?.closest?.("ol"));
+                if (ol?.classList.contains("list-alpha")) {
+                  // Remove alpha, turn back to numbered
+                  ol.classList.remove("list-alpha");
                 } else {
-                  // Convert current ordered list to alpha
-                  editor.chain().focus().updateAttributes("orderedList", { HTMLAttributes: { class: "list-alpha" } }).run();
+                  // Turn off the list entirely
+                  editor.chain().focus().toggleOrderedList().run();
                 }
               } else {
+                // Create ordered list then mark as alpha
                 editor.chain().focus().toggleOrderedList().run();
-                // Set alpha class after toggling
                 setTimeout(() => {
-                  editor.chain().focus().updateAttributes("orderedList", { HTMLAttributes: { class: "list-alpha" } }).run();
-                }, 0);
+                  const domEl = editor.view.domAtPos(editor.state.selection.from);
+                  const ol = (domEl.node as HTMLElement).closest?.("ol") || (domEl.node.parentElement?.closest?.("ol"));
+                  if (ol) ol.classList.add("list-alpha");
+                }, 10);
               }
             }}
             title="Alphabet List (a, b, c)"
