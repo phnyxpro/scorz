@@ -2,7 +2,7 @@ import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tier
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Eye, Mic, Heart, HelpCircle, Mail } from "lucide-react";
+import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail } from "lucide-react";
 import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
