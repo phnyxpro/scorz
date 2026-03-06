@@ -284,8 +284,14 @@ export default function About() {
                     <CardTitle className="text-base font-mono">{tier.name}</CardTitle>
                     <div className="flex items-baseline gap-1 mt-2">
                       <span className="text-4xl font-bold text-foreground">${tier.price}</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
+                      <span className="text-sm text-muted-foreground">/competition</span>
                     </div>
+                    {(() => {
+                      const localApprox = getLocalCurrencyApprox(tier.price);
+                      return localApprox ? (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{localApprox} approx.</p>
+                      ) : null;
+                    })()}
                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{tier.description}</p>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
@@ -293,7 +299,7 @@ export default function About() {
                       {tier.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm">
                           <Check className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{f}</span>
+                          <span className={`text-muted-foreground ${f.includes("coming soon") ? "italic" : ""}`}>{f}</span>
                         </li>
                       ))}
                     </ul>
