@@ -120,11 +120,11 @@ const FAQ = [
     a: "The Chief Judge can break ties using criterion-level analysis—comparing specific rubric scores to determine the winner. All tie-break decisions are logged with notes for full transparency.",
   },
   {
-    q: "Can I upgrade or downgrade my plan?",
-    a: "Yes. You can change your plan at any time from your billing settings. Changes take effect immediately, and billing is prorated.",
+    q: "Can I buy multiple competition credits?",
+    a: "Yes. Each purchase unlocks one competition at the selected tier. You can buy as many credits as you need, and they never expire.",
   },
   {
-    q: "What if I need more than the Enterprise plan offers?",
+    q: "What if I need a custom solution?",
     a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organization's needs, including white-label options, API access, and dedicated support.",
   },
 ];
