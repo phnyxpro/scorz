@@ -825,12 +825,72 @@ export function RichTextEditor({
           </ToolbarButton>
           <Divider />
           <ToolbarButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            active={editor.isActive("heading", { level: 1 })}
+            title="Heading 1"
+          >
+            <Heading1 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             active={editor.isActive("heading", { level: 2 })}
             title="Heading 2"
           >
             <Heading2 className="h-3.5 w-3.5" />
           </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            active={editor.isActive("heading", { level: 3 })}
+            title="Heading 3"
+          >
+            <Heading3 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <Divider />
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().sinkListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent + 1 });
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Increase Indent"
+          >
+            <IndentIncrease className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("listItem")) {
+                editor.chain().focus().liftListItem("listItem").run();
+              } else {
+                editor.chain().focus().command(({ tr, state }) => {
+                  const { from, to } = state.selection;
+                  state.doc.nodesBetween(from, to, (node, pos) => {
+                    if (node.type.name === "paragraph" || node.type.name.startsWith("heading")) {
+                      const currentIndent = parseInt(node.attrs?.indent || "0", 10);
+                      if (currentIndent > 0) {
+                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: currentIndent - 1 });
+                      }
+                    }
+                  });
+                  return true;
+                }).run();
+              }
+            }}
+            title="Decrease Indent"
+          >
+            <IndentDecrease className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <Divider />
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHighlight({ color: "#fef08a" }).run()}
             active={editor.isActive("highlight")}
