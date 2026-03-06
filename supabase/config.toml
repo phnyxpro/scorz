@@ -1,37 +1,29 @@
 project_id = "dwcdxofvxsmpbziosvbo"
 
-[functions.create-checkout]
-verify_jwt = false
-
-[functions.check-subscription]
-verify_jwt = false
-
-[functions.customer-portal]
-verify_jwt = false
-
-[functions.notify-registration-status]
-verify_jwt = false
-
-[functions.seed-demo-data]
-verify_jwt = false
-
-[functions.seed-demo-users]
-verify_jwt = false
-
-[functions.parse-pdf]
-verify_jwt = false
-
-[functions.send-staff-invite]
-verify_jwt = false
-
-[functions.send-ticket-email]
-verify_jwt = false
-
-[functions.send-welcome-email]
-verify_jwt = false
-
-[functions.send-score-alert]
-verify_jwt = false
-
-[functions.send-competition-update]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-subscription]
+    verify_jwt = false
+  [functions.create-checkout]
+    verify_jwt = false
+  [functions.customer-portal]
+    verify_jwt = false
+  [functions.notify-registration-status]
+    verify_jwt = false
+  [functions.parse-pdf]
+    verify_jwt = false
+  [functions.seed-demo-data]
+    verify_jwt = false
+  [functions.seed-demo-users]
+    verify_jwt = false
+  [functions.send-competition-update]
+    verify_jwt = false
+  [functions.send-score-alert]
+    verify_jwt = false
+  [functions.send-staff-invite]
+    verify_jwt = false
+  [functions.send-ticket-email]
+    verify_jwt = false
+  [functions.send-welcome-email]
+    verify_jwt = false
