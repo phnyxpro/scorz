@@ -90,7 +90,7 @@ const FAQ = [
   },
   {
     q: "How does digital scoring work?",
-    a: "Judges score each contestant using a customizable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
+    a: "Judges score each contestant using a customisable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
   },
   {
     q: "Can I assign different staff to different events?",
