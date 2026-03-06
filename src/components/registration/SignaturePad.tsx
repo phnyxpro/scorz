@@ -64,6 +64,7 @@ export function SignaturePad({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const hasDrawnRef = useRef(false);
   const [typedName, setTypedName] = useState("");
   const [mode, setMode] = useState<string>("draw");
 
