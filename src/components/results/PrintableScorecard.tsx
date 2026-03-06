@@ -146,6 +146,21 @@ export function PrintableScorecard({
                 {score.time_penalty > 0 && ` • Penalty: -${score.time_penalty}`}
               </div>
               {score.comments && <div className="comments">"{score.comments}"</div>}
+              {score.is_certified && (
+                <div className="sig-stamp">
+                  <span className="sig-icon">✓</span>
+                  <span>Digitally signed via Scorz</span>
+                  <span className="sig-sep">·</span>
+                  <span>Role: Judge</span>
+                  <span className="sig-sep">·</span>
+                  <span>{score.signed_at ? new Date(score.signed_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }) : "—"}</span>
+                </div>
+              )}
+              {score.judge_signature && (
+                <div className="sig-image">
+                  <img src={score.judge_signature} alt="Judge signature" style={{ maxHeight: 50, opacity: 0.8 }} />
+                </div>
+              )}
             </div>
           );
         })}
