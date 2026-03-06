@@ -9,8 +9,10 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -27,25 +29,35 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>You've been invited to join SCORZ</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Section style={header}>
+          <Img
+            src="https://dwcdxofvxsmpbziosvbo.supabase.co/storage/v1/object/public/email-assets/logo.png"
+            width="40"
+            height="40"
+            alt="SCORZ"
+            style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '12px' }}
+          />
+          <span style={wordmark}>SCOR</span>
+          <span style={wordmarkAccent}>Z</span>
+        </Section>
+        <Heading style={h1}>You're invited</Heading>
         <Text style={text}>
           You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
+          <Link href={siteUrl} style={linkStyle}>
+            <strong>SCORZ</strong>
           </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          — live competition scoring and real-time results. Accept the invitation to create your account.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Accept Invitation
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          Wasn't expecting this? You can safely ignore this email.
         </Text>
+        <Text style={brand}>© 2026 SCORZ &nbsp;|&nbsp; Powered by phnyx.dev</Text>
       </Container>
     </Body>
   </Html>
@@ -53,27 +65,42 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
+const container = { padding: '32px 32px 24px' }
+const header = { textAlign: 'center' as const, marginBottom: '24px' }
+const wordmark = { fontSize: '24px', fontWeight: 800 as const, letterSpacing: '2px', color: '#1a1b25' }
+const wordmarkAccent = { fontSize: '24px', fontWeight: 800 as const, letterSpacing: '2px', color: '#f59e0b' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  color: '#1a1b25',
+  margin: '0 0 16px',
+  fontFamily: "'JetBrains Mono', 'Courier New', monospace",
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#6b6e76',
+  lineHeight: '1.6',
+  margin: '0 0 20px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const linkStyle = { color: '#f59e0b', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#1a1b25',
   color: '#ffffff',
-  fontSize: '14px',
+  fontSize: '15px',
+  fontWeight: 600 as const,
   borderRadius: '8px',
-  padding: '12px 20px',
+  padding: '14px 28px',
   textDecoration: 'none',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '12px', color: '#a1a1aa', margin: '28px 0 0' }
+const brand = {
+  fontSize: '11px',
+  color: '#a1a1aa',
+  fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+  letterSpacing: '1px',
+  textAlign: 'center' as const,
+  margin: '24px 0 0',
+  borderTop: '1px solid #e4e4e7',
+  paddingTop: '16px',
+}
