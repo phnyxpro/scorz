@@ -76,7 +76,7 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                 onChange={(e) => setPhone(e.target.value)}
                             />
                         </div>
-                        <div className="w-[180px] space-y-2">
+                        <div className="space-y-2">
                             <Label htmlFor="staff-role">Role</Label>
                             <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
                                 <SelectTrigger id="staff-role">
@@ -88,8 +88,11 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button type="submit" disabled={invite.isPending || !email}>
-                            <Mail className="h-4 w-4 mr-2" /> Send Invite
+                        <div className="sm:col-span-2 flex justify-end">
+                            <Button type="submit" disabled={invite.isPending || !email}>
+                                <Mail className="h-4 w-4 mr-2" /> Send Invite
+                            </Button>
+                        </div>
                         </Button>
                     </form>
                 </CardContent>
