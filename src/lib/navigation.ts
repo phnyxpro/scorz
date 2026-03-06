@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Trophy, ClipboardList, User, Shield, Mic, Users,
     BarChart3, Eye, CreditCard, BookOpen, ShieldCheck, Calendar,
-    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper, MessageSquare
+    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper, MessageSquare, Key, TrendingUp
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
