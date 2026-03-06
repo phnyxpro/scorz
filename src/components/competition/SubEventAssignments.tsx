@@ -340,6 +340,103 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   );
 }
 
+/* ── Email Preview Dialog ── */
+function EmailPreviewDialog({ inv, competitionName, onClose }: { inv: StaffInvitation | null; competitionName?: string; onClose: () => void }) {
+  if (!inv) return null;
+
+  const roleLabel =
+    inv.role === "organizer" ? "Organizer"
+    : inv.role === "judge" ? "Judge"
+    : inv.role === "tabulator" ? "Tabulator"
+    : inv.role === "chief_judge" ? "Chief Judge"
+    : inv.role === "witness" ? "Witness"
+    : String(inv.role);
+  const compLabel = competitionName || "a competition";
+
+  return (
+    <Dialog open={!!inv} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-base">Email Preview</DialogTitle>
+        </DialogHeader>
+        <div className="p-6 pt-3">
+          <div className="text-xs text-muted-foreground mb-3 space-y-1 border border-border rounded-md p-3 bg-muted/30">
+            <p><span className="font-medium text-foreground">From:</span> Scorz &lt;no-reply@notify.scorz.live&gt;</p>
+            <p><span className="font-medium text-foreground">To:</span> {inv.email}</p>
+            <p><span className="font-medium text-foreground">Subject:</span> You're invited as {roleLabel} — {compLabel}</p>
+          </div>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <iframe
+              title="Email preview"
+              srcDoc={buildPreviewHtml(roleLabel, compLabel)}
+              className="w-full border-0"
+              style={{ height: "520px" }}
+              sandbox=""
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function buildPreviewHtml(roleLabel: string, competitionLabel: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Inter',system-ui,-apple-system,sans-serif;">
+  <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">You've been invited as ${roleLabel} for ${competitionLabel}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color:#1a1b25;padding:24px 32px;text-align:center;">
+              <span style="font-size:28px;font-weight:800;letter-spacing:2px;color:#ffffff;">SCOR</span><span style="font-size:28px;font-weight:800;letter-spacing:2px;color:#f59e0b;">Z</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 24px;color:#1a1b25;font-size:15px;line-height:1.6;">
+              <h1 style="font-size:22px;margin:0 0 8px;color:#1a1b25;">You're Invited</h1>
+              <p style="color:#52525b;font-size:15px;line-height:1.6;">
+                You've been assigned as <strong style="color:#1a1b25;">${roleLabel}</strong> for
+                <strong style="color:#1a1b25;">${competitionLabel}</strong>.
+              </p>
+              <p style="color:#52525b;font-size:15px;line-height:1.6;">
+                Click the button below to sign in and access your dashboard. No password needed — this is a secure one-time link.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+                <tr>
+                  <td align="center" style="background-color:#1a1b25;border-radius:8px;">
+                    <a href="#" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                      Sign In to Scorz
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color:#a1a1aa;font-size:12px;">
+                If the button doesn't work, copy and paste the magic link from your email.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px;border-top:1px solid #e4e4e7;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#a1a1aa;font-family:'JetBrains Mono','Courier New',monospace;letter-spacing:1px;">
+                &copy; 2026 SCORZ &nbsp;|&nbsp; Powered by phnyx.dev
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 /* ── Staff Row Component ── */
 interface StaffRowProps {
   inv: StaffInvitation;
