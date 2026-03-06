@@ -56,6 +56,9 @@ const UpdatesHub = lazy(() => import("./pages/UpdatesHub"));
 const ContestantFeedback = lazy(() => import("./pages/ContestantFeedback"));
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
 const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const HelpCategory = lazy(() => import("./pages/HelpCategory"));
+const HelpArticle = lazy(() => import("./pages/HelpArticle"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
