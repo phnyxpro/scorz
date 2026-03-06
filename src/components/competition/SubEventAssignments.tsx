@@ -323,6 +323,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   sendingInvite={false}
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
+                  onPreviewEmail={isAdmin ? setPreviewInv : undefined}
                 />
               ))}
             </div>
