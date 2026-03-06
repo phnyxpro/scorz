@@ -280,6 +280,50 @@ export type Database = {
           },
         ]
       }
+      competition_infractions: {
+        Row: {
+          category: string
+          competition_id: string
+          created_at: string
+          description: string | null
+          id: string
+          penalty_points: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          competition_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          penalty_points?: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          competition_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          penalty_points?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_infractions_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_levels: {
         Row: {
           banner_url: string | null
