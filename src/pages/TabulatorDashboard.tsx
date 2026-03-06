@@ -389,11 +389,11 @@ function SubEventWorkspace({
 /* ─── Main Unified Dashboard ─── */
 export default function TabulatorDashboard() {
   const { id: routeCompId } = useParams<{ id: string }>();
-  const { data: competitions, isLoading: compsLoading } = useCompetitions();
+  const { assignedCompetitions, isLoading: compsLoading } = useStaffView("tabulator");
 
   const activeComps = useMemo(
-    () => (competitions || []).filter((c) => c.status === "active" || c.status === "completed"),
-    [competitions]
+    () => (assignedCompetitions || []).filter((c) => c.status === "active" || c.status === "completed"),
+    [assignedCompetitions]
   );
 
   const [searchQuery, setSearchQuery] = useState("");
