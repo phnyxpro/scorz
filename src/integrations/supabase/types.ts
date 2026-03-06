@@ -1558,6 +1558,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_staff_invitations: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_assigned_competitions: {
         Args: { _user_id: string }
