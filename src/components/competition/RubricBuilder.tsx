@@ -44,6 +44,7 @@ const criterionSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Title is required"),
   guidelines: z.string().optional(),
+  weight_percent: z.coerce.number().min(0).max(100).default(0),
   description_1: z.string().min(1, "Required"),
   description_2: z.string().min(1, "Required"),
   description_3: z.string().min(1, "Required"),
@@ -67,12 +68,12 @@ type RubricFormValues = z.infer<typeof rubricSchema>;
 const DEFAULT_SCALE_LABELS = { "1": "Very Weak", "2": "Weak", "3": "Average", "4": "Good", "5": "Excellent" };
 
 const DEFAULT_CRITERIA: Omit<RubricFormValues["criteria"][number], "id">[] = [
-  { name: "Voice & Articulation", guidelines: "-Range of voice\n-Clarity of words (Diction)", description_1: "Inaudible or unintelligible", description_2: "Occasionally unclear", description_3: "Generally clear", description_4: "Clear and expressive", description_5: "Exceptional vocal command" },
-  { name: "Stage Presence", guidelines: "-Confidence\n-Eye contact\n-Movement", description_1: "No engagement", description_2: "Minimal engagement", description_3: "Adequate presence", description_4: "Commanding presence", description_5: "Captivating throughout" },
-  { name: "Dramatic Appropriateness", guidelines: "-Tone\n-Emotional depth\n-Character portrayal", description_1: "Inappropriate tone", description_2: "Inconsistent tone", description_3: "Appropriate tone", description_4: "Strong dramatic choices", description_5: "Masterful interpretation" },
-  { name: "Literary Devices", guidelines: "-Metaphor\n-Imagery\n-Symbolism", description_1: "No literary devices", description_2: "Basic device usage", description_3: "Adequate device usage", description_4: "Effective device usage", description_5: "Exceptional craft" },
-  { name: "Use of Language", guidelines: "-Word choice\n-Grammar\n-Vocabulary range", description_1: "Poor word choice", description_2: "Basic vocabulary", description_3: "Competent language", description_4: "Rich language", description_5: "Extraordinary language" },
-  { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful" },
+  { name: "Voice & Articulation", guidelines: "-Range of voice\n-Clarity of words (Diction)", weight_percent: 17, description_1: "Inaudible or unintelligible", description_2: "Occasionally unclear", description_3: "Generally clear", description_4: "Clear and expressive", description_5: "Exceptional vocal command" },
+  { name: "Stage Presence", guidelines: "-Confidence\n-Eye contact\n-Movement", weight_percent: 17, description_1: "No engagement", description_2: "Minimal engagement", description_3: "Adequate presence", description_4: "Commanding presence", description_5: "Captivating throughout" },
+  { name: "Dramatic Appropriateness", guidelines: "-Tone\n-Emotional depth\n-Character portrayal", weight_percent: 17, description_1: "Inappropriate tone", description_2: "Inconsistent tone", description_3: "Appropriate tone", description_4: "Strong dramatic choices", description_5: "Masterful interpretation" },
+  { name: "Literary Devices", guidelines: "-Metaphor\n-Imagery\n-Symbolism", weight_percent: 17, description_1: "No literary devices", description_2: "Basic device usage", description_3: "Adequate device usage", description_4: "Effective device usage", description_5: "Exceptional craft" },
+  { name: "Use of Language", guidelines: "-Word choice\n-Grammar\n-Vocabulary range", weight_percent: 16, description_1: "Poor word choice", description_2: "Basic vocabulary", description_3: "Competent language", description_4: "Rich language", description_5: "Extraordinary language" },
+  { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", weight_percent: 16, description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful" },
 ];
 
 /* ─── Sortable Table Row (Desktop) ─── */
@@ -108,6 +109,12 @@ function SortableTableRow({
         )} />
         <Controller control={control} name={`criteria.${index}.guidelines`} render={({ field: f }) => (
           <Textarea {...f} className="text-xs min-h-[48px] resize-none" placeholder="Guidelines / subtext..." rows={2} />
+        )} />
+        <Controller control={control} name={`criteria.${index}.weight_percent`} render={({ field: f }) => (
+          <div className="flex items-center gap-1.5">
+            <Input {...f} type="number" min={0} max={100} className="h-7 text-xs w-20 font-mono" placeholder="0" />
+            <span className="text-[10px] text-muted-foreground">% weight</span>
+          </div>
         )} />
       </TableCell>
       {SCALE_POINTS.map((n) => (
@@ -176,6 +183,12 @@ function SortableAccordionCard({
               <Textarea {...f} className="text-xs min-h-[40px] resize-none" placeholder="Subtext / guidelines..." rows={2} />
             )} />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Weight %</Label>
+            <Controller control={control} name={`criteria.${index}.weight_percent`} render={({ field: f }) => (
+              <Input {...f} type="number" min={0} max={100} className="h-8 text-xs w-24 font-mono" placeholder="0" />
+            )} />
+          </div>
           {SCALE_POINTS.map((n) => (
             <div key={n} className="space-y-1">
               <Label className="text-xs">
@@ -232,6 +245,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
     if (criteria && criteria.length > 0) {
       form.setValue("criteria", criteria.map((c) => ({
         id: c.id, name: c.name, guidelines: c.guidelines || "",
+        weight_percent: c.weight_percent ?? 0,
         description_1: c.description_1, description_2: c.description_2, description_3: c.description_3,
         description_4: c.description_4, description_5: c.description_5,
       })));
@@ -253,7 +267,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   }, [form]);
 
   const handleAddCriterion = useCallback(() => {
-    append({ name: "", guidelines: "", description_1: "", description_2: "", description_3: "", description_4: "", description_5: "" });
+    append({ name: "", guidelines: "", weight_percent: 0, description_1: "", description_2: "", description_3: "", description_4: "", description_5: "" });
   }, [append]);
 
   const onSubmit = async (values: RubricFormValues) => {
@@ -279,6 +293,7 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
       const c = values.criteria[i];
       const data = {
         competition_id: competitionId, name: c.name, guidelines: c.guidelines || null, sort_order: i,
+        weight_percent: c.weight_percent ?? 0,
         description_1: c.description_1, description_2: c.description_2, description_3: c.description_3,
         description_4: c.description_4, description_5: c.description_5,
       };
@@ -290,6 +305,8 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   };
 
   const scaleLabels = form.watch("scaleLabels");
+  const watchedCriteria = form.watch("criteria");
+  const totalWeight = (watchedCriteria || []).reduce((sum, c) => sum + (Number(c.weight_percent) || 0), 0);
 
   if (criteriaLoading) return <Card className="border-border/50 bg-card/80 animate-pulse h-48" />;
 
@@ -372,9 +389,16 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
           </SortableContext>
         </DndContext>
 
-        <Button variant="outline" size="sm" onClick={handleAddCriterion} className="w-full">
-          <Plus className="h-4 w-4 mr-1" /> Add Criterion
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={handleAddCriterion}>
+            <Plus className="h-4 w-4 mr-1" /> Add Criterion
+          </Button>
+          {fields.length > 0 && (
+            <div className={`text-xs font-mono px-2 py-1 rounded ${totalWeight === 100 ? "bg-primary/10 text-primary" : totalWeight > 0 ? "bg-destructive/10 text-destructive" : "text-muted-foreground"}`}>
+              Weight total: {totalWeight}%{totalWeight > 0 && totalWeight !== 100 && " (should be 100%)"}
+            </div>
+          )}
+        </div>
 
         {form.formState.errors.criteria && typeof form.formState.errors.criteria.message === "string" && (
           <p className="text-xs text-destructive">{form.formState.errors.criteria.message}</p>

@@ -157,7 +157,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
             </p>
             {scoringMethod === "weighted" && (
               <p className="text-xs text-amber-500 mt-1">
-                ⚠ Configure criterion weights in the Rubric tab (coming soon).
+                ⚠ Configure criterion weights in the Rubric tab. Ensure weights total 100%.
               </p>
             )}
           </div>

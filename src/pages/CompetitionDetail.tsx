@@ -152,6 +152,7 @@ export default function CompetitionDetail() {
         name: c.name,
         guidelines: null,
         sort_order: startOrder + i,
+        weight_percent: 0,
         description_1: c.description_1,
         description_2: c.description_2,
         description_3: c.description_3,

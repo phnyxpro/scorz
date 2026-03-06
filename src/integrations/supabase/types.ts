@@ -782,6 +782,7 @@ export type Database = {
           name: string
           sort_order: number
           updated_at: string
+          weight_percent: number
         }
         Insert: {
           competition_id: string
@@ -796,6 +797,7 @@ export type Database = {
           name: string
           sort_order?: number
           updated_at?: string
+          weight_percent?: number
         }
         Update: {
           competition_id?: string
@@ -810,6 +812,7 @@ export type Database = {
           name?: string
           sort_order?: number
           updated_at?: string
+          weight_percent?: number
         }
         Relationships: [
           {

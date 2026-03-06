@@ -43,6 +43,7 @@ export interface RubricCriterion {
   name: string;
   sort_order: number;
   guidelines: string | null;
+  weight_percent: number;
   description_1: string;
   description_2: string;
   description_3: string;
