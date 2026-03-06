@@ -243,6 +243,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                   <TableHead className="text-xs">Name</TableHead>
                   <TableHead className="text-xs">Email</TableHead>
                   <TableHead className="text-xs">Age</TableHead>
+                  <TableHead className="text-xs">Scheduled Slot</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Order</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
@@ -251,7 +252,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
