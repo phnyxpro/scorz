@@ -13,9 +13,10 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface StaffInvitationFormProps {
     competitionId: string;
+    competitionName?: string;
 }
 
-export function StaffInvitationForm({ competitionId }: StaffInvitationFormProps) {
+export function StaffInvitationForm({ competitionId, competitionName }: StaffInvitationFormProps) {
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<AppRole>("judge");
     const { data: invitations, isLoading } = useStaffInvitations(competitionId);
