@@ -26,9 +26,10 @@ const roleColors: Record<string, string> = {
 
 interface Props {
   competitionId: string;
+  competitionName?: string;
 }
 
-export function SubEventAssignments({ competitionId }: Props) {
+export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: levels } = useLevels(competitionId);
   const { data: assignableUsers } = useAssignableUsers();
   const addAssignment = useAddAssignment();
