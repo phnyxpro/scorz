@@ -44,6 +44,7 @@ const criterionSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Title is required"),
   guidelines: z.string().optional(),
+  weight_percent: z.coerce.number().min(0).max(100).default(0),
   description_1: z.string().min(1, "Required"),
   description_2: z.string().min(1, "Required"),
   description_3: z.string().min(1, "Required"),
