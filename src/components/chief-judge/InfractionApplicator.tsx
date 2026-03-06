@@ -86,7 +86,7 @@ export function InfractionApplicator({
 
   const handleRemove = async (contestantId: string, infractionId: string) => {
     if (!user || !certification) return;
-    const currentAdj = (certification.penalty_adjustments || {}) as Record<string, AppliedInfraction[]>;
+    const currentAdj = ((certification.penalty_adjustments || {}) as unknown) as Record<string, AppliedInfraction[]>;
     const updated = (currentAdj[contestantId] || []).filter(i => i.infraction_id !== infractionId);
     const newAdj = { ...currentAdj, [contestantId]: updated };
     if (updated.length === 0) delete newAdj[contestantId];
