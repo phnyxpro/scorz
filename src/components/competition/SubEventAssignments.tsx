@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatRoleName } from "@/lib/utils";
 import {
   useSubEventAssignments,
   useAssignableUsers,
