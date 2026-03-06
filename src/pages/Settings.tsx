@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatRoleName } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +164,7 @@ export default function Settings() {
                 <div className="flex flex-wrap gap-1.5">
                   {roles.length > 0 ? roles.map((r) => (
                     <Badge key={r} variant="secondary" className="font-mono text-[10px]">
-                      {r.replace("_", " ")}
+                      {formatRoleName(r)}
                     </Badge>
                   )) : <p className="text-sm text-muted-foreground">No roles assigned</p>}
                 </div>

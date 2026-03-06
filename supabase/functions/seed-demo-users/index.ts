@@ -9,7 +9,7 @@ const corsHeaders = {
 const DEMO_PASSWORD = "demo1234";
 
 const DEMO_USERS = [
-  { email: "organizer@demo.scorz.app", fullName: "Demo Organizer", role: "organizer" },
+  { email: "organizer@demo.scorz.app", fullName: "Demo Organiser", role: "organizer" },
   { email: "chief_judge@demo.scorz.app", fullName: "Demo Chief Judge", role: "chief_judge" },
   { email: "judge@demo.scorz.app", fullName: "Demo Judge", role: "judge" },
   { email: "tabulator@demo.scorz.app", fullName: "Demo Tabulator", role: "tabulator" },

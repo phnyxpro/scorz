@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatRoleName } from "@/lib/utils";
 import {
   useSubEventAssignments,
   useAssignableUsers,
@@ -149,7 +150,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                   <SelectContent>
                     {ASSIGNABLE_ROLES.map((r) => (
-                      <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>
+                      <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -286,7 +287,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                           <TableCell>
                             <div className="flex items-center gap-1.5">
                               <Badge className={roleColors[a.role] || "bg-muted text-muted-foreground"}>
-                                {a.role.replace("_", " ")}
+                                {formatRoleName(a.role)}
                               </Badge>
                               {(a as any).is_chief && (
                                 <Badge variant="outline" className="text-[10px] border-primary/50 text-primary gap-0.5">

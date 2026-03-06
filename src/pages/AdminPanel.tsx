@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { formatRoleName } from "@/lib/utils";
 import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminUsers, type AdminUser } from "@/hooks/useAdminUsers";
@@ -71,7 +72,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
           {user.roles.length === 0 && <span className="text-xs text-muted-foreground italic">No roles assigned</span>}
           {user.roles.map((role) => (
             <Badge key={role} variant="outline" className={`${roleBadgeColor[role] || ""} text-xs gap-1`}>
-              {role.replace("_", " ")}
+              {formatRoleName(role)}
               <button onClick={() => handleRevoke(role)} disabled={busy} className="ml-0.5 hover:text-destructive transition-colors" title={`Revoke ${role}`}>
                 <X className="h-3 w-3" />
               </button>
@@ -85,7 +86,7 @@ function RoleManager({ user, assignRole, revokeRole }: {
             <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Select role to add..." /></SelectTrigger>
             <SelectContent>
               {availableRoles.map((r) => (
-                <SelectItem key={r} value={r} className="text-xs">{r.replace("_", " ")}</SelectItem>
+                <SelectItem key={r} value={r} className="text-xs">{formatRoleName(r)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -219,7 +220,7 @@ export default function AdminPanel() {
                           <div className="flex flex-wrap gap-1">
                             {u.roles.length === 0 && <span className="text-xs text-muted-foreground italic">none</span>}
                             {u.roles.map((r) => (
-                              <Badge key={r} variant="outline" className={`${roleBadgeColor[r] || ""} text-[10px]`}>{r.replace("_", " ")}</Badge>
+                              <Badge key={r} variant="outline" className={`${roleBadgeColor[r] || ""} text-[10px]`}>{formatRoleName(r)}</Badge>
                             ))}
                           </div>
                         </TableCell>
