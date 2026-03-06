@@ -20,6 +20,7 @@ interface TabulatorTimerProps {
   gracePeriodSeconds: number;
   contestants: Array<{ id: string; full_name: string }>;
   onDurationChange?: (seconds: number) => void;
+  onContestantChange?: (contestantId: string) => void;
 }
 
 export function TabulatorTimer({
