@@ -1,47 +1,68 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Rubric Builder Redesign
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Summary
+Replace the existing `RubricBuilder` component with a full-featured matrix/grid builder that supports configurable scale definitions, criterion subtexts/guidelines, a visual grid editor, react-hook-form + zod validation, and responsive mobile layout using accordion stacking.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Current State
+- `RubricBuilder.tsx` exists with basic add/edit/delete criteria using individual Collapsible rows
+- Data model: `rubric_criteria` table with fixed columns `description_1` through `description_5`
+- The current DB schema is hardcoded to a 1-5 scale with separate `description_N` columns -- no flexible scale definition or subtext/guidelines field
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Database Changes
+A migration to add two things:
+1. **`rubric_scale_labels` JSONB column** on the `competitions` table -- stores the scale definition (min, max, labels per point). Default: `{"min":1,"max":5,"labels":{"1":"Very Weak","2":"Weak","3":"Average","4":"Good","5":"Excellent"}}`
+2. **`guidelines` text column** on the `rubric_criteria` table -- stores the subtext/guidelines for each criterion (e.g., "-Range of voice. -Clarity of words")
 
----
+No structural change to `description_1..5` columns needed since a 1-5 scale is already the default and the user's spec matches.
 
-### Fix 1: Conditionally apply auditorium filter
+### Component Architecture
 
-**File: `src/contexts/ThemeContext.tsx`**
+**File: `src/components/competition/RubricBuilder.tsx`** (full rewrite)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+- **react-hook-form + zod** for the entire form:
+  - Scale labels section: min/max range (locked to 1-5 for now given DB constraints), editable label per scale point (required)
+  - Criteria array via `useFieldArray`: each with title (required), guidelines (optional), and `description_1..5` cells (required)
+- **Desktop view**: Render a `<Table>` grid where rows = criteria, columns = scale points. Each cell is an `<Input>` or `<Textarea>` for the description. Column headers show the scale point number + label.
+- **Mobile view** (using `useIsMobile`): Switch to an Accordion layout per criterion. Each accordion item shows the criterion title and expands to reveal a stacked card with all 5 scale point descriptions as labeled inputs.
+- **Drag-to-reorder**: Use simple up/down arrow buttons for reordering criteria (keeps it simple without adding a DnD dependency).
+- **"Save Rubric Schema" button**: Assembles the full JSON payload with scale definition + all criteria and `console.log`s it, plus persists to the database via existing mutation hooks.
+- **"Load Default Template" button**: Pre-fills the form with the 6 default spoken word criteria.
 
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+### JSON Output Shape
+```json
+{
+  "scale": {
+    "min": 1,
+    "max": 5,
+    "labels": { "1": "Very Weak", "2": "Weak", "3": "Average", "4": "Good", "5": "Excellent" }
+  },
+  "criteria": [
+    {
+      "title": "Voice & Articulation",
+      "guidelines": "-Range of voice. -Clarity of words (Diction)",
+      "sort_order": 0,
+      "descriptions": {
+        "1": "Inaudible or unintelligible",
+        "2": "Occasionally unclear",
+        "3": "Generally clear",
+        "4": "Clear and expressive",
+        "5": "Exceptional vocal command"
+      }
+    }
+  ]
 }
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files to Change
+1. **DB migration** -- Add `rubric_scale_labels` JSONB to `competitions`, add `guidelines` text to `rubric_criteria`
+2. **`src/hooks/useCompetitions.ts`** -- Update `RubricCriterion` interface to include `guidelines`, add hook for saving/reading scale labels from the competition record
+3. **`src/components/competition/RubricBuilder.tsx`** -- Full rewrite with:
+   - Scale label editor section
+   - Grid/matrix table (desktop) with criteria rows x scale columns
+   - Accordion layout (mobile) per criterion
+   - react-hook-form + zod validation
+   - Save button that logs JSON + persists to DB
+4. **`src/pages/CompetitionDetail.tsx`** -- No change needed (already imports and renders `RubricBuilder`)
 
