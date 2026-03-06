@@ -146,6 +146,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Log activity
+    await supabase.from("activity_log").insert({
+      competition_id: level.competition_id,
+      sub_event_id: sub_event_id,
+      event_type: "scores_certified",
+      title: "All Scorecards Certified",
+      description: `All ${totalScorecards} scorecards for ${subEvent.name} are now certified. ${sent} notification(s) sent.`,
+      metadata: { total_scorecards: totalScorecards, judges: uniqueJudges, contestants: uniqueContestants, emails_sent: sent },
+    });
+
     console.log(`notify-certification-complete: sent ${sent} emails for sub_event ${sub_event_id}`);
 
     return new Response(JSON.stringify({ success: true, sent }), {
