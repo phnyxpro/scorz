@@ -124,8 +124,9 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
 const SELECTED_COMP_KEY = "scorz_selected_competition";
 
 export default function Dashboard() {
-  const { user, roles, hasRole } = useAuth();
-  const { stats, loading: statsLoading } = useDashboardStats();
+  const { user, roles, hasRole, masquerade, isMasquerading } = useAuth();
+  const effectiveUserId = isMasquerading ? masquerade?.userId : user?.id;
+  const { stats, loading: statsLoading } = useDashboardStats(effectiveUserId);
   const isAdmin = hasRole("admin");
   const isTabulator = hasRole("tabulator");
   const { data: topCompetitions } = useQuery({
