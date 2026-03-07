@@ -181,6 +181,8 @@ export default function JudgeScoring() {
     }
   };
 
+  const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
+
   // Debounced auto-save when scores change
   const handleSaveRef = useRef(handleSave);
   handleSaveRef.current = handleSave;
@@ -222,8 +224,6 @@ export default function JudgeScoring() {
       setCertifyAllPending(false);
     }
   };
-
-  const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
