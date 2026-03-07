@@ -40,11 +40,44 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
     },
   });
 
-  const profileMap = useMemo(() => {
+  // Get judge emails for staff invitation lookup
+  const judgeEmails = useMemo(
+    () => (profiles || []).map((p) => p.email).filter(Boolean) as string[],
+    [profiles]
+  );
+
+  // Fetch staff invitation names (organiser-entered names)
+  const { data: staffInvitations } = useQuery({
+    queryKey: ["judge-staff-invitations", judgeEmails],
+    enabled: judgeEmails.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from("staff_invitations" as any)
+        .select("email, name")
+        .in("email", judgeEmails) as any);
+      if (error) throw error;
+      return (data || []) as { email: string; name: string | null }[];
+    },
+  });
+
+  // Map email → staff invitation name
+  const staffNameByEmail = useMemo(() => {
     const m = new Map<string, string>();
-    profiles?.forEach((p) => m.set(p.user_id, friendlyDisplayName(p.full_name, p.email)));
+    staffInvitations?.forEach((inv) => {
+      if (inv.name) m.set(inv.email.toLowerCase(), inv.name);
+    });
     return m;
-  }, [profiles]);
+  }, [staffInvitations]);
+
+  // Build final name map: invitation name → profile full_name → friendly email
+  const nameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    profiles?.forEach((p) => {
+      const staffName = p.email ? staffNameByEmail.get(p.email.toLowerCase()) : undefined;
+      m.set(p.user_id, staffName || friendlyDisplayName(p.full_name, p.email));
+    });
+    return m;
+  }, [profiles, staffNameByEmail]);
 
   // Compute per-judge activity
   const judgeActivity = useMemo(() => {
@@ -69,8 +102,8 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
 
       return {
         judgeId,
-        name: profileMap.get(judgeId) || "Judge",
-        initials: (profileMap.get(judgeId) || "J").slice(0, 2).toUpperCase(),
+        name: nameMap.get(judgeId) || "Judge",
+        initials: (nameMap.get(judgeId) || "J").slice(0, 2).toUpperCase(),
         totalScored,
         certifiedCount,
         draftCount,
@@ -79,7 +112,7 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
         lastUpdate,
       };
     });
-  }, [judgeUserIds, allScores, profileMap, contestantCount]);
+  }, [judgeUserIds, allScores, nameMap, contestantCount]);
 
   if (judgeActivity.length === 0) return null;
 
