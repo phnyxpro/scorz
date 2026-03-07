@@ -324,7 +324,10 @@ export default function PublicEventDetail() {
                   </motion.p>
                 )}
 
-                {comp.status === "active" && (
+                {comp.status === "active" &&
+                  (comp as any).registration_enabled !== false &&
+                  (!(comp as any).registration_start_at || new Date() >= new Date((comp as any).registration_start_at)) &&
+                  (!(comp as any).registration_end_at || new Date() <= new Date((comp as any).registration_end_at)) && (
                   <Button
                     size="lg"
                     className="w-full sm:w-auto"

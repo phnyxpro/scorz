@@ -316,6 +316,26 @@ export default function ContestantRegistration() {
 
   if (compLoading || regLoading) return <LoadingSpinner />;
 
+  // Guard: registration closed
+  const regOpen =
+    !isOnBehalf &&
+    comp &&
+    ((comp as any).registration_enabled === false ||
+      ((comp as any).registration_start_at && new Date() < new Date((comp as any).registration_start_at)) ||
+      ((comp as any).registration_end_at && new Date() > new Date((comp as any).registration_end_at)));
+
+  if (regOpen) {
+    return (
+      <div className="max-w-md mx-auto py-20 text-center space-y-4">
+        <h1 className="text-2xl font-bold">Registration Closed</h1>
+        <p className="text-muted-foreground">Registration for this competition is currently closed.</p>
+        <Button variant="outline" onClick={() => navigate("/competitions")}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Competitions
+        </Button>
+      </div>
+    );
+  }
+
   if (existing) {
     return <AlreadyRegisteredView status={existing.status} onBack={() => navigate("/competitions")} />;
   }
