@@ -668,6 +668,7 @@ export type Database = {
       }
       event_messages: {
         Row: {
+          channel: string
           competition_id: string
           content: string | null
           created_at: string
@@ -675,10 +676,12 @@ export type Database = {
           file_url: string | null
           id: string
           message_type: string
+          recipient_id: string | null
           reply_to_id: string | null
           sender_id: string
         }
         Insert: {
+          channel?: string
           competition_id: string
           content?: string | null
           created_at?: string
@@ -686,10 +689,12 @@ export type Database = {
           file_url?: string | null
           id?: string
           message_type?: string
+          recipient_id?: string | null
           reply_to_id?: string | null
           sender_id: string
         }
         Update: {
+          channel?: string
           competition_id?: string
           content?: string | null
           created_at?: string
@@ -697,6 +702,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           message_type?: string
+          recipient_id?: string | null
           reply_to_id?: string | null
           sender_id?: string
         }
