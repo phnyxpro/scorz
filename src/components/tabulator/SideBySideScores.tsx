@@ -11,6 +11,8 @@ interface Props {
   indexToName?: Record<string, string>;
   contestantName: string;
   contestantUserId?: string;
+  /** Map judge_id → display name */
+  judgeProfiles?: Record<string, string>;
 }
 
 export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId }: Props) {
