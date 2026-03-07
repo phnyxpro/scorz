@@ -227,6 +227,35 @@ function buildSheets(data: FetchedData) {
   return { masterRows, judgeSheets };
 }
 
+function buildBlankMasterSheet(data: FetchedData): SheetRow[] {
+  const { contestants, assignedJudges } = data;
+  return contestants.map((c) => {
+    const row: SheetRow = { "#": c.sort_order, Contestant: c.full_name, TIME: "" };
+    for (const j of assignedJudges) {
+      row[j.name] = "";
+    }
+    row["Total"] = "";
+    row["MIN"] = "";
+    row["MAX"] = "";
+    row["Penalty"] = "";
+    row["Final Score"] = "";
+    return row;
+  });
+}
+
+function buildBlankJudgeSheet(data: FetchedData): SheetRow[] {
+  const { contestants, criteria } = data;
+  return contestants.map((c) => {
+    const row: SheetRow = { Contestant: c.full_name };
+    for (const crit of criteria) {
+      row[crit.name] = "";
+    }
+    row["Total"] = "";
+    return row;
+  });
+}
+
+
 export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreSheetDownloadsProps) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
