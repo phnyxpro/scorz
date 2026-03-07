@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { UpdateNotice } from "@/components/shared/UpdateNotice";
 
 // Eagerly loaded (public entry points)
 import Index from "./pages/Index";
