@@ -96,6 +96,7 @@ export default function JudgeScoring() {
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
+  const [isLive, setIsLive] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autoSaveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [certifyAllPending, setCertifyAllPending] = useState(false);
