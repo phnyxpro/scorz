@@ -58,7 +58,8 @@ export function useRegistrations(competitionId: string | undefined) {
         .from("contestant_registrations")
         .select("*")
         .eq("competition_id", competitionId!)
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data as ContestantRegistration[];
     },

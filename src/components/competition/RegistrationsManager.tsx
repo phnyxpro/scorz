@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ShieldAlert, Clock } from "lucide-react";
+import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -20,6 +20,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -79,6 +96,117 @@ function SlotTimeCell({ slot, onUpdate, formatTime }: SlotTimeCellProps) {
   );
 }
 
+interface SortableRowProps {
+  reg: ContestantRegistration;
+  idx: number;
+  slot?: { id: string; start_time: string; end_time: string };
+  onSlotUpdate: (slotId: string, startTime: string, endTime: string) => void;
+  formatTime: (time: string) => string;
+  onSelect: (reg: ContestantRegistration) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+}
+
+function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApprove, onReject }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
+      <TableCell className="w-[40px]">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+      <TableCell>
+        <button
+          className="text-sm font-medium text-primary hover:underline text-left"
+          onClick={() => onSelect(reg)}
+        >
+          {reg.full_name}
+        </button>
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="text-[10px]">
+            {reg.age_category}
+          </Badge>
+          {reg.age_category === "minor" && !reg.guardian_name && (
+            <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
+              <ShieldAlert className="h-2.5 w-2.5" /> No Guardian
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <SlotTimeCell
+          slot={slot}
+          onUpdate={onSlotUpdate}
+          formatTime={formatTime}
+        />
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
+          {reg.status}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {reg.status === "pending" && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-secondary hover:text-secondary"
+                onClick={() => onApprove(reg.id)}
+                title="Approve"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                onClick={() => onReject(reg.id)}
+                title="Reject"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          {reg.status === "rejected" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onApprove(reg.id)}
+            >
+              Re-approve
+            </Button>
+          )}
+          {reg.status === "approved" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-destructive"
+              onClick={() => onReject(reg.id)}
+            >
+              Revoke
+            </Button>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 interface Props {
   competitionId: string;
 }
@@ -101,7 +229,6 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInConsent, setWalkInConsent] = useState(false);
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
 
-  // Get all sub-events for filtering
   const allLevelIds = levels?.map(l => l.id) || [];
   const firstLevelId = allLevelIds[0];
   const { data: subEventsFirst } = useSubEvents(firstLevelId);
@@ -142,14 +269,50 @@ export function RegistrationsManager({ competitionId }: Props) {
     if (filterSubEvent !== "all") {
       list = list.filter(r => r.sub_event_id === filterSubEvent);
     }
-    // Sort by sort_order, then by name
-    list.sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0));
+    // Primary sort by sort_order, secondary by scheduled slot start_time
+    list.sort((a, b) => {
+      const orderA = (a as any).sort_order || 0;
+      const orderB = (b as any).sort_order || 0;
+      if (orderA !== orderB) return orderA - orderB;
+      // Secondary: scheduled slot start_time
+      const slotA = slotsByRegId[a.id]?.start_time || "";
+      const slotB = slotsByRegId[b.id]?.start_time || "";
+      return slotA.localeCompare(slotB);
+    });
     return list;
-  }, [registrations, search, filterSubEvent]);
+  }, [registrations, search, filterSubEvent, slotsByRegId]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filtered.findIndex(r => r.id === active.id);
+    const newIndex = filtered.findIndex(r => r.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    // Reorder: assign new sort_order values based on position
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Batch update sort_order for all affected items
+    const updates = reordered.map((r, i) => ({ id: r.id, sort_order: i }));
+    
+    // Optimistic: update all sort_orders
+    for (const u of updates) {
+      await supabase.from("contestant_registrations").update({ sort_order: u.sort_order } as any).eq("id", u.id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+  };
 
   const sendNotification = async (registrationId: string, status: string) => {
     try {
-      // Get competition name for the email
       const { data: comp } = await supabase
         .from("competitions")
         .select("name")
@@ -180,20 +343,6 @@ export function RegistrationsManager({ competitionId }: Props) {
     });
   };
 
-  const handleMoveOrder = async (id: string, direction: "up" | "down") => {
-    const idx = filtered.findIndex(r => r.id === id);
-    if (idx < 0) return;
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= filtered.length) return;
-
-    const currentOrder = (filtered[idx] as any).sort_order || 0;
-    const swapOrder = (filtered[swapIdx] as any).sort_order || 0;
-
-    await supabase.from("contestant_registrations").update({ sort_order: swapOrder } as any).eq("id", filtered[idx].id);
-    await supabase.from("contestant_registrations").update({ sort_order: currentOrder } as any).eq("id", filtered[swapIdx].id);
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
-  };
-
   const handleSlotTimeUpdate = async (slotId: string, startTime: string, endTime: string) => {
     const { error } = await supabase
       .from("performance_slots")
@@ -208,7 +357,6 @@ export function RegistrationsManager({ competitionId }: Props) {
   };
 
   const formatSlotTime = (time: string) => {
-    // time is in HH:MM:SS format, display as HH:MM AM/PM
     const [h, m] = time.split(":");
     const hour = parseInt(h, 10);
     const ampm = hour >= 12 ? "PM" : "AM";
@@ -218,10 +366,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
   const handleWalkInAdd = async () => {
     if (!walkInName || !walkInEmail || !user) return;
-    // For walk-ins, the organizer creates the registration on behalf
-    // We use a special approach: create with the organizer's user_id tagged
     try {
-      // First check if a profile exists for this email
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("user_id")
@@ -261,7 +406,7 @@ export function RegistrationsManager({ competitionId }: Props) {
             <div>
               <CardTitle className="text-base">Contestant Registrations</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                {registrations?.length || 0} total · {pendingCount} pending approval
+                {registrations?.length || 0} total · {pendingCount} pending approval · Drag to reorder
               </p>
             </div>
             <div className="flex gap-2">
@@ -288,135 +433,51 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
 
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs w-[40px]">#</TableHead>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Email</TableHead>
-                  <TableHead className="text-xs">Age</TableHead>
-                  <TableHead className="text-xs">Scheduled Slot</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Order</TableHead>
-                  <TableHead className="text-xs">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 && (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis]}
+            >
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                      No registrations found.
-                    </TableCell>
+                    <TableHead className="text-xs w-[40px]"></TableHead>
+                    <TableHead className="text-xs w-[40px]">#</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Email</TableHead>
+                    <TableHead className="text-xs">Age</TableHead>
+                    <TableHead className="text-xs">Scheduled Slot</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs">Actions</TableHead>
                   </TableRow>
-                )}
-                {filtered.map((reg, idx) => (
-                  <TableRow key={reg.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell>
-                      <button
-                        className="text-sm font-medium text-primary hover:underline text-left"
-                        onClick={() => setSelectedReg(reg)}
-                      >
-                        {reg.full_name}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-[10px]">
-                          {reg.age_category}
-                        </Badge>
-                        {reg.age_category === "minor" && !reg.guardian_name && (
-                          <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
-                            <ShieldAlert className="h-2.5 w-2.5" /> No Guardian
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <SlotTimeCell
+                </TableHeader>
+                <SortableContext items={filtered.map(r => r.id)} strategy={verticalListSortingStrategy}>
+                  <TableBody>
+                    {filtered.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                          No registrations found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {filtered.map((reg, idx) => (
+                      <SortableRow
+                        key={reg.id}
+                        reg={reg}
+                        idx={idx}
                         slot={slotsByRegId[reg.id]}
-                        onUpdate={handleSlotTimeUpdate}
+                        onSlotUpdate={handleSlotTimeUpdate}
                         formatTime={formatSlotTime}
+                        onSelect={setSelectedReg}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
-                        {reg.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveOrder(reg.id, "up")}
-                        >
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={idx === filtered.length - 1}
-                          onClick={() => handleMoveOrder(reg.id, "down")}
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {reg.status === "pending" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-secondary hover:text-secondary"
-                              onClick={() => handleApprove(reg.id)}
-                              title="Approve"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => handleReject(reg.id)}
-                              title="Reject"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        {reg.status === "rejected" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleApprove(reg.id)}
-                          >
-                            Re-approve
-                          </Button>
-                        )}
-                        {reg.status === "approved" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-destructive"
-                            onClick={() => handleReject(reg.id)}
-                          >
-                            Revoke
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    ))}
+                  </TableBody>
+                </SortableContext>
+              </Table>
+            </DndContext>
           </div>
         </CardContent>
       </Card>
