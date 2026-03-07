@@ -365,7 +365,7 @@ export default function JudgeScoring() {
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             {!sidebarOpen && (
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="shrink-0">
                 <PanelLeft className="h-4 w-4" />
@@ -375,21 +375,23 @@ export default function JudgeScoring() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold text-foreground truncate">Judge Scoring</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Judge Scoring</h1>
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
-            {onStageContestant === selectedContestant && (
-              <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
-                On Stage
-              </Badge>
-            )}
-            {selectedContestantName && (
-              <Badge variant="secondary" className="shrink-0 gap-1">
-                <User className="h-3 w-3" />
-                <span className="truncate max-w-[120px]">{selectedContestantName}</span>
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {onStageContestant === selectedContestant && (
+                <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
+                  <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+                  On Stage
+                </Badge>
+              )}
+              {selectedContestantName && (
+                <Badge variant="secondary" className="shrink-0 gap-1">
+                  <User className="h-3 w-3" />
+                  <span className="truncate max-w-[120px]">{selectedContestantName}</span>
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Rubric reference */}
