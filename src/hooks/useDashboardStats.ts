@@ -136,7 +136,7 @@ export function useDashboardStats(effectiveUserId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchStats]);
+  }, [uid, fetchStats]);
 
   return { stats, loading };
 }
