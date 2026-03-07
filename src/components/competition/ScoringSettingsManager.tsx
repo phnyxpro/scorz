@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Clock, MessageSquare, Settings, Calculator } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
 import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
+import { ScoreCardExportSection } from "./ScoreCardExportSection";
 
 interface ScoringSettingsManagerProps {
   competitionId: string;
@@ -251,6 +252,14 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       {/* Score Sheet Downloads */}
       <ScoreSheetDownloads
         competitionId={competitionId}
+        levels={levels || []}
+        subEvents={(allSubEvents || []).map(se => ({ id: se.id, name: se.name, level_id: se.level_id, status: se.status }))}
+      />
+
+      {/* PDF Score Card Export */}
+      <ScoreCardExportSection
+        competitionId={competitionId}
+        competitionName={competition?.name || ""}
         levels={levels || []}
         subEvents={(allSubEvents || []).map(se => ({ id: se.id, name: se.name, level_id: se.level_id, status: se.status }))}
       />
