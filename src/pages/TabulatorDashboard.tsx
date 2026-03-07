@@ -103,10 +103,11 @@ function useJudgingOverview(competitionId: string | undefined) {
 
 /* ─── Sub-event Workspace ─── */
 function SubEventWorkspace({
-  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
+  subEventId, competitionId, registrations, rubricNames, indexToName, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
 }: {
   subEventId: string; competitionId: string;
   registrations: any[]; rubricNames: string[];
+  indexToName: Record<string, string>;
   onOpenChat: () => void; unreadCount: number;
   onContestantChange: (id: string) => void;
 }) {
