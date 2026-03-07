@@ -1,807 +1,868 @@
 # Contestant Walkthrough Guide
 
-Welcome to Scorz as a contestant! This comprehensive guide covers everything you need to know about registering for competitions, managing your profile, participating in events, and accessing your results and feedback.
+Step-by-step guide for contestants covering registration, profile building, competition participation, and feedback.
 
 ---
 
 ## Table of Contents
 
-1. [Getting Started as a Contestant](#getting-started-as-a-contestant)
-2. [Creating Your Profile](#creating-your-profile)
-3. [Finding & Registering for Competitions](#finding--registering-for-competitions)
-4. [Registration Process](#registration-process)
-5. [Managing Your Registrations](#managing-your-registrations)
-6. [Competition Day Preparation](#competition-day-preparation)
-7. [During the Competition](#during-the-competition)
-8. [Viewing Results & Feedback](#viewing-results--feedback)
-9. [Post-Competition Activities](#post-competition-activities)
-10. [Advanced Features](#advanced-features)
-11. [Account Management](#account-management)
-12. [Troubleshooting](#troubleshooting)
-13. [Best Practices](#best-practices)
+1. [Registering for Events](#registeringforevents)
+2. [Managing Your Profile](#managingyourprofile)
+3. [Viewing Feedback](#viewingfeedback)
+4. [Contestant Registration Guide](#contestantregistrationguide)
+5. [Building Your Competition Profile](#buildingcompetitionprofile)
+6. [Understanding Results & Feedback](#understandingresultsfeedback)
+7. [Contestant Community Engagement](#contestantcommunityengagement)
 
 ---
 
-## Getting Started as a Contestant
+## Registering for Events
 
-### Account Creation
+## Finding Events
 
-**Step 1: Sign Up**
-1. Visit the Scorz website
-2. Click **"Get Started"** or **"Sign Up"**
-3. Enter your email address and create a password
-4. Verify your email with the confirmation link
+Browse available competitions from the **Events** page. Click on any event to see details including dates, location, rules and rubric.
 
-**Step 2: Complete Profile**
-- Add your full name and basic information
-- Upload a profile photo
-- Set your location and contact preferences
+![Browse events](/help-images/contestant/browse-events.png)
 
-**Step 3: Explore Dashboard**
-- Your contestant dashboard shows:
-  - Available competitions
-  - Your registrations
-  - Upcoming events
-  - Results and feedback
+## Starting Registration
 
-### Understanding Your Role
+Click **Register** on the competition page. You'll need to be signed in to your Scorz account.
 
-**What You Can Do**:
-- Browse and register for competitions
-- Manage your profile and portfolio
-- View competition details and schedules
-- Access judge feedback and scores
-- Participate in audience voting
-- Purchase tickets for events
+## Registration Form
 
-**Account Types**:
-- **Basic Contestant**: Register and participate
-- **Premium Features**: Enhanced profile, analytics (if available)
-- **Multi-Role**: You can also be a judge, organiser, etc.
+Complete the registration form with:
+- **Full name** and contact details
+- **Age category** selection
+- **Profile photo** upload
+- **Bio** — tell judges and audiences about yourself
+- **Performance video URL** (optional)
+- **Social media handles** (optional)
+
+## Rules Acknowledgement
+
+Read the competition rules and check the acknowledgement box. You may also need to provide a **digital signature**.
+
+![Registration form](/help-images/contestant/registration-form.png)
+
+## Guardian Consent (Minors)
+
+If you're under 18, a guardian must also provide their details and digital signature.
+
+> **Tip:** You can update your profile information after submitting, but changes may need re-approval from the organiser.
 
 ---
 
-## Creating Your Profile
+## Managing Your Profile
 
-### Profile Basics
+## Accessing Your Profile
 
-**Essential Information**:
-- **Full Name**: Your complete legal name
-- **Email**: Primary contact (must be verified)
-- **Phone**: For competition communications
+Click **My Profile** from the dashboard or navigate via the sidebar.
+
+![Contestant profile](/help-images/contestant/profile.png)
+
+## Editable Fields
+
+- **Profile photo** — upload or change your headshot
+- **Bio** — update your personal statement
+- **Performance video** — add or change your showcase video URL
+- **Social handles** — link your Instagram, TikTok, Facebook, etc.
+- **Location** — city or region
+
+## Media Gallery
+
+Upload additional photos and videos to your media gallery. These are visible to organisers and can be featured on the public event page.
+
+> **Tip:** A complete profile with a great photo and bio makes a strong first impression on judges and audiences.
+
+---
+
+## Viewing Feedback
+
+## Feedback Page
+
+After results are published, navigate to **Feedback** from your dashboard to view:
+- **Judge comments** — qualitative feedback from each judge
+- **Score breakdown** — your scores per criterion
+- **People's Choice votes** — how many audience votes you received
+
+![Feedback page](/help-images/contestant/feedback.png)
+
+## Understanding Your Scores
+
+Each criterion shows your individual score from each judge, the weighted score, and how it compares to the average.
+
+## Post-Event Portal
+
+Some competitions offer a **Post-Event Portal** with additional resources, certificates and media from the event.
+
+> **Tip:** Use judge feedback to improve for your next competition. Specific comments on criteria like "Stage Presence" or "Content" are especially valuable.
+
+---
+
+## Contestant Registration Guide
+
+## Finding Competitions
+
+### Discovery Methods
+1. **Public Events Page**: Browse all available competitions
+2. **Search & Filters**: Find by date, location, or type
+3. **Direct Links**: Follow shared competition URLs
+4. **Email Invitations**: Registration links from organisers
+
+### Competition Research
+**Essential Information to Check**:
+- Registration deadlines and fees
+- Age and eligibility requirements
+- Competition categories and sub-events
+- Judging criteria and scoring method
+- Schedule and venue details
+
+## Account Setup
+
+### Creating Your Account
+1. Visit the competition registration page
+2. Click **"Register"** or **"Create Account"**
+3. Provide email and create password
+4. Verify email address
+5. Complete basic profile information
+
+### Profile Requirements
+- **Full Legal Name**: As it appears on ID
+- **Contact Information**: Phone and emergency contacts
 - **Date of Birth**: For age category verification
-- **Location**: City, state/province, country
-
-**Profile Photo**:
-- **Requirements**: Clear, professional headshot
-- **Format**: JPG, PNG (max 5MB)
-- **Guidelines**: Recent photo, neutral background
-- **Usage**: Displayed to judges, audience, and organisers
-
-### Personal Information
-
-**Bio Section**:
-- **Personal Statement**: 2-3 paragraphs about yourself
-- **Background**: Education, experience, achievements
-- **Goals**: Why you're competing, what you hope to achieve
-- **Personality**: What makes you unique
-
-**Physical Information** (if applicable):
-- Height, measurements (pageants)
-- Age category verification
-- Special accommodations needed
-
-### Media Portfolio
-
-**Photo Gallery**:
-- **Headshots**: Multiple angles and expressions
-- **Action Shots**: Performance photos
-- **Professional**: Portfolio-quality images
-- **Casual**: Show your personality
-
-**Video Content**:
-- **Performance Videos**: Your talent or speeches
-- **Introduction Videos**: Personal introductions
-- **Demo Reels**: Show your skills
-- **Platforms**: YouTube, Vimeo, or direct upload
-
-### Social Media & Links
-
-**Social Profiles**:
-- Instagram, TikTok, Facebook
-- YouTube channel
-- Personal website or blog
-- Professional networking (LinkedIn)
-
-**External Links**:
-- Performance videos
-- Portfolio websites
-- Press coverage
-- Awards and achievements
-
-### Privacy Settings
-
-**Profile Visibility**:
-- **Public**: Visible to all competition visitors
-- **Registered Users Only**: Judges and staff only
-- **Private**: Only you and organisers
-
-**Contact Preferences**:
-- Email notifications for competitions
-- Marketing communications
-- Judge feedback alerts
-- Results announcements
-
----
-
-## Finding & Registering for Competitions
-
-### Browsing Competitions
-
-**Discovery Methods**:
-1. **Public Events Page**: Browse all upcoming competitions
-2. **Search & Filters**: Find by location, date, type
-3. **Categories**: Pageants, speech contests, talent shows
-4. **Featured Events**: Highlighted competitions
-
-**Competition Information**:
-- **Overview**: Description, dates, location
-- **Structure**: Levels and sub-events
-- **Judging Criteria**: Rubric and scoring method
-- **Entry Requirements**: Age, experience, fees
-- **Schedule**: Important dates and deadlines
-
-### Registration Eligibility
-
-**Common Requirements**:
-- **Age Restrictions**: Minimum/maximum age limits
-- **Residency**: Geographic restrictions
-- **Experience Level**: Beginner, intermediate, advanced
-- **Prerequisites**: Previous competitions or qualifications
-- **Membership**: Organisation membership requirements
-
-**Special Categories**:
-- **Youth Divisions**: Age-specific categories
-- **Professional**: Experience requirements
-- **Amateur**: Eligibility restrictions
-- **International**: Citizenship requirements
-
-### Registration Deadlines
-
-**Key Dates**:
-- **Early Bird**: Discounted registration period
-- **Regular Registration**: Standard deadline
-- **Late Registration**: Higher fees, limited availability
-- **Final Deadline**: Absolute cutoff date
-
-**Timeline Awareness**:
-- Registration opens weeks/months in advance
-- Prepare materials before deadline
-- Submit early to avoid technical issues
-- Confirm acceptance after submission
-
----
+- **Basic Bio**: Personal introduction
 
 ## Registration Process
 
-### Step-by-Step Registration
+### Step 1: Competition Selection
+- Choose your competition from available options
+- Review eligibility requirements
+- Check registration fees and deadlines
+- Select desired sub-events/categories
 
-**Step 1: Select Competition**
-1. Find competition on public events page
-2. Click **"Register"** or **"Enter Competition"**
-3. Review eligibility requirements
-4. Sign in to your Scorz account
-
-**Step 2: Choose Sub-Events**
-- Select which categories you want to enter
-- Check prerequisites for each sub-event
-- Note any additional fees
-- Confirm schedule conflicts
-
-**Step 3: Complete Application Form**
-
-**Personal Information**:
-- Full legal name
-- Contact details
+### Step 2: Personal Information
+**Required Details**:
+- Full name and contact information
 - Date of birth and age category
-- Emergency contact information
+- Emergency contact details
+- Current location/address
 
-**Profile & Media**:
-- Profile photo upload
-- Personal bio/statement
-- Performance video links
-- Additional photos
+**Optional Information**:
+- Personal bio and background
+- Social media profiles
+- Performance experience
+- Special accommodations needed
 
-**Additional Requirements**:
-- Custom questions from organiser
-- Guardian information (if under 18)
-- Medical information (if required)
-- Liability waivers
+### Step 3: Media Upload
+**Profile Photo**:
+- Professional headshot
+- Clear, high-quality image
+- Appropriate for competition context
+- Maximum file size: 5MB
 
-**Step 4: Payment & Submission**
-- Review total fees
-- Complete payment (if required)
-- Sign digital agreements
-- Submit application
+**Additional Media**:
+- Performance videos (YouTube/Vimeo links)
+- Portfolio photos
+- Demo reels or showcases
+- Supporting documentation
 
-### Digital Signatures
+### Step 4: Sub-Event Selection
+- Review available categories
+- Select appropriate sub-events
+- Check for prerequisites
+- Note any additional fees
 
-**Required Signatures**:
-- **Rules Acknowledgment**: Agree to competition rules
-- **Liability Waiver**: Release of liability
-- **Media Release**: Permission for photos/videos
-- **Code of Conduct**: Professional behavior agreement
+### Step 5: Agreements & Signatures
+**Required Agreements**:
+- Competition rules acknowledgment
+- Liability waiver
+- Media release permission
+- Code of conduct agreement
 
-**Signature Process**:
-1. Review document content
-2. Draw signature on signature pad
-3. Can clear and redraw if needed
-4. Signature legally binding
+**Digital Signatures**:
+- Draw signature on provided pad
+- Can clear and redraw if needed
+- Legally binding agreements
+- Stored securely for records
 
-### Payment Processing
-
+### Step 6: Payment Processing
 **Payment Options**:
-- **Credit/Debit Cards**: Visa, Mastercard, American Express
-- **Digital Wallets**: PayPal, Apple Pay, Google Pay
-- **Bank Transfer**: For large amounts
-- **Installments**: If offered by organiser
+- Credit/debit cards
+- Digital wallets (PayPal, Apple Pay)
+- Bank transfers for large amounts
+- Installment plans (if available)
 
 **Fee Structure**:
-- **Base Entry Fee**: Per competition
-- **Sub-Event Fees**: Additional per category
-- **Late Fees**: Penalty for late registration
-- **Processing Fees**: Platform charges
+- Base registration fee
+- Per sub-event fees
+- Late registration penalties
+- Processing fees
 
-### Confirmation & Next Steps
-
+### Step 7: Confirmation & Next Steps
 **Post-Registration**:
-- **Confirmation Email**: Registration details and receipt
-- **Status Update**: "Pending Review" initially
-- **Dashboard Update**: New registration appears
-- **Communication**: Updates from organiser
+- Receive confirmation email
+- Status shows as "Pending Review"
+- Access to contestant dashboard
+- Updates on approval status
 
----
+## Registration Management
 
-## Managing Your Registrations
-
-### Registration Status
-
-**Status Types**:
+### Status Tracking
 - **Pending**: Awaiting organiser review
 - **Approved**: Accepted to compete
-- **Rejected**: Not accepted (with reason)
+- **Rejected**: Not selected (with feedback)
 - **Waitlisted**: Backup position
-- **Withdrawn**: You cancelled registration
+- **Cancelled**: Registration withdrawn
 
-**Status Changes**:
-- Email notifications for status updates
-- Dashboard status indicators
-- Detailed feedback for rejections
+### Editing Registration
+**Before Approval**:
+- Update personal information
+- Change sub-event selections
+- Modify media uploads
+- Add additional details
 
-### Updating Registration
+**After Approval**:
+- Limited editing capabilities
+- Contact organiser for major changes
+- Some fields become locked
 
-**Editable Information**:
-- Contact details
-- Profile photo and bio
-- Media links
-- Emergency contact
+### Multiple Registrations
+- Register for multiple competitions
+- Manage separate applications
+- Track different deadlines
+- Organize competition schedules
 
-**Non-Editable After Approval**:
-- Sub-event selections
-- Personal identification
-- Signed agreements
+## Special Registration Scenarios
 
-### Managing Multiple Registrations
+### Group Registrations
+- Team or group applications
+- Designated team leader
+- Individual member management
+- Group fee structures
 
-**Organisation Tips**:
-- **Calendar Integration**: Add competition dates
-- **Document Storage**: Keep confirmation emails
-- **Fee Tracking**: Monitor payments and refunds
-- **Communication Log**: Track organiser messages
+### Minor Registrations
+- Guardian/parent information required
+- Additional consent forms
+- Age-appropriate content guidelines
+- Supervised participation rules
 
-### Withdrawals & Refunds
+### International Registrations
+- Currency conversion for fees
+- Visa/travel requirements
+- Language considerations
+- Time zone coordination
 
-**Withdrawal Process**:
-1. Contact organiser directly
-2. Submit withdrawal request
-3. Receive refund decision
-4. Update registration status
+## Troubleshooting Registration
 
-**Refund Policies**:
-- **Full Refund**: Early withdrawal (check deadline)
-- **Partial Refund**: After certain date
-- **No Refund**: Past cutoff or special circumstances
-- **Credit**: Future competition credit
+### Common Issues
+- **Form Won't Submit**: Check required fields, file sizes
+- **Payment Declined**: Verify card details, try different method
+- **Email Not Received**: Check spam folder, verify address
+- **Login Problems**: Reset password, clear browser cache
 
----
+### Getting Help
+- **Help Center**: Search for registration guides
+- **Contact Organiser**: Direct support for specific competitions
+- **Technical Support**: Platform-related issues
+- **Community Forums**: User experiences and solutions
 
-## Competition Day Preparation
-
-### Pre-Competition Checklist
-
-**2 Weeks Before**:
-- [ ] Confirm registration status
-- [ ] Review competition schedule
-- [ ] Prepare performance materials
-- [ ] Arrange transportation and lodging
-- [ ] Test technical equipment
-
-**1 Week Before**:
-- [ ] Finalize performance pieces
-- [ ] Practice timing and transitions
-- [ ] Prepare wardrobe and props
-- [ ] Review judging criteria
-
-**Day Before**:
-- [ ] Pack all necessary items
-- [ ] Confirm arrival time and location
-- [ ] Rest and prepare mentally
-- [ ] Emergency contact list ready
-
-### Venue & Logistics
-
-**Arrival Information**:
-- **Check-in Time**: When to arrive
-- **Location Details**: Address, parking, entrances
-- **Required Documents**: ID, confirmation, waivers
-- **Dressing Room**: Assignment and access
-
-**Technical Requirements**:
-- **Sound/Lighting**: Provided or bring your own
-- **Props/Equipment**: Approved items list
-- **Backstage Access**: Timing and restrictions
-- **Performance Order**: Your slot confirmation
-
-### Performance Preparation
-
-**Practice Sessions**:
-- **Timing Practice**: Exact duration rehearsal
-- **Technical Run-through**: Sound and lighting checks
-- **Full Dress Rehearsal**: Complete performance
-- **Backup Plans**: Technical failure contingencies
-
-**Mental Preparation**:
-- **Visualization**: Mental rehearsal
-- **Relaxation Techniques**: Stress management
-- **Goal Setting**: Performance objectives
-- **Contingency Planning**: "What if" scenarios
+> **Tip:** Start the registration process early to avoid last-minute technical issues. Prepare all required documents and media in advance for a smooth submission.
 
 ---
 
-## During the Competition
-
-### Check-In Process
-
-**Arrival Procedures**:
-1. **Sign-in**: Confirm attendance
-2. **Photo ID**: Verify identity
-3. **Waivers**: Sign any additional forms
-4. **Assignment**: Receive dressing room, schedule
-5. **Briefing**: Attend contestant orientation
-
-**Contestant Orientation**:
-- **Schedule Review**: Performance times and order
-- **Rules Reminder**: Competition guidelines
-- **Technical Brief**: Equipment and procedures
-- **Q&A Session**: Ask questions
-
-### Backstage Management
-
-**Timing & Transitions**:
-- **Call Times**: When to be ready
-- **Warm-up Areas**: Designated spaces
-- **Tech Checks**: Sound and lighting verification
-- **Quick Changes**: Wardrobe transitions
-
-**Communication**:
-- **Stage Manager**: Performance coordination
-- **Judges**: Professional courtesy only
-- **Fellow Contestants**: Appropriate interaction
-- **Support Team**: Family and friends
-
-### Performance Execution
-
-**Pre-Performance**:
-- **Final Preparation**: Warm-up and focus
-- **Equipment Check**: Props and costumes ready
-- **Mental Readiness**: Positive mindset
-- **Entrance**: Confident stage presence
-
-**During Performance**:
-- **Timing Awareness**: Stay within limits
-- **Audience Connection**: Engage appropriately
-- **Technical Execution**: Deliver your best
-- **Adaptability**: Handle any issues gracefully
-
-**Post-Performance**:
-- **Exit Gracefully**: Professional departure
-- **Debrief**: Quick self-assessment
-- **Recovery**: Physical and mental reset
-- **Next Performance**: Prepare for additional rounds
-
-### Between Rounds (Multi-Round Competitions)
-
-**Interim Activities**:
-- **Feedback Review**: If available
-- **Strategy Adjustment**: Based on first round
-- **Rest & Recovery**: Physical and mental breaks
-- **Preparation**: Next round rehearsal
-
-**Advancement Tracking**:
-- **Results Monitoring**: Check progress
-- **Schedule Updates**: Next round timing
-- **Logistics**: Location changes if applicable
-
----
-
-## Viewing Results & Feedback
-
-### Results Publication
-
-**When Results Are Available**:
-- **End of Competition**: Immediate or scheduled release
-- **Round-by-Round**: Progressive announcements
-- **Final Results**: Complete standings
-- **Special Awards**: Additional recognitions
-
-**Access Methods**:
-- **Dashboard Notification**: Automatic alerts
-- **Email Announcements**: Direct notifications
-- **Public Results Page**: Competition website
-- **Mobile App**: Push notifications
-
-### Understanding Your Scores
-
-**Score Breakdown**:
-- **Individual Judge Scores**: Per criterion ratings
-- **Weighted Scores**: How criteria affect total
-- **Final Score**: Your overall placement
-- **Ranking**: Position among contestants
-
-**Rubric Review**:
-- **Criteria Analysis**: Strengths and weaknesses
-- **Judge Comments**: Qualitative feedback
-- **Comparative Data**: How you ranked vs. others
-- **Improvement Areas**: Specific suggestions
-
-### Judge Feedback
-
-**Feedback Types**:
-- **Written Comments**: Detailed observations
-- **Score Explanations**: Why specific ratings
-- **Strength Highlights**: What you did well
-- **Improvement Suggestions**: Growth opportunities
-
-**Feedback Access**:
-- **Private Dashboard**: Your personal feedback
-- **Organiser Sharing**: If permitted
-- **Post-Event Portal**: Additional resources
-- **One-on-One**: Direct judge consultation (if offered)
-
-### People's Choice Results
-
-**Audience Voting**:
-- **Your Vote Count**: Total audience votes received
-- **Ranking**: Popularity position
-- **Demographics**: Voter information (if shared)
-- **Impact**: How voting affected final results
-
----
-
-## Post-Competition Activities
-
-### Certificate & Awards
-
-**Digital Certificates**:
-- **Participation**: For all contestants
-- **Placement**: Based on final ranking
-- **Special Awards**: Category winners
-- **Custom Recognition**: Organiser designations
-
-**Physical Awards**:
-- **Pickup Information**: When and where
-- **Shipping**: Mail delivery options
-- **Presentation**: Award ceremony details
-
-### Media & Highlights
-
-**Competition Media**:
-- **Professional Photos**: Event photography
-- **Video Highlights**: Performance recordings
-- **Press Coverage**: Media mentions
-- **Social Media**: Tagged content
-
-**Personal Media**:
-- **Your Content**: Photos and videos you shared
-- **Fan Content**: Audience-shared media
-- **Official Footage**: Competition recordings
-
-### Networking & Opportunities
-
-**Post-Event Opportunities**:
-- **Sponsorships**: Brand partnership offers
-- **Media Appearances**: Interview requests
-- **Future Competitions**: Invitation offers
-- **Professional Development**: Workshop opportunities
-
-**Community Building**:
-- **Contestant Networks**: Connect with peers
-- **Mentorship**: Judge or organiser guidance
-- **Alumni Groups**: Past contestant communities
-- **Industry Connections**: Professional networking
-
-### Feedback & Improvement
-
-**Self-Assessment**:
-- **Performance Review**: What went well/differently
-- **Goal Achievement**: Did you meet objectives
-- **Learning Experience**: Key takeaways
-- **Future Preparation**: Improvement plans
-
-**Organiser Feedback**:
-- **Event Survey**: Share your experience
-- **Suggestions**: Improvement recommendations
-- **Re-competition Interest**: Future participation
-- **Referral Program**: Recommend to others
-
----
-
-## Advanced Features
-
-### Premium Profile Features
-
-**Enhanced Visibility**:
-- **Featured Profile**: Highlighted on competition page
-- **Advanced Analytics**: Detailed performance metrics
-- **Priority Support**: Direct organiser communication
-- **Media Gallery**: Expanded portfolio display
-
-### Analytics & Insights
-
-**Performance Analytics**:
-- **Score Trends**: How you performed across criteria
-- **Comparative Analysis**: vs. other contestants
-- **Judge Consistency**: Score variation analysis
-- **Improvement Tracking**: Progress over time
-
-**Competition Insights**:
-- **Success Patterns**: What works in competitions
-- **Demographic Data**: Competitor profiles
-- **Trend Analysis**: Industry developments
-- **Market Intelligence**: Competition landscape
-
-### Integration Features
-
-**Social Media Sync**:
-- **Auto-Posting**: Competition updates
-- **Hashtag Campaigns**: Branded content
-- **Fan Engagement**: Audience interaction
-- **Content Scheduling**: Strategic posting
-
-**Calendar Integration**:
-- **Competition Dates**: Automatic calendar events
-- **Deadline Reminders**: Registration and preparation
-- **Travel Planning**: Location and logistics
-- **Follow-up Tasks**: Post-competition activities
-
----
-
-## Account Management
-
-### Profile Maintenance
-
-**Regular Updates**:
-- **Photo Refresh**: Current headshots
-- **Bio Updates**: Recent achievements
-- **Media Addition**: New content and performances
-- **Contact Changes**: Updated information
-
-**Privacy Management**:
-- **Visibility Settings**: Who can see your profile
-- **Data Sharing**: Competition data usage
-- **Communication Preferences**: Notification settings
-- **Account Security**: Password and access controls
-
-### Multiple Competitions
-
-**Portfolio Management**:
-- **Competition History**: Past participations
-- **Results Archive**: Performance records
-- **Feedback Library**: Judge comments collection
-- **Achievement Showcase**: Awards and recognitions
-
-**Application Efficiency**:
-- **Saved Templates**: Reusable application content
-- **Bulk Updates**: Multi-competition changes
-- **Document Library**: Shared media assets
-- **Contact Database**: Organiser relationships
-
-### Account Security
-
-**Security Best Practices**:
-- **Strong Passwords**: Regular updates
-- **Two-Factor Authentication**: Additional security
-- **Login Monitoring**: Suspicious activity alerts
-- **Data Backup**: Important information preservation
-
----
-
-## Troubleshooting
-
-### Registration Issues
-
-**Can't Submit Application**:
-- **Check Requirements**: All mandatory fields completed
-- **File Sizes**: Media uploads within limits
-- **Browser Issues**: Try different browser or clear cache
-- **Contact Support**: Technical assistance
-
-**Payment Problems**:
-- **Card Declined**: Verify payment information
-- **Processing Delays**: Wait and check status
-- **Fee Questions**: Contact organiser directly
-- **Refund Issues**: Follow organiser policy
-
-### Profile & Media Problems
-
-**Upload Failures**:
-- **File Formats**: Check supported types
-- **Size Limits**: Reduce file sizes
-- **Connection Issues**: Stable internet required
-- **Alternative Methods**: Email attachments if needed
-
-**Visibility Issues**:
-- **Privacy Settings**: Check profile visibility
-- **Competition Access**: Verify registration status
-- **Technical Glitches**: Refresh and retry
-- **Support Contact**: Platform help desk
-
-### Competition Day Issues
-
-**Check-in Problems**:
-- **ID Verification**: Bring correct identification
-- **Confirmation**: Print or digital confirmation
-- **Timing**: Arrive early for processing
-- **Contact Info**: Have organiser details
-
-**Performance Issues**:
-- **Technical Problems**: Have backup plans
-- **Timing Issues**: Know your time limits
-- **Emergency Protocols**: Know what to do
-- **Support Access**: Stage manager contact
-
-### Results & Feedback Access
-
-**Missing Results**:
-- **Publication Timing**: Check schedule
-- **Notification Settings**: Verify email preferences
-- **Dashboard Access**: Login and refresh
-- **Contact Organiser**: Direct inquiry
-
-**Feedback Questions**:
-- **Availability**: Check post-event timeline
-- **Access Method**: Correct login credentials
-- **Technical Issues**: Browser and device checks
-- **Organiser Contact**: Direct communication
-
----
-
-## Best Practices
-
-### Profile Excellence
-
-**Professional Presentation**:
-- **High-Quality Photos**: Professional headshots
-- **Compelling Bio**: Engaging personal story
-- **Relevant Media**: Showcase your talents
-- **Complete Information**: All fields filled out
+## Building Your Competition Profile
+
+## Profile Strategy
+
+### Understanding Profile Purpose
+- **First Impression**: Judges' initial view of you
+- **Decision Factor**: Influences selection and scoring
+- **Audience Engagement**: Attracts fans and voters
+- **Professional Record**: Builds your competition history
+
+### Target Audience Analysis
+- **Judges**: Look for talent, skill, professionalism
+- **Audience**: Seek entertainment, relatability, inspiration
+- **Organisers**: Value commitment, preparation, marketability
+- **Sponsors**: Consider commercial appeal and brand fit
+
+## Essential Profile Elements
+
+### Professional Headshot
+**Requirements**:
+- High-resolution image (at least 1000x1000px)
+- Neutral background (white, gray, or blue)
+- Professional attire appropriate to competition
+- Clear facial expression, good lighting
+
+**Best Practices**:
+- Recent photo (within 6 months)
+- Natural smile and confident posture
+- Well-groomed appearance
+- Consistent with your performance style
+
+### Personal Biography
+**Structure**:
+- **Introduction**: Hook with interesting fact
+- **Background**: Education, experience, achievements
+- **Motivation**: Why you compete, what drives you
+- **Personality**: Unique qualities and interests
+
+**Writing Tips**:
+- Keep under 300 words
+- Use first person, conversational tone
+- Include specific achievements
+- Show passion and authenticity
+
+### Performance Media
+**Video Content**:
+- **Demo Reel**: 2-3 minute showcase of your talent
+- **Full Performance**: Complete routine or piece
+- **Behind-the-Scenes**: Preparation and process
+- **Testimonials**: Others speaking about your talent
+
+**Photo Gallery**:
+- **Action Shots**: Performing or in motion
+- **Professional Portraits**: Various expressions
+- **Candid Moments**: Show personality
+- **Preparation Images**: Backstage or practice
+
+## Advanced Profile Features
+
+### Social Media Integration
+**Platform Selection**:
+- Instagram, TikTok for visual talent
+- YouTube for performance videos
+- Twitter for personality and updates
+- Facebook for community engagement
 
 **Content Strategy**:
-- **Authenticity**: Be genuine and real
-- **Professionalism**: Appropriate content and language
-- **Relevance**: Show competition-related skills
+- Regular posting of progress
+- Behind-the-scenes content
+- Fan engagement posts
+- Professional milestone sharing
+
+### Portfolio Development
+**Digital Assets**:
+- High-quality performance recordings
+- Professional photography
+- Press clippings and reviews
+- Award certificates and recognitions
+
+**Organization**:
+- Categorize by type (video, photo, documents)
+- Update regularly with new content
+- Backup important files
+- Share appropriate content publicly
+
+## Profile Optimization
+
+### SEO & Discoverability
+- **Keywords**: Include relevant search terms
+- **Complete Fields**: Fill all profile sections
 - **Regular Updates**: Keep information current
+- **Cross-Platform Consistency**: Use same bio everywhere
 
-### Competition Preparation
+### Audience Engagement
+- **Storytelling**: Share your journey
+- **Transparency**: Be authentic and real
+- **Community Building**: Engage with followers
+- **Value Addition**: Provide useful content
 
-**Research & Planning**:
-- **Competition Study**: Understand format and criteria
-- **Practice Regimen**: Regular performance practice
-- **Technical Preparation**: Equipment and backup plans
-- **Mental Preparation**: Confidence and focus
+## Privacy & Security
 
-**Logistics Management**:
-- **Timeline Planning**: All deadlines met
-- **Resource Gathering**: Materials and support ready
-- **Contingency Planning**: Backup strategies
-- **Health & Wellness**: Physical and mental readiness
+### Profile Visibility Settings
+- **Public**: Visible to all visitors
+- **Judges Only**: Restricted to competition staff
+- **Private**: Only you can view
+- **Custom**: Specific sharing permissions
 
-### Performance Excellence
+### Data Protection
+- **Personal Information**: Control what you share
+- **Media Permissions**: Choose sharing settings
+- **Contact Preferences**: Manage communication options
+- **Account Security**: Strong passwords, privacy settings
 
-**Technical Mastery**:
-- **Timing Precision**: Stay within limits
-- **Technical Proficiency**: Equipment and presentation
-- **Adaptability**: Handle unexpected issues
-- **Professionalism**: Conduct and presentation
+## Profile Maintenance
 
-**Artistic Excellence**:
-- **Authentic Expression**: Genuine performance
-- **Audience Connection**: Engage and communicate
-- **Creative Innovation**: Unique presentation
-- **Emotional Impact**: Memorable experience
+### Regular Updates
+- **Content Refresh**: Update media every 3-6 months
+- **Achievement Addition**: Add new awards and experiences
+- **Bio Refinement**: Improve writing over time
+- **Analytics Review**: Track profile performance
 
-### Post-Competition Growth
+### Performance Tracking
+- **View Analytics**: See profile views and engagement
+- **Feedback Integration**: Use judge comments for improvement
+- **Goal Setting**: Set targets for profile enhancement
+- **Progress Monitoring**: Track development over time
 
-**Feedback Integration**:
-- **Actionable Insights**: Implement judge suggestions
-- **Skill Development**: Targeted improvement areas
-- **Goal Setting**: Specific growth objectives
-- **Progress Tracking**: Measure improvement
+## Profile Showcases
 
-**Networking & Development**:
-- **Relationship Building**: Connect with industry professionals
-- **Opportunity Pursuit**: Follow up on offers
-- **Continuous Learning**: Education and training
-- **Community Engagement**: Stay involved in your field
-
----
-
-## Quick Reference
-
-### Registration Checklist
-- [ ] Account created and verified
-- [ ] Profile complete with photo and bio
-- [ ] Competition eligibility confirmed
-- [ ] All required documents prepared
-- [ ] Payment method ready
-- [ ] Submission completed before deadline
-
-### Competition Day Checklist
-- [ ] Arrival time and location confirmed
-- [ ] Required documents and ID
-- [ ] Performance materials prepared
-- [ ] Wardrobe and props ready
-- [ ] Technical equipment tested
-- [ ] Emergency contacts programmed
-
-### Post-Competition Checklist
-- [ ] Results accessed and reviewed
-- [ ] Judge feedback studied
-- [ ] Certificate downloaded/saved
-- [ ] Self-assessment completed
-- [ ] Improvement plan created
-- [ ] Thank-you notes sent
-
-### Emergency Contacts
-- **Competition Organiser**: Main point of contact
-- **Stage Manager**: Performance coordination
-- **Technical Support**: Equipment issues
-- **Medical**: Health emergencies
-- **Security**: Safety concerns
-
----
-
-## Resources & Support
-
-### Help & Documentation
-- **Knowledge Base**: Comprehensive guides
-- **Video Tutorials**: Step-by-step walkthroughs
-- **FAQ Section**: Common questions answered
-- **Community Forum**: User discussions and tips
+### Competition-Specific Profiles
+- **Pageants**: Emphasize poise, confidence, community involvement
+- **Talent Shows**: Highlight performance skills and versatility
+- **Speech Contests**: Showcase communication and persuasion abilities
+- **Sports Competitions**: Demonstrate athletic achievements and dedication
 
 ### Professional Development
-- **Workshops**: Skill-building sessions
-- **Mentorship**: Expert guidance programs
-- **Training Resources**: Online courses
-- **Industry Events**: Networking opportunities
+- **Career Building**: Use competitions for professional advancement
+- **Networking**: Connect with industry professionals
+- **Branding**: Develop personal brand through competitions
+- **Portfolio Growth**: Build comprehensive professional portfolio
 
-### Community & Networking
-- **Contestant Groups**: Peer support communities
-- **Professional Networks**: Industry connections
-- **Alumni Associations**: Past participant groups
-- **Social Media**: Follow Scorz and competitions
+> **Tip:** Your profile is your first impression. Invest time in creating high-quality content that authentically represents your talents and personality. A strong profile can significantly impact your competition success.
 
 ---
 
-*Last Updated: March 2026*
-*For technical support, visit the Help Center or contact support@scorz.com*
+## Understanding Results & Feedback
+
+## Results Structure
+
+### Scoring System Overview
+**How Scores Work**:
+- Multiple judges evaluate each contestant
+- Scores based on defined rubric criteria
+- Weighted criteria affect final score
+- Penalties applied for rule violations
+
+**Score Components**:
+- **Individual Criterion Scores**: 1-5 scale per category
+- **Weighted Totals**: Criteria importance affects final score
+- **Judge Averages**: Combined judge scores
+- **Penalties**: Deductions for time or rule violations
+
+### Result Categories
+- **Preliminary Rounds**: Initial scoring and advancement
+- **Semi-Finals**: Reduced field scoring
+- **Finals**: Top contestant evaluations
+- **Special Awards**: Category-specific recognitions
+- **People's Choice**: Audience voting results
+
+## Accessing Your Results
+
+### Result Publication
+**Timing**:
+- Immediate after performance (preliminary)
+- End of round (official scores)
+- Competition conclusion (final results)
+- Post-certification (complete rankings)
+
+**Access Methods**:
+- Dashboard notifications
+- Email with result links
+- Public results page
+- Social media announcements
+
+### Score Breakdown
+**Detailed View**:
+- Individual judge scores per criterion
+- Your average scores vs. competition
+- Judge comments and feedback
+- Placement ranking information
+
+## Understanding Judge Feedback
+
+### Feedback Types
+**Quantitative Feedback**:
+- Numerical scores (1-5 scale)
+- Criterion-specific ratings
+- Overall ranking position
+- Statistical comparisons
+
+**Qualitative Feedback**:
+- Written comments from judges
+- Specific strengths highlighted
+- Areas for improvement identified
+- Performance suggestions provided
+
+### Reading Between the Lines
+**Score Interpretation**:
+- **High Scores (4-5)**: Exceptional performance in that area
+- **Medium Scores (2-3)**: Solid performance with room for growth
+- **Low Scores (1)**: Significant improvement needed
+- **Consistency**: How scores align across judges
+
+**Comment Analysis**:
+- **Specific Praise**: What judges valued most
+- **Constructive Criticism**: Actionable improvement areas
+- **Technical Notes**: Performance execution feedback
+- **Artistic Feedback**: Style and presentation notes
+
+## Using Feedback for Growth
+
+### Immediate Action Items
+**Short-term Improvements**:
+- Address specific technical issues
+- Work on highlighted weak areas
+- Practice suggested techniques
+- Refine performance elements
+
+**Practice Strategies**:
+- Daily skill development exercises
+- Video recording and self-analysis
+- Professional coaching sessions
+- Performance refinement drills
+
+### Long-term Development
+**Career Planning**:
+- Identify signature strengths
+- Develop unique performance style
+- Build comprehensive skill set
+- Create professional development roadmap
+
+**Goal Setting**:
+- Specific performance objectives
+- Timeline for skill mastery
+- Competition advancement targets
+- Professional milestone planning
+
+## Comparative Analysis
+
+### Benchmarking Performance
+**Internal Comparison**:
+- Your scores vs. personal bests
+- Performance trends over time
+- Strength/weakness patterns
+- Improvement velocity tracking
+
+**External Comparison**:
+- Your ranking vs. competition field
+- Score distribution analysis
+- Judge consensus evaluation
+- Market position assessment
+
+### Statistical Insights
+**Performance Metrics**:
+- Average score across all criteria
+- Score variance between judges
+- Criterion-specific performance
+- Overall competition percentile
+
+## Handling Different Outcomes
+
+### Success Scenarios
+**Winning Experience**:
+- Celebrate achievements appropriately
+- Express gratitude to supporters
+- Share success story strategically
+- Leverage momentum for next goals
+
+**Strong Performance**:
+- Acknowledge accomplishment
+- Identify what contributed to success
+- Maintain performance standards
+- Build on winning strategies
+
+### Learning from Challenges
+**Lower Placement**:
+- Focus on feedback over ranking
+- Identify specific improvement areas
+- Develop targeted practice plans
+- Maintain positive growth mindset
+
+**Unexpected Results**:
+- Seek additional feedback if needed
+- Analyze performance objectively
+- Consider external factors
+- Focus on controllable improvements
+
+## Feedback Integration
+
+### Action Planning
+**Specific Goals**:
+- Break feedback into actionable items
+- Set measurable improvement targets
+- Create practice schedules
+- Track progress systematically
+
+**Skill Development**:
+- Technical skill refinement
+- Performance technique improvement
+- Mental preparation enhancement
+- Professional presentation development
+
+### Professional Development
+**Coaching & Training**:
+- Work with performance coaches
+- Attend workshops and masterclasses
+- Seek mentorship opportunities
+- Join professional development programs
+
+**Resource Utilization**:
+- Online learning platforms
+- Professional organization membership
+- Performance libraries and archives
+- Industry publication study
+
+## Building Resilience
+
+### Mental Preparation
+**Growth Mindset**:
+- View feedback as opportunity
+- Embrace constructive criticism
+- Focus on controllable factors
+- Celebrate effort and improvement
+
+**Emotional Management**:
+- Process competition emotions
+- Maintain perspective on results
+- Build competition confidence
+- Develop coping strategies
+
+### Long-term Perspective
+**Career Development**:
+- Treat each competition as learning
+- Build comprehensive performance portfolio
+- Develop professional network
+- Create sustainable growth plan
+
+**Personal Growth**:
+- Develop competition resilience
+- Build performance confidence
+- Enhance professional skills
+- Create meaningful competition journey
+
+> **Tip:** Treat feedback as a gift. Every judge comment provides specific insights for improvement. Focus on the actionable intelligence rather than just the ranking numbers.
+
+---
+
+## Contestant Community Engagement
+
+## Community Understanding
+
+### Competition Ecosystem
+**Key Stakeholders**:
+- **Fellow Contestants**: Peers in your competitive journey
+- **Judges & Staff**: Competition professionals and experts
+- **Audience Members**: Fans, supporters, and voters
+- **Organisers & Sponsors**: Event creators and supporters
+- **Media & Press**: Coverage and promotion professionals
+
+### Community Benefits
+- **Support Network**: Encouragement and shared experiences
+- **Learning Opportunities**: Knowledge sharing and skill development
+- **Professional Connections**: Industry relationships and opportunities
+- **Motivation**: Inspiration from others' journeys
+- **Collaboration**: Group projects and joint initiatives
+
+## Networking Strategies
+
+### Pre-Competition Networking
+**Digital Engagement**:
+- Follow competition social media accounts
+- Join contestant Facebook groups or forums
+- Connect with other contestants online
+- Research judges and organisers
+
+**Initial Outreach**:
+- Introduce yourself professionally
+- Share your background and excitement
+- Ask appropriate questions
+- Show genuine interest in others
+
+### Competition Day Networking
+**Backstage Interactions**:
+- Respect personal preparation time
+- Offer appropriate encouragement
+- Share light conversation when suitable
+- Maintain professional boundaries
+
+**Post-Performance Connections**:
+- Congratulate fellow contestants
+- Share feedback experiences
+- Discuss performance challenges
+- Exchange contact information
+
+## Professional Relationships
+
+### Judge Interactions
+**Appropriate Engagement**:
+- Professional respect and courtesy
+- Thank judges for their time and expertise
+- Listen to feedback attentively
+- Maintain appropriate boundaries
+
+**Long-term Connections**:
+- Connect on professional networking sites
+- Attend judge workshops or seminars
+- Seek mentorship opportunities
+- Build professional relationships
+
+### Organiser Relationships
+**Communication Guidelines**:
+- Use official communication channels
+- Be professional and respectful
+- Express appreciation for their work
+- Provide constructive feedback
+
+**Ongoing Engagement**:
+- Attend organiser events and workshops
+- Volunteer for future competitions
+- Provide testimonials and references
+- Stay connected for opportunities
+
+## Social Media Strategy
+
+### Platform Selection
+**Competition-Appropriate Platforms**:
+- **Instagram**: Visual talent showcase
+- **TikTok**: Short performance clips
+- **YouTube**: Full performance videos
+- **Twitter**: Competition updates and networking
+- **Facebook**: Community groups and discussions
+
+### Content Strategy
+**Pre-Competition**:
+- Share preparation journey
+- Post motivation and inspiration
+- Connect with competition hashtags
+- Engage with other contestants' content
+
+**During Competition**:
+- Live updates (appropriate level)
+- Behind-the-scenes content
+- Performance teasers
+- Community engagement posts
+
+**Post-Competition**:
+- Share results and feedback
+- Thank supporters and organizers
+- Reflect on experience
+- Share growth and lessons learned
+
+## Community Building
+
+### Online Communities
+**Contestant Groups**:
+- Join competition-specific forums
+- Participate in discussion threads
+- Share experiences and advice
+- Support fellow contestants
+
+**Professional Networks**:
+- Join industry association groups
+- Attend virtual networking events
+- Participate in professional forums
+- Connect with mentors and coaches
+
+### Local Engagement
+**Regional Groups**:
+- Join local competition communities
+- Attend regional events and workshops
+- Participate in group activities
+- Build local support network
+
+**Alumni Networks**:
+- Connect with past contestants
+- Attend alumni events
+- Share experiences and advice
+- Build long-term relationships
+
+## Mentorship & Support
+
+### Finding Mentors
+**Mentor Identification**:
+- Past competition winners
+- Industry professionals
+- Experienced judges
+- Successful alumni
+
+**Mentorship Approach**:
+- Research potential mentors
+- Craft professional introduction
+- Clearly state your goals
+- Respect their time and expertise
+
+### Being a Mentor
+**Supporting Others**:
+- Share your experiences openly
+- Provide encouragement and advice
+- Help newcomers navigate competitions
+- Create positive community culture
+
+## Event Volunteering
+
+### Volunteer Opportunities
+**Competition Roles**:
+- Event setup and breakdown
+- Registration assistance
+- Audience management
+- Hospitality support
+
+**Benefits**:
+- Gain behind-the-scenes knowledge
+- Network with organisers and staff
+- Contribute to competition community
+- Build resume and experience
+
+## Professional Development
+
+### Skill Building
+**Community Learning**:
+- Attend workshops and seminars
+- Participate in masterclasses
+- Join study groups
+- Share resources and knowledge
+
+**Collaborative Projects**:
+- Group practice sessions
+- Joint performance projects
+- Community service initiatives
+- Professional development programs
+
+## Community Guidelines
+
+### Professional Conduct
+**Respect & Courtesy**:
+- Treat all community members with respect
+- Maintain professional communication
+- Honor competition integrity
+- Support positive community culture
+
+**Ethical Standards**:
+- Avoid inappropriate discussions
+- Respect privacy and confidentiality
+- Maintain competition fairness
+- Report concerning behavior appropriately
+
+### Digital Etiquette
+**Online Interactions**:
+- Use appropriate language and tone
+- Respect platform community guidelines
+- Protect personal and others' privacy
+- Contribute positively to discussions
+
+**Content Sharing**:
+- Obtain permission for sharing others' content
+- Respect intellectual property rights
+- Maintain professional online presence
+- Use social media responsibly
+
+## Measuring Engagement Success
+
+### Personal Metrics
+- **Network Size**: Professional connections made
+- **Opportunities Created**: Auditions, jobs, collaborations
+- **Knowledge Gained**: Skills and insights learned
+- **Community Impact**: Positive contributions made
+
+### Relationship Quality
+- **Mentorship Connections**: Meaningful guidance relationships
+- **Collaborative Projects**: Successful joint initiatives
+- **Professional Opportunities**: Career advancement results
+- **Community Recognition**: Positive community standing
+
+> **Tip:** Community engagement is about building genuine relationships, not just collecting contacts. Focus on being helpful, supportive, and professionally respectful to create lasting, valuable connections in the competition community.
+
+---
+
+## Need Help?
+
+- **In-App Help**: Access detailed guides within the Scorz platform
+- **Support**: Contact your competition organizer or Scorz support
+- **Updates**: This guide is automatically updated when new features are added
+
+---
+
+*Last updated: 3/7/2026*

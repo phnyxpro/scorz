@@ -1,715 +1,508 @@
 # Judge & Chief Judge Walkthrough Guide
 
-Welcome to the Scorz judging system! This guide covers everything judges and chief judges need to know about their roles, access, and responsibilities in competitions.
+Complete guide for judges and chief judges covering scoring, certification, and competition management.
 
 ---
 
 ## Table of Contents
 
-1. [Judge Access & Assignment](#judge-access--assignment)
-2. [Judge Dashboard](#judge-dashboard)
-3. [Judge Scoring Process](#judge-scoring-process)
-4. [Chief Judge Dashboard](#chief-judge-dashboard)
-5. [Chief Judge Responsibilities](#chief-judge-responsibilities)
-6. [Features & Tools](#features--tools)
-7. [Common Tasks](#common-tasks)
-8. [Tips & Best Practices](#tips--best-practices)
+1. [Scoring a Performance](#scoringaperformance)
+2. [Using the Timer](#usingthetimer)
+3. [Certifying Scorecards](#certifyingscorecards)
+4. [Judge Dashboard Overview](#judgedashboardoverview)
+5. [Judge Quick Start Guide](#judgequickstart)
+6. [Judge Assignment & Access](#judgeassignmentprocess)
+7. [Chief Judge Overview](#chiefjudgeoverview)
+8. [Reviewing & Comparing Judge Scores](#reviewingjudgescores)
+9. [Resolving Tie-Breaker Situations](#handlingtiebreakers)
+10. [Judge Best Practices & Tips](#judgebestpractices)
 
 ---
 
-## Judge Access & Assignment
+## Scoring a Performance
 
-### How Judges Are Added to Competitions
+## Accessing the Scoring Interface
 
-Judges are assigned to specific sub-events within a competition by administrators or event organizers. Each judge receives:
+Navigate to **Judging** from your dashboard, then select the competition and sub-event you're assigned to. Click **Score** to open the scoring interface.
 
-- **Role**: Designated as a "Judge"
-- **Assignment Scope**: One or more sub-events (e.g., "Speech - Intermediate Level", "Technical Presentation - Advanced")
-- **Chief Judge Flag** (optional): Some judges are designated as Chief Judges with additional oversight responsibilities
+![Judge scoring interface](/help-images/judge/scoring-interface.png)
 
-### Getting Access
+## Scoring with Sliders
 
-1. **Registration**: Ensure your account exists in the system with the "Judge" role
-2. **Assignment**: The competition organizer will assign you to specific sub-events and their levels
-3. **First Login**: Upon first login as a judge, you'll be directed to the Judge Dashboard
+Each rubric criterion appears as a **slider** ranging from 1 to 5. Drag the slider or click a position to set your score.
 
-### What If You Don't See Your Assignments?
+- Hover over the slider to see the description for each level
+- The weighted score updates in real-time as you adjust
 
-- Check with your competition organizer
-- Verify your email is registered in the system
-- Refresh the page or log out and back in
-- Contact support if issues persist
+## Adding Comments
+
+Use the **Comments** section below the sliders to provide qualitative feedback. These comments are shared with the contestant after results are published.
+
+## Saving Your Scores
+
+Scores are **auto-saved** as you adjust sliders. A confirmation toast appears when your score is saved.
+
+> **Tip:** You can return to a contestant's scorecard and adjust scores until the chief judge certifies the sub-event.
 
 ---
 
-## Judge Dashboard
+## Using the Timer
 
-The Judge Dashboard is your central hub for all judging activities.
+## Read-Only Timer
 
-### Accessing the Dashboard
+As a judge, you can see a **read-only** view of the performance timer that the tabulator controls. This helps you keep track of time without managing it yourself.
 
-After logging in with a judge account, you'll automatically be taken to `/judge-dashboard` or can select "Judge Dashboard" from the navigation menu.
+![Read-only timer](/help-images/judge/read-only-timer.png)
 
-### Dashboard Overview
+## Timer States
 
-**Header Section**
-- Title: "Judge Dashboard" with a star icon
-- Welcome message: Shows the number of competitions you're assigned to
+- **Idle** — waiting for the performance to start
+- **Running** — performance is in progress (green indicator)
+- **Paused** — performance is temporarily paused
+- **Stopped** — performance has ended
+
+## Time Penalties
+
+If the performance exceeds the time limit, penalty points are automatically calculated based on the competition's penalty rules and displayed on the scorecard.
+
+> **Tip:** Focus on scoring — the tabulator manages all timing and penalty calculations.
+
+---
+
+## Certifying Scorecards
+
+## When to Certify
+
+After you've scored all contestants in a sub-event, you can certify your scorecard. This locks your scores and adds your digital signature.
+
+## Digital Signature
+
+Use the signature pad to draw your signature. This is captured and stored alongside your scores for audit purposes.
+
+![Signature pad](/help-images/judge/signature-pad.png)
+
+## What Happens After Certification
+
+- Your scores become **read-only**
+- The chief judge can view your certified scores
+- Your signature appears on the printable scorecard
+
+> **Important:** Once certified, scores cannot be changed unless the chief judge decertifies the sub-event. Make sure all scores are final before certifying.
+
+---
+
+## Judge Dashboard Overview
+
+## Accessing the Judge Dashboard
+
+After logging in with a judge account, click **Judge Dashboard** from the main navigation or sidebar. This is your central hub for all judging activities.
+
+## Dashboard Layout
+
+### Welcome Section
+- Your title: "Judge Dashboard"
+- Summary message showing number of competitions you're assigned to
 - Quick stats: "You have assignments in X competition(s)"
 
-**Main Content Area**
+### Competition Cards
 
-The dashboard displays a card for each competition you're assigned to. Each competition card includes:
+Each competition you're assigned to appears as a card. On each card you'll find:
 
-#### Competition Information
-- **Competition Name**: The name of the competition
-- **Badge**: Indicates it's a "Competition" assignment
-- **Quick Links** (buttons):
-  - 📄 **Rules**: View competition rules and guidelines
-  - ℹ️ **Rubric**: View the scoring rubric/criteria
-  - ⏱️ **Penalties**: View time limit and grace period rules
+#### Quick Links
+- 📄 **Rules** — View competition rules and guidelines
+- ℹ️ **Rubric** — View the detailed scoring rubric
+- ⏱️ **Penalties** — View time limits and grace periods
 
-#### Sub-Events
-Below the quick links, you'll see individual cards for each sub-event you're assigned to within that competition:
+#### Sub-Event List
+Below the quick links are the individual sub-events you're assigned to within that competition:
+- Sub-event name (e.g., "Speech - Intermediate Level")
+- Level designation
+- Your role indicator (Judge or Chief Judge badge)
+- Number of contestants
+- Scoring progress
+- **Start Scoring** button
 
-**Sub-Event Card Details**:
-- **Sub-Event Name**: e.g., "Speech Case - Intermediate"
-- **Level**: The competition level (Beginner, Intermediate, Advanced, etc.)
-- **Status Badge**: 
-  - Shows if you're a Chief Judge (if applicable)
-  - Indicates scoring status for that sub-event
-- **Action Button**: "Start Scoring" or "Continue Scoring" button
+## No Assignments Yet?
 
-### Sub-Event Information Panel
-
-When you click on a sub-event, you can see:
-- Number of contestants in the event
-- Your role (Judge or Chief Judge)
-- Scoring progress (how many competitors have been scored)
-- Last activity timestamp
-
-### No Assignments?
-
-If you see "No Assignments" message with a trophy icon:
+If you see a message saying "No Assignments", it means:
 - You haven't been assigned to any sub-events yet
-- Contact the competition organizer
-- Check back later as assignments may be added
+- Contact your competition organiser
+- You can check back later as assignments may be added
+
+## Filtering & Search
+
+Click the **search** or **filter** options to narrow down competitions by name, status, or date.
+
+> **Tip:** Bookmark your Judge Dashboard for quick access during competition days.
 
 ---
 
-## Judge Scoring Process
+## Judge Quick Start Guide
 
-### Starting to Score
+## Step 1 — Access Your Dashboard
 
-1. From the Judge Dashboard, click **"Start Scoring"** on your assigned sub-event
-2. You'll be taken to the Judge Scoring interface
-3. Select the level and sub-event from dropdowns if not already selected
+Log in and click **Judge Dashboard** from the navigation menu.
 
-### Scoring Interface Layout
+## Step 2 — Review the Rubric
 
-The scoring page is divided into several sections:
+Before you start scoring, click the **Rubric** button on your competition card to understand:
+- What each criterion means
+- How points are awarded (1–5 scale)
+- What descriptions apply at each level
 
-#### Left Sidebar (Contestant List) - *Collapsible on Mobile*
+## Step 3 — Start Scoring
 
-**Contestant Selection Area**:
-- Dropdown menu showing all contestants for the selected sub-event
-- Status indicators for each contestant:
-  - **Scored** (grey badge): You've entered preliminary scores
-  - **Certified** (green badge): You've finalized and signed off
-  - **Not Scored** (no badge): Awaiting your evaluation
-- Click a contestant to select them for scoring
+Click **Start Scoring** on your assigned sub-event.
 
-#### Main Scoring Area
+![Start scoring button](/help-images/judge/start-scoring.png)
 
-**Contestant Header**:
-- Contestant's name and identification
-- Navigation arrows to move between contestants
-- Current scoring status
+## Step 4 — Score the Performance
 
-**Rubric Criteria Section**:
+1. Select a contestant from the dropdown
+2. Move the **rubric sliders** to set your scores (1–5)
+3. Optionally add **comments** explaining your scores
+4. Click **Save** — your scores are automatically saved
 
-Each criterion in the competition's rubric is displayed as:
-- **Criterion Name**: What is being evaluated (e.g., "Content Accuracy", "Delivery", "Engagement")
-- **Description**: Details about what constitutes quality in this area
-- **Score Slider**: Interactive slider to set a score
-  - Minimum to maximum points as defined
-  - Visual indication of current selection
-  - Point value displayed numerically
+## Step 5 — Certify When Ready
 
-**Performance Timer** (if configured):
-- Visual timer showing elapsed time
-- Shows configured time limit
-- Displays grace period (if applicable)
-- Changes color as time approaches limits
+After scoring all contestants:
+1. Click **Certify** on the last contestant
+2. Review your scores in the certification dialog
+3. Draw your **signature** on the signature pad
+4. Click **Confirm** to lock your scores
 
-**Comments Section** (if configured):
-- Text area for detailed notes about the performance
-- Can include strengths, areas for improvement, specific observations
-- Help you remember your reasoning later
+## Done!
 
-#### Bottom Controls
+Your scores are now certified and the chief judge can view them. You cannot modify certified scores.
 
-**Save Button**:
-- Saves your scoring without finalizing
-- Can be revisited and modified before certification
-- Shows confirmation toast when saved
-
-**Certify Button** (when ready):
-- Finalizes your scores for this contestant
-- Opens a certification dialog
-- Requires digital signature
-
-### Certification Process
-
-When you click **"Certify"**:
-
-1. **Review Dialog Opens**:
-   - Shows all your scores for the contestant
-   - Displays comments you've written
-   - Confirms you're ready to finalize
-
-2. **Consent Acknowledgment**:
-   - Must check a box confirming you've reviewed everything
-   - Confirms scores are accurate and fair
-
-3. **Digital Signature**:
-   - You'll see a signature pad
-   - Use mouse/touch to sign
-   - Can clear and try again if needed
-   - Your signature proves you've officially submitted scores
-
-4. **Confirmation**:
-   - Upon successful certification, a success message appears
-   - The contestant's status updates to "Certified"
-   - You cannot modify certified scores
-
-### Modifying Scores Before Certification
-
-- Before certifying, you can:
-  - Change any criterion score by moving the slider
-  - Update comments
-  - Add or remove notes
-  - Click "Save" to preserve changes
-  
-- After certification, scores are locked
-
-### Scoring Tips
-
-**Best Practices**:
-- Score while the performance is fresh in your mind
-- Review the rubric criteria before evaluation
-- Write descriptive comments to explain your scoring
-- Use the full range of the scale (don't cluster all scores in the middle)
-- Be consistent with other judges (compare if visible)
-- Follow penalty rules for time violations
-
-**Avoiding Common Mistakes**:
-- Don't miss the grace period when timing performances
-- Ensure all required criteria are scored (sliders shouldn't be at default)
-- Write meaningful comments (not just "good job")
-- Double-check scores before certification
-- Don't wait until the last minute to score (real-time backups help)
+> **Pro Tip:** Score while performances are fresh in your mind — save preliminary scores and certify after you've reviewed all contestants.
 
 ---
+
+## Judge Assignment & Access
+
+## How Judges Are Assigned
+
+A competition organiser or administrator assigns judges to specific:
+- **Sub-events** (e.g., "Evening Gown", "Talent", "Interview")
+- **Levels** (e.g., "Beginner", "Intermediate", "Advanced")
+- **Role** — whether you're a standard judge or Chief Judge
+
+## Receiving Your Assignment
+
+You'll typically receive:
+1. **Email invitation** with a link and brief details
+2. **Account creation** prompt (if you don't have an account yet)
+3. **First login** takes you directly to your Judge Dashboard
+
+## Verifying Your Assignment
+
+On your Judge Dashboard, check that:
+- You see the correct competition(s)
+- All assigned sub-events are listed
+- Your role (Judge or Chief Judge) is correct
+
+## If Something Is Missing
+
+- Verify your email is correctly registered
+- Refresh the page or log out and back in
+- Check if the invitation was marked as spam
+- Contact your competition organiser
+
+## Dashboard Access Tips
+
+- Bookmark your Judge Dashboard
+- You can participate in multiple competitions simultaneously
+- Each competition is isolated — you only see your assigned sub-events
+- Your dashboard updates in real-time as scores come in
+
+> **Tip:** If you're assigned to multiple sub-events, you'll see them all listed on your dashboard — you can work through them in any order.
+
+---
+
+## Chief Judge Overview
+
+## What Is a Chief Judge?
+
+A Chief Judge is a senior judge with oversight responsibilities for a sub-event. In addition to scoring like a regular judge, you have the power to:
+
+- **Monitor** all judges' progress and activity in real-time
+- **Review** all submitted scores before final approval
+- **Adjust** time penalties if needed
+- **Resolve** tie situations between contestants
+- **Certify** the entire sub-event results officially
+
+## Chief Judge vs. Regular Judge
+
+| Capability | Judge | Chief Judge |
+|---|---|---|
+| Score contestants | ✓ | ✓ |
+| View their own scores | ✓ | ✓ |
+| View other judges' scores | | ✓ |
+| Monitor judge activity | | ✓ |
+| Adjust penalties | | ✓ |
+| Resolve tie-breakers | | ✓ |
+| Certify sub-event | | ✓ |
 
 ## Chief Judge Dashboard
 
-### Chief Judge Role
+As a Chief Judge, your dashboard includes additional tabs:
 
-A Chief Judge has all standard judge responsibilities PLUS additional oversight:
+### Panel Monitor
+See real-time activity of all judges:
+- Who is actively scoring right now
+- How many contestants each judge has completed
+- Progress percentage per judge
+- Last activity timestamp
 
-- **Supervise** all judges' scoring for assigned sub-events
-- **Review** all submitted scores before they're finalized
-- **Adjust** penalty calculations if needed
-- **Resolve** tie situations
-- **Certify** the sub-event results officially
-- **Monitor** judge activity and progress
+### Score Review
+Compare all judges' scores side-by-side:
+- View scores for each contestant from each judge
+- See judge comments and reasoning
+- Identify inconsistencies or outliers
+- Understand score variation
 
-### Accessing the Chief Judge Dashboard
+### Penalties Review  
+Manage time violations:
+- Review original penalty calculations
+- Adjust penalties if timing errors occurred
+- Add justification notes
+- Document your reasoning
 
-The Chief Judge Dashboard is similar to the Judge Dashboard but appears when you're designated as Chief Judge for one or more sub-events.
+### Tie Breaker
+Resolve tied scores:
+- See which contestants have identical final scores
+- Review tie-breaker criteria (if defined)
+- Designate the winner
+- Document your decision
 
-### Chief Judge Dashboard Layout
+## Communication with Judges
 
-**Sub-Event Selection**:
-- Dropdown to select which sub-event to review
-- Filters to show only sub-events where you're Chief Judge
-
-**Main Review Tabs**:
-
-#### 1. **Panel Monitor** Tab
-Shows real-time judging activity:
-- List of all judges assigned to the sub-event
-- Current activity status (actively scoring, idle, etc.)
-- Last action timestamp
-- Number of contestants each judge has scored/certified
-- Progress percentage for each judge
-
-**Benefits**:
-- Identify any judges who are falling behind
-- Spot activity issues early
-- Coordinate scoring schedule
-
-#### 2. **Score Review** Tab
-Shows aggregated scores for all contestants:
-- **Contestant List**: All competitors in the sub-event
-- **Judge Scores**: Side-by-side comparison of scores from each judge
-- **Score Consistency**: Visual indication of score variation
-  - Green: Judges largely in agreement
-  -Yellow: Moderate variation
-  - Red: Significant disagreement (may need investigation)
-
-**Actions Available**:
-- View each judge's individual score cards
-- Review judge comments and notes
-- See scoring timestamp from each judge
-- Identify outliers or unusual patterns
-
-#### 3. **Penalties Review** Tab
-Manage time violations and adjustments:
-- List all contestants with time violations
-- Original penalty amounts
-- Adjustment controls if needed
-- Justification fields for any changes
-
-**Your Responsibilities**:
-- Review time violation recordings
-- Confirm penalty amounts are correct
-- Adjust if technical timing errors occurred
-- Document reasons for adjustments
-
-#### 4. **Tie Breaker** Tab
-Handle competitions where multiple contestants have identical scores:
-- Displays tied contestants
-- List of available tie-breaker criteria
-- Selection interface to designate the winner
-- Comments field for explanation
-
-**Process**:
-1. System identifies tied scores
-2. You review alternate scoring criteria (if defined)
-3. Select which contestant prevails (optional)
-4. Document the reasoning
-
-#### Scoring Progress Bar
-Shows overall completion:
-- Visual progress indicator
-- Number of contested scored vs. total
-- Percentage complete
-- Status: "In Progress", "Ready for Certification", etc.
-
-### After all judges submit scores
-
-Once all judges have submitted and certified their scores for all contestants:
-
-1. **Final Certification Button** becomes available
-2. You can review the complete Panel Monitor showing 100% judge participation
-3. Click **"Certify Sub-Event"** to officially finalize results
-
-### Final Certification Process
-
-**Certification Dialog**:
-1. Review that all judges have certified
-2. Acknowledge you've reviewed all scores
-3. Confirm penalty adjustments are correct
-4. Confirm any tie-breaker decisions
-5. Add your digital signature
-6. Submit to finalize the sub-event
-
-**What Happens After**:
-- Results are locked and archived
-- Competitors can view their scores
-- Reports can be generated
-- Results move to tabulation phase
-
----
-
-## Chief Judge Responsibilities
-
-### Before Scoring Begins
-
-- [ ] Review the rubric criteria with judges
-- [ ] Confirm all judges understand the time limits
-- [ ] Verify penalty rules are clear
-- [ ] Test the scoring interface if judges are unfamiliar
-- [ ] Establish communication channel (chat)
-- [ ] Set expectations for commenting/notes
-
-### During Scoring
-
-- [ ] Monitor judge progress using Panel Monitor
-- [ ] Watch for unusual patterns in Score Review
-- [ ] Coordinate if judges want to discuss borderline cases
-- [ ] Ensure timers are accurate
-- [ ] Document any special circumstances
-
-### After Scoring (Before Certification)
-
-- [ ] Review all submitted scores carefully
-- [ ] Check for outlier scores that need discussion
-- [ ] Verify penalty calculations
-- [ ] Resolve any identified tie-breakers
-- [ ] Reach out to judges if scores seem inconsistent
-- [ ] Document any adjustments and reasoning
-
-### Certification
-
-- [ ] Final review of all data
-- [ ] Complete any remaining tie-breaker decisions
-- [ ] Make any final penalty adjustments with documentation
-- [ ] Sign and certify the sub-event
-- [ ] Ensure scores are locked
-
-### Post-Certification
-
-- [ ] Communicate results to appropriate parties
-- [ ] Be available for questions about scoring decisions
-- [ ] Preserve documentation for records
-
----
-
-## Features & Tools
-
-### Communication: Event Chat
-
-**Purpose**: Communicate with other judges, chief judges, and administrators
-
-**Accessing Chat**:
-- Look for a **Message icon** 💬 in the dashboard
-- Shows unread message count
-- Click to open chat panel
-
-**Chat Features**:
-- Real-time messaging
-- See who's online
-- Threaded conversations (optional)
-- File sharing capability
-- Chat history is logged
-
-**Best Uses**:
-- Clarify rubric interpretation
+Use the **Event Chat** to:
+- Clarify rubric ambiguities with your judge panel
 - Discuss borderline scoring cases
-- Coordinate timing or scheduling
-- Ask quick technical questions
-- Share notes on patterns you're noticing
+- Coordinate timing or special circumstances
+- Provide real-time guidance
 
-**Communication Tips**:
-- Keep messages professional
-- Reference specific contestants when discussing
-- Avoid discussing other judges' scores in a negative way
-- Use chat for quick clarifications, email for formal documentation
-
-### Guidelines & Reference Materials
-
-**Quick Links Available**:
-- 📄 **Rules**: Competition-specific rules and guidelines
-- ℹ️ **Rubric**: Detailed scoring criteria for all categories
-- ⏱️ **Penalties**: Time limits, grace periods, and penalty amounts
-
-**Access**:
-- From Judge Dashboard quick links
-- Usually links to PDF or detailed description pages
-- Can be accessed anytime
-
-**How to Use**:
-- Review the full rubric before you start scoring
-- Reference rules when you encounter unusual situations
-- Check penalties tab before final scoring to understand time calculations
-
-### Real-Time Updates
-
-The system provides live synchronization:
-- Your scores are saved in real-time as you work
-- If connection is lost, you won't lose progress
-- See other judges' activity (Chief Judge only)
-- Notifications when judges certify scores
+> **Important:** As Chief Judge, you're responsible for the integrity and fairness of the entire judging process. Take your review role seriously and reach out to judges if you spot inconsistencies.
 
 ---
 
-## Common Tasks
+## Reviewing & Comparing Judge Scores
 
-### Task: Score Your First Contestant
+## Accessing Score Review
 
-1. Go to Judge Dashboard
-2. Click "Start Scoring" on your assigned sub-event
-3. From the contestant dropdown, select the first contestant
-4. Move the slider for each rubric criterion to set scores
-5. Add comments explaining your scoring (optional)
-6. Click "Save" to save preliminary scores
-7. Click "Certify" when ready to finalize
-8. Review in the certification dialog
-9. Sign the signature pad
-10. Click "Confirm Certification"
+As a Chief Judge:
+1. Go to your **Chief Judge Dashboard**
+2. Select the sub-event from the dropdown
+3. Click the **Score Review** tab
 
-### Task: Adjust a Score Before Certification (Judge)
+## Score Comparison Interface
 
-1. In the scoring interface, locate the criterion you need to adjust
-2. Move the slider to the new score value
-3. Update comments if the reasoning has changed
-4. Click "Save"
-5. Verify the change was saved
-6. Do NOT certify until you're fully ready
+### Contestant List
+Shows all contestants in the sub-event with their status:
+- Number of judges who have scored them
+- Color coding for score consistency (green=agreement, yellow=variation, red=significant disagreement)
 
-### Task: Review Judge Scores (Chief Judge)
+### Judge Score Cards
+Click on a contestant to see:
+- **Side-by-side scores** from each judge
+- Judge names and their individual scores per criterion
+- **Judge comments** explaining their reasoning
+- **Final weighted score** for that contestant
+- **Timestamp** when each judge submitted
 
-1. Go to Chief Judge Dashboard
-2. Select the sub-event from dropdown
-3. Click on "Score Review" tab
-4. Select a contestant from the list
-5. Compare scores from each judge
-6. Read comments from each judge
-7. Note any significant discrepancies
-8. Return to contestant list to review others
+## What to Look For
 
-### Task: Monitor Judge Progress (Chief Judge)
+**Score Consistency** — Are all judges within 1–2 points? If spread is wider, investigate.
 
-1. On Chief Judge Dashboard
-2. Click "Panel Monitor" tab
-3. Review the judge list:
-   - Green indicators = actively scoring
-   - Grey = idle
-   - Check last activity time
-4. If a judge is delayed, you can message them in chat
-5. Update your expectations based on progress
+**Outlier Judges** — Does one judge consistently score higher or lower than others? This may indicate calibration issues.
 
-### Task: Adjust a Penalty (Chief Judge)
+**Comments** — Do judge comments explain any score variation? Different perspectives may be valid.
 
-1. On Chief Judge Dashboard
-2. Click "Penalties Review" tab
-3. Locate contestant with questionable time violation
-4. Click to review original timing
-5. If adjustment is needed:
-   - Click "Adjust Penalty" button
-   - Enter the corrected penalty amount
-   - Add justification comment
-   - Confirm adjustment
-6. Keep documentation for records
+**Scoring Patterns** — Do certain criteria have more variation? This might indicate ambiguous rubric language.
 
-### Task: Resolve a Tie-Breaker (Chief Judge)
+## Taking Action
 
-1. On Chief Judge Dashboard
-2. Click "Tie Breaker" tab
-3. System shows tied contestants
-4. Review available tie-breaker criteria
-5. Option 1: Auto-adjustment (if criteria are defined)
-6. Option 2: Manual selection
-   - Select which contestant prevails
-   - Add explanation
-7. Confirm and save
+If you notice issues:
 
-### Task: Certify Sub-Event Results (Chief Judge)
+1. **Discuss with judges** — Use event chat to clarify borderline cases
+2. **Review rubric** — Are descriptions clear? 
+3. **Document observations** — Note patterns in your certification notes
+4. **Make adjustments** — If a judge clearly misunderstood, discuss with them
+5. **Accept variation** — Some judging variation is normal and acceptable
 
-**Prerequisites**:
-- All judge panels have certified their scores
-- All penalties have been reviewed
-- All tie-breakers are resolved
-
-**Steps**:
-1. Chief Judge Dashboard
-2. Ensure all judge progress shows 100%
-3. Review Score Review tab once more
-4. Click "Certify Sub-Event" button
-5. Review confirmation dialog
-6. Check final consent checkbox
-7. Add your digital signature
-8. Click "Confirm Certification"
-9. See success message - sub-event is now locked
+> **Note:** You cannot directly edit judge scores. If a serious error exists, contact the competition admin.
 
 ---
 
-## Tips & Best Practices
+## Resolving Tie-Breaker Situations
 
-### Scoring Best Practices
+## When Tie-Breakers Occur
 
-**Before Evaluation**:
-- ✅ Read the complete rubric beforehand
-- ✅ Understand the point values for each criterion
-- ✅ Know the time limits and grace periods
-- ✅ Review previous scores if reference available (without bias)
+A tie-breaker situation arises when two or more contestants have the **exact same final weighted score**. The Scorz system automatically identifies these and flags them for Chief Judge resolution.
 
-**During Evaluation**:
-- ✅ Take notes during the performance
-- ✅ Score immediately after to avoid memory fade
-- ✅ Be consistent across multiple contestants
-- ✅ Watch the timer if you're responsible for timing
-- ✅ Look for both strengths and areas for improvement
+## Accessing Tie-Breaker Interface
 
-**When Scoring**:
-- ✅ Consider the full scale of available points
-- ✅ Avoid clustering all scores in the middle
-- ✅ Be fair and non-biased
-- ✅ Grade relative to the rubric, not to other competitors
-- ✅ Write meaningful comments explaining your scores
+1. Go to your **Chief Judge Dashboard**
+2. Click the **Tie Breaker** tab
+3. System displays all tied contestants
 
-**After Scoring**:
-- ✅ Review your comments for clarity
-- ✅ Double-check math if there's a score modifier
-- ✅ Think about consistency with other performances
-- ✅ Only certify when you're genuinely ready
-- ✅ Don't second-guess after certification
+## Tie-Breaker Methods
 
-### Chief Judge Best Practices
+### Automatic Criteria
+If the competition has defined **tie-breaker criteria** (e.g., "Highest delivery score", "Fewest penalties"), the system may automatically calculate these.
 
-**Before Scoring Begins**:
-- ✅ Meet with judge team if possible
-- ✅ Review the rubric with judges
-- ✅ Clarify any ambiguous criteria
-- ✅ Set expectations for speed and quality
-- ✅ Explain penalty rules
-- ✅ Establish communication protocol
+### Manual Selection
+1. Review the tied contestants' scores
+2. Compare their individual criterion scores
+3. Consider comments from judges
+4. Select which contestant prevails
+5. Add **justification notes** explaining your decision
 
-**During Active Scoring**:
-- ✅ Monitor progress regularly
-- ✅ Look for consistency between judges
-- ✅ Watch for judges who are struggling
-- ✅ Be ready to clarify rubric questions
-- ✅ Note any technical issues
-- ✅ Keep communication flowing
+## Documenting Your Decision
 
-**During Score Review**:
-- ✅ Look at overall patterns first
-- ✅ Investigate significant outliers
-- ✅ Don't immediately assume errors
-- ✅ Check if comments explain variation
-- ✅ Review at detail for inconsistencies
-- ✅ Document observations
+Always include notes on why you chose the winner:
+- Which criterion was the deciding factor
+- Any special circumstances considered
+- Reference to competition rules
 
-**Special Situations**:
-- **Significantly Different Scores**: Check comments; if no clear issue, it may reflect legitimate different interpretations
-- **Missed Criteria**: Reach out to judge to understand why
-- **Timing Issues**: Review recordings if available
-- **Judge Questions**: Clarify immediately to avoid cascading errors
-- **Technical Problems**: Alert admin if system issues
+## Multiple Tie-Breakers
 
-### Technology Tips
+If more than two contestants are tied:
+- Resolve the top two first
+- If the new winner then ties with another, resolve again
+- Document all decisions
 
-**Saving Your Work**:
-- The system auto-saves constantly
-- Always click "Save" button for explicit checkpoint
-- You can safely close browser without losing progress
-- Even if disconnected, scores persist on device initially
+## After Resolution
 
-**Signature Pad**:
-- If signature looks weird, click "Clear" and try again
-- Use smooth, steady strokes
-- Your signature proves you've verified the data
-- Can't be unsigned once certified
+- The winning contestant is locked in
+- Their placement is final
+- Justification is recorded for audit purposes
 
-**Mobile/Tablet Scoring**:
-- Works well on tablets 
-- Use stylus if possible for better precision
-- Sidebar collapses to save space
-- Landscape orientation recommended for rubric
-
-**Desktop Scoring**:
-- Wider screen allows side-by-side layout
-- Keep rubric reference open in another window
-- Mouse works fine for all controls
-
-### Troubleshooting Common Issues
-
-**Issue**: "I can't see my assignments"
-- **Solution**: Verify you're logged in as judge user, refresh page, check with administrator
-
-**Issue**: "Scores won't save"
-- **Solution**: Check internet connection, try a different browser, clear cache if needed
-
-**Issue**: "Timer isn't counting down"
-- **Solution**: May be display-only (not your responsibility), check tab/role requirements
-
-**Issue**: "I certified by mistake"
-- **Solution**: Notify chief judge/admin immediately; they may be able to uncertify if needed
-
-**Issue**: "Comments aren't showing for all judges"
-- **Solution**: Comments are optional; not all judges may writeComments
-
-**Issue**: "Can't access Chat"
-- **Solution**: Chat may be disabled for this competition; try refreshing or ask organizer
+> **Important:** Tie-breaker decisions should be made thoughtfully and documented thoroughly — these are high-stakes decisions that deserve careful consideration.
 
 ---
 
-## Keyboard Shortcuts & Navigation
+## Judge Best Practices & Tips
 
-While the system is mouse/touch friendly, some useful patterns:
+## Before You Start Scoring
 
-- **Tab between Criteria**: Use Tab key to move between sliders
-- **Arrow Keys**: Some dropdowns support arrow key navigation
-- **Signature Pad**: Use trackpad for best signature accuracy
-- **Mobile Back Button**: Returns to previous page
+### 1. Understand the Rubric
+- [ ] Read each criterion description carefully
+- [ ] Understand what distinguishes a 1 vs. 5 score
+- [ ] Note any weighted criteria (some count more than others)
+- [ ] Ask questions during pre-event judge calibration
+
+### 2. Review Competition Rules
+- [ ] Know the time limits and grace periods
+- [ ] Understand the penalty structure
+- [ ] Clarify any unusual scoring methods
+- [ ] Ask the Chief Judge if anything is ambiguous
+
+### 3. Get Aligned with Other Judges
+- [ ] Attend judge orientation or calibration session
+- [ ] Review sample scorecards if available
+- [ ] Discuss borderline cases in advance
+- [ ] Establish communication channels (chat, email)
+
+## During Scoring
+
+### 4. Score Immediately After Each Performance
+- [ ] Document scores while the performance is fresh
+- [ ] Don't wait until later — memory fades
+- [ ] Use the comment field to note reasoning
+- [ ] Save preliminary scores without certifying yet
+
+### 5. Use the Full Scoring Range
+- [ ] Avoid clustering all scores in the middle (3–4)
+- [ ] A truly excellent contestant deserves a 5
+- [ ] A significantly weak area deserves a 1
+- [ ] This creates meaningful differentiation between performances
+
+### 6. Be Consistent Across Contestants
+- [ ] Score the first contestant with a particular approach
+- [ ] Apply that same standard to subsequent contestants
+- [ ] If you change your mental scale, note why
+- [ ] Check your first and last scores — avoid drift
+
+### 7. Grade Against the Rubric, Not Against Other Contestants
+- Each contestant should be evaluated independently
+- Score based on the rubric criteria, not comparisons
+- Early contestants shouldn't influence later ones
+- Focus on what the rubric says, not personal preference
+
+### 8. Write Meaningful Comments
+- [ ] Comment why you gave that score, not just "good job"
+- [ ] Example: "Excellent stage presence — clear eye contact and confident posture throughout"
+- [ ] Identify both strengths and areas for improvement
+- [ ] Help contestants understand how to improve next time
+
+## Before Certifying
+
+### 9. Review All Your Scores
+- [ ] Go through each contestant one more time
+- [ ] Check for any scoring errors
+- [ ] Verify comments align with scores
+- [ ] Make sure you used the full scale
+
+### 10. Check for Outliers in Your Scoring
+- [ ] Do you have significantly higher or lower scores than other judges? (Review score summary if visible)
+- [ ] If so, consider whether you're using the rubric differently
+- [ ] It's OK to score differently — but be consistent with your interpretation
+
+### 11. Only Certify When You're Ready
+- [ ] Don't rush to sign off
+- [ ] Once certified, scores are locked
+- [ ] Your signature is a legal commitment
+- [ ] Take your time to get it right
+
+## As a Chief Judge
+
+### 12. Prepare Your Judge Panel
+- [ ] Meet with judges before scoring begins (if possible)
+- [ ] Review the rubric together
+- [ ] Share this best practices guide
+- [ ] Answer questions proactively
+
+### 13. Monitor Progress
+- [ ] Check the Panel Monitor regularly
+- [ ] If a judge is falling behind, reach out
+- [ ] Watch for scoring patterns as scores come in
+- [ ] Flag any concerns early
+
+### 14. Review Comprehensively
+- [ ] Don't just check for obvious errors
+- [ ] Look for subtle patterns (e.g., one judge always scores higher in "delivery")
+- [ ] Read judge comments to understand their reasoning
+- [ ] Consider whether variation is acceptable or concerning
+
+### 15. Communicate With Integrity
+- [ ] If you need to discuss scores with a judge, be professional
+- [ ] Focus on facts, not criticism ("I noticed variation in X" vs. "You scored too high")
+- [ ] If a judge made an error, help them understand the rubric better
+- [ ] Support fair adjudication — that's your core responsibility
+
+## Common Mistakes to Avoid
+
+❌ **Waiting Too Long to Score** — Performances blur together; score immediately
+❌ **Not Using the Full Scale** — Clustering scores 3–5 reduces meaningful differentiation
+❌ **Scoring Based on Other Judges** — Score the rubric, not other scores
+❌ **Vague Comments** — "Good job" doesn't help contestants improve
+❌ **Certifying When Unsure** — Verify everything before you sign
+
+✅ **Do Approach** — Understand rubric deeply → score immediately → use full scale → meaning comments → review carefully → certify with confidence
+
+> **Remember:** Your honest, fair, thoughtful judging contributes to legitimate, trusted results. Contestants, audiences, and organisers rely on your integrity.
 
 ---
 
-## Contacting Support
+## Need Help?
 
-If you encounter issues:
-
-1. **In-System**: Look for Help or Support link in footer
-2. **Email**: Contact the competition organizer
-3. **Chat**: Message tech support if available in competition chat
-4. **Direct**: Ask your Chief Judge who may have admin contact
-
-Provide:
-- Competition name
-- Your name and email
-- What you were trying to do
-- What went wrong
-- Any error messages
+- **In-App Help**: Access detailed guides within the Scorz platform
+- **Support**: Contact your competition organizer or Scorz support
+- **Updates**: This guide is automatically updated when new features are added
 
 ---
 
-## Summary
-
-**Key Takeaways**:
-- ✅ Judge Dashboard is your home; start there
-- ✅ Always review the rubric before scoring
-- ✅ Use comments to explain your scoring
-- ✅ Save before certifying
-- ✅ Signature = final commitment
-- ✅ Chief Judges: monitor progress and review comprehensively
-- ✅ Communication is key for clarifications
-- ✅ Chief Judges certify to lock results
-
-**Judge Workflow**: Assign → Dashboard → View Guidelines → Score → Certify
-
-**Chief Judge Workflow**: Assign → Dashboard → Monitor Judges → Review Scores → Adjust Penalties → Resolve Ties → Certify Sub-Event
-
----
-
-## Appendices
-
-### A. Glossary of Terms
-
-**Sub-Event**: A specific event category at a particular level (e.g., "Speech - Beginner")
-**Level**: Competition tier (Beginner, Intermediate, Advanced, etc.)
-**Rubric Criterion**: Individual scoring category evaluated
-**Time Limit**: Maximum allowed performance time
-**Grace Period**: Extra time allowed before penalties apply
-**Certification**: Official sign-off locking in your scores
-**Chief Judge**: Lead judge responsible for final review and sign-off
-**Penalty**: Points deducted for time violations
-**Tie-Breaker**: Process to determine winner when scores are equal
-**Panel**: The group of judges evaluating a sub-event
-
-### B. Sample Rubric Criteria
-
-Typical scoring areas (yours may vary):
-- **Content Accuracy**: Factual correctness of information
-- **Organization**: Logical flow and structure
-- **Delivery**: Voice, pacing, clarity, engagement
-- **Visual Aids** (if applicable): Quality and effectiveness
-- **Q&A Response** (if applicable): Accuracy and thoughtfulness
-- **Engagement**: Connection with audience
-- **Time Management**: Adherence to time limits
-
-### C. Typical Time Limits
-
-These vary by competition type:
-- **Speech Events**: 3-8 minutes + 30-60 second grace period
-- **Presentations**: 10-15 minutes + 1 minute grace period
-- **Demonstrations**: 5-12 minutes typically
-- **Your Competition**: Check the Penalties link for specifics
-
----
-
-*Last Updated: March 2026*
-*For system-specific questions, contact your competition administrator*
+*Last updated: 3/7/2026*

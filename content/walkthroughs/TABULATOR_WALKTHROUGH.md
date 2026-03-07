@@ -1,664 +1,725 @@
 # Tabulator Walkthrough Guide
 
-Welcome to the Scorz Tabulator role! This guide covers everything you need to know about timing performances, verifying scores, and certifying competition results.
+Complete guide for tabulators covering timing, score verification, penalties, and certification.
 
 ---
 
 ## Table of Contents
 
-1. [Understanding the Tabulator Role](#understanding-the-tabulator-role)
-2. [Getting Started](#getting-started)
-3. [Pre-Competition Preparation](#pre-competition-preparation)
-4. [Competition Day Setup](#competition-day-setup)
-5. [Performance Timing](#performance-timing)
-6. [Score Verification Process](#score-verification-process)
-7. [Penalty Management](#penalty-management)
-8. [Results Certification](#results-certification)
-9. [Post-Certification Tasks](#post-certification-tasks)
-10. [Advanced Features](#advanced-features)
-11. [Troubleshooting](#troubleshooting)
-12. [Best Practices](#best-practices)
+1. [Tabulator Dashboard](#tabulatordashboard)
+2. [Timing Performances](#timingperformances)
+3. [Certifying Results](#certifyingresults)
+4. [Tabulator Getting Started](#tabulatorgettingstarted)
+5. [Performance Timing Techniques](#performancetimingtechniques)
+6. [Score Verification Process](#scoreverificationprocess)
+7. [Penalty Management Guide](#penaltymanagementguide)
+8. [Certification Workflow](#certificationworkflow)
 
 ---
 
-## Understanding the Tabulator Role
+## Tabulator Dashboard
 
-### What is a Tabulator?
+## Your Workspace
 
-The Tabulator is a critical role responsible for:
-- **Timing** all performances accurately
-- **Recording** performance durations
-- **Verifying** judge scores against physical records
-- **Applying** time penalties automatically
-- **Certifying** final results with digital signatures
+The Tabulator Dashboard is your command centre for managing performance timing, score verification and result certification.
 
-### Why Tabulators Matter
+![Tabulator dashboard](/help-images/tabulator/dashboard.png)
 
-**Accuracy**: Your timing directly affects penalty calculations and fairness
-**Integrity**: You ensure digital scores match physical score sheets
-**Efficiency**: Real-time timing helps judges stay aware of time limits
-**Compliance**: Your certification provides legal audit trail
+## Key Sections
 
-### Tabulator vs. Other Roles
+### Contestant Table
+Lists all approved contestants for the selected sub-event. The currently performing contestant is highlighted with an **On Stage** badge.
 
-| Responsibility | Judge | Chief Judge | Tabulator |
-|---|---|---|---|
-| Score contestants | ✓ | ✓ |  |
-| Time performances |  |  | ✓ |
-| Monitor judge activity |  | ✓ |  |
-| Verify scores |  |  | ✓ |
-| Apply penalties |  | ✓ | ✓ |
-| Certify results |  | ✓ | ✓ |
+### Performance Timer
+Control the timer for each contestant's performance:
+- **Start** — begin timing
+- **Pause** — temporarily stop (e.g. for interruptions)
+- **Stop** — end the performance and record duration
+
+### Score Summary
+View a side-by-side comparison of all judges' scores for each contestant after scoring is complete.
+
+> **Tip:** Select a contestant from the pill selector above the timer to automatically highlight them in the table.
 
 ---
 
-## Getting Started
+## Timing Performances
+
+## Selecting a Contestant
+
+Choose the contestant who is about to perform from the **contestant selector** above the timer. Their row in the table will be highlighted.
+
+## Timer Controls
+
+1. Click **Start** when the performance begins
+2. Use **Pause** if there's an interruption
+3. Click **Stop** when the performance ends
+
+![Timer controls](/help-images/tabulator/timer-controls.png)
+
+## Duration Recording
+
+When you stop the timer, the duration is automatically saved. This duration is used to calculate any **time penalties** based on the competition's penalty rules.
+
+## Penalty Calculation
+
+The system compares the recorded duration against the penalty rules:
+- **Grace period** — no penalty within this window
+- **Penalty brackets** — points deducted per time range exceeded
+
+> **Tip:** The timer syncs in real-time with judges' read-only timer view, so they can see elapsed time during the performance.
+
+---
+
+## Certifying Results
+
+## Verification Checklist
+
+Before certifying results, complete these checks:
+
+1. **All contestants scored** — ensure every judge has submitted scores for every contestant
+2. **Score review** — compare the digital scores against any physical score sheets
+3. **Penalty review** — verify time penalties are correctly applied
+4. **Discrepancy check** — note any discrepancies between digital and physical records
+
+## Digital vs Physical Match
+
+Toggle the **Digital vs Physical Match** checkbox to confirm that digital scores align with physical score sheets.
+
+![Certification form](/help-images/tabulator/certification.png)
+
+## Signing Off
+
+Use the signature pad to add your digital signature. Add any discrepancy notes in the text field.
+
+Click **Certify Results** to lock the scores and make them available for publication.
+
+> **Important:** Certification is final. Only an admin can decertify results after this step.
+
+---
+
+## Tabulator Getting Started
+
+## Account Setup & Access
 
 ### Receiving Your Assignment
+1. **Email Invitation**: Competition organiser sends invitation
+2. **Magic Link**: Click link to accept and set up account
+3. **Role Assignment**: Automatically assigned "Tabulator" role
+4. **Dashboard Access**: Full access to timing and verification tools
 
-**How You Get Assigned**:
-1. Competition organiser invites you via email
-2. You receive a magic link to accept the role
-3. Your account gets the "Tabulator" role added
-4. You gain access to assigned sub-events
+### First Login Experience
+- **Welcome Screen**: Introduction to tabulator responsibilities
+- **Quick Setup**: Basic preferences and notifications
+- **Training Resources**: Links to guides and tutorials
+- **Assigned Competitions**: Your active timing assignments
 
-**Assignment Scope**:
-- Usually assigned to specific sub-events
-- May work multiple sub-events in sequence
-- Sometimes assigned as "roving tabulator" for multiple events
+## Understanding Your Role
 
-### Accessing Your Dashboard
+### Core Responsibilities
+- **Performance Timing**: Accurate start/stop timing for all contestants
+- **Score Verification**: Compare digital scores against physical records
+- **Penalty Application**: Calculate and apply time-based penalties
+- **Results Certification**: Final sign-off on competition results
 
-**Tabulator Dashboard Features**:
+### Why Accuracy Matters
+- **Fairness**: Precise timing ensures equal opportunities
+- **Integrity**: Verification prevents scoring errors
+- **Compliance**: Proper penalties maintain competition rules
+- **Audit Trail**: Your certification provides legal documentation
+
+## Dashboard Overview
+
+### Main Interface
 - **Contestant List**: All performers for your assigned sub-events
-- **Performance Timer**: Primary timing interface
-- **Score Verification**: Compare digital vs. physical scores
+- **Timer Controls**: Primary timing interface
+- **Score Verification**: Digital vs. physical comparison tools
 - **Penalty Calculator**: Automatic penalty applications
-- **Certification Tools**: Final sign-off capabilities
 
-**Navigation Tips**:
-- Dashboard updates in real-time
-- Use keyboard shortcuts for quick timing
-- Mobile-friendly for on-the-go access
-
----
+### Navigation Elements
+- **Sub-event Selector**: Switch between assigned events
+- **Status Indicators**: Current timing and verification status
+- **Communication Panel**: Chat with judges and organisers
+- **Help Resources**: Quick access to guides and support
 
 ## Pre-Competition Preparation
 
 ### Review Competition Details
+**Essential Information**:
+- Sub-event schedules and contestant lists
+- Time limits and grace periods
+- Penalty rules and calculations
+- Special timing requirements
 
-**Essential Information to Know**:
-- **Sub-event Schedule**: When each performance occurs
-- **Time Limits**: Maximum allowed performance time
-- **Grace Periods**: Extra time before penalties apply
-- **Penalty Rules**: How penalties are calculated
-- **Contestant List**: Names, order, and any special requirements
+**Access Methods**:
+- Competition details in your dashboard
+- Direct communication with organiser
+- Physical documents if provided
+- Online resource library
 
-**Access Information**:
-1. Go to **"Competitions"** → Select your assigned competition
-2. Review **"Schedule"** and **"Rules"** tabs
-3. Download contestant list and timing sheets
-4. Note any special timing requirements
-
-### Equipment & Setup Check
-
+### Equipment & Technical Setup
 **Required Equipment**:
-- **Primary Device**: Laptop/tablet with reliable internet
-- **Backup Device**: Phone or secondary device
-- **Physical Records**: Printed score sheets and timing logs
-- **Communication**: Headset for coordination
-
-**Technical Requirements**:
+- Reliable device (laptop/tablet recommended)
 - Stable internet connection
-- Browser compatibility (Chrome/Firefox recommended)
 - Backup power source
-- Clear line of sight to performance area
+- Physical timing sheets (backup)
 
-### Communication Setup
+**Technical Verification**:
+- Test timer functionality
+- Verify internet connectivity
+- Check browser compatibility
+- Confirm audio/video capabilities
 
-**Coordination Channels**:
-- **Event Chat**: Real-time communication with judges and staff
-- **Direct Contact**: Phone numbers for key personnel
-- **Emergency Protocols**: Backup communication methods
-
-**Pre-Event Meeting**:
-- Attend organiser briefing
-- Meet with judges and chief judges
-- Review timing procedures
-- Test communication channels
+> **Tip:** Arrive at the venue 30-60 minutes early to set up your workspace and test all equipment. Have backup devices and physical timing methods ready.
 
 ---
 
-## Competition Day Setup
+## Performance Timing Techniques
 
-### Venue Setup
+## Timing Fundamentals
 
-**Positioning**:
-- Clear view of performance area
-- Good lighting for device screens
-- Minimal distractions
-- Easy access to performers and judges
+### Precision Timing Principles
+- **Consistent Start Points**: Use the same cue for every performance
+- **Clear Stop Signals**: Well-defined performance endings
+- **Reaction Time**: Account for your own response delay
+- **Backup Methods**: Multiple timing verification approaches
 
-**Workspace Setup**:
-- Dedicated table or station
-- Backup power and internet access
-- Physical score sheets organized
-- Emergency kit (chargers, backup devices)
+### Timer Types & States
+- **Countdown Timer**: Shows time remaining
+- **Stopwatch Mode**: Shows elapsed time
+- **Pause Function**: Temporary stops for interruptions
+- **Reset Capability**: Clear for next performance
 
-### System Verification
+## Timing a Performance
 
-**Pre-Competition Checks**:
-1. **Login Test**: Access your tabulator dashboard
-2. **Timer Test**: Start/stop timer functionality
-3. **Sync Test**: Verify real-time updates with judges
-4. **Backup Test**: Confirm secondary device access
+### Pre-Performance Setup
+1. **Contestant Selection**: Choose current performer from list
+2. **Verification**: Confirm correct person and performance order
+3. **Preparation**: Ensure clear view of performance area
+4. **Communication**: Signal readiness to stage manager
 
-**Contestant Verification**:
-- Check-in procedure for performers
-- Photo ID verification if required
-- Special accommodations noted
-- Performance order confirmation
+### Start Timing
+- **Trigger Point**: Exact moment performance begins
+- **Visual Cues**: Watch for performer movement or sound
+- **Consistent Method**: Use same start trigger every time
+- **Documentation**: Note any unusual start conditions
 
-### Timing Calibration
+### During Performance
+- **Continuous Monitoring**: Watch for time approaching limits
+- **Interruption Handling**: Pause for technical issues
+- **Communication**: Alert performer if approaching time limits
+- **Backup Timing**: Use secondary method simultaneously
 
-**Timer Synchronization**:
-- Synchronize with official competition time
-- Test countdown accuracy
-- Verify grace period settings
-- Confirm penalty calculations
+### Stop Timing
+- **End Point Definition**: Clear performance conclusion
+- **Precise Stop**: Stop at exact end moment
+- **Duration Recording**: Automatic save to system
+- **Verification**: Confirm recorded time is accurate
 
----
+## Special Timing Scenarios
 
-## Performance Timing
+### Interruptions & Pauses
+- **Technical Issues**: Equipment failures, sound problems
+- **Medical Emergencies**: Health-related stops
+- **Rule Violations**: Brief pauses for warnings
+- **Environmental Factors**: Weather, venue issues
 
-### Understanding Timer States
+**Handling Process**:
+1. Pause timer immediately
+2. Document reason for pause
+3. Resume when appropriate
+4. Adjust total time if approved
+5. Continue timing normally
 
-**Timer Interface Elements**:
-- **Contestant Selector**: Choose current performer
-- **Time Display**: Large, clear countdown/readout
-- **Control Buttons**: Start, Pause, Stop, Reset
-- **Status Indicators**: Running, Paused, Stopped
-- **Duration Recording**: Automatic save on stop
+### Multiple Rounds
+- **Round Transitions**: Clear breaks between rounds
+- **Cumulative Timing**: Track total vs. per-round time
+- **Reset Procedures**: Clear timer for each round
+- **Documentation**: Record each round's duration
 
-**Timer States**:
-- **Idle**: Waiting for performance to begin
-- **Running**: Active countdown during performance
-- **Paused**: Temporary stop (e.g., technical issues)
-- **Stopped**: Performance completed, duration recorded
+### Team Performances
+- **Start Triggers**: When first performer begins
+- **Stop Points**: When last performer finishes
+- **Group Coordination**: Communication with all team members
+- **Individual Tracking**: Note any individual time issues
 
-### Timing a Performance
+## Timing Accuracy Techniques
 
-**Step-by-Step Process**:
+### Reaction Time Compensation
+- **Practice Drills**: Regular timing practice sessions
+- **Calibration**: Test your personal reaction time
+- **Consistent Method**: Use same technique every time
+- **Backup Verification**: Secondary timing confirmation
 
-1. **Select Contestant**
-   - Choose performer from dropdown or pill selector
-   - Verify correct person and performance order
-   - Confirm any special timing requirements
+### Environmental Factors
+- **Lighting**: Ensure good visibility of performance area
+- **Audio**: Clear sound cues for start/stop points
+- **Distance**: Optimal viewing position
+- **Distractions**: Minimize background noise and interruptions
 
-2. **Pre-Performance Setup**
-   - Announce "30 seconds" warning if applicable
-   - Ensure clear start signal
-   - Prepare to start timer precisely
+### Technology Optimization
+- **Device Selection**: Use reliable, fast devices
+- **Screen Position**: Optimal viewing angle
+- **Input Methods**: Keyboard shortcuts for speed
+- **Backup Systems**: Secondary timing devices
 
-3. **Start Timing**
-   - Click **"Start"** exactly when performance begins
-   - Timer begins countdown from time limit
-   - Real-time sync with judge dashboards
+## Time Limit Management
 
-4. **Monitor Performance**
-   - Watch for time approaching limits
-   - Note any interruptions or pauses
-   - Communicate with stage manager if needed
+### Grace Period Handling
+- **Automatic Extension**: System applies grace period
+- **No Penalty Zone**: Buffer time before penalties
+- **Clear Communication**: Inform performers of grace period
+- **Documentation**: Record grace period usage
 
-5. **Handle Interruptions**
-   - Use **"Pause"** for technical issues or emergencies
-   - Resume with **"Start"** when ready
-   - Document pause reasons and durations
+### Penalty Calculation
+- **Automatic Application**: System calculates penalties
+- **Rate Structure**: Points per time unit exceeded
+- **Documentation**: Clear penalty reasoning
+- **Appeal Process**: Handle penalty disputes
 
-6. **Stop Timing**
-   - Click **"Stop"** when performance ends
-   - Duration automatically recorded
-   - Penalty calculations applied if over time
+## Quality Assurance
 
-### Special Timing Scenarios
+### Self-Checking Techniques
+- **Double Verification**: Check recorded times
+- **Consistency Review**: Compare similar performances
+- **Pattern Recognition**: Spot timing anomalies
+- **Peer Review**: Compare with other tabulators
 
-**Common Situations**:
+### Documentation Standards
+- **Timing Logs**: Detailed records of all timings
+- **Interruption Notes**: Reasons for pauses
+- **Special Circumstances**: Unusual timing situations
+- **Quality Metrics**: Your accuracy statistics
 
-**Early Finish**:
-- Stop timer when performance actually ends
-- Record actual duration (may be under time limit)
-- No penalties for finishing early
-
-**Technical Interruptions**:
-- Pause timer immediately
-- Resume when issue resolved
-- Document interruption details
-- Consider time adjustments with chief judge
-
-**Contestant Issues**:
-- Health or safety concerns: pause and consult organiser
-- Equipment failures: pause and allow restart
-- Rule violations: continue timing but note for penalties
-
-**Multiple Rounds**:
-- Reset timer between rounds if applicable
-- Track cumulative time if single time limit
-- Communicate clearly between rounds
-
-### Time Extensions & Adjustments
-
-**Grace Period Handling**:
-- Automatic grace period (usually 15-30 seconds)
-- No penalties within grace period
-- Clear visual indicators for judges
-
-**Special Accommodations**:
-- Document approved time extensions
-- Apply adjustments in penalty system
-- Maintain fairness for all contestants
+> **Pro Tip:** Practice timing with sample videos before competition day. Focus on consistency and develop a personal timing ritual for maximum accuracy.
 
 ---
 
 ## Score Verification Process
 
-### When Verification Occurs
+## Understanding Score Verification
 
-**Verification Timing**:
-- After all judges complete scoring for a sub-event
-- Before final certification
-- Typically at end of sub-event or competition day
-- Can be done in real-time or batched
+### Why Verification Matters
+- **Accuracy Assurance**: Catch data entry errors
+- **Integrity Protection**: Prevent scoring manipulation
+- **Legal Compliance**: Provide audit trail for results
+- **Fairness Guarantee**: Ensure all scores are correctly recorded
 
-### Accessing Score Verification
+### Verification Timing
+- **Real-time**: During active scoring periods
+- **Batch Processing**: End-of-sub-event verification
+- **Final Review**: Before results certification
+- **Dispute Resolution**: When discrepancies are reported
 
-**Verification Interface**:
+## Accessing Verification Tools
+
+### Verification Dashboard
 1. Go to **"Score Verification"** tab
 2. Select sub-event to verify
-3. View side-by-side score comparison
-4. Access physical vs. digital matching
+3. Choose verification method
+4. Access comparison tools
 
-### Digital vs. Physical Comparison
+### Available Tools
+- **Side-by-Side View**: Digital vs. physical comparison
+- **Discrepancy Logger**: Record and track differences
+- **Judge Communication**: Contact judges about issues
+- **Audit Trail**: Complete verification history
 
-**Verification Checklist**:
+## Verification Process
 
-**Per Contestant**:
-- [ ] Judge names match physical sheets
-- [ ] All rubric criteria scored
-- [ ] Scores match within acceptable variance
-- [ ] Comments recorded accurately
-- [ ] Signatures present and valid
+### Preparation Phase
+1. **Gather Materials**: Physical score sheets from judges
+2. **System Access**: Ensure all digital scores are submitted
+3. **Judge Confirmation**: Verify all judges have certified
+4. **Workspace Setup**: Quiet area for careful comparison
 
-**Aggregate Checks**:
-- [ ] Total number of judges correct
-- [ ] No missing scores
-- [ ] Mathematical calculations accurate
-- [ ] Penalty applications correct
+### Systematic Verification
+1. **Contestant Selection**: Choose first contestant to verify
+2. **Digital Review**: Examine scores in the system
+3. **Physical Comparison**: Check against paper records
+4. **Discrepancy Check**: Look for any differences
+5. **Documentation**: Record findings and resolutions
 
-### Identifying Discrepancies
+### Per-Contestant Verification
+**Check Each Element**:
+- Judge names and assignments
+- All rubric criterion scores
+- Written comments and notes
+- Mathematical calculations
+- Signature presence and validity
 
-**Common Issues**:
+## Identifying Discrepancies
+
+### Common Issues
 - **Data Entry Errors**: Typos in score recording
 - **Judge Misidentification**: Wrong judge assigned
-- **Missing Scores**: Incomplete scoring
-- **Calculation Errors**: Math mistakes in averaging
+- **Missing Scores**: Incomplete scoring submissions
+- **Calculation Mistakes**: Math errors in averaging
+- **Comment Omissions**: Missing required feedback
 
-**Resolution Process**:
-1. **Document Discrepancy**: Note what doesn't match
+### Severity Levels
+- **Minor**: Typos, formatting issues (can be corrected)
+- **Moderate**: Score differences of 1-2 points (investigation needed)
+- **Major**: Significant discrepancies (judge re-scoring may be required)
+- **Critical**: Evidence of misconduct (organiser involvement required)
+
+## Resolution Procedures
+
+### Minor Corrections
+1. **Document Issue**: Record the discrepancy clearly
 2. **Contact Judge**: Use chat or direct communication
-3. **Verify Original**: Check physical records
-4. **Correct as Needed**: Update digital records
-5. **Re-certify**: Have judge re-sign if major changes
+3. **Confirm Correction**: Verify fix with judge
+4. **Update Records**: Apply correction in system
+5. **Re-certify**: Have judge sign off again
+
+### Major Discrepancies
+1. **Detailed Documentation**: Comprehensive issue recording
+2. **Judge Interview**: Discuss discrepancy privately
+3. **Evidence Review**: Examine physical records carefully
+4. **Resolution Decision**: Determine appropriate fix
+5. **Approval Process**: Chief judge or organiser approval
+
+### Escalation Protocol
+- **Chief Judge Involvement**: For scoring disputes
+- **Organiser Notification**: Major integrity concerns
+- **Legal Consultation**: Serious misconduct allegations
+- **Result Delay**: If resolution requires time
+
+## Documentation Requirements
+
+### Verification Records
+- **Date and Time**: When verification was performed
+- **Tabulator Identity**: Your name and credentials
+- **Method Used**: Digital vs. physical comparison
+- **Issues Found**: Detailed discrepancy descriptions
+- **Resolutions Applied**: How each issue was handled
+
+### Audit Trail Maintenance
+- **Complete History**: All verification actions logged
+- **Timestamp Tracking**: When each action occurred
+- **User Attribution**: Who performed each verification
+- **Change Documentation**: Before/after values for corrections
+
+## Quality Control
+
+### Verification Standards
+- **100% Coverage**: Every score verified against physical records
+- **Dual Check**: Two people verify major discrepancies
+- **Random Sampling**: Spot checks on previously verified scores
+- **Consistency Review**: Compare verification across judges
+
+### Performance Metrics
+- **Accuracy Rate**: Percentage of error-free verifications
+- **Issue Resolution Time**: How quickly discrepancies are resolved
+- **Judge Satisfaction**: Feedback on verification process
+- **Process Efficiency**: Time spent per verification
+
+## Communication Protocols
+
+### Judge Communication
+- **Professional Tone**: Respectful and factual
+- **Clear Explanations**: Explain verification purpose
+- **Confidentiality**: Private discussion of issues
+- **Resolution Focus**: Emphasize fair and accurate results
+
+### Organiser Updates
+- **Regular Reports**: Verification progress updates
+- **Issue Alerts**: Major discrepancies requiring attention
+- **Timeline Estimates**: When verification will be complete
+- **Confidence Levels**: Assurance in final results
+
+> **Tip:** Approach verification with a mindset of accuracy, not accusation. Most discrepancies are honest mistakes that can be easily corrected through clear communication.
+
+---
+
+## Penalty Management Guide
+
+## Understanding Penalty Rules
+
+### Penalty Components
+- **Time Limit**: Maximum allowed performance time
+- **Grace Period**: Buffer time before penalties apply
+- **Penalty Rate**: Points deducted per time unit
+- **Penalty Type**: Flat rate, per second, or tiered structure
+
+### Common Penalty Structures
+- **Simple Rate**: 1 point per 30 seconds over time limit
+- **Tiered System**: Higher rates for greater time excesses
+- **Flat Penalty**: Fixed deduction for any time violation
+- **Percentage Based**: Deduction as percentage of total score
+
+## Automatic Penalty Application
+
+### System Integration
+- **Real-time Calculation**: Penalties applied as timing completes
+- **Judge Visibility**: Penalties appear in judge scorecards
+- **Automatic Deduction**: Applied to final contestant scores
+- **Audit Trail**: Complete penalty calculation history
+
+### Calculation Process
+1. **Duration Recorded**: Timer stop captures exact time
+2. **Limit Comparison**: System compares to time limit
+3. **Grace Period Check**: Determines if penalty applies
+4. **Rate Application**: Calculates deduction amount
+5. **Score Adjustment**: Applies to contestant's total
+
+## Manual Penalty Adjustments
+
+### When Adjustments Are Needed
+- **Timing Errors**: Incorrect duration recording
+- **Technical Issues**: Equipment or environmental problems
+- **Special Accommodations**: Approved time extensions
+- **Dispute Resolution**: Organiser-approved changes
+
+### Adjustment Process
+1. **Document Reason**: Clear justification for change
+2. **Calculate New Penalty**: Recalculate based on corrected time
+3. **Apply Adjustment**: Update in penalty system
+4. **Notify Affected Parties**: Inform judges and contestant
+5. **Record Change**: Complete audit documentation
+
+## Penalty Review Procedures
+
+### Regular Reviews
+- **Pre-Certification**: Review all penalties before finalizing
+- **Accuracy Check**: Verify calculations are correct
+- **Consistency Review**: Ensure uniform application
+- **Appeal Handling**: Process penalty dispute requests
 
 ### Documentation Requirements
+- **Original Timing**: Recorded performance duration
+- **Penalty Calculation**: Step-by-step deduction process
+- **Adjustment Reasons**: Why any changes were made
+- **Approval Authority**: Who authorized adjustments
 
-**Discrepancy Logging**:
-- Date and time of verification
-- Contestant and judge involved
-- Nature of discrepancy
-- Resolution method
-- Your signature as verifier
+## Handling Penalty Disputes
+
+### Contestant Appeals
+1. **Receive Appeal**: Contestant submits dispute request
+2. **Review Evidence**: Examine timing records and video
+3. **Consult Rules**: Check competition penalty policy
+4. **Make Decision**: Approve or deny adjustment
+5. **Communicate Result**: Inform contestant of outcome
+
+### Judge Disputes
+1. **Judge Concern**: Judge questions penalty application
+2. **Technical Review**: Verify timing accuracy
+3. **Rule Interpretation**: Confirm penalty rules
+4. **Resolution**: Adjust if error confirmed
+5. **Documentation**: Record dispute and resolution
+
+## Special Penalty Scenarios
+
+### Technical Interruptions
+- **Equipment Failure**: Pause timer, resume after fix
+- **No Penalty**: If interruption causes time loss
+- **Documentation**: Record interruption details
+- **Adjustment**: Potential time addition approval
+
+### Medical Emergencies
+- **Immediate Pause**: Stop timing for health issues
+- **No Penalty**: Medical situations don't incur penalties
+- **Documentation**: Record medical interruption
+- **Resumption**: Continue timing when safe
+
+### Environmental Factors
+- **Weather Delays**: Outdoor event interruptions
+- **Venue Issues**: Technical or facility problems
+- **Penalty Waiver**: May be approved by organiser
+- **Documentation**: Record environmental factors
+
+## Penalty Communication
+
+### Contestant Notification
+- **Clear Explanation**: How penalty was calculated
+- **Evidence Provided**: Timing records and rules reference
+- **Appeal Process**: How to dispute if desired
+- **Final Decision**: Clear communication of outcome
+
+### Judge Updates
+- **Penalty Visibility**: Judges see penalties in real-time
+- **Adjustment Alerts**: Notification of any changes
+- **Reasoning Provided**: Why adjustments were made
+- **Consistency Assurance**: Uniform penalty application
+
+## Quality Assurance
+
+### Penalty Accuracy Checks
+- **Double Verification**: Two people check calculations
+- **Random Sampling**: Spot check penalty applications
+- **Historical Comparison**: Compare to past competitions
+- **Rule Compliance**: Ensure all penalties follow rules
+
+### Performance Metrics
+- **Accuracy Rate**: Percentage of correct penalty applications
+- **Appeal Rate**: Frequency of successful penalty disputes
+- **Processing Time**: How quickly penalties are resolved
+- **Satisfaction Scores**: Contestant and judge feedback
+
+## Legal & Compliance Considerations
+
+### Documentation Standards
+- **Complete Records**: All penalty decisions documented
+- **Audit Trail**: Who made decisions and when
+- **Evidence Preservation**: Timing records and communications
+- **Retention Policy**: How long records are kept
+
+### Dispute Resolution Framework
+- **Clear Process**: Defined steps for penalty appeals
+- **Timely Resolution**: Reasonable timeframes for decisions
+- **Fair Treatment**: Consistent application for all contestants
+- **Final Authority**: Clear escalation path
+
+> **Tip:** Always document penalty decisions thoroughly. Clear records protect both the competition integrity and provide evidence for any disputes or legal challenges.
 
 ---
 
-## Penalty Management
+## Certification Workflow
 
-### Understanding Penalty Rules
+## Certification Prerequisites
 
-**Penalty Components**:
-- **Time Limit**: Maximum allowed performance time
-- **Grace Period**: Buffer before penalties apply
-- **Penalty Rate**: Points deducted per time unit
-- **Penalty Type**: Per second, flat rate, or tiered
-
-**Example Rules**:
-- Time Limit: 5 minutes
-- Grace Period: 30 seconds
-- Penalty: 1 point per 30 seconds over
-
-### Automatic Penalty Application
-
-**How It Works**:
-1. **Duration Recorded**: Timer stop saves exact duration
-2. **Comparison Made**: System compares to time limit
-3. **Penalty Calculated**: Automatic deduction based on rules
-4. **Score Adjustment**: Applied to contestant's final score
-
-**Penalty Display**:
-- Visible to judges during scoring
-- Included in final score calculations
-- Documented in certification records
-
-### Manual Penalty Adjustments
-
-**When to Adjust**:
-- Technical timing errors
-- Approved accommodations
-- Special circumstances approved by organiser
-- Equipment or environmental issues
-
-**Adjustment Process**:
-1. **Document Reason**: Clear justification required
-2. **Calculate Adjustment**: Manual penalty modification
-3. **Apply Change**: Update in penalty system
-4. **Notify Judges**: Inform of adjustment
-5. **Record in Audit**: Full documentation
-
-### Penalty Review with Chief Judge
-
-**Collaboration Process**:
-- Chief Judge reviews all penalties
-- Discuss borderline cases
-- Approve or modify adjustments
-- Final penalty sign-off
-
----
-
-## Results Certification
-
-### Certification Prerequisites
-
-**Requirements Checklist**:
-- [ ] All performances timed and recorded
+### Required Conditions
+- [ ] All performances timed and durations recorded
 - [ ] All judge scores submitted and certified
-- [ ] Score verification completed
-- [ ] Penalties reviewed and applied
-- [ ] No outstanding discrepancies
-- [ ] Chief Judge approval obtained
+- [ ] Score verification completed against physical records
+- [ ] All penalties reviewed and applied correctly
+- [ ] No outstanding verification discrepancies
+- [ ] Chief judge approval obtained for all adjustments
 
-### Certification Process
+### Documentation Checklist
+- [ ] Timing logs complete and accurate
+- [ ] Score verification records signed
+- [ ] Penalty applications documented
+- [ ] Any adjustments approved and recorded
+- [ ] Chief judge sign-off obtained
 
-**Step-by-Step Certification**:
+## Certification Process
 
-1. **Access Certification**
-   - Go to **"Certification"** tab
-   - Select sub-event to certify
-   - Review final results summary
+### Step 1: Access Certification
+1. Navigate to **"Certification"** tab in your dashboard
+2. Select the sub-event ready for certification
+3. Review the certification checklist
+4. Confirm all prerequisites are met
 
-2. **Final Verification**
-   - Confirm all judges certified
-   - Verify penalty applications
-   - Check score calculations
-   - Review any discrepancy notes
+### Step 2: Final Review
+**Comprehensive Check**:
+- Verify all contestant performances are timed
+- Confirm judge certifications are complete
+- Review penalty applications and adjustments
+- Check score verification completion
+- Validate mathematical calculations
 
-3. **Digital Signature**
-   - Review certification statement
-   - Draw signature on signature pad
-   - Add any final notes
-   - Confirm legal acknowledgment
+### Step 3: Generate Summary Report
+- **Timing Summary**: All performance durations
+- **Score Overview**: Final scores for all contestants
+- **Penalty Report**: All applied penalties and reasons
+- **Verification Status**: Confirmation of accuracy checks
+- **Discrepancy Log**: Any issues found and resolved
 
-4. **Submit Certification**
-   - Click **"Certify Results"**
-   - Results become locked
-   - Automatic notifications sent
+### Step 4: Digital Signature
+- **Review Statement**: Read certification declaration
+- **Legal Acknowledgment**: Confirm understanding of responsibility
+- **Signature Capture**: Draw signature on digital pad
+- **Timestamp**: Automatic date and time recording
 
-### What Happens After Certification
+### Step 5: Submit Certification
+- **Final Confirmation**: Click "Certify Results"
+- **System Lock**: Results become unchangeable
+- **Notification**: Automatic alerts to organiser and contestants
+- **Archive Creation**: Complete record preservation
 
-**Immediate Effects**:
-- Scores locked and unchangeable
-- Results available to contestants
-- Public results published (if enabled)
-- Certificates generated
+## What Happens After Certification
 
-**Audit Trail Created**:
-- Complete timing records
-- Judge certifications
-- Penalty applications
-- Your certification signature
-- All verification documentation
+### Immediate Effects
+- **Result Lock**: Scores cannot be modified
+- **Public Access**: Results available to contestants
+- **Certificate Generation**: Automatic award creation
+- **Notification System**: Email alerts sent to all parties
 
----
+### Data Preservation
+- **Complete Archive**: All timing, scoring, and verification data
+- **Audit Trail**: Full history of all actions and decisions
+- **Backup Storage**: Secure long-term data preservation
+- **Export Options**: Data available for external systems
 
-## Post-Certification Tasks
+## Post-Certification Responsibilities
 
-### Results Publication
+### Communication Management
+- **Contestant Updates**: Inform participants of result availability
+- **Judge Notifications**: Confirm certification completion
+- **Organiser Reports**: Provide final documentation
+- **Media Coordination**: Support result announcements
 
-**Publication Options**:
-- **Immediate**: Results available right after certification
-- **Scheduled**: Release at specific time/date
-- **Staggered**: Different results at different times
-- **Private**: Results only visible to contestants
+### Documentation Finalization
+- **Physical Records**: Secure paper documents
+- **Digital Backups**: Ensure all data is preserved
+- **Certificate Distribution**: Manage award delivery
+- **Feedback Collection**: Gather post-event input
 
-**Communication**:
-- Automatic email notifications to contestants
-- Public announcement on competition website
-- Social media sharing
-- Press release distribution
+## Handling Certification Issues
 
-### Documentation & Archiving
+### Incomplete Prerequisites
+- **Missing Scores**: Contact judges for completion
+- **Verification Gaps**: Complete outstanding checks
+- **Penalty Issues**: Resolve any outstanding disputes
+- **Chief Judge Delay**: Coordinate for final approval
 
-**Record Keeping**:
-- All timing sheets and logs
-- Physical score sheets
-- Digital backups
-- Audit trail preservation
-- Certificate copies
+### Technical Problems
+- **System Access**: Ensure stable internet connection
+- **Signature Issues**: Clear and redraw if needed
+- **Data Corruption**: Use backup records if available
+- **Timing Errors**: Correct any final timing issues
 
-**Data Export**:
-- Results in multiple formats (PDF, Excel, CSV)
-- Complete score breakdowns
-- Statistical summaries
-- Archive packages
+### Legal Considerations
+- **Signature Validity**: Ensure proper digital signature
+- **Record Completeness**: All required documentation present
+- **Compliance Check**: Verify all rules were followed
+- **Liability Coverage**: Certification provides legal protection
 
-### Feedback & Debrief
+## Certification Best Practices
 
-**Post-Event Review**:
-- Timing accuracy assessment
-- Process improvement suggestions
-- Technical issue documentation
-- Staff feedback collection
+### Preparation Excellence
+- **Thorough Reviews**: Don't rush final verification
+- **Team Coordination**: Work with chief judge and organiser
+- **Documentation**: Keep detailed records of all decisions
+- **Backup Plans**: Have contingency procedures ready
 
----
+### Quality Assurance
+- **Final Verification**: Double-check all critical data
+- **Consistency Review**: Ensure uniform application of rules
+- **Stakeholder Communication**: Keep all parties informed
+- **Professional Standards**: Maintain integrity throughout
 
-## Advanced Features
+### Risk Management
+- **Contingency Planning**: Prepare for technical issues
+- **Escalation Procedures**: Know when to involve organisers
+- **Documentation Standards**: Maintain complete audit trails
+- **Ethical Considerations**: Ensure fair and honest certification
+
+## Advanced Certification Features
 
 ### Multi-Tabulator Coordination
+- **Role Assignment**: Clear responsibilities in multi-person teams
+- **Communication Protocols**: Coordinated certification processes
+- **Quality Control**: Cross-verification between tabulators
+- **Unified Reporting**: Consolidated certification documentation
 
-**Large Events**:
-- Multiple tabulators for different sub-events
-- Real-time coordination through chat
-- Shared timing standards
-- Unified certification process
+### Integration Capabilities
+- **External Systems**: Connect with registration or scoring software
+- **API Integration**: Automated data transfer
+- **Custom Reporting**: Tailored certification reports
+- **Archival Systems**: Long-term record preservation
 
-### Integration Features
-
-**External Tools**:
-- Professional timing devices sync
-- Video recording timestamping
-- Automated penalty calculations
-- Integration with scoring software
-
-### Analytics & Reporting
-
-**Performance Metrics**:
-- Average performance durations
-- Timing consistency statistics
-- Penalty frequency analysis
-- Process efficiency reports
+> **Important:** Certification is a serious legal and ethical responsibility. Take time to ensure all data is accurate and all processes have been followed before applying your digital signature.
 
 ---
 
-## Troubleshooting
+## Need Help?
 
-### Timing Issues
-
-**Timer Not Starting**:
-- Check internet connection
-- Refresh browser page
-- Verify correct contestant selected
-- Contact technical support
-
-**Timer Desync**:
-- Refresh all judge devices
-- Restart timer if needed
-- Document timing discrepancy
-- Use backup timing method
-
-**Incorrect Duration**:
-- Stop and restart timer if caught early
-- Document actual vs. recorded time
-- Apply manual adjustment if approved
-- Note for future process improvement
-
-### Score Verification Problems
-
-**Missing Scores**:
-- Contact judge via chat
-- Check if judge device offline
-- Verify judge assignment
-- Allow additional time if needed
-
-**Score Discrepancies**:
-- Compare physical vs. digital carefully
-- Check for data entry errors
-- Verify judge identification
-- Document all findings
-
-### Technical Difficulties
-
-**Device Issues**:
-- Have backup device ready
-- Use mobile phone as backup
-- Maintain physical timing logs
-- Continue with manual processes
-
-**Connectivity Problems**:
-- Switch to mobile data
-- Use offline timing mode if available
-- Maintain physical records
-- Sync when connection restored
+- **In-App Help**: Access detailed guides within the Scorz platform
+- **Support**: Contact your competition organizer or Scorz support
+- **Updates**: This guide is automatically updated when new features are added
 
 ---
 
-## Best Practices
-
-### Timing Excellence
-
-**Precision**:
-- Start/stop timer at exact performance boundaries
-- Use consistent timing methodology
-- Document any irregularities immediately
-- Maintain focus during performances
-
-**Consistency**:
-- Apply rules uniformly across all contestants
-- Use same timing standards throughout
-- Document special cases clearly
-- Maintain professional impartiality
-
-### Verification Rigor
-
-**Thoroughness**:
-- Check every score against physical records
-- Verify calculations manually
-- Document all discrepancies
-- Maintain clear audit trail
-
-**Communication**:
-- Contact judges promptly about issues
-- Explain verification process clearly
-- Maintain professional tone
-- Document all communications
-
-### Professionalism
-
-**Preparation**:
-- Arrive early and test all equipment
-- Review all rules and procedures
-- Prepare backup plans
-- Know emergency protocols
-
-**During Event**:
-- Maintain focus and attention
-- Communicate clearly and professionally
-- Document everything thoroughly
-- Stay organized and efficient
-
-**Accuracy Focus**:
-- Double-check all timing and calculations
-- Maintain physical backup records
-- Verify work before certification
-- Take pride in precision work
-
-### Emergency Preparedness
-
-**Backup Plans**:
-- Secondary timing devices
-- Manual timing procedures
-- Physical record keeping
-- Alternative communication methods
-
-**Contingency Procedures**:
-- Power outage protocols
-- Internet failure procedures
-- Equipment replacement plans
-- Staff backup coordination
-
----
-
-## Quick Reference
-
-### Timer Controls
-- **Start**: Begin timing performance
-- **Pause**: Temporary stop for interruptions
-- **Stop**: End timing, record duration
-- **Reset**: Clear timer for next performance
-
-### Certification Checklist
-- [ ] All performances timed
-- [ ] Scores verified against physical records
-- [ ] Penalties correctly applied
-- [ ] Chief Judge approval obtained
-- [ ] Digital signature applied
-- [ ] Documentation complete
-
-### Common Timing Scenarios
-- **Normal Performance**: Start → Monitor → Stop
-- **Interruption**: Start → Pause → Resume → Stop
-- **Early Finish**: Start → Stop (record actual time)
-- **Over Time**: Automatic penalty application
-
-### Emergency Contacts
-- **Technical Support**: Platform help desk
-- **Competition Organiser**: Main coordinator
-- **Chief Judge**: Scoring authority
-- **Stage Manager**: Performance coordination
-
----
-
-## Keyboard Shortcuts
-
-**Timer Controls**:
-- **Spacebar**: Start/Stop timer
-- **P**: Pause/Resume
-- **R**: Reset timer
-- **Tab**: Move between contestants
-
-**Navigation**:
-- **Ctrl+S**: Save current data
-- **Ctrl+V**: Open verification
-- **Ctrl+C**: Open certification
-
----
-
-*Last Updated: March 2026*
-*For technical support, visit the Help Center or contact support@scorz.com*
+*Last updated: 3/7/2026*

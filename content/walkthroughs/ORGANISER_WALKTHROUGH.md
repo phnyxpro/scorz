@@ -1,517 +1,666 @@
 # Organiser Walkthrough Guide
 
-Welcome to the Scorz Organiser platform! This guide covers everything you need to know about creating, managing, and running successful competitions from start to finish.
+Comprehensive guide for competition organizers covering event planning, staff management, and execution.
 
 ---
 
 ## Table of Contents
 
-1. [Getting Started as an Organiser](#getting-started-as-an-organiser)
-2. [Creating Your First Competition](#creating-your-first-competition)
-3. [Setting Up Competition Structure](#setting-up-competition-structure)
-4. [Configuring Scoring & Rubrics](#configuring-scoring--rubrics)
-5. [Managing Registrations](#managing-registrations)
-6. [Staff Management](#staff-management)
-7. [Competition Administration](#competition-administration)
-8. [Ticketing & Audience Management](#ticketing--audience-management)
-9. [During Competition Day](#during-competition-day)
-10. [Post-Competition Tasks](#post-competition-tasks)
-11. [Advanced Features](#advanced-features)
-12. [Troubleshooting](#troubleshooting)
+1. [Creating a Competition](#creatingacompetition)
+2. [Managing Registrations](#managingregistrations)
+3. [Building Rubrics](#buildingrubrics)
+4. [Assigning Staff](#assigningstaff)
+5. [Ticketing & Voting](#ticketingandvoting)
+6. [Organiser Dashboard Overview](#organiserdashboardoverview)
+7. [Competition Planning Guide](#competitionplanningguide)
+8. [Staff Management System](#staffmanagementsystem)
+9. [Financial Management](#financialmanagement)
+10. [Marketing Your Competition](#marketingyourcompetition)
 
 ---
 
-## Getting Started as an Organiser
+## Creating a Competition
 
-### Account Setup & Roles
+## Step 1 — Open the Events Page
 
-**Creating an Organiser Account**:
-1. Sign up for a Scorz account at the landing page
-2. Verify your email address
-3. Your account automatically gets the "Organiser" role
-4. You can also be assigned additional roles (Judge, Tabulator, etc.)
+Navigate to **Events** from your dashboard or sidebar. Click **Create Competition**.
 
-**Understanding Your Dashboard**:
-- **Competition Cards**: Shows all competitions you own or are assigned to
-- **Quick Actions**: Create new competition, view analytics, manage staff
-- **Notifications**: Updates on registrations, staff assignments, competition status
+![Create competition button](/help-images/organiser/create-comp-step1.png)
 
-### First Steps Checklist
+## Step 2 — Fill in Event Details
 
-- [ ] Complete your profile with contact information
-- [ ] Set up your organisation details (if applicable)
-- [ ] Review platform features and capabilities
-- [ ] Create your first competition (see next section)
+Provide a **name**, optional description, start/end dates and upload a banner image.
 
----
+## Step 3 — Add Levels & Sub-Events
 
-## Creating Your First Competition
+Competitions are organised into **Levels** (e.g. "Junior", "Senior") and each level contains **Sub-Events** (e.g. "Evening Gown", "Talent").
 
-### Step 1: Access Competition Creation
+![Levels and sub-events](/help-images/organiser/levels-sub-events.png)
 
-1. From your dashboard, click **"Create Competition"**
-2. Choose between **"Blank Competition"** or **"Use Template"**
-3. Templates include: Pageant, Speech Contest, Talent Show, Debate, etc.
+## Step 4 — Configure Branding
 
-### Step 2: Basic Competition Details
+Upload your competition logo, set primary and accent colours, and choose a font to match your brand identity.
 
-**Required Information**:
-- **Competition Name**: Clear, descriptive title
-- **Description**: What the competition is about
-- **Date & Time**: Start and end dates
-- **Location**: Venue address or "Virtual"
-- **Banner Image**: High-quality image (recommended: 1200x400px)
+## Step 5 — Set Scoring Method
 
-**Optional Settings**:
-- **Website URL**: Link to your organisation's website
-- **Social Media**: Links to Instagram, Facebook, etc.
-- **Contact Information**: Public contact details
+Choose between **average**, **trimmed mean**, **sum** or **weighted** scoring methods for your competition.
 
-### Step 3: Competition Branding
-
-**Visual Identity**:
-- **Primary Color**: Main brand color
-- **Accent Color**: Secondary color for highlights
-- **Logo**: Upload your organisation's logo
-- **Font**: Choose from available typography options
-
-**Branding Tips**:
-- Use colors that match your organisation's brand
-- Ensure logo is high-resolution and works on all backgrounds
-- Test color combinations for readability
-
-### Step 4: Save & Continue
-
-Click **"Create Competition"** to save your basic setup. You'll be taken to the competition management dashboard where you can configure the rest.
-
----
-
-## Setting Up Competition Structure
-
-### Levels & Sub-Events
-
-**Understanding the Hierarchy**:
-```
-Competition (e.g., "Miss Universe 2026")
-├── Level 1: "Preliminary Round"
-│   ├── Sub-Event: "Evening Gown"
-│   ├── Sub-Event: "Swimsuit"
-│   └── Sub-Event: "Interview"
-├── Level 2: "Finals"
-│   ├── Sub-Event: "Evening Gown Final"
-│   └── Sub-Event: "Coronation"
-```
-
-**Creating Levels**:
-1. Go to **"Structure"** tab in your competition
-2. Click **"Add Level"**
-3. Set **Name** (e.g., "Beginner", "Intermediate", "Advanced")
-4. Set **Sort Order** (determines display order)
-5. Add **Description** (optional)
-
-**Creating Sub-Events**:
-1. Within each level, click **"Add Sub-Event"**
-2. Set **Name** (e.g., "Speech Case", "Talent Performance")
-3. Choose **Event Type** (Speech, Performance, Interview, etc.)
-4. Configure **Settings** (timer, comments, etc.)
-
-### Sub-Event Configuration
-
-**Timer Settings**:
-- **Timer Visible**: Show countdown to judges
-- **Comments Visible**: Allow judges to add written feedback
-- **Public Voting**: Enable audience voting for this sub-event
-
-**Advanced Options**:
-- **Maximum Registrations**: Limit entries per sub-event
-- **Prerequisites**: Require completion of other sub-events
-- **Dependencies**: Link related sub-events
-
----
-
-## Configuring Scoring & Rubrics
-
-### Understanding Scoring Methods
-
-**Available Methods**:
-- **Average**: Simple average of all judge scores
-- **Trimmed Mean**: Remove highest/lowest scores, then average
-- **Weighted**: Different criteria have different point values
-- **Sum**: Add up all scores (no averaging)
-
-**Choosing the Right Method**:
-- **Average**: Best for most competitions, fair and simple
-- **Trimmed Mean**: Reduces impact of outlier judges
-- **Weighted**: When some criteria are more important
-- **Sum**: When you want total points rather than averages
-
-### Creating Your Rubric
-
-**Step 1: Access Rubric Builder**
-1. Go to **"Rubric"** tab
-2. Click **"Add Criterion"**
-
-**Step 2: Define Each Criterion**
-- **Name**: Clear, descriptive (e.g., "Stage Presence", "Content Accuracy")
-- **Weight**: Percentage importance (must total 100%)
-- **Description**: What judges should evaluate
-- **Scale Labels**: Custom names for 1-5 scale (optional)
-
-**Step 3: Scale Descriptions**
-For each point (1-5), provide detailed descriptions:
-- **1 (Poor)**: "No stage presence, appears uncomfortable"
-- **3 (Good)**: "Confident presence, engages audience adequately"
-- **5 (Excellent)**: "Commanding stage presence, captivates audience"
-
-### Penalty Rules
-
-**Time Penalties**:
-- **Time Limit**: Maximum allowed performance time
-- **Grace Period**: Extra time before penalties apply
-- **Penalty Amount**: Points deducted per time violation
-- **Penalty Type**: Per second, per minute, or flat rate
-
-**Other Penalties**:
-- **Technical Violations**: Props, costumes, etc.
-- **Conduct Issues**: Professionalism, rules compliance
-- **Late Arrivals**: Registration and check-in penalties
+> **Tip:** You can change the scoring method at any time before results are certified.
 
 ---
 
 ## Managing Registrations
 
-### Registration Setup
+## Accessing Registrations
 
-**Opening Registration**:
-1. Go to **"Settings"** → **"Registration"**
-2. Set **Registration Opens** and **Closes** dates
-3. Configure **Registration Fee** (if applicable)
-4. Set **Maximum Registrations** (optional)
+Go to **Registrations** from your dashboard. You'll see a filterable table of all registration submissions.
 
-**Registration Form Fields**:
-- **Required**: Name, email, age category, photo
-- **Optional**: Bio, social media, performance video
-- **Custom Fields**: Add organisation-specific questions
+![Registrations hub](/help-images/organiser/registrations.png)
 
-### Review Process
+## Reviewing Applications
 
-**Viewing Submissions**:
-1. Go to **"Registrations"** tab
-2. Filter by status: Pending, Approved, Rejected
-3. Search by name or email
+Click on any registration to view the full application including:
+- Profile photo and bio
+- Age category and location
+- Digital signature and rules acknowledgement
+- Guardian details (for minors)
 
-**Reviewing Applications**:
-- Click on any registration to view full details
-- Review photos, bio, and additional materials
-- Check eligibility requirements
-- View guardian information (for minors)
+## Approving or Rejecting
 
-**Approval Workflow**:
-1. **Bulk Actions**: Select multiple registrations
-2. **Individual Review**: Approve/reject with comments
-3. **Email Notifications**: Automatic emails sent to contestants
-4. **Assignment**: Assign approved contestants to sub-events
+Use the status dropdown to change a registration from **pending** to **approved** or **rejected**. Approved contestants appear in the competition's contestant list.
 
-### Managing Approved Contestants
+## Assigning to Sub-Events
 
-**Post-Approval Tasks**:
-- Assign to specific sub-events and levels
-- Send welcome emails with competition details
-- Provide access to judge feedback forms
-- Manage contestant communications
+Once approved, assign contestants to specific sub-events using the dropdown selector on each registration row.
+
+> **Tip:** Use the search and filter controls to quickly find registrations by name, status or sub-event.
 
 ---
 
-## Staff Management
+## Building Rubrics
 
-### Understanding Staff Roles
+## What is a Rubric?
 
-**Core Roles**:
-- **Judges**: Score contestants on rubric criteria
-- **Chief Judges**: Oversee judging panels, resolve ties
-- **Tabulators**: Time performances, verify scores
-- **Witnesses**: Observe and certify the process
+A rubric defines the **criteria** judges use to score contestants. Each criterion has a name, weight percentage, and descriptions for each score level (1–5).
 
-### Inviting Staff
+![Rubric builder](/help-images/organiser/rubric-builder.png)
 
-**Step 1: Access Staff Management**
-1. Go to **"Staff"** tab
-2. Click **"Invite Staff"**
+## Creating Criteria
 
-**Step 2: Send Invitations**
-- **Email Address**: Staff member's email
-- **Role**: Select appropriate role(s)
-- **Message**: Personal note (optional)
-- **Send**: Email invitation with magic link
+1. Navigate to your competition → **Rubric** tab
+2. Click **Add Criterion**
+3. Fill in the criterion name (e.g. "Stage Presence")
+4. Set the **weight percentage** (all criteria must total 100%)
+5. Write descriptions for each score level (1 = Poor, 5 = Excellent)
 
-**Step 3: Assignment to Sub-Events**
-- After staff accept invitations, assign them to specific sub-events
-- Multiple staff can be assigned to the same sub-event
-- One Chief Judge per sub-event maximum
+## Reordering Criteria
 
-### Staff Communication
+Drag and drop criteria to change their display order on the judge's scoring interface.
 
-**Built-in Communication**:
-- **Event Chat**: Real-time messaging for all assigned staff
-- **Email Notifications**: Automatic updates on schedule changes
-- **Role-specific Dashboards**: Tailored interfaces for each role
+## Scale Labels
 
-**Best Practices**:
-- Invite staff 2-4 weeks before competition
-- Provide clear role descriptions and expectations
-- Schedule a pre-event meeting or call
-- Share rubric and rules documents in advance
+Customise the labels for each point on the 1–5 scale (e.g. "Needs Improvement", "Developing", "Competent", "Proficient", "Outstanding").
+
+> **Tip:** Keep descriptions concise but specific — judges rely on them to make consistent scoring decisions.
 
 ---
 
-## Competition Administration
+## Assigning Staff
 
-### Pre-Competition Checklist
+## Staff Roles
 
-**2 Weeks Before**:
-- [ ] Confirm all staff assignments
-- [ ] Finalize rubric and penalty rules
-- [ ] Test scoring interface with sample data
-- [ ] Send contestant welcome emails
+Each sub-event can have its own panel of:
+- **Judges** — score contestants
+- **Chief Judge** — oversees the judging panel (one per sub-event)
+- **Tabulator** — manages timing and score verification
+- **Witness** — observes and certifies the process
 
-**1 Week Before**:
-- [ ] Verify venue and technical setup
-- [ ] Confirm schedule and timing
-- [ ] Test live features (chat, notifications)
-- [ ] Prepare backup plans
+## Inviting Staff
 
-**Day Before**:
-- [ ] Final contestant count and assignments
-- [ ] Staff check-in and briefing
-- [ ] Technical rehearsal
-- [ ] Emergency contact list
+1. Go to your competition → **Staff** tab
+2. Click **Invite Staff**
+3. Enter the person's email address and select their role
+4. They'll receive an email invitation with a magic link
 
-### Competition Status Management
+![Staff assignments](/help-images/organiser/staff-assignments.png)
 
-**Status Options**:
-- **Draft**: Private, only you can see
-- **Published**: Public registration open
-- **Active**: Competition in progress
-- **Completed**: Results finalized
-- **Archived**: Historical record
+## Managing Assignments
 
-**Status Transitions**:
-- Draft → Published (opens registration)
-- Published → Active (starts competition)
-- Active → Completed (certifies results)
-- Completed → Archived (preserves records)
+Use the sub-event assignment panel to assign staff to specific sub-events. A judge can be assigned to multiple sub-events.
+
+> **Tip:** Staff members must have verified accounts before they can be assigned. The invitation email will prompt them to sign up if they don't have an account yet.
 
 ---
 
-## Ticketing & Audience Management
+## Ticketing & Voting
 
-### Setting Up Ticketing
+## Ticketing
 
-**Per Sub-Event Ticketing**:
-1. Go to sub-event settings
-2. Enable **"Ticketing"**
-3. Set **Price** (free, paid, or donation)
-4. Set **Capacity** limits
-5. Configure **Check-in** method
+Each sub-event can be configured with:
+- **Ticket type** — free, paid, or donation-based
+- **Ticket price** — set per sub-event
+- **Max tickets** — limit capacity
+- **QR code check-in** — scan tickets at the door
 
-**Ticketing Options**:
-- **Free**: No payment required
-- **Paid**: Set price per ticket
-- **Donation**: Suggested donation amount
-- **VIP**: Premium pricing tiers
+![Ticketing settings](/help-images/organiser/ticketing.png)
 
-### Audience Features
+## People's Choice Voting
 
-**People's Choice Voting**:
-- Enable voting per sub-event
-- Require ticket purchase or allow free voting
-- Set voting period (during/after performances)
-- Display real-time results
+Enable audience voting on your competition to let ticket holders cast votes for their favourite contestants.
 
-**Public Event Page**:
-- Contestant profiles and photos
-- Schedule and venue information
-- News updates and announcements
-- Social media integration
+1. Toggle **Voting Enabled** on the competition settings
+2. Optionally require a ticket number to vote
+3. Voters submit their name, email, and optional phone number
+4. Results appear in the **People's Choice** dashboard
 
-### Managing Ticket Sales
-
-**Ticket Dashboard**:
-- Real-time sales tracking
-- Check-in status monitoring
-- Revenue reporting (if applicable)
-- Attendee list export
+> **Tip:** You can enable or disable voting per sub-event for granular control.
 
 ---
 
-## During Competition Day
+## Organiser Dashboard Overview
+
+## Accessing the Organiser Dashboard
+
+After logging in with an organiser account, click **"Organiser Dashboard"** from the main navigation. This is your command center for all competition management activities.
+
+## Dashboard Layout
+
+### Competition Overview
+- **Active Competitions**: Currently running events
+- **Draft Competitions**: Events in planning
+- **Completed Events**: Past competitions with results
+- **Quick Stats**: Total registrations, revenue, upcoming deadlines
+
+### Quick Actions Panel
+- **Create Competition**: Start a new event
+- **View Analytics**: Performance metrics across competitions
+- **Manage Staff**: Assign roles and permissions
+- **Financial Overview**: Revenue and payment tracking
+
+### Recent Activity Feed
+- **Registration Updates**: New contestant signups
+- **Staff Assignments**: Recent role assignments
+- **Competition Milestones**: Important dates approaching
+- **System Notifications**: Platform updates and alerts
+
+## Competition Management Cards
+
+Each competition displays as a card with:
+- **Status Badge**: Draft, Published, Active, Completed
+- **Key Metrics**: Registrations, sub-events, staff count
+- **Quick Links**: Edit, View Public Page, Analytics
+- **Progress Indicators**: Setup completion percentage
+
+## Filtering & Search
+
+Use filters to organize your view:
+- **By Status**: Active, draft, completed
+- **By Date**: Upcoming, recent, past
+- **By Type**: Pageant, speech contest, etc.
+- **Search Bar**: Find specific competitions by name
+
+> **Tip:** Bookmark your organiser dashboard for quick access during busy competition periods.
+
+---
+
+## Competition Planning Guide
+
+## Phase 1: Conceptual Planning (1-3 Months Before)
+
+### Define Your Vision
+- **Competition Type**: Pageant, speech contest, talent show, debate
+- **Target Audience**: Age groups, experience levels, geographic scope
+- **Unique Selling Points**: What makes your event special
+- **Goals & Objectives**: What you want to achieve
+
+### Budget Planning
+- **Venue Costs**: Location rental, AV equipment, staging
+- **Staff Compensation**: Judges, tabulators, technical crew
+- **Marketing Expenses**: Advertising, social media, promotions
+- **Contingency Fund**: 10-15% for unexpected costs
+
+### Timeline Development
+- **Key Milestones**: Registration opens, judging dates, finale
+- **Dependencies**: Venue availability, staff commitments
+- **Buffer Time**: Extra days for unexpected delays
+
+## Phase 2: Setup & Configuration (2-4 Weeks Before)
+
+### Competition Structure
+- **Create Competition**: Basic details and branding
+- **Define Levels**: Beginner, Intermediate, Advanced categories
+- **Set Up Sub-Events**: Individual competition categories
+- **Configure Rubric**: Judging criteria and weights
+
+### Staff Recruitment
+- **Identify Needs**: Judges, tabulators, technical staff
+- **Send Invitations**: Use Scorz's staff management system
+- **Training Sessions**: Prepare staff for their roles
+- **Backup Planning**: Secondary staff for emergencies
+
+### Marketing & Registration
+- **Launch Public Page**: Competition website goes live
+- **Open Registration**: Set registration periods and fees
+- **Social Media Campaign**: Build excitement and awareness
+- **Partnership Outreach**: Sponsors, media, influencers
+
+## Phase 3: Pre-Competition (1-2 Weeks Before)
+
+### Final Preparations
+- **Staff Confirmations**: All roles filled and confirmed
+- **Venue Setup**: Technical requirements confirmed
+- **Contestant Communication**: Welcome emails and instructions
+- **Emergency Protocols**: Backup plans and contact lists
+
+### Technical Checks
+- **Platform Testing**: All Scorz features working
+- **Staff Training**: Final role-specific briefings
+- **Backup Systems**: Alternative platforms if needed
+- **Communication Channels**: Chat, email, phone chains
+
+## Phase 4: Competition Execution (Event Days)
+
+### Day-Of Management
+- **Staff Check-in**: Confirm all personnel present
+- **Technical Setup**: AV, timing, scoring systems
+- **Contestant Management**: Check-in and preparation
+- **Schedule Adherence**: Keep events on time
 
 ### Real-Time Monitoring
+- **Progress Tracking**: Monitor judging and tabulation
+- **Issue Resolution**: Handle technical or logistical problems
+- **Communication**: Keep all parties informed
+- **Quality Control**: Ensure fair and smooth proceedings
 
-**Competition Dashboard**:
-- Live progress across all sub-events
-- Judge activity and completion status
-- Tabulator timing updates
-- Audience voting results
+## Phase 5: Post-Competition (After Event)
 
-**Communication Hub**:
-- Event-wide chat for all staff
-- Role-specific channels
-- Emergency broadcast system
-- Technical support coordination
+### Results & Communication
+- **Certification**: Finalize and lock results
+- **Announcement**: Share results with contestants and public
+- **Certificates**: Generate and distribute awards
+- **Feedback Collection**: Gather input from all participants
 
-### Handling Issues
+### Analysis & Improvement
+- **Performance Review**: What worked well, what didn't
+- **Financial Reconciliation**: Final budget vs. actuals
+- **Staff Debrief**: Lessons learned session
+- **Planning for Next**: Apply insights to future events
 
-**Common Issues & Solutions**:
-- **Technical Problems**: Have backup devices ready
-- **Staff No-shows**: Have backup staff on call
-- **Timing Delays**: Adjust schedule and communicate changes
-- **Scoring Discrepancies**: Use Chief Judge resolution process
+## Success Metrics
 
-**Emergency Procedures**:
-- Designated emergency coordinator
-- Backup communication methods
-- Evacuation procedures (if applicable)
-- Data backup and recovery plans
+### Quantitative Measures
+- **Registration Numbers**: Target vs. actual
+- **Revenue Performance**: Budget vs. actuals
+- **Attendee Satisfaction**: Survey results
+- **Media Coverage**: Press mentions and reach
 
----
+### Qualitative Measures
+- **Participant Feedback**: Contestant and staff comments
+- **Process Efficiency**: Smoothness of execution
+- **Innovation Impact**: New approaches that worked
+- **Community Impact**: Broader event influence
 
-## Post-Competition Tasks
-
-### Results Certification
-
-**Certification Process**:
-1. All judges certify their scorecards
-2. Tabulator verifies and certifies results
-3. Chief Judge reviews and approves
-4. Final results are locked and published
-
-**Publishing Results**:
-- Automatic notifications to contestants
-- Public results page
-- Certificate generation
-- Social media sharing
-
-### Feedback & Analytics
-
-**Contestant Feedback**:
-- Collect feedback on competition experience
-- Review judge comments and scores
-- Provide improvement suggestions
-
-**Performance Analytics**:
-- Judge scoring patterns and consistency
-- Audience voting trends
-- Registration and attendance statistics
-- Revenue reports (if applicable)
-
-### Archiving & Records
-
-**Data Preservation**:
-- All scores, comments, and certifications saved
-- Photo and video archives
-- Complete audit trail
-- Export capabilities for external systems
+> **Pro Tip:** Start planning 3-6 months in advance for major competitions. Use checklists and assign responsibilities to team members to ensure nothing falls through the cracks.
 
 ---
 
-## Advanced Features
+## Staff Management System
 
-### Custom Integrations
+## Understanding Staff Roles
 
-**API Access**:
-- RESTful API for custom integrations
-- Webhook notifications for real-time updates
-- Data export in multiple formats
+### Core Competition Roles
+- **Judges**: Score contestants on rubric criteria
+- **Chief Judges**: Oversee judging panels and resolve disputes
+- **Tabulators**: Time performances and verify score accuracy
+- **Witnesses**: Observe proceedings for integrity
+- **Technical Staff**: AV, lighting, sound operators
+- **Stage Managers**: Coordinate backstage and timing
 
-**Third-Party Tools**:
-- Payment processor integration
-- Email marketing platform sync
-- Social media automation
-- CRM system connections
+### Administrative Roles
+- **Registration Coordinators**: Manage contestant applications
+- **Hospitality Staff**: Handle contestant and guest services
+- **Security Personnel**: Venue safety and access control
+- **Medical Staff**: Health and emergency response
+- **Volunteers**: General event support
 
-### Advanced Scoring
+## Inviting Staff Members
 
-**Complex Scoring Scenarios**:
-- Multi-round competitions with advancing contestants
-- Team-based scoring
-- Peer judging components
-- Audience scoring integration
+### Step 1: Access Staff Management
+1. Go to your competition → **"Staff"** tab
+2. Click **"Invite Staff"**
+3. Select invitation method
 
-### Automation & Workflows
+### Step 2: Send Invitations
+**Individual Invitations**:
+- Enter email address
+- Select role and sub-event assignments
+- Add personal message
+- Send invitation
 
-**Automated Processes**:
-- Email notifications and reminders
-- Certificate generation
-- Results publication scheduling
-- Staff payment calculations
+**Bulk Invitations**:
+- Upload CSV with staff details
+- Assign roles in bulk
+- Send batch invitations
+- Track response rates
+
+### Step 3: Follow Up
+- **Reminder Emails**: Automatic follow-ups for non-responders
+- **Status Tracking**: See who accepted, declined, or hasn't responded
+- **Re-invitations**: Send to alternates if needed
+
+## Role Assignments
+
+### Sub-Event Specific Roles
+- **Judges & Chief Judges**: Assigned to specific sub-events
+- **Tabulators**: May cover multiple sub-events
+- **Witnesses**: Can observe multiple events
+
+### Assignment Management
+- **Add Assignments**: Assign staff to additional sub-events
+- **Remove Assignments**: Reassign or remove staff
+- **Role Changes**: Modify staff roles if needed
+- **Backup Assignments**: Secondary staff for each role
+
+## Staff Communication
+
+### Built-in Communication Tools
+- **Event Chat**: Real-time messaging for all assigned staff
+- **Role-specific Channels**: Private discussions by role
+- **Announcement System**: Broadcast important updates
+- **Document Sharing**: Rules, schedules, and resources
+
+### Communication Best Practices
+- **Pre-Event Briefings**: Send detailed instructions
+- **Schedule Updates**: Keep everyone informed of changes
+- **Emergency Protocols**: Clear communication chains
+- **Feedback Channels**: Ways for staff to report issues
+
+## Staff Training & Preparation
+
+### Pre-Event Training
+- **Role-specific Training**: Detailed walkthroughs
+- **Platform Tutorials**: How to use Scorz effectively
+- **Process Reviews**: Step-by-step procedures
+- **Q&A Sessions**: Address concerns and questions
+
+### Resource Provision
+- **Digital Guides**: Downloadable manuals and checklists
+- **Video Tutorials**: Visual training materials
+- **Contact Lists**: Emergency and support contacts
+- **Equipment Lists**: What staff need to bring
+
+## During Competition Management
+
+### Staff Check-in
+- **Arrival Confirmation**: Track who has arrived
+- **Equipment Verification**: Ensure staff have what they need
+- **Assignment Confirmation**: Final role assignments
+- **Communication Setup**: Test chat and emergency contacts
+
+### Real-Time Support
+- **Technical Assistance**: Help with platform issues
+- **Process Guidance**: Answer questions during event
+- **Issue Resolution**: Handle problems as they arise
+- **Status Updates**: Keep staff informed of progress
+
+## Post-Competition Staff Management
+
+### Feedback Collection
+- **Staff Surveys**: Gather feedback on processes
+- **Performance Reviews**: Document staff effectiveness
+- **Issue Documentation**: Record problems and resolutions
+- **Improvement Suggestions**: Ideas for future events
+
+### Payment & Compensation
+- **Payment Tracking**: Hours worked, rates, totals
+- **Invoice Generation**: Automated payment requests
+- **Tax Documentation**: Required forms and records
+- **Payment Processing**: Secure payment methods
+
+## Staff Database Management
+
+### Building Your Team
+- **Contact Database**: Maintain staff contact information
+- **Performance History**: Track past event participation
+- **Availability Calendar**: Schedule planning
+- **Skill Tracking**: Special skills and certifications
+
+### Long-term Relationships
+- **Regular Communication**: Stay in touch between events
+- **Professional Development**: Training opportunities
+- **Recognition Programs**: Awards for outstanding service
+- **Referral Networks**: Expand your staff pool
+
+> **Tip:** Start staff recruitment 4-6 weeks before your event. Send invitations early and follow up regularly to ensure full staffing.
 
 ---
 
-## Troubleshooting
+## Financial Management
 
-### Common Issues
+## Revenue Streams
 
-**Registration Problems**:
-- **Issue**: Contestants can't submit forms
-- **Solution**: Check form field requirements, file upload limits
+### Registration Fees
+- **Base Entry Fees**: Per competition registration
+- **Sub-Event Fees**: Additional charges per category
+- **Late Registration**: Penalty fees for late entries
+- **Premium Options**: VIP packages or upgrades
 
-**Staff Assignment Issues**:
-- **Issue**: Staff can't access their dashboards
-- **Solution**: Verify role assignments, check email verification
+### Ticketing Revenue
+- **Audience Tickets**: General admission pricing
+- **VIP Packages**: Premium seating and experiences
+- **Group Discounts**: Bulk purchase options
+- **Dynamic Pricing**: Time-based price adjustments
 
-**Scoring Technical Issues**:
-- **Issue**: Judges can't save scores
-- **Solution**: Check internet connection, clear browser cache
+### Sponsorship & Partnerships
+- **Title Sponsorships**: Naming rights and branding
+- **Category Sponsors**: Sub-event specific partnerships
+- **Vendor Booths**: Exhibition space revenue
+- **Media Rights**: Broadcasting and coverage fees
 
-**Timing Problems**:
-- **Issue**: Timer not syncing
-- **Solution**: Refresh page, check device compatibility
+## Payment Processing
 
-### Getting Help
+### Integrated Payment System
+- **Secure Processing**: PCI-compliant payment gateway
+- **Multiple Methods**: Cards, digital wallets, bank transfers
+- **Currency Support**: Multi-currency for international events
+- **Mobile Payments**: Phone and contactless options
 
-**Support Resources**:
-- **Knowledge Base**: In-app help articles
-- **Video Tutorials**: Step-by-step guides
-- **Community Forum**: User discussions and tips
-- **Direct Support**: Contact form for technical issues
+### Payment Flow
+1. **Registration**: Contestant selects payment method
+2. **Processing**: Secure transaction through gateway
+3. **Confirmation**: Instant payment verification
+4. **Receipt**: Automatic email receipt generation
 
-**Best Practices for Support**:
-- Include screenshots when reporting issues
-- Note browser and device information
-- Describe steps to reproduce problems
-- Provide competition URL and specific error messages
+## Financial Dashboard
+
+### Revenue Tracking
+- **Real-time Totals**: Current revenue across all streams
+- **Projection Tools**: Forecast final revenue
+- **Payment Status**: Track paid vs. pending registrations
+- **Refund Management**: Process refund requests
+
+### Expense Tracking
+- **Budget Categories**: Venue, staff, marketing, equipment
+- **Actual vs. Budget**: Compare planned vs. actual spending
+- **Vendor Payments**: Track payments to suppliers
+- **Contingency Funds**: Monitor emergency reserves
+
+## Registration Management
+
+### Fee Structures
+- **Tiered Pricing**: Early bird, regular, late fees
+- **Discount Codes**: Promotional and group discounts
+- **Payment Plans**: Installment options for large fees
+- **Scholarships**: Reduced fees for qualifying contestants
+
+### Refund Policies
+- **Cancellation Windows**: Refund periods and amounts
+- **Policy Communication**: Clear refund terms for contestants
+- **Automated Processing**: Self-service refund requests
+- **Manual Reviews**: Special circumstance approvals
+
+## Reporting & Analytics
+
+### Financial Reports
+- **Revenue Breakdown**: By category and time period
+- **Expense Analysis**: Spending patterns and trends
+- **Profit/Loss**: Overall financial performance
+- **Tax Preparation**: Documentation for accounting
+
+### Performance Metrics
+- **ROI Analysis**: Return on marketing investment
+- **Break-even Analysis**: When costs are covered
+- **Trend Analysis**: Year-over-year comparisons
+- **Forecasting**: Future event financial projections
+
+## Tax & Legal Compliance
+
+### Tax Considerations
+- **Sales Tax**: Collection and remittance
+- **Income Tax**: Business income reporting
+- **Vendor Taxes**: 1099 forms for payments
+- **International**: Cross-border tax implications
+
+### Financial Records
+- **Receipt Storage**: Digital receipt management
+- **Audit Trail**: Complete transaction history
+- **Backup Systems**: Secure data preservation
+- **Retention Policies**: How long to keep records
+
+## Risk Management
+
+### Financial Risks
+- **Non-payment**: Contestants who don't complete payment
+- **Chargebacks**: Credit card disputes
+- **Currency Fluctuation**: International payment risks
+- **Vendor Issues**: Supplier payment disputes
+
+### Mitigation Strategies
+- **Payment Verification**: Confirm payment before allowing participation
+- **Clear Policies**: Communicate refund and payment terms
+- **Insurance**: Event cancellation and liability coverage
+- **Contingency Planning**: Backup funding sources
+
+> **Tip:** Set up automatic financial reporting to track revenue and expenses in real-time. This helps you make informed decisions during the competition.
 
 ---
 
-## Quick Reference
+## Marketing Your Competition
 
-### Competition Creation Checklist
-- [ ] Basic details (name, dates, location)
-- [ ] Branding (colors, logo, fonts)
-- [ ] Structure (levels and sub-events)
-- [ ] Rubric and scoring method
-- [ ] Registration settings
-- [ ] Staff assignments
-- [ ] Ticketing configuration
+## Digital Marketing Strategy
 
-### Competition Day Checklist
-- [ ] Staff check-in and briefing
-- [ ] Technical setup verification
-- [ ] Backup equipment ready
-- [ ] Communication channels open
-- [ ] Emergency procedures reviewed
-- [ ] Results publication plan ready
+### Website & SEO
+- **Competition Page**: Compelling event description
+- **SEO Optimization**: Keywords for search visibility
+- **Mobile-Friendly**: Responsive design for all devices
+- **Fast Loading**: Optimized images and content
 
-### Post-Competition Checklist
-- [ ] All results certified and published
-- [ ] Contestant feedback collected
-- [ ] Analytics and reports generated
-- [ ] Data archived and backed up
-- [ ] Staff payments processed
-- [ ] Thank-you communications sent
+### Social Media Campaigns
+- **Platform Selection**: Choose relevant social networks
+- **Content Calendar**: Regular posting schedule
+- **Hashtag Creation**: Unique event hashtags
+- **Influencer Partnerships**: Collaborate with relevant creators
+
+### Email Marketing
+- **Registration Lists**: Build prospect databases
+- **Teaser Campaigns**: Build anticipation
+- **Reminder Sequences**: Deadline and event notifications
+- **Post-Event Follow-up**: Maintain relationships
+
+## Content Marketing
+
+### Blog & Articles
+- **Behind-the-Scenes**: Event preparation stories
+- **Contestant Spotlights**: Feature participants
+- **Tips & Advice**: Competition preparation guides
+- **Industry Insights**: Relevant trend articles
+
+### Video Content
+- **Promo Videos**: Highlight event features
+- **Testimonials**: Past participant feedback
+- **Virtual Tours**: Venue and facility previews
+- **Tutorial Videos**: How to register and prepare
+
+## Partnership & Sponsorship
+
+### Sponsorship Opportunities
+- **Title Sponsors**: Main event naming rights
+- **Category Sponsors**: Sub-event specific partnerships
+- **Vendor Partnerships**: Product and service integrations
+- **Media Sponsors**: Coverage and promotion support
+
+### Partnership Benefits
+- **Financial Support**: Additional revenue streams
+- **Marketing Reach**: Partner networks and audiences
+- **Credibility**: Association with established brands
+- **Added Value**: Enhanced event offerings
+
+## Public Relations
+
+### Media Outreach
+- **Press Releases**: Event announcements and milestones
+- **Media Kits**: Press photos, bios, and information
+- **Interview Opportunities**: Spokesperson availability
+- **Story Angles**: Unique event aspects for coverage
+
+### Community Engagement
+- **Local Partnerships**: Community organization involvement
+- **Charity Tie-ins**: Cause-related marketing
+- **School Programs**: Educational institution participation
+- **Industry Associations**: Professional group involvement
+
+## Registration Conversion
+
+### Landing Page Optimization
+- **Clear Value Proposition**: Why attend this event
+- **Social Proof**: Testimonials and past results
+- **Easy Registration**: Streamlined signup process
+- **Trust Signals**: Security badges, guarantees
+
+### Conversion Funnels
+- **Awareness**: Initial interest generation
+- **Consideration**: Detailed information provision
+- **Decision**: Registration encouragement
+- **Retention**: Post-registration engagement
+
+## Analytics & Measurement
+
+### Marketing Metrics
+- **Website Traffic**: Visitor numbers and sources
+- **Social Engagement**: Likes, shares, comments
+- **Email Performance**: Open rates, click-throughs
+- **Conversion Rates**: Visitors to registrants
+
+### ROI Tracking
+- **Cost per Registration**: Marketing spend efficiency
+- **Channel Performance**: Best performing marketing sources
+- **Customer Lifetime Value**: Long-term participant relationships
+- **Brand Impact**: Reputation and awareness growth
+
+## Crisis Communication
+
+### Issue Management
+- **Rapid Response**: Quick acknowledgment of problems
+- **Transparent Communication**: Honest situation updates
+- **Solution Focus**: Emphasis on resolution steps
+- **Stakeholder Updates**: Regular progress reports
+
+### Reputation Management
+- **Online Monitoring**: Social media and review tracking
+- **Response Strategy**: Professional issue handling
+- **Recovery Planning**: Steps to restore confidence
+- **Prevention**: Risk mitigation for future events
+
+> **Tip:** Start marketing 3-6 months in advance for major competitions. Focus on building excitement and clearly communicating the unique value of your event.
 
 ---
 
-*Last Updated: March 2026*
-*For technical support, visit the Help Center or contact support@scorz.com*
+## Need Help?
+
+- **In-App Help**: Access detailed guides within the Scorz platform
+- **Support**: Contact your competition organizer or Scorz support
+- **Updates**: This guide is automatically updated when new features are added
+
+---
+
+*Last updated: 3/7/2026*
