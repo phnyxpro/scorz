@@ -366,7 +366,26 @@ export default function JudgeScoring() {
       )}
 
       {/* Main scoring area */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div
+        className="flex-1 min-w-0 overflow-y-auto"
+        onTouchStart={(e) => {
+          if (!isMobile || filteredContestants.length < 2) return;
+          touchStartX.current = e.touches[0].clientX;
+        }}
+        onTouchEnd={(e) => {
+          if (!isMobile || touchStartX.current === null || filteredContestants.length < 2 || isCertified) return;
+          const diff = e.changedTouches[0].clientX - touchStartX.current;
+          touchStartX.current = null;
+          if (Math.abs(diff) < 50) return;
+          setSwipeHintVisible(false);
+          const currentIdx = filteredContestants.findIndex(r => r.id === selectedContestant);
+          if (diff < 0 && currentIdx < filteredContestants.length - 1) {
+            setSelectedContestant(filteredContestants[currentIdx + 1].id);
+          } else if (diff > 0 && currentIdx > 0) {
+            setSelectedContestant(filteredContestants[currentIdx - 1].id);
+          }
+        }}
+      >
         <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
