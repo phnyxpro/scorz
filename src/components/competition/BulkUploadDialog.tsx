@@ -283,7 +283,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
                       <div key={field.key} className="flex items-center gap-2">
                         <Label className="text-xs w-28 shrink-0">
                           {field.label}
-                          {field.required && <span className="text-destructive ml-0.5">*</span>}
+                          {"required" in field && field.required && <span className="text-destructive ml-0.5">*</span>}
                         </Label>
                         <Select
                           value={mapping[field.key] || "__none__"}
