@@ -141,6 +141,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         if (event === "INITIAL_SESSION") return;
 
+        // Retry invitation acceptance on token refresh (in case initial login failed)
+        if (event === "TOKEN_REFRESHED" && session?.user) {
+          supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(({ error: rpcErr }) => {
+            if (rpcErr) console.error("accept_staff_invitations retry failed:", rpcErr);
+          });
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -149,7 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (event === "SIGNED_IN") {
             // Mark any pending staff invitations as accepted
-            supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(() => {});
+            supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(({ error: rpcErr }) => {
+              if (rpcErr) console.error("accept_staff_invitations failed:", rpcErr);
+            });
 
             assignSignupRole(session.user).then(() =>
               fetchRoles(session.user!.id).then((r) => {
