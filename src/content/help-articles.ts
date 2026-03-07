@@ -40,7 +40,6 @@ export const helpArticles: HelpArticle[] = [
 
 Scorz is a full-featured competition management platform built for pageants, talent shows, speech contests, and any judged event. It covers **every stage** of a competition — from registration through to certified results.
 
-![Scorz dashboard overview](/help-images/getting-started/platform-overview.png)
 
 ### Core Capabilities
 
@@ -78,7 +77,6 @@ Scorz is a full-featured competition management platform built for pageants, tal
 
 Click **Get Started** on the landing page or go directly to the authentication screen.
 
-![Sign up screen](/help-images/getting-started/sign-up.png)
 
 ## Step 2 — Enter Your Details
 
@@ -88,7 +86,6 @@ Fill in your **email address** and choose a **strong password**. You can also pr
 
 Check your inbox for a confirmation email and click the verification link. Once verified, you'll be redirected to your dashboard.
 
-![Email verification](/help-images/getting-started/verify-email.png)
 
 > **Note:** You must verify your email before you can sign in. If you don't see the email, check your spam folder.
 
@@ -120,7 +117,6 @@ When you first sign up, you have the **audience** role by default. Organisers an
 - **Audience** — Browse events, purchase tickets, cast People's Choice votes
 - **Admin** — Platform-wide administrative access
 
-![Role selection](/help-images/getting-started/roles.png)
 
 ### How Roles Affect Your Dashboard
 
@@ -144,7 +140,6 @@ Your dashboard cards automatically adjust based on your roles. A user with both 
 
 Navigate to **Events** from your dashboard or sidebar. Click **Create Competition**.
 
-![Create competition button](/help-images/organiser/create-comp-step1.png)
 
 ## Step 2 — Fill in Event Details
 
@@ -154,7 +149,6 @@ Provide a **name**, optional description, start/end dates and upload a banner im
 
 Competitions are organised into **Levels** (e.g. "Junior", "Senior") and each level contains **Sub-Events** (e.g. "Evening Gown", "Talent").
 
-![Levels and sub-events](/help-images/organiser/levels-sub-events.png)
 
 ## Step 4 — Configure Branding
 
@@ -180,7 +174,6 @@ Choose between **average**, **trimmed mean**, **sum** or **weighted** scoring me
 
 Go to **Registrations** from your dashboard. You'll see a filterable table of all registration submissions.
 
-![Registrations hub](/help-images/organiser/registrations.png)
 
 ## Reviewing Applications
 
@@ -214,7 +207,6 @@ Once approved, assign contestants to specific sub-events using the dropdown sele
 
 A rubric defines the **criteria** judges use to score contestants. Each criterion has a name, weight percentage, and descriptions for each score level (1–5).
 
-![Rubric builder](/help-images/organiser/rubric-builder.png)
 
 ## Creating Criteria
 
@@ -259,7 +251,6 @@ Each sub-event can have its own panel of:
 3. Enter the person's email address and select their role
 4. They'll receive an email invitation with a magic link
 
-![Staff assignments](/help-images/organiser/staff-assignments.png)
 
 ## Managing Assignments
 
@@ -285,7 +276,6 @@ Each sub-event can be configured with:
 - **Max tickets** — limit capacity
 - **QR code check-in** — scan tickets at the door
 
-![Ticketing settings](/help-images/organiser/ticketing.png)
 
 ## People's Choice Voting
 
@@ -314,7 +304,6 @@ Enable audience voting on your competition to let ticket holders cast votes for 
 
 Navigate to **Judging** from your dashboard, then select the competition and sub-event you're assigned to. Click **Score** to open the scoring interface.
 
-![Judge scoring interface](/help-images/judge/scoring-interface.png)
 
 ## Scoring with Sliders
 
@@ -347,7 +336,6 @@ Scores are **auto-saved** as you adjust sliders. A confirmation toast appears wh
 
 As a judge, you can see a **read-only** view of the performance timer that the tabulator controls. This helps you keep track of time without managing it yourself.
 
-![Read-only timer](/help-images/judge/read-only-timer.png)
 
 ## Timer States
 
@@ -380,7 +368,6 @@ After you've scored all contestants in a sub-event, you can certify your scoreca
 
 Use the signature pad to draw your signature. This is captured and stored alongside your scores for audit purposes.
 
-![Signature pad](/help-images/judge/signature-pad.png)
 
 ## What Happens After Certification
 
@@ -467,7 +454,6 @@ Before you start scoring, click the **Rubric** button on your competition card t
 
 Click **Start Scoring** on your assigned sub-event.
 
-![Start scoring button](/help-images/judge/start-scoring.png)
 
 ## Step 4 — Score the Performance
 
@@ -3056,7 +3042,6 @@ Use filters to organize your view:
 
 The Tabulator Dashboard is your command centre for managing performance timing, score verification and result certification.
 
-![Tabulator dashboard](/help-images/tabulator/dashboard.png)
 
 ## Key Sections
 
@@ -3094,7 +3079,6 @@ Choose the contestant who is about to perform from the **contestant selector** a
 2. Use **Pause** if there's an interruption
 3. Click **Stop** when the performance ends
 
-![Timer controls](/help-images/tabulator/timer-controls.png)
 
 ## Duration Recording
 
@@ -3131,7 +3115,6 @@ Before certifying results, complete these checks:
 
 Toggle the **Digital vs Physical Match** checkbox to confirm that digital scores align with physical score sheets.
 
-![Certification form](/help-images/tabulator/certification.png)
 
 ## Signing Off
 
@@ -3157,7 +3140,6 @@ Click **Certify Results** to lock the scores and make them available for publica
 
 Browse available competitions from the **Events** page. Click on any event to see details including dates, location, rules and rubric.
 
-![Browse events](/help-images/contestant/browse-events.png)
 
 ## Starting Registration
 
@@ -3177,7 +3159,6 @@ Complete the registration form with:
 
 Read the competition rules and check the acknowledgement box. You may also need to provide a **digital signature**.
 
-![Registration form](/help-images/contestant/registration-form.png)
 
 ## Guardian Consent (Minors)
 
@@ -3199,7 +3180,6 @@ If you're under 18, a guardian must also provide their details and digital signa
 
 Click **My Profile** from the dashboard or navigate via the sidebar.
 
-![Contestant profile](/help-images/contestant/profile.png)
 
 ## Editable Fields
 
@@ -3232,7 +3212,6 @@ After results are published, navigate to **Feedback** from your dashboard to vie
 - **Score breakdown** — your scores per criterion
 - **People's Choice votes** — how many audience votes you received
 
-![Feedback page](/help-images/contestant/feedback.png)
 
 ## Understanding Your Scores
 
@@ -3260,7 +3239,6 @@ Some competitions offer a **Post-Event Portal** with additional resources, certi
 
 Visit the **Events** page to see all upcoming and active competitions. No account is required to browse.
 
-![Public events](/help-images/audience/public-events.png)
 
 ## Event Details
 
@@ -3299,7 +3277,6 @@ On the public event page, sub-events with ticketing show a **Get Tickets** butto
 3. Complete payment (if applicable)
 4. Receive your ticket with a **QR code** via email
 
-![Ticket purchase](/help-images/audience/buy-ticket.png)
 
 ## Your Tickets
 
@@ -3329,7 +3306,6 @@ Present your QR code at the venue for scanning. The organiser's check-in hub wil
 
 When an organiser enables People's Choice voting, audience members can vote for their favourite contestant in each sub-event.
 
-![Voting form](/help-images/audience/voting.png)
 
 ## Casting Your Vote
 

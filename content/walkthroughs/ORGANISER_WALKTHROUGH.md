@@ -25,7 +25,6 @@ Comprehensive guide for competition organizers covering event planning, staff ma
 
 Navigate to **Events** from your dashboard or sidebar. Click **Create Competition**.
 
-![Create competition button](/help-images/organiser/create-comp-step1.png)
 
 ## Step 2 — Fill in Event Details
 
@@ -35,7 +34,6 @@ Provide a **name**, optional description, start/end dates and upload a banner im
 
 Competitions are organised into **Levels** (e.g. "Junior", "Senior") and each level contains **Sub-Events** (e.g. "Evening Gown", "Talent").
 
-![Levels and sub-events](/help-images/organiser/levels-sub-events.png)
 
 ## Step 4 — Configure Branding
 
@@ -55,7 +53,6 @@ Choose between **average**, **trimmed mean**, **sum** or **weighted** scoring me
 
 Go to **Registrations** from your dashboard. You'll see a filterable table of all registration submissions.
 
-![Registrations hub](/help-images/organiser/registrations.png)
 
 ## Reviewing Applications
 
@@ -83,7 +80,6 @@ Once approved, assign contestants to specific sub-events using the dropdown sele
 
 A rubric defines the **criteria** judges use to score contestants. Each criterion has a name, weight percentage, and descriptions for each score level (1–5).
 
-![Rubric builder](/help-images/organiser/rubric-builder.png)
 
 ## Creating Criteria
 
@@ -122,7 +118,6 @@ Each sub-event can have its own panel of:
 3. Enter the person's email address and select their role
 4. They'll receive an email invitation with a magic link
 
-![Staff assignments](/help-images/organiser/staff-assignments.png)
 
 ## Managing Assignments
 
@@ -142,7 +137,6 @@ Each sub-event can be configured with:
 - **Max tickets** — limit capacity
 - **QR code check-in** — scan tickets at the door
 
-![Ticketing settings](/help-images/organiser/ticketing.png)
 
 ## People's Choice Voting
 

@@ -25,7 +25,6 @@ Complete guide for judges and chief judges covering scoring, certification, and 
 
 Navigate to **Judging** from your dashboard, then select the competition and sub-event you're assigned to. Click **Score** to open the scoring interface.
 
-![Judge scoring interface](/help-images/judge/scoring-interface.png)
 
 ## Scoring with Sliders
 
@@ -52,7 +51,6 @@ Scores are **auto-saved** as you adjust sliders. A confirmation toast appears wh
 
 As a judge, you can see a **read-only** view of the performance timer that the tabulator controls. This helps you keep track of time without managing it yourself.
 
-![Read-only timer](/help-images/judge/read-only-timer.png)
 
 ## Timer States
 
@@ -79,7 +77,6 @@ After you've scored all contestants in a sub-event, you can certify your scoreca
 
 Use the signature pad to draw your signature. This is captured and stored alongside your scores for audit purposes.
 
-![Signature pad](/help-images/judge/signature-pad.png)
 
 ## What Happens After Certification
 
@@ -154,7 +151,6 @@ Before you start scoring, click the **Rubric** button on your competition card t
 
 Click **Start Scoring** on your assigned sub-event.
 
-![Start scoring button](/help-images/judge/start-scoring.png)
 
 ## Step 4 — Score the Performance
 

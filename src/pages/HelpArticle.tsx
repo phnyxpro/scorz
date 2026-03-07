@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { getArticle, getArticlesByCategory, getCategoryBySlug } from "@/content/help-articles";
 import { markdownToHtml, renderVideoEmbed } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 export default function HelpArticle() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
@@ -20,8 +21,34 @@ export default function HelpArticle() {
   const contentHtml = markdownToHtml(article.content);
   const videoHtml = renderVideoEmbed(article.video);
 
+  // Prepare SEO data
+  const articleTitle = `${article.title} | Scorz Help`;
+  const articleDescription = article.excerpt;
+  const canonicalUrl = `${window.location.origin}/help/${category}/${slug}`;
+
+  // FAQ Schema for knowledge base
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": {
+      "@type": "Question",
+      "name": article.title,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": article.excerpt
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEO
+        title={articleTitle}
+        description={articleDescription}
+        canonical={canonicalUrl}
+        structuredData={faqStructuredData}
+      />
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -114,6 +141,7 @@ export default function HelpArticle() {
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
         <p>Can't find what you're looking for? Contact us at support@scorz.app</p>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

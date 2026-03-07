@@ -22,7 +22,6 @@ Step-by-step guide for contestants covering registration, profile building, comp
 
 Browse available competitions from the **Events** page. Click on any event to see details including dates, location, rules and rubric.
 
-![Browse events](/help-images/contestant/browse-events.png)
 
 ## Starting Registration
 
@@ -42,7 +41,6 @@ Complete the registration form with:
 
 Read the competition rules and check the acknowledgement box. You may also need to provide a **digital signature**.
 
-![Registration form](/help-images/contestant/registration-form.png)
 
 ## Guardian Consent (Minors)
 
@@ -58,7 +56,6 @@ If you're under 18, a guardian must also provide their details and digital signa
 
 Click **My Profile** from the dashboard or navigate via the sidebar.
 
-![Contestant profile](/help-images/contestant/profile.png)
 
 ## Editable Fields
 
@@ -85,7 +82,6 @@ After results are published, navigate to **Feedback** from your dashboard to vie
 - **Score breakdown** — your scores per criterion
 - **People's Choice votes** — how many audience votes you received
 
-![Feedback page](/help-images/contestant/feedback.png)
 
 ## Understanding Your Scores
 

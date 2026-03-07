@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { format } from "date-fns";
+import { SEO } from "@/components/SEO";
 
 function usePublicCompetitions() {
   return useQuery({
@@ -32,25 +33,31 @@ export default function PublicEvents() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
-            <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <InstallPWA />
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/about">About</Link>
-            </Button>
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/help">Knowledge Base</Link>
-            </Button>
-            {user ? (
-              <Button asChild size="sm" variant="outline">
-                <Link to="/dashboard">Dashboard</Link>
+    <>
+      <SEO
+        title="Scorz - Live Scoring & Competition Management"
+        description="Discover live competitions, view real-time scores, and explore judged events on Scorz. The complete platform for pageants, talent shows, and competitive events."
+        canonical="https://scorz.live/events"
+      />
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
+              <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <InstallPWA />
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/about">About</Link>
+              </Button>
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/help">Knowledge Base</Link>
+              </Button>
+              {user ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/dashboard">Dashboard</Link>
               </Button>
             ) : (
               <Button asChild size="sm">
@@ -162,6 +169,7 @@ export default function PublicEvents() {
           @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

@@ -45,6 +45,7 @@ import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { PublicVotingForm } from "@/components/public/PublicVotingForm";
+import { SEO } from "@/components/SEO";
 
 function usePublicCompetition(slug: string | undefined) {
   return useQuery({
@@ -172,30 +173,71 @@ export default function PublicEventDetail() {
     setSearchParams({ tab: value });
   };
 
+  // Prepare SEO data
+  const eventTitle = `${comp.name} | Live Leaderboard & Results | Scorz`;
+  const eventDescription = `View live scores, results, and standings for ${comp.name}. Real-time competition management platform for judged events.`;
+  const canonicalUrl = `${window.location.origin}/events/${comp.slug || comp.id}`;
+
+  // Structured data for Event schema
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": comp.name,
+    "description": comp.description || eventDescription,
+    "startDate": comp.start_date,
+    "endDate": comp.end_date,
+    "location": comp.location ? {
+      "@type": "Place",
+      "name": comp.location
+    } : {
+      "@type": "VirtualLocation",
+      "url": canonicalUrl
+    },
+    "eventStatus": "https://schema.org/EventScheduled",
+    "organizer": {
+      "@type": "Organization",
+      "name": "Scorz",
+      "url": window.location.origin
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            {(comp as any).white_label && (comp as any).branding_logo_url ? (
-              <>
-                <img src={(comp as any).branding_logo_url} alt={comp.name} className="h-7 w-7 rounded" />
-                <span className="font-bold tracking-tight text-foreground text-lg">{comp.name}</span>
-              </>
-            ) : (
-              <>
-                <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-                <span className="font-bold tracking-tighter text-foreground font-mono">
-                  SCOR<span className="text-accent">Z</span>
-                </span>
-              </>
-            )}
-          </Link>
-          <div className="flex items-center gap-2">
-            {socialLinks && <SocialLinks links={socialLinks} />}
-            {user ? (
-              <Button asChild size="sm" variant="outline">
+    <>
+      <SEO
+        title={eventTitle}
+        description={eventDescription}
+        canonical={canonicalUrl}
+        ogType="event"
+        structuredData={structuredData}
+      />
+      {/* Hidden AEO Match Summary for AI agents */}
+      <div className="sr-only" aria-hidden="true">
+        Current Leader: View live scores and results for {comp.name}. Competition status: {comp.status}. 
+        Location: {comp.location || 'Online'}. Start date: {comp.start_date}.
+      </div>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              {(comp as any).white_label && (comp as any).branding_logo_url ? (
+                <>
+                  <img src={(comp as any).branding_logo_url} alt={comp.name} className="h-7 w-7 rounded" />
+                  <span className="font-bold tracking-tight text-foreground text-lg">{comp.name}</span>
+                </>
+              ) : (
+                <>
+                  <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+                  <span className="font-bold tracking-tighter text-foreground font-mono">
+                    SCOR<span className="text-accent">Z</span>
+                  </span>
+                </>
+              )}
+            </Link>
+            <div className="flex items-center gap-2">
+              {socialLinks && <SocialLinks links={socialLinks} />}
+              {user ? (
+                <Button asChild size="sm" variant="outline">
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
             ) : (
@@ -531,7 +573,8 @@ export default function PublicEventDetail() {
           <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 

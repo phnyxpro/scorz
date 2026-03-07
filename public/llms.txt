@@ -1,0 +1,34 @@
+# Scorz - Competition Management Platform
+
+Scorz is a comprehensive competition management platform designed for pageants, talent shows, speech contests, and any judged event. It handles the entire competition lifecycle from registration through certified results.
+
+## Purpose
+Scorz enables organizers to create and manage competitions with custom rubrics, real-time scoring, audience voting, and automated result certification. Judges score contestants using customizable criteria, tabulators manage timing and verification, and contestants can register and track their progress.
+
+## Key Features
+- **Event Management**: Create competitions with levels, sub-events, and custom scoring rules
+- **Registration**: Online contestant registration with profiles and digital signatures
+- **Judging**: Real-time scoring with customizable rubrics and sliders
+- **Tabulation**: Performance timing, score verification, and result certification
+- **Audience Engagement**: Ticket sales, live voting, and event updates
+- **Analytics**: Comprehensive reporting and performance metrics
+
+## Supported Competition Types
+- Pageants and beauty contests
+- Talent shows and performances
+- Speech contests and debates
+- Sports competitions with judging
+- Academic competitions
+- Any scored competitive event
+
+## Technology
+Built with React, TypeScript, Supabase, and modern web technologies for real-time updates and scalability.
+
+## Important Links
+- Homepage: https://scorz.live
+- Events: https://scorz.live/events
+- Help Center: https://scorz.live/help
+- About: https://scorz.live/about
+
+## Contact
+For questions about competitions or platform features, visit our help center or contact support through the platform.

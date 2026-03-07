@@ -23,7 +23,6 @@ Complete guide for tabulators covering timing, score verification, penalties, an
 
 The Tabulator Dashboard is your command centre for managing performance timing, score verification and result certification.
 
-![Tabulator dashboard](/help-images/tabulator/dashboard.png)
 
 ## Key Sections
 
@@ -55,7 +54,6 @@ Choose the contestant who is about to perform from the **contestant selector** a
 2. Use **Pause** if there's an interruption
 3. Click **Stop** when the performance ends
 
-![Timer controls](/help-images/tabulator/timer-controls.png)
 
 ## Duration Recording
 
@@ -86,7 +84,6 @@ Before certifying results, complete these checks:
 
 Toggle the **Digital vs Physical Match** checkbox to confirm that digital scores align with physical score sheets.
 
-![Certification form](/help-images/tabulator/certification.png)
 
 ## Signing Off
 

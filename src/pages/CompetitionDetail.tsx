@@ -33,6 +33,7 @@ import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { SEO } from "@/components/SEO";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -240,22 +241,58 @@ export default function CompetitionDetail() {
   if (isLoading || authLoading) return <DetailPageSkeleton />;
   if (!comp) return <div className="text-muted-foreground">Competition not found</div>;
 
-  return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon" className="shrink-0">
-          <Link to="/competitions"><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{comp.name}</h1>
-          <p className="text-muted-foreground text-sm">Configure competition settings</p>
-        </div>
-      </div>
+  // Prepare SEO data
+  const eventTitle = `${comp.name} | Live Leaderboard & Results | Scorz`;
+  const eventDescription = `View live scores, results, and standings for ${comp.name}. Real-time competition management platform for judged events.`;
+  const canonicalUrl = `${window.location.origin}/competitions/${comp.id}`;
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-          <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
-          <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
+  // Structured data for Event schema
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": comp.name,
+    "description": comp.description || eventDescription,
+    "startDate": comp.start_date,
+    "endDate": comp.end_date,
+    "location": comp.location ? {
+      "@type": "Place",
+      "name": comp.location
+    } : {
+      "@type": "VirtualLocation",
+      "url": canonicalUrl
+    },
+    "eventStatus": "https://schema.org/EventScheduled",
+    "organizer": {
+      "@type": "Organization",
+      "name": "Scorz",
+      "url": window.location.origin
+    }
+  };
+
+  return (
+    <>
+      <SEO
+        title={eventTitle}
+        description={eventDescription}
+        canonical={canonicalUrl}
+        ogType="event"
+        structuredData={structuredData}
+      />
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <Link to="/competitions"><ArrowLeft className="h-4 w-4" /></Link>
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{comp.name}</h1>
+            <p className="text-muted-foreground text-sm">Configure competition settings</p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="general" className="space-y-4">
+          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+            <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
+            <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
           <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
@@ -542,5 +579,6 @@ export default function CompetitionDetail() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </>
   );
 }
