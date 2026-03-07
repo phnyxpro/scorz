@@ -335,32 +335,28 @@ export function RegistrationsManager({ competitionId }: Props) {
     },
   });
 
-  // Also fetch all unbooked slots for the active sub-event tab
-  const { data: availableSlots } = useQuery({
-    queryKey: ["available_slots", activeSubEventTab],
-    enabled: activeSubEventTab !== "all",
+  // Fetch ALL slots for all sub-events in this competition so the picker always works
+  const { data: allSlotsRaw } = useQuery({
+    queryKey: ["available_slots", competitionId, subEventIds],
+    enabled: subEventIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_slots")
         .select("id, contestant_registration_id, start_time, end_time, sub_event_id, is_booked")
-        .eq("sub_event_id", activeSubEventTab)
+        .in("sub_event_id", subEventIds)
         .order("start_time");
       if (error) throw error;
       return data;
     },
   });
 
-  // Combine booked + available slots for the slot picker
+  // Combine all slots (from both queries) for the picker, keyed by sub-event
   const allSlotsForPicker = useMemo(() => {
-    const combined = [...(availableSlots || [])];
-    // Add any slots from slotsData that belong to other sub-events (for current reg assignments)
-    slotsData?.forEach((s) => {
-      if (!combined.find((c) => c.id === s.id)) {
-        combined.push(s);
-      }
-    });
-    return combined;
-  }, [availableSlots, slotsData]);
+    const map = new Map<string, typeof allSlotsRaw extends (infer T)[] | undefined ? T : never>();
+    allSlotsRaw?.forEach((s) => map.set(s.id, s));
+    slotsData?.forEach((s) => { if (!map.has(s.id)) map.set(s.id, s); });
+    return Array.from(map.values());
+  }, [allSlotsRaw, slotsData]);
 
   // Map registration id -> slot
   const slotsByRegId = useMemo(() => {
