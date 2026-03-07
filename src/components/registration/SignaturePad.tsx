@@ -229,15 +229,6 @@ export function SignaturePad({
               </span>
             </div>
           )}
-          <Button
-            type="button"
-            onClick={confirmTyped}
-            disabled={!typedName.trim()}
-            size="sm"
-            className="w-full gap-1.5"
-          >
-            <Check className="h-3.5 w-3.5" /> Confirm Signature
-          </Button>
         </TabsContent>
       </Tabs>
 
