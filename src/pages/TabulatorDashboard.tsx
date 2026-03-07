@@ -7,8 +7,9 @@ import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } f
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
 import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWitnessCertificationRealtime } from "@/hooks/useWitness";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
