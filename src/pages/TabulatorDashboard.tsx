@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePenaltyRules } from "@/hooks/useCompetitions";
+import { usePenaltyRules, useSetActiveScoring } from "@/hooks/useCompetitions";
+import { Switch } from "@/components/ui/switch";
 import { useStaffView } from "@/hooks/useStaffView";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
