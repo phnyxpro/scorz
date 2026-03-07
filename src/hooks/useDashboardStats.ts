@@ -111,7 +111,7 @@ export function useDashboardStats(effectiveUserId?: string) {
 
     setStats(results);
     setLoading(false);
-  }, [user?.id, roles]);
+  }, [uid, roles]);
 
   // Initial fetch
   useEffect(() => {
@@ -120,7 +120,7 @@ export function useDashboardStats(effectiveUserId?: string) {
 
   // Realtime subscriptions – refetch counts on any relevant change
   useEffect(() => {
-    if (!user) return;
+    if (!uid) return;
 
     const tables = ["competitions", "contestant_registrations", "judge_scores", "tabulator_certifications", "sub_event_assignments"];
 
