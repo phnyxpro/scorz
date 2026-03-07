@@ -23,6 +23,8 @@ function playNotificationSound() {
   }
 }
 
+export type ChatChannel = "production" | "adjudication" | "dm";
+
 export interface EventMessage {
   id: string;
   competition_id: string;
@@ -32,9 +34,11 @@ export interface EventMessage {
   file_url: string | null;
   file_name: string | null;
   reply_to_id: string | null;
+  channel: string;
+  recipient_id: string | null;
   created_at: string;
   sender?: { full_name: string | null; avatar_url: string | null };
-  readBy?: string[]; // full_names of users who have read past this message
+  readBy?: string[];
 }
 
 interface ReadCursor {
@@ -43,10 +47,92 @@ interface ReadCursor {
   full_name?: string | null;
 }
 
-export function useEventChat(competitionId: string | undefined) {
+export interface ChatStaffMember {
+  user_id: string;
+  full_name: string;
+  role: string;
+}
+
+/** Fetch staff members for a competition (for DM picker) */
+export function useChatStaff(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["chat-staff", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      // Get all sub-event IDs for this competition
+      const { data: levels } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .eq("competition_id", competitionId!);
+      if (!levels?.length) return [];
+
+      const { data: subEvents } = await supabase
+        .from("sub_events")
+        .select("id")
+        .in("level_id", levels.map((l) => l.id));
+      if (!subEvents?.length) return [];
+
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("user_id, role")
+        .in("sub_event_id", subEvents.map((se) => se.id));
+      if (!assignments?.length) return [];
+
+      // Deduplicate by user_id, keeping highest-priority role
+      const userMap = new Map<string, string>();
+      for (const a of assignments) {
+        if (!userMap.has(a.user_id)) userMap.set(a.user_id, a.role);
+      }
+
+      const userIds = [...userMap.keys()];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+
+      // Also get organiser/admin via user_roles
+      const { data: orgRoles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["organizer", "admin"]);
+
+      for (const r of orgRoles || []) {
+        if (!userMap.has(r.user_id)) userMap.set(r.user_id, r.role);
+      }
+
+      // Fetch profiles for org roles too
+      const extraIds = (orgRoles || []).map((r) => r.user_id).filter((id) => !userIds.includes(id));
+      let allProfiles = profiles || [];
+      if (extraIds.length) {
+        const { data: extra } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", extraIds);
+        allProfiles = [...allProfiles, ...(extra || [])];
+      }
+
+      const profileMap = new Map(allProfiles.map((p) => [p.user_id, p.full_name]));
+      const result: ChatStaffMember[] = [];
+      for (const [userId, role] of userMap.entries()) {
+        result.push({
+          user_id: userId,
+          full_name: profileMap.get(userId) || "Unknown",
+          role,
+        });
+      }
+      return result.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    },
+  });
+}
+
+export function useEventChat(
+  competitionId: string | undefined,
+  channel: ChatChannel = "production",
+  dmRecipientId?: string
+) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const queryKey = ["event-messages", competitionId];
+  const queryKey = ["event-messages", competitionId, channel, dmRecipientId];
   const cursorKey = ["chat-read-cursors", competitionId];
 
   // Fetch messages
@@ -54,14 +140,34 @@ export function useEventChat(competitionId: string | undefined) {
     queryKey,
     enabled: !!competitionId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("event_messages" as any)
         .select("*")
         .eq("competition_id", competitionId!)
         .order("created_at", { ascending: true })
         .limit(200);
+
+      if (channel === "dm" && dmRecipientId) {
+        // DMs between current user and recipient
+        query = query.not("recipient_id", "is", null);
+        // We need to get messages where (sender=me AND recipient=them) OR (sender=them AND recipient=me)
+        // Supabase doesn't support OR in a single query easily, so we fetch all DMs and filter client-side
+      } else {
+        query = query.eq("channel", channel).is("recipient_id", null);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      const msgs = (data || []) as unknown as EventMessage[];
+      let msgs = (data || []) as unknown as EventMessage[];
+
+      // Client-side filter for DMs
+      if (channel === "dm" && dmRecipientId && user) {
+        msgs = msgs.filter(
+          (m) =>
+            (m.sender_id === user.id && m.recipient_id === dmRecipientId) ||
+            (m.sender_id === dmRecipientId && m.recipient_id === user.id)
+        );
+      }
 
       // Fetch sender profiles
       const senderIds = [...new Set(msgs.map((m) => m.sender_id))];
@@ -96,7 +202,6 @@ export function useEventChat(competitionId: string | undefined) {
       if (error) throw error;
       const cursors = (data || []) as unknown as ReadCursor[];
 
-      // Attach profile names
       const userIds = cursors.map((c) => c.user_id);
       if (userIds.length) {
         const { data: profiles } = await supabase
@@ -112,7 +217,7 @@ export function useEventChat(competitionId: string | undefined) {
     },
   });
 
-  // Compute readBy for each message (other users who read at or after message time)
+  // Compute readBy for each message
   const messagesWithReads = messages.map((msg) => {
     const readBy = readCursors
       .filter(
@@ -127,8 +232,9 @@ export function useEventChat(competitionId: string | undefined) {
   // Realtime subscription with browser notification
   useEffect(() => {
     if (!competitionId) return;
-    const channel = supabase
-      .channel(`event-messages-${competitionId}`)
+    const channel_name = `event-messages-${competitionId}-${channel}-${dmRecipientId || "all"}`;
+    const sub = supabase
+      .channel(channel_name)
       .on(
         "postgres_changes",
         {
@@ -141,7 +247,6 @@ export function useEventChat(competitionId: string | undefined) {
           qc.invalidateQueries({ queryKey });
           qc.invalidateQueries({ queryKey: ["chat-unread", competitionId] });
 
-          // Sound + browser notification for messages from others
           const newMsg = payload.new;
           if (newMsg && newMsg.sender_id !== user?.id) {
             playNotificationSound();
@@ -154,11 +259,11 @@ export function useEventChat(competitionId: string | undefined) {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(sub);
     };
-  }, [competitionId, qc, user?.id]);
+  }, [competitionId, channel, dmRecipientId, qc, user?.id]);
 
-  // Mark as read (upsert cursor)
+  // Mark as read
   const markAsRead = useCallback(async () => {
     if (!competitionId || !user) return;
     await supabase.from("chat_read_cursors" as any).upsert(
@@ -169,7 +274,7 @@ export function useEventChat(competitionId: string | undefined) {
     qc.invalidateQueries({ queryKey: ["chat-unread", competitionId] });
   }, [competitionId, user, qc]);
 
-  // Send text message
+  // Send message
   const sendMessage = useMutation({
     mutationFn: async ({
       content,
@@ -185,7 +290,7 @@ export function useEventChat(competitionId: string | undefined) {
       replyToId?: string;
     }) => {
       if (!competitionId || !user) throw new Error("Not ready");
-      const { error } = await supabase.from("event_messages" as any).insert({
+      const payload: any = {
         competition_id: competitionId,
         sender_id: user.id,
         message_type: messageType,
@@ -193,7 +298,10 @@ export function useEventChat(competitionId: string | undefined) {
         file_url: fileUrl || null,
         file_name: fileName || null,
         reply_to_id: replyToId || null,
-      });
+        channel: channel === "dm" ? "dm" : channel,
+        recipient_id: channel === "dm" && dmRecipientId ? dmRecipientId : null,
+      };
+      const { error } = await supabase.from("event_messages" as any).insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -221,7 +329,7 @@ export function useEventChat(competitionId: string | undefined) {
   return { messages: messagesWithReads, isLoading, sendMessage, uploadFile, markAsRead, readCursors };
 }
 
-/** Lightweight hook just for unread count — use on buttons/badges without loading full chat */
+/** Lightweight hook just for unread count */
 export function useChatUnreadCount(competitionId: string | undefined) {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -229,9 +337,8 @@ export function useChatUnreadCount(competitionId: string | undefined) {
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["chat-unread", competitionId],
     enabled: !!competitionId && !!user,
-    refetchInterval: 30000, // poll every 30s as fallback
+    refetchInterval: 30000,
     queryFn: async () => {
-      // Get user's last read cursor
       const { data: cursor } = await supabase
         .from("chat_read_cursors" as any)
         .select("last_read_at")
@@ -241,7 +348,6 @@ export function useChatUnreadCount(competitionId: string | undefined) {
 
       const lastRead = (cursor as any)?.last_read_at;
 
-      // Count messages after last read
       let query = supabase
         .from("event_messages" as any)
         .select("id", { count: "exact", head: true })
@@ -258,7 +364,6 @@ export function useChatUnreadCount(competitionId: string | undefined) {
     },
   });
 
-  // Also listen to realtime for instant updates
   useEffect(() => {
     if (!competitionId) return;
     const channel = supabase
