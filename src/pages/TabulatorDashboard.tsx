@@ -436,6 +436,23 @@ export default function TabulatorDashboard() {
 
   const unreadCount = useChatUnreadCount(selectedCompId || "");
 
+  // Active scoring config for the selected competition
+  const { data: activeComp } = useQuery({
+    queryKey: ["active_scoring", selectedCompId],
+    enabled: !!selectedCompId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("active_scoring_level_id, active_scoring_sub_event_id")
+        .eq("id", selectedCompId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const activeScoringSubEventId = activeComp?.active_scoring_sub_event_id;
+  const setActiveScoring = useSetActiveScoring();
+
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
 
   if (compsLoading) return <CardGridSkeleton cards={3} />;
