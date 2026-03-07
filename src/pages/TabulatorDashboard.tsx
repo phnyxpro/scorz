@@ -709,6 +709,7 @@ export default function TabulatorDashboard() {
                                                             <SideBySideScores
                                                               scores={cScores.map((s) => ({ ...s, judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…" })) as any}
                                                               rubricNames={rubricNames}
+                                                              indexToName={indexToName}
                                                               contestantName={c.full_name}
                                                               contestantUserId={c.user_id}
                                                             />

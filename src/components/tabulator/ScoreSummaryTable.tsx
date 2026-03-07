@@ -29,7 +29,8 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
           for (const s of scores) {
             const cs = s.criterion_scores as Record<string, number>;
             for (const [k, v] of Object.entries(cs)) {
-              criterionAvgs[k] = (criterionAvgs[k] || 0) + v;
+              const name = indexToName[k] ?? k;
+              criterionAvgs[name] = (criterionAvgs[name] || 0) + v;
             }
           }
           for (const k of Object.keys(criterionAvgs)) {
