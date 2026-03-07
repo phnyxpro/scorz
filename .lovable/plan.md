@@ -1,47 +1,86 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Timer Enhancements: Drag-and-Drop Reorder, Multi-Tabulator Clocks, Duration in Score Sheets, and On-Stage Broadcasting
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Overview
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+Four interconnected enhancements to the TabulatorTimer and score display system:
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
-
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
+1. **Drag-and-drop contestant reordering** in the timer's contestant list
+2. **Multi-tabulator clock display** showing all tabulators' recorded times
+3. **Duration column** in ScoreSummaryTable and SideBySideScores
+4. **"On Stage" broadcast** from tabulator to judges via realtime
 
 ---
 
-### Summary
+### 1. Drag-and-drop contestant reorder — `TabulatorTimer.tsx`
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Replace the static contestant pill buttons with a draggable list (same HTML5 drag pattern as `PerformanceOrder.tsx`):
+- Add `GripVertical` handle + `draggable` attribute to each contestant row
+- On drop, persist new `sort_order` to `contestant_registrations` via supabase update
+- Invalidate the query so the parent re-fetches the updated order
+- Disable drag while timer is running
+
+### 2. Multi-tabulator clock display — `TabulatorTimer.tsx`
+
+When a contestant is selected and has recorded durations:
+- Fetch tabulator profiles for all `performance_durations` entries matching the selected contestant
+- Display each tabulator's recorded duration as a small row: `"Tabulator Name — mm:ss"`
+- If multiple tabulators recorded, show an "Average" summary line
+- This section appears below the timer controls, only when not running
+
+### 3. Duration column in score sheets
+
+**`ScoreSummaryTable.tsx`**:
+- Accept new optional prop `durations: PerformanceDuration[]`
+- Add a "Duration" column header between the last rubric criterion column and the "Penalty" column
+- Display `getAvgDuration(durations, regId)` formatted as `mm:ss` per row
+
+**`SideBySideScores.tsx`**:
+- Accept optional `durationSeconds?: number` prop
+- Show a small "Duration: mm:ss" badge in the contestant header when provided
+
+**`TabulatorDashboard.tsx` (`SubEventWorkspace`)**:
+- Call `usePerformanceDurations(subEventId)` and pass `durations` to `ScoreSummaryTable`
+- Compute and pass `durationSeconds` per contestant to `SideBySideScores`
+
+### 4. "On Stage" broadcast — tabulator → judges
+
+Currently, the judge's "On Stage" indicator is local (judges toggle it themselves in `JudgeScoring.tsx`). The user wants tabulators to broadcast who is on stage so judges see it automatically.
+
+**Mechanism**: Use the existing `performance_timer_events` table. When the tabulator selects a contestant (before even starting the timer), insert an event with `event_type: "on_stage"`. When deselected, insert `event_type: "off_stage"`. These are already broadcast via realtime.
+
+**`TabulatorTimer.tsx`**:
+- Add an "On Stage" button next to the selected contestant badge (visible when a contestant is selected but timer not yet started)
+- On click, insert a `performance_timer_events` row with `event_type: "on_stage"`
+- When the timer starts, the existing `start` event already implies "on stage + live"
+- When contestant is deselected or changed, insert `off_stage`
+
+**`JudgeScoring.tsx`**:
+- Subscribe to `performance_timer_events` realtime (already done via `ReadOnlyTimer`)
+- Query the latest timer event for the sub-event; if `event_type` is `on_stage` or `start`, auto-set `onStageContestant` to that contestant and show the "On Stage" badge
+- If `event_type` is `start`, also show the "LIVE" badge next to "On Stage"
+- Remove the manual per-judge "on stage" toggle button since the tabulator now controls this
+
+**`ReadOnlyTimer.tsx`**:
+- Already shows the contestant name and LIVE badge based on timer events
+- Extend to also show an "On Stage" badge when the latest event is `on_stage` (timer not yet started)
+
+**`usePerformanceTimer.ts`**:
+- Update `useLatestTimerEvent` to also match `on_stage` and `off_stage` event types (no code change needed — it already fetches the latest event regardless of type)
+
+---
+
+### Files changed
+
+| File | Changes |
+|---|---|
+| `src/components/scoring/TabulatorTimer.tsx` | Drag-and-drop reorder, multi-tabulator durations display, "On Stage" broadcast button |
+| `src/components/tabulator/ScoreSummaryTable.tsx` | New "Duration" column |
+| `src/components/tabulator/SideBySideScores.tsx` | Optional duration badge |
+| `src/pages/TabulatorDashboard.tsx` | Pass durations data to score tables |
+| `src/pages/JudgeScoring.tsx` | Auto-set on-stage from realtime events, remove manual toggle, show LIVE badge when timer running |
+| `src/components/scoring/ReadOnlyTimer.tsx` | Show "On Stage" badge for `on_stage` events (not just `start`) |
+
+No database migrations needed — reuses existing `performance_timer_events` table with new event type values (`on_stage`, `off_stage`) which are just text strings in the existing `event_type` column.
 
