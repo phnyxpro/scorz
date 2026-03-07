@@ -1,47 +1,43 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Add Blank Template Download to Score Sheet Downloads
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+Currently, the score sheet downloads only include judges who have **already scored** (derived from `judge_scores`). Organizers need a **blank template** that includes tabs for **all assigned judges** (from `sub_event_assignments`) — not just those who have submitted scores — so they can print blank score sheets before the event.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**`src/components/competition/ScoreSheetDownloads.tsx`**
 
----
+1. Update `fetchSubEventData` to also fetch assigned judges from `sub_event_assignments` where `role = 'judge'` for the sub-event, plus their profile names. Store as `assignedJudges: { user_id: string; name: string }[]` on `FetchedData`.
 
-### Fix 1: Conditionally apply auditorium filter
+2. Add a new `buildBlankTemplate` function:
+   - **Master sheet**: Columns are `#`, `Contestant`, `TIME`, one column per **assigned judge** (empty values), `Total`, `MIN`, `MAX`, `Penalty`, `Final Score` — all score values left blank.
+   - **Per-judge sheets**: One tab per assigned judge with columns `Contestant`, each rubric criterion name, `Total` — all values blank.
 
-**File: `src/contexts/ThemeContext.tsx`**
+3. Add a "Blank Template" download button (with a `FileSpreadsheet` icon variant) next to the existing Preview/Excel/CSV buttons for each sub-event. This button does **not** require existing scores — it fetches contestants, assigned judges, and criteria only.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+4. Update `FetchedData` interface to include `assignedJudges`.
 
-### Fix 2: Remove filter class when at defaults
+**`src/components/competition/ScoreSheetPreviewModal.tsx`**
+- No changes needed — the blank template is download-only (no preview required since it's empty).
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+### Implementation detail
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+```typescript
+// New fetch for assigned judges inside fetchSubEventData
+const assignmentsRes = await supabase
+  .from("sub_event_assignments")
+  .select("user_id")
+  .eq("sub_event_id", subEventId)
+  .eq("role", "judge");
 
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+// Merge assigned judge IDs with any from scores for profile lookup
+// Store assignedJudges: { user_id, name }[] on FetchedData
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+The blank template handler will call a lighter fetch (no scores needed) and export directly — no "no scores" guard since the template is meant to be empty.
 
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+- `src/components/competition/ScoreSheetDownloads.tsx` — add assigned judges fetch, blank template builder, and download button
 
