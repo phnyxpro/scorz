@@ -72,6 +72,21 @@ export default function JudgeScoring() {
   const { data: myScores } = useMyScores(subEventId || undefined);
   const { data: perfDurations } = usePerformanceDurations(subEventId || undefined);
   useDurationsRealtime(subEventId || undefined);
+  const { data: latestTimerEvent } = useLatestTimerEvent(subEventId || undefined);
+  useTimerEventsRealtime(subEventId || undefined);
+
+  // Auto-sync on-stage contestant from tabulator broadcast
+  useEffect(() => {
+    if (!latestTimerEvent) return;
+    const { event_type, contestant_registration_id } = latestTimerEvent;
+    if (event_type === "on_stage" || event_type === "start") {
+      setOnStageContestant(contestant_registration_id);
+      setIsLive(event_type === "start");
+    } else if (event_type === "off_stage" || event_type === "stop") {
+      if (event_type === "off_stage") setOnStageContestant(null);
+      setIsLive(false);
+    }
+  }, [latestTimerEvent?.id]);
 
   // Build lookup: contestant_registration_id -> score status
   const scoreStatusMap = useMemo(() => {
