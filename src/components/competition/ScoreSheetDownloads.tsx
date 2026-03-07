@@ -417,6 +417,20 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       )}
                       Google Sheets
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!!loading[se.id + "_blank"]}
+                      onClick={() => handleBlankTemplate(se.id, se.name)}
+                    >
+                      {loading[se.id + "_blank"] ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <FileDown className="h-4 w-4 mr-1.5" />
+                      )}
+                      Blank Template
+                    </Button>
+                    </Button>
                   </div>
                 </div>
               ))}
