@@ -481,7 +481,7 @@ export default function JudgeScoring() {
               {!isCertified && (
                 <div className="space-y-2">
                   <div className="flex gap-2">
-                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1 h-12 sm:h-10" variant="outline">
                       <Save className="h-4 w-4 mr-1" />
                       {upsert.isPending ? "Saving…" : "Save Draft"}
                     </Button>
@@ -494,7 +494,7 @@ export default function JudgeScoring() {
                         setShowCertifyDialog(true);
                       }}
                       disabled={!allScored || !existingScore?.id}
-                      className="flex-1"
+                      className="flex-1 h-12 sm:h-10"
                     >
                       <Lock className="h-4 w-4 mr-1" /> Certify & Lock
                     </Button>
@@ -503,7 +503,7 @@ export default function JudgeScoring() {
                     <Button
                       onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyAllDialog(true); }}
                       variant="secondary"
-                      className="w-full"
+                      className="w-full h-12 sm:h-10"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" /> Certify All Results
                     </Button>
