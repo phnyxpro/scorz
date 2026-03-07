@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -46,62 +47,130 @@ const statusColor: Record<string, string> = {
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
-interface SlotTimeCellProps {
+type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
+type SortDir = "asc" | "desc";
+
+// ─── Slot Picker Cell ──────────────────────────────────────────────
+interface SlotPickerCellProps {
+  regId: string;
   slot?: { id: string; start_time: string; end_time: string };
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  onAssign: (regId: string, slotId: string) => void;
   onUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
 }
 
-function SlotTimeCell({ slot, onUpdate, formatTime }: SlotTimeCellProps) {
-  const [editStart, setEditStart] = useState(slot?.start_time?.slice(0, 5) || "");
-  const [editEnd, setEditEnd] = useState(slot?.end_time?.slice(0, 5) || "");
+function SlotPickerCell({ regId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
 
-  if (!slot) {
-    return <span className="text-xs text-muted-foreground">—</span>;
-  }
+  // Available slots: unbooked OR currently assigned to this reg
+  const available = allSlots.filter(
+    (s) => !s.is_booked || s.contestant_registration_id === regId
+  );
 
-  const handleSave = () => {
-    onUpdate(slot.id, editStart + ":00", editEnd + ":00");
+  const handleSelectSlot = (slotId: string) => {
+    onAssign(regId, slotId);
+    setOpen(false);
+  };
+
+  const handleEditSave = () => {
+    if (slot) {
+      onUpdate(slot.id, editStart + ":00", editEnd + ":00");
+    }
+    setEditMode(false);
     setOpen(false);
   };
 
   return (
     <Popover open={open} onOpenChange={(o) => {
-      if (o) {
+      setOpen(o);
+      if (o && slot) {
         setEditStart(slot.start_time?.slice(0, 5) || "");
         setEditEnd(slot.end_time?.slice(0, 5) || "");
       }
-      setOpen(o);
+      if (!o) setEditMode(false);
     }}>
       <PopoverTrigger asChild>
         <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 whitespace-nowrap">
           <Clock className="h-3 w-3" />
-          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+          {slot ? `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}` : "Assign slot"}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 space-y-3 p-3" align="start">
-        <p className="text-xs font-medium text-foreground">Edit Slot Time</p>
-        <div className="space-y-2">
-          <div>
-            <Label className="text-[10px] text-muted-foreground">Start</Label>
-            <Input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div>
-            <Label className="text-[10px] text-muted-foreground">End</Label>
-            <Input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="h-8 text-sm" />
-          </div>
-        </div>
-        <Button size="sm" className="w-full h-7 text-xs" onClick={handleSave}>Save</Button>
+      <PopoverContent className="w-64 p-3 space-y-2" align="start">
+        {!editMode ? (
+          <>
+            <p className="text-xs font-medium text-foreground">
+              {slot ? "Change Slot" : "Select Slot"}
+            </p>
+            {available.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No available slots</p>
+            ) : (
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {available.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSelectSlot(s.id)}
+                    className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent ${
+                      slot?.id === s.id ? "bg-accent font-medium" : ""
+                    }`}
+                  >
+                    {formatTime(s.start_time)} – {formatTime(s.end_time)}
+                    {s.contestant_registration_id === regId && (
+                      <span className="text-muted-foreground ml-1">(current)</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {slot && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full h-7 text-xs mt-1"
+                onClick={() => setEditMode(true)}
+              >
+                Edit Time Manually
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-foreground">Edit Slot Time</p>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Start</Label>
+                <Input type="time" value={editStart} onChange={(e) => setEditStart(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">End</Label>
+                <Input type="time" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="h-8 text-sm" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" className="flex-1 h-7 text-xs" onClick={handleEditSave}>
+                Save
+              </Button>
+            </div>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );
 }
 
+// ─── Sortable Row ──────────────────────────────────────────────────
 interface SortableRowProps {
   reg: ContestantRegistration;
   idx: number;
   slot?: { id: string; start_time: string; end_time: string };
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  onSlotAssign: (regId: string, slotId: string) => void;
   onSlotUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
   onSelect: (reg: ContestantRegistration) => void;
@@ -109,7 +178,7 @@ interface SortableRowProps {
   onReject: (id: string) => void;
 }
 
-function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApprove, onReject }: SortableRowProps) {
+function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
 
   const style = {
@@ -148,8 +217,11 @@ function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApp
         </div>
       </TableCell>
       <TableCell>
-        <SlotTimeCell
+        <SlotPickerCell
+          regId={reg.id}
           slot={slot}
+          allSlots={allSlots}
+          onAssign={onSlotAssign}
           onUpdate={onSlotUpdate}
           formatTime={formatTime}
         />
@@ -163,45 +235,19 @@ function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApp
         <div className="flex gap-1">
           {reg.status === "pending" && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-secondary hover:text-secondary"
-                onClick={() => onApprove(reg.id)}
-                title="Approve"
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary hover:text-secondary" onClick={() => onApprove(reg.id)} title="Approve">
                 <CheckCircle className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
-                onClick={() => onReject(reg.id)}
-                title="Reject"
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onReject(reg.id)} title="Reject">
                 <XCircle className="h-4 w-4" />
               </Button>
             </>
           )}
           {reg.status === "rejected" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => onApprove(reg.id)}
-            >
-              Re-approve
-            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onApprove(reg.id)}>Re-approve</Button>
           )}
           {reg.status === "approved" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-destructive"
-              onClick={() => onReject(reg.id)}
-            >
-              Revoke
-            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => onReject(reg.id)}>Revoke</Button>
           )}
         </div>
       </TableCell>
@@ -209,6 +255,28 @@ function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApp
   );
 }
 
+// ─── Sortable Column Header ───────────────────────────────────────
+function SortHeader({ label, field, sortField, sortDir, onSort }: {
+  label: string;
+  field: SortField;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (field: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <button className="flex items-center gap-0.5 text-xs hover:text-foreground" onClick={() => onSort(field)}>
+      {label}
+      {active ? (
+        sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-30" />
+      )}
+    </button>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────
 interface Props {
   competitionId: string;
 }
@@ -222,7 +290,11 @@ export function RegistrationsManager({ competitionId }: Props) {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [filterSubEvent, setFilterSubEvent] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterAge, setFilterAge] = useState("all");
+  const [sortField, setSortField] = useState<SortField>("sort_order");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [activeSubEventTab, setActiveSubEventTab] = useState("all");
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showAddContestant, setShowAddContestant] = useState(false);
@@ -232,29 +304,68 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInConsent, setWalkInConsent] = useState(false);
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
 
-  const allLevelIds = levels?.map(l => l.id) || [];
-  const firstLevelId = allLevelIds[0];
-  const { data: subEventsFirst } = useSubEvents(firstLevelId);
+  // Fetch all sub-events across all levels
+  const allLevelIds = levels?.map((l) => l.id) || [];
+  const { data: allSubEvents } = useQuery({
+    queryKey: ["all_sub_events_for_comp", competitionId, allLevelIds.length],
+    enabled: allLevelIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sub_events")
+        .select("id, name, level_id")
+        .in("level_id", allLevelIds)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  // Fetch performance slots for all registrations in this competition
-  const regIds = registrations?.map(r => r.id) || [];
+  // Fetch performance slots for all registrations
+  const regIds = registrations?.map((r) => r.id) || [];
   const { data: slotsData } = useQuery({
     queryKey: ["performance_slots_for_regs", competitionId, regIds.length],
     enabled: regIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_slots")
-        .select("id, contestant_registration_id, start_time, end_time, sub_event_id")
+        .select("id, contestant_registration_id, start_time, end_time, sub_event_id, is_booked")
         .in("contestant_registration_id", regIds);
       if (error) throw error;
       return data;
     },
   });
 
+  // Also fetch all unbooked slots for the active sub-event tab
+  const { data: availableSlots } = useQuery({
+    queryKey: ["available_slots", activeSubEventTab],
+    enabled: activeSubEventTab !== "all",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("id, contestant_registration_id, start_time, end_time, sub_event_id, is_booked")
+        .eq("sub_event_id", activeSubEventTab)
+        .order("start_time");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Combine booked + available slots for the slot picker
+  const allSlotsForPicker = useMemo(() => {
+    const combined = [...(availableSlots || [])];
+    // Add any slots from slotsData that belong to other sub-events (for current reg assignments)
+    slotsData?.forEach((s) => {
+      if (!combined.find((c) => c.id === s.id)) {
+        combined.push(s);
+      }
+    });
+    return combined;
+  }, [availableSlots, slotsData]);
+
   // Map registration id -> slot
   const slotsByRegId = useMemo(() => {
     const map: Record<string, { id: string; start_time: string; end_time: string }> = {};
-    slotsData?.forEach(s => {
+    slotsData?.forEach((s) => {
       if (s.contestant_registration_id) {
         map[s.contestant_registration_id] = { id: s.id, start_time: s.start_time, end_time: s.end_time };
       }
@@ -262,28 +373,95 @@ export function RegistrationsManager({ competitionId }: Props) {
     return map;
   }, [slotsData]);
 
+  // Get unique sub-events from registrations
+  const subEventIds = useMemo(() => {
+    const ids = new Set<string>();
+    registrations?.forEach((r) => { if (r.sub_event_id) ids.add(r.sub_event_id); });
+    return Array.from(ids);
+  }, [registrations]);
+
+  const subEventMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allSubEvents?.forEach((se) => { map[se.id] = se.name; });
+    return map;
+  }, [allSubEvents]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
   const filtered = useMemo(() => {
     if (!registrations) return [];
     let list = [...registrations];
+
+    // Sub-event tab filter
+    if (activeSubEventTab !== "all") {
+      list = list.filter((r) => r.sub_event_id === activeSubEventTab);
+    }
+
+    // Search
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(r => r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+      list = list.filter((r) => r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
     }
-    if (filterSubEvent !== "all") {
-      list = list.filter(r => r.sub_event_id === filterSubEvent);
+
+    // Status filter
+    if (filterStatus !== "all") {
+      list = list.filter((r) => r.status === filterStatus);
     }
-    // Primary sort by sort_order, secondary by scheduled slot start_time
+
+    // Age filter
+    if (filterAge !== "all") {
+      if (filterAge === "minor") {
+        list = list.filter((r) => r.age_category === "minor");
+      } else if (filterAge === "adult_all") {
+        list = list.filter((r) => r.age_category !== "minor");
+      } else {
+        list = list.filter((r) => r.age_category === filterAge);
+      }
+    }
+
+    // Sort
     list.sort((a, b) => {
-      const orderA = (a as any).sort_order || 0;
-      const orderB = (b as any).sort_order || 0;
-      if (orderA !== orderB) return orderA - orderB;
-      // Secondary: scheduled slot start_time
-      const slotA = slotsByRegId[a.id]?.start_time || "";
-      const slotB = slotsByRegId[b.id]?.start_time || "";
-      return slotA.localeCompare(slotB);
+      let cmp = 0;
+      switch (sortField) {
+        case "sort_order":
+          cmp = ((a as any).sort_order || 0) - ((b as any).sort_order || 0);
+          if (cmp === 0) {
+            const slotA = slotsByRegId[a.id]?.start_time || "";
+            const slotB = slotsByRegId[b.id]?.start_time || "";
+            cmp = slotA.localeCompare(slotB);
+          }
+          break;
+        case "name":
+          cmp = a.full_name.localeCompare(b.full_name);
+          break;
+        case "email":
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case "age":
+          cmp = a.age_category.localeCompare(b.age_category);
+          break;
+        case "status":
+          cmp = a.status.localeCompare(b.status);
+          break;
+        case "slot": {
+          const sa = slotsByRegId[a.id]?.start_time || "zzz";
+          const sb = slotsByRegId[b.id]?.start_time || "zzz";
+          cmp = sa.localeCompare(sb);
+          break;
+        }
+      }
+      return sortDir === "asc" ? cmp : -cmp;
     });
+
     return list;
-  }, [registrations, search, filterSubEvent, slotsByRegId]);
+  }, [registrations, search, filterStatus, filterAge, activeSubEventTab, sortField, sortDir, slotsByRegId]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -295,19 +473,15 @@ export function RegistrationsManager({ competitionId }: Props) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = filtered.findIndex(r => r.id === active.id);
-    const newIndex = filtered.findIndex(r => r.id === over.id);
+    const oldIndex = filtered.findIndex((r) => r.id === active.id);
+    const newIndex = filtered.findIndex((r) => r.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
 
-    // Reorder: assign new sort_order values based on position
     const reordered = [...filtered];
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
 
-    // Batch update sort_order for all affected items
     const updates = reordered.map((r, i) => ({ id: r.id, sort_order: i }));
-    
-    // Optimistic: update all sort_orders
     for (const u of updates) {
       await supabase.from("contestant_registrations").update({ sort_order: u.sort_order } as any).eq("id", u.id);
     }
@@ -316,18 +490,9 @@ export function RegistrationsManager({ competitionId }: Props) {
 
   const sendNotification = async (registrationId: string, status: string) => {
     try {
-      const { data: comp } = await supabase
-        .from("competitions")
-        .select("name")
-        .eq("id", competitionId)
-        .single();
-
+      const { data: comp } = await supabase.from("competitions").select("name").eq("id", competitionId).single();
       await supabase.functions.invoke("notify-registration-status", {
-        body: {
-          registration_id: registrationId,
-          status,
-          competition_name: comp?.name || "Competition",
-        },
+        body: { registration_id: registrationId, status, competition_name: comp?.name || "Competition" },
       });
     } catch (e) {
       console.error("Failed to send notification:", e);
@@ -335,27 +500,38 @@ export function RegistrationsManager({ competitionId }: Props) {
   };
 
   const handleApprove = (id: string) => {
-    updateReg.mutate({ id, status: "approved" } as any, {
-      onSuccess: () => sendNotification(id, "approved"),
-    });
+    updateReg.mutate({ id, status: "approved" } as any, { onSuccess: () => sendNotification(id, "approved") });
   };
 
   const handleReject = (id: string) => {
-    updateReg.mutate({ id, status: "rejected" } as any, {
-      onSuccess: () => sendNotification(id, "rejected"),
-    });
+    updateReg.mutate({ id, status: "rejected" } as any, { onSuccess: () => sendNotification(id, "rejected") });
   };
 
   const handleSlotTimeUpdate = async (slotId: string, startTime: string, endTime: string) => {
-    const { error } = await supabase
-      .from("performance_slots")
-      .update({ start_time: startTime, end_time: endTime })
-      .eq("id", slotId);
+    const { error } = await supabase.from("performance_slots").update({ start_time: startTime, end_time: endTime }).eq("id", slotId);
     if (error) {
       toast({ title: "Error updating slot", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Slot time updated" });
       qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+      qc.invalidateQueries({ queryKey: ["available_slots"] });
+    }
+  };
+
+  const handleSlotAssign = async (regId: string, slotId: string) => {
+    // Unbook the current slot if any
+    const currentSlot = slotsByRegId[regId];
+    if (currentSlot) {
+      await supabase.from("performance_slots").update({ contestant_registration_id: null, is_booked: false }).eq("id", currentSlot.id);
+    }
+    // Book the new slot
+    const { error } = await supabase.from("performance_slots").update({ contestant_registration_id: regId, is_booked: true }).eq("id", slotId);
+    if (error) {
+      toast({ title: "Error assigning slot", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Slot assigned" });
+      qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+      qc.invalidateQueries({ queryKey: ["available_slots"] });
     }
   };
 
@@ -370,14 +546,8 @@ export function RegistrationsManager({ competitionId }: Props) {
   const handleWalkInAdd = async () => {
     if (!walkInName || !walkInEmail || !user) return;
     try {
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("email", walkInEmail)
-        .maybeSingle();
-
+      const { data: existingProfile } = await supabase.from("profiles").select("user_id").eq("email", walkInEmail).maybeSingle();
       const userId = existingProfile?.user_id || user.id;
-
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
@@ -399,7 +569,77 @@ export function RegistrationsManager({ competitionId }: Props) {
 
   if (isLoading) return <div className="text-muted-foreground text-sm animate-pulse">Loading registrations…</div>;
 
-  const pendingCount = registrations?.filter(r => r.status === "pending").length || 0;
+  const pendingCount = registrations?.filter((r) => r.status === "pending").length || 0;
+  const hasSubEvents = subEventIds.length > 0;
+
+  // Count per sub-event
+  const countBySubEvent = useMemo(() => {
+    const map: Record<string, number> = { all: registrations?.length || 0 };
+    registrations?.forEach((r) => {
+      const key = r.sub_event_id || "unassigned";
+      map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+  }, [registrations]);
+
+  const renderTable = () => (
+    <div className="overflow-x-auto">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs w-[40px]"></TableHead>
+              <TableHead className="text-xs w-[40px]">
+                <SortHeader label="#" field="sort_order" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">
+                <SortHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">
+                <SortHeader label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">
+                <SortHeader label="Age" field="age" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">
+                <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">
+                <SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <SortableContext items={filtered.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+            <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    No registrations found.
+                  </TableCell>
+                </TableRow>
+              )}
+              {filtered.map((reg, idx) => (
+                <SortableRow
+                  key={reg.id}
+                  reg={reg}
+                  idx={idx}
+                  slot={slotsByRegId[reg.id]}
+                  allSlots={allSlotsForPicker}
+                  onSlotAssign={handleSlotAssign}
+                  onSlotUpdate={handleSlotTimeUpdate}
+                  formatTime={formatSlotTime}
+                  onSelect={setSelectedReg}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                />
+              ))}
+            </TableBody>
+          </SortableContext>
+        </Table>
+      </DndContext>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -409,10 +649,10 @@ export function RegistrationsManager({ competitionId }: Props) {
             <div>
               <CardTitle className="text-base">Contestant Registrations</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                {registrations?.length || 0} total · {pendingCount} pending approval · Drag to reorder
+                {registrations?.length || 0} total · {pendingCount} pending · {filtered.length} shown
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button size="sm" onClick={() => setShowAddContestant(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
               </Button>
@@ -426,65 +666,68 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          {/* Filters Row */}
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or email…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9 text-sm"
               />
             </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9 w-[130px] text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterAge} onValueChange={setFilterAge}>
+              <SelectTrigger className="h-9 w-[140px] text-xs">
+                <SelectValue placeholder="Age" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="adult_all">Adults (all)</SelectItem>
+                <SelectItem value="adult_18_24">Adult | 18-24</SelectItem>
+                <SelectItem value="adult_25_34">Adult | 25-34</SelectItem>
+                <SelectItem value="adult_35_44">Adult | 35-44</SelectItem>
+                <SelectItem value="adult_45_54">Adult | 45-54</SelectItem>
+                <SelectItem value="adult_55_plus">Adult | 55+</SelectItem>
+                <SelectItem value="minor">Minor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="overflow-x-auto">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-              modifiers={[restrictToVerticalAxis]}
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs w-[40px]"></TableHead>
-                    <TableHead className="text-xs w-[40px]">#</TableHead>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Email</TableHead>
-                    <TableHead className="text-xs">Age</TableHead>
-                    <TableHead className="text-xs">Scheduled Slot</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <SortableContext items={filtered.map(r => r.id)} strategy={verticalListSortingStrategy}>
-                  <TableBody>
-                    {filtered.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                          No registrations found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {filtered.map((reg, idx) => (
-                      <SortableRow
-                        key={reg.id}
-                        reg={reg}
-                        idx={idx}
-                        slot={slotsByRegId[reg.id]}
-                        onSlotUpdate={handleSlotTimeUpdate}
-                        formatTime={formatSlotTime}
-                        onSelect={setSelectedReg}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                      />
-                    ))}
-                  </TableBody>
-                </SortableContext>
-              </Table>
-            </DndContext>
-          </div>
+          {/* Sub-event tabs or direct table */}
+          {hasSubEvents ? (
+            <Tabs value={activeSubEventTab} onValueChange={setActiveSubEventTab}>
+              <TabsList className="h-8">
+                <TabsTrigger value="all" className="text-xs h-7 px-3">
+                  All ({countBySubEvent.all || 0})
+                </TabsTrigger>
+                {subEventIds.map((seId) => (
+                  <TabsTrigger key={seId} value={seId} className="text-xs h-7 px-3">
+                    {subEventMap[seId] || "Unknown"} ({countBySubEvent[seId] || 0})
+                  </TabsTrigger>
+                ))}
+                {countBySubEvent.unassigned > 0 && (
+                  <TabsTrigger value="unassigned" className="text-xs h-7 px-3">
+                    Unassigned ({countBySubEvent.unassigned})
+                  </TabsTrigger>
+                )}
+              </TabsList>
+              {renderTable()}
+            </Tabs>
+          ) : (
+            renderTable()
+          )}
         </CardContent>
       </Card>
 
@@ -495,8 +738,8 @@ export function RegistrationsManager({ competitionId }: Props) {
             <DialogTitle className="text-base">Quick Add Walk-in Contestant</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input placeholder="Full Name" value={walkInName} onChange={e => setWalkInName(e.target.value)} />
-            <Input placeholder="Email" type="email" value={walkInEmail} onChange={e => setWalkInEmail(e.target.value)} />
+            <Input placeholder="Full Name" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} />
+            <Input placeholder="Email" type="email" value={walkInEmail} onChange={(e) => setWalkInEmail(e.target.value)} />
             <Select value={walkInAge} onValueChange={setWalkInAge}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -505,11 +748,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               </SelectContent>
             </Select>
             <div className="flex items-start gap-2">
-              <Checkbox
-                id="walk-in-consent"
-                checked={walkInConsent}
-                onCheckedChange={(v) => setWalkInConsent(!!v)}
-              />
+              <Checkbox id="walk-in-consent" checked={walkInConsent} onCheckedChange={(v) => setWalkInConsent(!!v)} />
               <Label htmlFor="walk-in-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
                 I confirm the contestant has verbally acknowledged the competition rules and consents to registration on their behalf.
               </Label>
