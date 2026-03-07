@@ -336,9 +336,10 @@ export function RegistrationsManager({ competitionId }: Props) {
   });
 
   // Fetch ALL slots for all sub-events in this competition so the picker always works
+  const allSubEventIds = allSubEvents?.map((se) => se.id) || [];
   const { data: allSlotsRaw } = useQuery({
-    queryKey: ["available_slots", competitionId, subEventIds],
-    enabled: subEventIds.length > 0,
+    queryKey: ["available_slots", competitionId, allSubEventIds.length],
+    enabled: allSubEventIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_slots")
