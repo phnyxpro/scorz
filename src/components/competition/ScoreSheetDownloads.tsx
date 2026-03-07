@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, Sheet, Loader2, Eye } from "lucide-react";
+import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportMultiSheetXLSX, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { ScoreSheetPreviewModal } from "./ScoreSheetPreviewModal";
@@ -31,8 +31,9 @@ export interface FetchedData {
   }[];
   criteria: { id: string; name: string; sort_order: number }[];
   judgeProfiles: Record<string, string>;
-  timerData: Record<string, number>; // contestant_registration_id -> elapsed_seconds
+  timerData: Record<string, number>;
   penaltyRules: PenaltyRule[];
+  assignedJudges: { user_id: string; name: string }[];
 }
 
 export interface PreviewData {
@@ -62,7 +63,7 @@ function computePenalty(elapsedSeconds: number | undefined, rules: PenaltyRule[]
 }
 
 async function fetchSubEventData(competitionId: string, subEventId: string): Promise<FetchedData> {
-  const [contestantsRes, scoresRes, criteriaRes, timerRes, penaltyRes] = await Promise.all([
+  const [contestantsRes, scoresRes, criteriaRes, timerRes, penaltyRes, assignmentsRes] = await Promise.all([
     supabase
       .from("contestant_registrations")
       .select("id, full_name, sort_order")
@@ -89,6 +90,11 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
       .select("from_seconds, to_seconds, penalty_points")
       .eq("competition_id", competitionId)
       .order("sort_order"),
+    supabase
+      .from("sub_event_assignments")
+      .select("user_id")
+      .eq("sub_event_id", subEventId)
+      .eq("role", "judge"),
   ]);
 
   if (contestantsRes.error) throw contestantsRes.error;
@@ -96,6 +102,7 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
   if (criteriaRes.error) throw criteriaRes.error;
   if (timerRes.error) throw timerRes.error;
   if (penaltyRes.error) throw penaltyRes.error;
+  if (assignmentsRes.error) throw assignmentsRes.error;
 
   // Build timer data map — use last stop event per contestant
   const timerData: Record<string, number> = {};
@@ -105,19 +112,26 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
     }
   }
 
-  // Get unique judge IDs and fetch their names
-  const judgeIds = [...new Set((scoresRes.data || []).map((s) => s.judge_id))];
+  // Merge judge IDs from scores + assignments
+  const assignedJudgeIds = (assignmentsRes.data || []).map((a) => a.user_id);
+  const scoreJudgeIds = [...new Set((scoresRes.data || []).map((s) => s.judge_id))];
+  const allJudgeIds = [...new Set([...assignedJudgeIds, ...scoreJudgeIds])];
   const judgeProfiles: Record<string, string> = {};
 
-  if (judgeIds.length > 0) {
+  if (allJudgeIds.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name")
-      .in("user_id", judgeIds);
+      .in("user_id", allJudgeIds);
     for (const p of profiles || []) {
       judgeProfiles[p.user_id] = p.full_name || "Unknown Judge";
     }
   }
+
+  const assignedJudges = assignedJudgeIds.map((uid) => ({
+    user_id: uid,
+    name: judgeProfiles[uid] || "Unknown Judge",
+  }));
 
   return {
     contestants: contestantsRes.data || [],
@@ -134,6 +148,7 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
       to_seconds: r.to_seconds,
       penalty_points: Number(r.penalty_points),
     })),
+    assignedJudges,
   };
 }
 
@@ -212,6 +227,35 @@ function buildSheets(data: FetchedData) {
   return { masterRows, judgeSheets };
 }
 
+function buildBlankMasterSheet(data: FetchedData): SheetRow[] {
+  const { contestants, assignedJudges } = data;
+  return contestants.map((c) => {
+    const row: SheetRow = { "#": c.sort_order, Contestant: c.full_name, TIME: "" };
+    for (const j of assignedJudges) {
+      row[j.name] = "";
+    }
+    row["Total"] = "";
+    row["MIN"] = "";
+    row["MAX"] = "";
+    row["Penalty"] = "";
+    row["Final Score"] = "";
+    return row;
+  });
+}
+
+function buildBlankJudgeSheet(data: FetchedData): SheetRow[] {
+  const { contestants, criteria } = data;
+  return contestants.map((c) => {
+    const row: SheetRow = { Contestant: c.full_name };
+    for (const crit of criteria) {
+      row[crit.name] = "";
+    }
+    row["Total"] = "";
+    return row;
+  });
+}
+
+
 export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreSheetDownloadsProps) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
@@ -275,6 +319,32 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
       toast({ title: "Preview failed", description: err.message, variant: "destructive" });
     } finally {
       setLoading((p) => ({ ...p, [subEventId + "_preview"]: false }));
+    }
+  };
+
+  const handleBlankTemplate = async (subEventId: string, subEventName: string) => {
+    setLoading((p) => ({ ...p, [subEventId + "_blank"]: true }));
+    try {
+      const data = await fetchSubEventData(competitionId, subEventId);
+      if (data.assignedJudges.length === 0) {
+        toast({ title: "No judges assigned", description: "Assign judges to this sub-event first.", variant: "destructive" });
+        return;
+      }
+      const masterRows = buildBlankMasterSheet(data);
+      const judgeSheets = data.assignedJudges.map((j) => ({
+        name: j.name.slice(0, 28),
+        rows: buildBlankJudgeSheet(data),
+      }));
+      const sheets = [
+        { name: "Master", rows: masterRows },
+        ...judgeSheets.map((js) => ({ name: js.name, rows: js.rows })),
+      ];
+      exportMultiSheetXLSX(sheets, `${subEventName.replace(/[^a-zA-Z0-9 ]/g, "")}_Blank_Template`);
+      toast({ title: "Blank template downloaded" });
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading((p) => ({ ...p, [subEventId + "_blank"]: false }));
     }
   };
 
@@ -346,6 +416,19 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                         <Sheet className="h-4 w-4 mr-1.5" />
                       )}
                       Google Sheets
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!!loading[se.id + "_blank"]}
+                      onClick={() => handleBlankTemplate(se.id, se.name)}
+                    >
+                      {loading[se.id + "_blank"] ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <FileDown className="h-4 w-4 mr-1.5" />
+                      )}
+                      Blank Template
                     </Button>
                   </div>
                 </div>
