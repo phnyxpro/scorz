@@ -223,6 +223,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
   const [search, setSearch] = useState("");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showAddContestant, setShowAddContestant] = useState(false);
   const [walkInName, setWalkInName] = useState("");
