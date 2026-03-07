@@ -191,7 +191,7 @@ export default function Auth() {
                           <button
                             key={r.role}
                             type="button"
-                            onClick={() => setSigninRole(r.role)}
+                            onClick={() => { setSigninRole(r.role); setSigninMethod(null); }}
                             className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-accent/40 transition-all group"
                           >
                             <r.icon className="h-5 w-5 text-primary shrink-0" />
@@ -208,10 +208,34 @@ export default function Auth() {
                         ))}
                       </div>
                     </motion.div>
-                  ) : isMagicLinkRole ? (
-                    <motion.div key="magic-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <button type="button" onClick={() => { setSigninRole(null); setMagicLinkSent(false); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                  ) : isMagicLinkRole && !signinMethod ? (
+                    /* Method picker for judge/tabulator */
+                    <motion.div key="method-pick" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <button type="button" onClick={() => setSigninRole(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
                         <ChevronLeft className="h-3 w-3" /> Back to role selection
+                      </button>
+                      <p className="text-xs text-muted-foreground mb-3">How would you like to sign in?</p>
+                      <div className="space-y-2">
+                        <button type="button" onClick={() => setSigninMethod("password")} className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-accent/40 transition-all">
+                          <Zap className="h-5 w-5 text-primary shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Email &amp; Password</p>
+                            <p className="text-[11px] text-muted-foreground">Sign in with your credentials</p>
+                          </div>
+                        </button>
+                        <button type="button" onClick={() => setSigninMethod("magic")} className="w-full flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 text-left hover:bg-muted/50 hover:border-accent/40 transition-all">
+                          <Mail className="h-5 w-5 text-primary shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Magic Link</p>
+                            <p className="text-[11px] text-muted-foreground">Receive a sign-in link via email</p>
+                          </div>
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : isMagicLinkRole && signinMethod === "magic" ? (
+                    <motion.div key="magic-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <button type="button" onClick={() => { setSigninMethod(null); setMagicLinkSent(false); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                        <ChevronLeft className="h-3 w-3" /> Back
                       </button>
                       {magicLinkSent ? (
                         <div className="text-center py-6">
@@ -223,7 +247,7 @@ export default function Auth() {
                       ) : (
                         <form onSubmit={handleMagicLink} className="space-y-4">
                           <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                            {signinRole === "judge" ? "Judge" : "Tabulator"} accounts are created when you are assigned to a competition. Enter your email to receive a sign-in link.
+                            Enter your email to receive a sign-in link.
                           </p>
                           <div className="space-y-2">
                             <Label htmlFor="magic-email">Email</Label>
@@ -238,8 +262,8 @@ export default function Auth() {
                     </motion.div>
                   ) : (
                     <motion.div key="password-login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <button type="button" onClick={() => setSigninRole(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
-                        <ChevronLeft className="h-3 w-3" /> Back to role selection
+                      <button type="button" onClick={() => isMagicLinkRole ? setSigninMethod(null) : setSigninRole(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                        <ChevronLeft className="h-3 w-3" /> Back
                       </button>
                       <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
