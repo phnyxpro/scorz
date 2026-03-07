@@ -286,6 +286,7 @@ function SubEventWorkspace({
                     rubricNames={rubricNames}
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
+                    judgeProfiles={judgeProfiles}
                   />
                 </CardContent>
               </Card>
