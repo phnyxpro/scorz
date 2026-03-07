@@ -96,6 +96,8 @@ export default function JudgeScoring() {
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autoSaveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [certifyAllPending, setCertifyAllPending] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -149,7 +151,7 @@ export default function JudgeScoring() {
   const finalScore = Math.max(0, rawTotal - timePenalty);
   const isCertified = existingScore?.is_certified ?? false;
 
-  const handleSave = async () => {
+  const handleSave = async (silent = false) => {
     if (!user || !subEventId || !selectedContestant) return;
     await upsert.mutateAsync({
       id: existingScore?.id,
@@ -163,7 +165,7 @@ export default function JudgeScoring() {
       final_score: finalScore,
       comments: comments || undefined,
     } as any);
-    toast({ title: "Score saved" });
+    if (!silent) toast({ title: "Score saved" });
   };
 
   const handleCertify = async () => {
@@ -189,8 +191,17 @@ export default function JudgeScoring() {
   useEffect(() => {
     if (!allScored || isCertified || !selectedContestant || !subEventId) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => {
-      handleSaveRef.current();
+    setAutoSaveStatus("idle");
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      try {
+        await handleSaveRef.current(true);
+        setAutoSaveStatus("saved");
+        if (autoSaveStatusTimerRef.current) clearTimeout(autoSaveStatusTimerRef.current);
+        autoSaveStatusTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 2500);
+      } catch {
+        setAutoSaveStatus("idle");
+      }
     }, 1200);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
   }, [scores, allScored, isCertified, selectedContestant, subEventId]);
@@ -445,6 +456,14 @@ export default function JudgeScoring() {
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">Raw Total</p>
                     <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(1)}</p>
+                    {autoSaveStatus === "saving" && (
+                      <p className="text-[10px] text-muted-foreground mt-1 animate-pulse">Saving…</p>
+                    )}
+                    {autoSaveStatus === "saved" && (
+                      <p className="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1">
+                        <CheckCircle className="h-3 w-3" /> Auto-saved
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -460,7 +479,7 @@ export default function JudgeScoring() {
               {!isCertified && (
                 <div className="space-y-2">
                   <div className="flex gap-2">
-                    <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
                       <Save className="h-4 w-4 mr-1" />
                       {upsert.isPending ? "Saving…" : "Save Draft"}
                     </Button>
