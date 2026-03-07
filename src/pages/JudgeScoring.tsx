@@ -181,6 +181,48 @@ export default function JudgeScoring() {
     }
   };
 
+  // Debounced auto-save when scores change
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+  useEffect(() => {
+    if (!allScored || isCertified || !selectedContestant || !subEventId) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSaveRef.current();
+    }, 1200);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [scores, allScored, isCertified, selectedContestant, subEventId]);
+
+  // Check if all contestants have drafts (scored but not all certified)
+  const allContestantsDrafted = useMemo(() => {
+    if (!filteredContestants.length || !myScores?.length) return false;
+    const hasUncertified = filteredContestants.some(r => scoreStatusMap.get(r.id) === "scored");
+    if (!hasUncertified) return false;
+    return filteredContestants.every(r => scoreStatusMap.has(r.id));
+  }, [filteredContestants, myScores, scoreStatusMap]);
+
+  const handleCertifyAll = async () => {
+    if (!signature || !certifyConfirmed || !myScores) return;
+    setCertifyAllPending(true);
+    try {
+      const uncertified = myScores.filter(s => !s.is_certified);
+      for (const score of uncertified) {
+        await certify.mutateAsync({
+          id: score.id,
+          judge_signature: signature,
+          sub_event_id: score.sub_event_id,
+          contestant_registration_id: score.contestant_registration_id,
+        });
+      }
+      setShowCertifyAllDialog(false);
+      toast({ title: "All scorecards certified" });
+    } catch (err: any) {
+      toast({ title: "Error certifying", description: err.message, variant: "destructive" });
+    } finally {
+      setCertifyAllPending(false);
+    }
+  };
+
   const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
 
   useEffect(() => {
