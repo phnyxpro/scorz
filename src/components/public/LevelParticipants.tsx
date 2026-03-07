@@ -45,7 +45,7 @@ export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
           <Award className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
           <div>
             <span className="font-medium text-foreground">Judges:</span>{" "}
-            {data.judges.map((j: any) => j.full_name || "Unknown").join(", ")}
+            {data.judges.map((j: any) => friendlyDisplayName(j.full_name, null)).join(", ")}
           </div>
         </div>
       )}

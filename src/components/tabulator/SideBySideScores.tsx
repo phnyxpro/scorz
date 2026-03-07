@@ -51,7 +51,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
               }
               return (
                 <TableRow key={s.id}>
-                  <TableCell className="font-mono text-xs">{s.judge_id}</TableCell>
+                  <TableCell className="text-xs">{judgeProfiles[s.judge_id] || s.judge_id.slice(0, 8)}</TableCell>
                   {rubricNames.map((n) => (
                     <TableCell key={n} className="text-center font-mono text-xs">
                       {mapped[n] != null ? mapped[n] : "—"}

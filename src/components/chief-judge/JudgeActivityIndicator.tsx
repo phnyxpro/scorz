@@ -42,7 +42,7 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
 
   const profileMap = useMemo(() => {
     const m = new Map<string, string>();
-    profiles?.forEach((p) => m.set(p.user_id, p.full_name || p.email || "Judge"));
+    profiles?.forEach((p) => m.set(p.user_id, friendlyDisplayName(p.full_name, p.email)));
     return m;
   }, [profiles]);
 
