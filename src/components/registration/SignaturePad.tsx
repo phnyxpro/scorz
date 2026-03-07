@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Eraser, Check, PenTool, Type } from "lucide-react";
+import { Eraser, PenTool, Type } from "lucide-react";
 
 interface SignaturePadProps {
   onSignature: (dataUrl: string) => void;
