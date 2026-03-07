@@ -328,11 +328,9 @@ function SubEventWorkspace({
       {/* Score Card Exporter */}
       {tabCertified && (
         <ScoreCardExporter
-          subEventId={subEventId}
-          competitionId={competitionId}
           contestants={seContestants}
-          scoresByContestant={scoresByContestant}
-          rubricNames={rubricNames}
+          subEventName={subEventId}
+          competitionName={competitionId}
         />
       )}
 

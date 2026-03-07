@@ -67,15 +67,10 @@ export default function CompetitionFormsPage() {
     },
   });
 
-  // Delete form mutation
+  // Delete form mutation (stub)
   const deleteForm = useMutation({
     mutationFn: async () => {
-      if (!editingForm) return;
-      const { error } = await supabase
-        .from("registration_forms")
-        .delete()
-        .eq("id", editingForm.id);
-      if (error) throw error;
+      throw new Error("registration_forms table not yet created");
     },
     onSuccess: () => {
       toast({ title: "Registration form deleted" });

@@ -128,7 +128,8 @@ export default function Onboarding() {
     try {
       const { data: result, error } = await supabase.from("competitions").insert({
         name: data.name,
-        slug: data.slug || undefined,
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, "-"),
+        created_by: user!.id,
         description: data.description || undefined,
         start_date: data.startDate || undefined,
         end_date: data.endDate || undefined,
