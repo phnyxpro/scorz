@@ -64,7 +64,10 @@ export function ScoreCardExportSection({ competitionId, competitionName, levels,
         .select("*")
         .eq("sub_event_id", selectedSubEventId);
       if (error) throw error;
-      return data;
+      return data.map(s => ({
+        ...s,
+        criterion_scores: (s.criterion_scores as Record<string, number>) || {},
+      }));
     },
     enabled: !!selectedSubEventId,
   });
