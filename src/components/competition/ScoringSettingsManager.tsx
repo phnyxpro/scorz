@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Clock, MessageSquare, Settings, Calculator } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
+import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
 
 interface ScoringSettingsManagerProps {
   competitionId: string;
