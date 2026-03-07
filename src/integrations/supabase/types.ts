@@ -1617,6 +1617,14 @@ export type Database = {
         Args: { _competition_id: string; _user_id: string }
         Returns: boolean
       }
+      set_active_scoring: {
+        Args: {
+          _competition_id: string
+          _level_id?: string
+          _sub_event_id?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
