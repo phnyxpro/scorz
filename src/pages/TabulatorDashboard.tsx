@@ -590,12 +590,21 @@ export default function TabulatorDashboard() {
                                       }>
                                         {se.status}
                                       </Badge>
+                                      <Switch
+                                        checked={activeScoringSubEventId === se.id}
+                                        onCheckedChange={(checked) => {
+                                          setActiveScoring.mutate({
+                                            competitionId: selectedCompId!,
+                                            levelId: checked ? level.id : null,
+                                            subEventId: checked ? se.id : null,
+                                          });
+                                        }}
+                                      />
                                       <Button
                                         size="sm"
                                         variant={isActive ? "secondary" : "default"}
                                         onClick={() => setActiveSubEventId(isActive ? "" : se.id)}
                                       >
-                                        <Zap className="h-3.5 w-3.5 mr-1" />
                                         {isActive ? "Close" : "Select"}
                                       </Button>
                                     </div>
