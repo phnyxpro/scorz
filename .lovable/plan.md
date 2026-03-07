@@ -1,47 +1,34 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Fix Criterion Score Columns Showing Dashes
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+The `criterion_scores` JSONB in `judge_scores` stores keys as numeric indices (`"0"`, `"1"`, `"2"`, ...) based on `sort_order`, but both `ScoreSummaryTable` and `SideBySideScores` try to look up values using rubric name strings (e.g., `"Content & Meaning"`). This mismatch causes all individual criterion columns to show dashes.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. `src/pages/TabulatorDashboard.tsx`**
+- Build an `indexToName` mapping from the rubric data: `{ "0": "Content & Meaning", "1": "Vocal Delivery", ... }` using `sort_order` as the key
+- Pass `indexToName` to both `SideBySideScores` (already accepts this prop) and `ScoreSummaryTable` (needs new prop)
 
----
+**2. `src/components/tabulator/ScoreSummaryTable.tsx`**
+- Add `indexToName` prop (`Record<string, string>`)
+- Remap `criterion_scores` numeric keys to rubric names before computing averages (same pattern already used in `SideBySideScores`)
 
-### Fix 1: Conditionally apply auditorium filter
+**3. `src/pages/TabulatorDashboard.tsx` (overview section ~line 695)**
+- Also pass `indexToName` to the `SideBySideScores` used in the overview/accordion expandable rows
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+### How the mapping works
+The rubric array is already sorted by `sort_order`. The index `i` in that array corresponds to key `"i"` in `criterion_scores`. So:
+```typescript
+const indexToName = useMemo(() => {
+  const m: Record<string, string> = {};
+  (overview?.rubric || []).forEach((r: any, i: number) => { m[String(i)] = r.name; });
+  return m;
+}, [overview?.rubric]);
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+- `src/pages/TabulatorDashboard.tsx` — build and pass `indexToName`
+- `src/components/tabulator/ScoreSummaryTable.tsx` — accept `indexToName`, remap keys
 
