@@ -38,6 +38,7 @@ export default function JudgeScoring() {
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  useRegistrationsRealtime(competitionId);
   const { data: myAssignments } = useMyAssignedSubEvents("judge");
 
   const [selectedLevelId, setSelectedLevelId] = useState("");

@@ -111,3 +111,25 @@ export function useUpdateRegistration() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 }
+
+export function useRegistrationsRealtime(competitionId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!competitionId) return;
+    const channel = supabase
+      .channel(`reg-order-${competitionId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "contestant_registrations" },
+        (payload) => {
+          if ((payload.new as any)?.competition_id === competitionId) {
+            qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+            qc.invalidateQueries({ queryKey: ["judging_overview", competitionId] });
+            qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [competitionId, qc]);
+}

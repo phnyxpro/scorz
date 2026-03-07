@@ -111,7 +111,7 @@ function SubEventWorkspace({
   const { data: penalties } = usePenaltyRules(competitionId);
 
    const [performanceDuration, setPerformanceDuration] = useState(0);
-   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected"), [registrations, subEventId]);
+   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected").sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)), [registrations, subEventId]);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [certifyMode, setCertifyMode] = useState<"tabulator" | "witness">("tabulator");
   const [signature, setSignature] = useState("");
