@@ -11,9 +11,11 @@ interface Props {
   indexToName?: Record<string, string>;
   contestantName: string;
   contestantUserId?: string;
+  /** Map judge_id → display name */
+  judgeProfiles?: Record<string, string>;
 }
 
-export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId }: Props) {
+export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId, judgeProfiles = {} }: Props) {
   if (scores.length === 0) return null;
 
   return (
@@ -49,7 +51,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
               }
               return (
                 <TableRow key={s.id}>
-                  <TableCell className="font-mono text-xs">{s.judge_id}</TableCell>
+                  <TableCell className="text-xs">{judgeProfiles[s.judge_id] || s.judge_id.slice(0, 8)}</TableCell>
                   {rubricNames.map((n) => (
                     <TableCell key={n} className="text-center font-mono text-xs">
                       {mapped[n] != null ? mapped[n] : "—"}

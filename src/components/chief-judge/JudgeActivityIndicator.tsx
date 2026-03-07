@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { PenLine, CheckCircle2, Clock } from "lucide-react";
+import { friendlyDisplayName } from "@/lib/utils";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 interface JudgeActivityIndicatorProps {
@@ -41,7 +42,7 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
 
   const profileMap = useMemo(() => {
     const m = new Map<string, string>();
-    profiles?.forEach((p) => m.set(p.user_id, p.full_name || p.email || "Judge"));
+    profiles?.forEach((p) => m.set(p.user_id, friendlyDisplayName(p.full_name, p.email)));
     return m;
   }, [profiles]);
 

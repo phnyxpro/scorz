@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { friendlyDisplayName } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePenaltyRules, useSetActiveScoring } from "@/hooks/useCompetitions";
@@ -150,6 +151,28 @@ function SubEventWorkspace({
     return map;
   }, [allScores]);
 
+  // Build judge profiles map for display names
+  const judgeIds = useMemo(() => [...new Set((allScores || []).map(s => s.judge_id))], [allScores]);
+  const { data: judgeProfilesData } = useQuery({
+    queryKey: ["judge-profiles-tab", judgeIds],
+    enabled: judgeIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", judgeIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const judgeProfiles = useMemo(() => {
+    const m: Record<string, string> = {};
+    judgeProfilesData?.forEach(p => {
+      m[p.user_id] = friendlyDisplayName(p.full_name, p.email);
+    });
+    return m;
+  }, [judgeProfilesData]);
+
   const contestantName = (regId: string) =>
     registrations.find((r: any) => r.id === regId)?.full_name ?? "Unknown";
   const contestantUserId = (regId: string) =>
@@ -263,6 +286,7 @@ function SubEventWorkspace({
                     rubricNames={rubricNames}
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
+                    judgeProfiles={judgeProfiles}
                   />
                 </CardContent>
               </Card>
