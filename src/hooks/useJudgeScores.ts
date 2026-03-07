@@ -155,6 +155,11 @@ export function useCertifyScore() {
       qc.invalidateQueries({ queryKey: ["my_scores", v.sub_event_id] });
       qc.invalidateQueries({ queryKey: ["my_score", v.sub_event_id, v.contestant_registration_id] });
       toast({ title: "Score certified and locked" });
+
+      // Notify scoring events — judge certified
+      supabase.functions.invoke("notify-scoring-events", {
+        body: { type: "judge_certified", sub_event_id: v.sub_event_id, judge_id: v.id ? undefined : undefined },
+      }).catch(() => {});
     },
     onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
   });

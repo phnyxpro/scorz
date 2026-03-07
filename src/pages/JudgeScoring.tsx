@@ -408,11 +408,14 @@ export default function JudgeScoring() {
                   On Stage
                 </Badge>
               )}
-              {selectedContestantName && (
+            {selectedContestantName && (
                 <Badge variant="secondary" className="shrink-0 gap-1">
                   <User className="h-3 w-3" />
                   <span className="truncate max-w-[120px]">{selectedContestantName}</span>
                 </Badge>
+              )}
+              {isMobile && swipeHintVisible && selectedContestant && filteredContestants.length > 1 && (
+                <span className="text-[10px] text-muted-foreground/60 font-mono">Swipe ← →</span>
               )}
             </div>
           </div>
