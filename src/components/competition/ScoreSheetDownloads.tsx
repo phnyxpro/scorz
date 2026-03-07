@@ -430,7 +430,6 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       )}
                       Blank Template
                     </Button>
-                    </Button>
                   </div>
                 </div>
               ))}
