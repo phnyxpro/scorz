@@ -53,22 +53,23 @@ type SortDir = "asc" | "desc";
 // ─── Slot Picker Cell ──────────────────────────────────────────────
 interface SlotPickerCellProps {
   regId: string;
+  subEventId: string | null;
   slot?: { id: string; start_time: string; end_time: string };
-  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onAssign: (regId: string, slotId: string) => void;
   onUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
 }
 
-function SlotPickerCell({ regId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
+function SlotPickerCell({ regId, subEventId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
 
-  // Available slots: unbooked OR currently assigned to this reg
+  // Available slots: same sub-event, unbooked OR currently assigned to this reg
   const available = allSlots.filter(
-    (s) => !s.is_booked || s.contestant_registration_id === regId
+    (s) => s.sub_event_id === subEventId && (!s.is_booked || s.contestant_registration_id === regId)
   );
 
   const handleSelectSlot = (slotId: string) => {
