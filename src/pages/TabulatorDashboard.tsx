@@ -38,7 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronDown, ClipboardList, Zap, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronDown, ClipboardList, Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
