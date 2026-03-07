@@ -556,7 +556,7 @@ export default function JudgeScoring() {
       </Dialog>
       {/* Certify All Dialog */}
       <Dialog open={showCertifyAllDialog} onOpenChange={(open) => { setShowCertifyAllDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Certify All Scorecards</DialogTitle>
             <DialogDescription>

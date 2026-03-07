@@ -45,7 +45,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
 
   return (
     <div
-      className={`space-y-2 p-2 rounded-lg transition-colors ${isFocused ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}
+      className={`space-y-1.5 sm:space-y-2 p-1.5 sm:p-2 rounded-lg transition-colors ${isFocused ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}
       onKeyDown={handleKeyDown}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
@@ -69,7 +69,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
         </div>
         <div className="flex items-center gap-2">
           {isFocused && (
-            <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded animate-pulse">
+            <span className="hidden sm:inline text-[10px] text-muted-foreground bg-muted px-1 rounded animate-pulse">
               Press 1-5
             </span>
           )}
