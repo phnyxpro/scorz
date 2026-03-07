@@ -152,9 +152,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(() => {});
 
             assignSignupRole(session.user).then(() =>
-              fetchRoles(session.user!.id).then((r) =>
-                fireWelcomeEmail(session.user!, r || [])
-              )
+              fetchRoles(session.user!.id).then((r) => {
+                fireWelcomeEmail(session.user!, r || []);
+                // Log login activity for tracked roles
+                const trackedRoles: AppRole[] = ["organizer", "judge", "chief_judge", "tabulator", "contestant"];
+                const matchedRoles = (r || []).filter((role) => trackedRoles.includes(role));
+                if (matchedRoles.length > 0) {
+                  const userName = session.user!.user_metadata?.full_name || session.user!.email || "Unknown";
+                  const roleLabel = matchedRoles.join(", ");
+                  supabase.from("activity_log").insert({
+                    event_type: "user_login",
+                    title: `${userName} logged in`,
+                    description: `Role(s): ${roleLabel}`,
+                    actor_id: session.user!.id,
+                    metadata: { roles: matchedRoles, email: session.user!.email },
+                  }).then(() => {});
+                }
+              })
             );
           }
         } else if (event === "SIGNED_OUT") {
