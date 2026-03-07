@@ -8,13 +8,14 @@ export interface DashboardStat {
   to: string;
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(effectiveUserId?: string) {
   const { user, roles } = useAuth();
+  const uid = effectiveUserId || user?.id;
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
-    if (!user) {
+    if (!uid) {
       setStats([]);
       setLoading(false);
       return;
@@ -77,14 +78,14 @@ export function useDashboardStats() {
         const { count: unscoredCount } = await supabase
           .from("sub_event_assignments")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
+        .eq("user_id", uid)
           .eq("role", "judge" as any);
         results.push({ label: "My Assignments", value: unscoredCount ?? 0, to: "/judge-dashboard" });
 
         const { count: uncertified } = await supabase
           .from("judge_scores")
           .select("id", { count: "exact", head: true })
-          .eq("judge_id", user.id)
+          .eq("judge_id", uid)
           .eq("is_certified", false);
         results.push({ label: "Uncertified Scores", value: uncertified ?? 0, to: "/judge-dashboard" });
       }
@@ -101,7 +102,7 @@ export function useDashboardStats() {
         const { count: myRegs } = await supabase
           .from("contestant_registrations")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id);
+          .eq("user_id", uid);
         results.push({ label: "My Registrations", value: myRegs ?? 0, to: "/profile" });
       }
     } catch (err) {
@@ -110,7 +111,7 @@ export function useDashboardStats() {
 
     setStats(results);
     setLoading(false);
-  }, [user?.id, roles]);
+  }, [uid, roles]);
 
   // Initial fetch
   useEffect(() => {
@@ -119,7 +120,7 @@ export function useDashboardStats() {
 
   // Realtime subscriptions – refetch counts on any relevant change
   useEffect(() => {
-    if (!user) return;
+    if (!uid) return;
 
     const tables = ["competitions", "contestant_registrations", "judge_scores", "tabulator_certifications", "sub_event_assignments"];
 
@@ -135,7 +136,7 @@ export function useDashboardStats() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchStats]);
+  }, [uid, fetchStats]);
 
   return { stats, loading };
 }
