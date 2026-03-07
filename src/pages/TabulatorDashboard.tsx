@@ -415,6 +415,7 @@ export default function TabulatorDashboard() {
   const [onStageContestantId, setOnStageContestantId] = useState("");
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
+  useRegistrationsRealtime(selectedCompId || undefined);
 
   const filteredComps = useMemo(() => {
     if (!searchQuery.trim()) return activeComps;
