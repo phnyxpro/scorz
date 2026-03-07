@@ -101,6 +101,10 @@ export default function JudgeScoring() {
   const [certifyAllPending, setCertifyAllPending] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Swipe gesture state
+  const touchStartX = useRef<number | null>(null);
+  const [swipeHintVisible, setSwipeHintVisible] = useState(true);
+
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
 
