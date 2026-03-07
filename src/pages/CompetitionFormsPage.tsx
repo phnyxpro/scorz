@@ -47,30 +47,16 @@ export default function CompetitionFormsPage() {
   const forms: { id: string; name: string; description: string | null; created_at: string; updated_at: string }[] = [];
   const isLoading = false;
 
-  // Create form mutation
+  // Create form mutation (stub — table doesn't exist yet)
   const createForm = useMutation({
     mutationFn: async (data: { name: string; description: string }) => {
-      const { error } = await supabase
-        .from("registration_forms")
-        .insert([
-          {
-            competition_id: id,
-            name: data.name,
-            description: data.description,
-            created_by: user?.id,
-          },
-        ]);
-      if (error) throw error;
+      toast({ title: "Registration forms feature coming soon", variant: "destructive" });
+      throw new Error("registration_forms table not yet created");
     },
     onSuccess: () => {
-      toast({ title: "Registration form created" });
       setFormName("");
       setFormDescription("");
       setIsCreateOpen(false);
-      qc.invalidateQueries({ queryKey: ["registration_forms", id] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error creating form", description: error.message, variant: "destructive" });
     },
   });
 
