@@ -72,6 +72,7 @@ export default function Auth() {
   const [loginPassword, setLoginPassword] = useState("");
   const [magicLinkEmail, setMagicLinkEmail] = useState("");
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [signinMethod, setSigninMethod] = useState<"password" | "magic" | null>(null);
 
 
   const handleLogin = async (e: React.FormEvent) => {
