@@ -1,32 +1,47 @@
 
 
-## Show Chief Judge Badge & Assignments for Uninvited Staff
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-Jean-Claude Cournand is invited as a Chief Judge for National Poetry Slam 2026, but:
-1. The header badges only show roles from `user_roles` — "chief_judge" is an assignment flag (`is_chief`), not a standalone role, so it never appears
-2. His invitation hasn't been accepted yet, so `sub_event_assignments` is empty → Dashboard shows 0 assignments and no competitions
-3. Chief Judge action cards don't appear because `hasChiefAssignment` is false
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Plan
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Add chief judge detection to header badges** (`src/components/AppLayout.tsx`)
-- Query `sub_event_assignments` for `is_chief=true` OR `staff_invitations` for `is_chief=true` matching the effective user
-- If found, append a "chief judge" badge alongside existing role badges
-- Use `effectiveUserId` (masquerade-aware) for the query
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. Fall back to `staff_invitations` for assignments** (`src/pages/Dashboard.tsx`)
-- In `useAssignedCompetitions`, when `sub_event_assignments` returns empty, query `staff_invitations` by the user's email to find pending assignments with their competition, sub-event, and `is_chief` flag
-- This ensures competitions and sub-events appear even before invitation acceptance
-- Need the target user's email: available from `masquerade.email` or `user.email`
+---
 
-**3. Show Chief Judge action cards** (`src/pages/Dashboard.tsx`)
-- `buildJudgeCards` already supports `hasChiefAssignments` — the fix is ensuring `hasChiefAssignment` is derived from both `sub_event_assignments` AND `staff_invitations`
+### Fix 1: Conditionally apply auditorium filter
 
-**4. Sub-event quick links from invitations** (`src/pages/Dashboard.tsx`)
-- The assigned sub-events query should also fall back to `staff_invitations` data when `sub_event_assignments` is empty
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Files changed
-- `src/components/AppLayout.tsx` — add chief judge badge via query
-- `src/pages/Dashboard.tsx` — update `useAssignedCompetitions` and sub-event queries to fall back to `staff_invitations`
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

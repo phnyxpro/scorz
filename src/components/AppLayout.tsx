@@ -11,13 +11,46 @@ import { mainNavItems } from "@/lib/navigation";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles, hasRole, masquerade, stopMasquerade, isMasquerading } = useAuth();
   const { brightness, contrast } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const effectiveUserId = isMasquerading ? masquerade?.userId : user?.id;
+  const effectiveEmail = isMasquerading ? masquerade?.email : user?.email;
   const needsFilter = brightness !== 100 || contrast !== 100;
+
+  // Check if user has chief judge designation via assignments or pending invitations
+  const { data: isChiefJudge } = useQuery({
+    queryKey: ["chief-judge-badge", effectiveUserId, effectiveEmail],
+    enabled: !!effectiveUserId,
+    queryFn: async () => {
+      // Check sub_event_assignments
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("id")
+        .eq("user_id", effectiveUserId!)
+        .eq("is_chief", true)
+        .limit(1);
+      if (assignments && assignments.length > 0) return true;
+
+      // Check pending staff_invitations by email
+      if (effectiveEmail) {
+        const { data: invites } = await supabase
+          .from("staff_invitations")
+          .select("id")
+          .ilike("email", effectiveEmail)
+          .eq("is_chief", true)
+          .is("accepted_at", null)
+          .limit(1);
+        if (invites && invites.length > 0) return true;
+      }
+      return false;
+    },
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,13 +98,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
           {/* Right: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {roles.length > 0 && (
+            {(roles.length > 0 || isChiefJudge) && (
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
                   <span key={r} className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {formatRoleName(r)}
                   </span>
                 ))}
+                {isChiefJudge && !roles.includes("chief_judge") && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                    Chief Judge
+                  </span>
+                )}
               </div>
             )}
             <AuditoriumControls />
