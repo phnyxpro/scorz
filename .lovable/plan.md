@@ -1,31 +1,47 @@
 
 
-## Quick Links to Assigned Sub-Events on Judge Dashboard
+## Fix Blank Rendering in Browser Automation
 
-### What
-Add a horizontal row of quick-link chips/badges above the dashboard action cards for judges. Each chip represents an assigned sub-event within the selected competition, linking directly to the scoring page with that sub-event pre-selected. The currently active scoring sub-event (set by the organizer via `competitions.active_scoring_sub_event_id`) is highlighted with a visual indicator.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### How
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**File: `src/pages/Dashboard.tsx`**
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-1. After the competition is selected (`selectedCompId`), fetch the judge's assigned sub-events for that competition:
-   - Query `sub_event_assignments` filtered by `effectiveUserId` + join through `sub_events` → `competition_levels` to filter by `selectedCompId`
-   - Also fetch the competition's `active_scoring_level_id` and `active_scoring_sub_event_id` from the `competitions` table (already available if we query it)
+---
 
-2. Fetch competition record for `selectedCompId` to get `active_scoring_sub_event_id`
+### Fix 1: Conditionally apply auditorium filter
 
-3. Render a new section between the "select competition" prompt and the action cards grid:
-   - Row of pill/badge links: `Level Name → Sub-Event Name`
-   - Each links to `/competitions/${selectedCompId}/score?subEvent=${subEventId}`
-   - If `subEvent.id === active_scoring_sub_event_id`, show a green dot / "LIVE" badge
-   - Use existing `Badge` component with variant styling
+**File: `src/contexts/ThemeContext.tsx`**
 
-4. Data flow:
-   - Reuse `useStaffView()` which already returns `subEventDetails` with nested level data and `myAssignments`
-   - Filter `subEventDetails` to those belonging to the selected competition
-   - Query competition's `active_scoring_sub_event_id` via a small `useQuery` on `competitions` table filtered to `selectedCompId`
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### Files changed
-- `src/pages/Dashboard.tsx` — add sub-event quick links section with active indicator
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

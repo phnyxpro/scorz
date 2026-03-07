@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon
+  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -16,8 +16,8 @@ import TabulatorDashboard from "@/pages/TabulatorDashboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-// Calculator icon imported above as CalcIcon
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
+import { Badge } from "@/components/ui/badge";
 
 const container = {
   hidden: { opacity: 0 },
@@ -163,6 +163,53 @@ export default function Dashboard() {
   const selectedComp = assignedComps.find(c => c.id === selectedCompId);
   const hasChiefForSelected = selectedComp?.hasChiefAssignment ?? false;
 
+  // Fetch active scoring sub-event for selected competition
+  const { data: selectedCompData } = useQuery({
+    queryKey: ["comp-active-scoring", selectedCompId],
+    enabled: !!selectedCompId && isJudgeRole,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("competitions")
+        .select("active_scoring_sub_event_id")
+        .eq("id", selectedCompId)
+        .single();
+      return data;
+    },
+  });
+
+  // Fetch assigned sub-events with level info for the selected competition
+  const { data: assignedSubEvents } = useQuery({
+    queryKey: ["judge-assigned-sub-events", effectiveUserId, selectedCompId],
+    enabled: !!effectiveUserId && !!selectedCompId && isJudgeRole,
+    queryFn: async () => {
+      // Get assignments for user
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("sub_event_id")
+        .eq("user_id", effectiveUserId!);
+      if (!assignments?.length) return [];
+
+      const seIds = assignments.map(a => a.sub_event_id);
+
+      // Get sub-events with level info
+      const { data: subEvents } = await supabase
+        .from("sub_events")
+        .select("id, name, level_id, competition_levels!inner(id, name, competition_id)")
+        .in("id", seIds);
+
+      // Filter to selected competition
+      return (subEvents || []).filter(
+        (se: any) => se.competition_levels?.competition_id === selectedCompId
+      ).map((se: any) => ({
+        id: se.id,
+        name: se.name,
+        levelName: se.competition_levels?.name || "",
+      }));
+    },
+  });
+
+  const activeScoringSubEventId = selectedCompData?.active_scoring_sub_event_id;
+
   const cards = useMemo(() => {
     if (isJudgeRole && selectedCompId) {
       return buildJudgeCards(selectedCompId, hasChiefForSelected);
@@ -249,7 +296,46 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Quick stats */}
+          {/* Sub-event quick links for judges */}
+          {isJudgeRole && selectedCompId && assignedSubEvents && assignedSubEvents.length > 0 && (
+            <div className="mb-6">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
+                Your Sub-Events
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {assignedSubEvents.map((se) => {
+                  const isActive = se.id === activeScoringSubEventId;
+                  return (
+                    <Link
+                      key={se.id}
+                      to={`/competitions/${selectedCompId}/score?subEvent=${se.id}`}
+                    >
+                      <Badge
+                        variant={isActive ? "default" : "outline"}
+                        className={`cursor-pointer transition-all text-xs px-3 py-1.5 ${
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "hover:bg-accent/10 hover:border-accent"
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="relative mr-1.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-foreground opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-foreground" />
+                          </span>
+                        )}
+                        <span className="text-muted-foreground mr-1">{se.levelName} ›</span>
+                        {se.name}
+                        {isActive && <span className="ml-1.5 text-[10px] opacity-80">LIVE</span>}
+                      </Badge>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+
           {stats.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
