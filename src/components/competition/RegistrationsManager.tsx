@@ -344,7 +344,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       const { data, error } = await supabase
         .from("performance_slots")
         .select("id, contestant_registration_id, start_time, end_time, sub_event_id, is_booked")
-        .in("sub_event_id", subEventIds)
+        .in("sub_event_id", allSubEventIds)
         .order("start_time");
       if (error) throw error;
       return data;
