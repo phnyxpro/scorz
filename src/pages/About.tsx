@@ -147,7 +147,7 @@ export default function About() {
               <Link to="/help">Knowledge Base</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link to="/auth">Get Started</Link>
+              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function About() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" asChild>
-              <Link to="/auth?view=signup">Start Now <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">Start Now <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="#roles">Explore Roles</a>

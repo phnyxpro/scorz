@@ -37,6 +37,8 @@ const ContestantProfile = lazy(() => import("./pages/ContestantProfile"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const AdminBilling = lazy(() => import("./pages/AdminBilling"));
+const AdminLogs = lazy(() => import("./pages/AdminLogs"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 const MasterScoreSheet = lazy(() => import("./pages/MasterScoreSheet"));
 const LevelMasterSheet = lazy(() => import("./pages/LevelMasterSheet"));
 const JudgeDashboard = lazy(() => import("./pages/JudgeDashboard"));
@@ -129,6 +131,8 @@ const App = () => (
                 <Route path="/admin/users" element={<ProtectedPage><AdminUsers /></ProtectedPage>} />
                 <Route path="/admin/settings" element={<ProtectedPage><AdminSettings /></ProtectedPage>} />
                 <Route path="/admin/billing" element={<ProtectedPage><AdminBilling /></ProtectedPage>} />
+                <Route path="/admin/logs" element={<ProtectedPage><AdminLogs /></ProtectedPage>} />
+                <Route path="/onboarding" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
                 <Route path="/competitions/:id/master-sheet" element={<ProtectedPage><MasterScoreSheet /></ProtectedPage>} />
                 <Route path="/competitions/:id/level-sheet" element={<ProtectedPage><LevelMasterSheet /></ProtectedPage>} />
                 <Route path="/competitions/:id/rules-rubric" element={<ProtectedPage><RulesAndRubric /></ProtectedPage>} />

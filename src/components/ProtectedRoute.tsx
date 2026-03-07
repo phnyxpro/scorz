@@ -12,7 +12,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) {
+    // preserve current location for redirect after login
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    return <Navigate to={`/auth?redirect=${returnTo}`} replace />;
+  }
 
   return <>{children}</>;
 }

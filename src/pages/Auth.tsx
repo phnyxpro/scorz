@@ -51,8 +51,17 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
+  // parse query params for onboarding/defaults
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  const initialView = search.get("view") === "signup" ? "signup" : "login";
+  const initialRoleParam = search.get("role");
+  const redirectTo = search.get("redirect") || undefined;
+
   // Sign Up state
-  const [signupRole, setSignupRole] = useState<SignupRole | null>(null);
+  const [signupRole, setSignupRole] = useState<SignupRole | null>(
+    (initialRoleParam as SignupRole) || null
+  );
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
@@ -64,6 +73,7 @@ export default function Auth() {
   const [magicLinkEmail, setMagicLinkEmail] = useState("");
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -72,7 +82,7 @@ export default function Auth() {
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/dashboard");
+      navigate(redirectTo || "/dashboard");
     }
   };
 
@@ -86,6 +96,10 @@ export default function Auth() {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Check your email", description: "We sent you a verification link." });
+      // redirect after signup only if no email confirmation required?
+      if (!redirectTo) {
+        navigate(redirectTo || "/dashboard");
+      }
     }
   };
 

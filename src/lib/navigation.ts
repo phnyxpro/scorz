@@ -1,7 +1,8 @@
 import {
     LayoutDashboard, Trophy, ClipboardList, User, Shield, Mic, Users,
     BarChart3, Eye, CreditCard, BookOpen, ShieldCheck, Calendar,
-    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper, MessageSquare, Key, TrendingUp
+    DollarSign, FileText, ListChecks, Settings, TicketCheck, Newspaper, MessageSquare, Key, TrendingUp,
+    Activity
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const dashboardCards: { title: string; desc: string; icon: LucideIcon; co
     // Admin
     { title: "User Management", desc: "Manage users & assign roles", icon: Users, color: "text-accent", to: "/admin/users", roles: ["admin"] },
     { title: "Global Settings", desc: "Branding, flags & defaults", icon: Shield, color: "text-accent", to: "/admin/settings", roles: ["admin"] },
+    { title: "Audit Logs", desc: "View activity trail & system logs", icon: Activity, color: "text-accent", to: "/admin/logs", roles: ["admin"] },
     { title: "Billing", desc: "Subscriptions & payment tiers", icon: CreditCard, color: "text-accent", to: "/admin/billing", roles: ["admin"] },
 
     // Organizer

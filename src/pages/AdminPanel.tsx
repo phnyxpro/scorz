@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Constants } from "@/integrations/supabase/types";
-import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Users, Trophy, BarChart3, Eye, Settings, CreditCard } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Users, Trophy, BarChart3, Eye, Settings, CreditCard, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import GlobalSettingsPanel from "@/components/admin/GlobalSettingsPanel";
 import BillingPanel from "@/components/admin/BillingPanel";
@@ -109,13 +110,14 @@ export default function AdminPanel() {
     queryKey: ["admin-platform-stats"],
     enabled: hasRole("admin"),
     queryFn: async () => {
-      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }] = await Promise.all([
+      const [{ count: userCount }, { count: compCount }, { count: activeCount }, { count: regCount }, { count: logCount }] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("competitions").select("*", { count: "exact", head: true }),
         supabase.from("competitions").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contestant_registrations").select("*", { count: "exact", head: true }),
+        supabase.from("activity_log").select("*", { count: "exact", head: true }),
       ]);
-      return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0 };
+      return { users: userCount || 0, competitions: compCount || 0, active: activeCount || 0, registrations: regCount || 0, logs: logCount || 0 };
     },
   });
 
@@ -146,23 +148,33 @@ export default function AdminPanel() {
 
       {/* Platform Analytics */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           {[
             { label: "Total Users", value: stats.users, icon: Users, color: "text-primary" },
             { label: "Competitions", value: stats.competitions, icon: Trophy, color: "text-secondary" },
             { label: "Active Events", value: stats.active, icon: BarChart3, color: "text-accent" },
             { label: "Registrations", value: stats.registrations, icon: UserPlus, color: "text-primary" },
-          ].map((s) => (
-            <Card key={s.label} className="border-border/50 bg-card/80">
-              <CardContent className="pt-4 pb-3 flex items-center gap-3">
-                <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
-                <div>
-                  <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+            { label: "Audit Events", value: stats.logs, icon: Activity, color: "text-accent", link: "/admin/logs" },
+          ].map((s) => {
+            const card = (
+              <Card key={s.label} className="border-border/50 bg-card/80">
+                <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                  <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
+                  <div>
+                    <p className="text-xl font-bold font-mono text-foreground">{s.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+            return s.link ? (
+              <Link to={s.link} key={s.label} className="block">
+                {card}
+              </Link>
+            ) : (
+              card
+            );
+          })}
         </div>
       )}
 
