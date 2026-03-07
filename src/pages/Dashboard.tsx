@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon
+  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -16,8 +16,8 @@ import TabulatorDashboard from "@/pages/TabulatorDashboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-// Calculator icon imported above as CalcIcon
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
+import { Badge } from "@/components/ui/badge";
 
 const container = {
   hidden: { opacity: 0 },
