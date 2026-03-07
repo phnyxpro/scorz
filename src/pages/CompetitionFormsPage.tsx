@@ -60,26 +60,10 @@ export default function CompetitionFormsPage() {
     },
   });
 
-  // Update form mutation
+  // Update form mutation (stub)
   const updateForm = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
-      if (!editingForm) return;
-      const { error } = await supabase
-        .from("registration_forms")
-        .update({ name: data.name, description: data.description })
-        .eq("id", editingForm.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Registration form updated" });
-      setEditingForm(null);
-      setFormName("");
-      setFormDescription("");
-      setIsEditOpen(false);
-      qc.invalidateQueries({ queryKey: ["registration_forms", id] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error updating form", description: error.message, variant: "destructive" });
+    mutationFn: async (_data: { name: string; description: string }) => {
+      throw new Error("registration_forms table not yet created");
     },
   });
 
