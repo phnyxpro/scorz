@@ -271,6 +271,7 @@ function SubEventWorkspace({
                 contestantName={contestantName}
                 contestantUserId={contestantUserId}
                 rubricNames={rubricNames}
+                indexToName={indexToName}
               />
             </CardContent>
           </Card>
