@@ -163,7 +163,7 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-medium text-foreground truncate max-w-[100px]">
+                    <span className="font-medium text-foreground truncate max-w-[180px]">
                       {judge.name}
                     </span>
                     <span className="text-[9px] text-muted-foreground flex items-center gap-1">
