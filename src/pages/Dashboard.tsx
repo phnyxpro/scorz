@@ -296,7 +296,46 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Quick stats */}
+          {/* Sub-event quick links for judges */}
+          {isJudgeRole && selectedCompId && assignedSubEvents && assignedSubEvents.length > 0 && (
+            <div className="mb-6">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
+                Your Sub-Events
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {assignedSubEvents.map((se) => {
+                  const isActive = se.id === activeScoringSubEventId;
+                  return (
+                    <Link
+                      key={se.id}
+                      to={`/competitions/${selectedCompId}/score?subEvent=${se.id}`}
+                    >
+                      <Badge
+                        variant={isActive ? "default" : "outline"}
+                        className={`cursor-pointer transition-all text-xs px-3 py-1.5 ${
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "hover:bg-accent/10 hover:border-accent"
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="relative mr-1.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-foreground opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-foreground" />
+                          </span>
+                        )}
+                        <span className="text-muted-foreground mr-1">{se.levelName} ›</span>
+                        {se.name}
+                        {isActive && <span className="ml-1.5 text-[10px] opacity-80">LIVE</span>}
+                      </Badge>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+
           {stats.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
