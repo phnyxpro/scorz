@@ -100,7 +100,9 @@ export default function JudgeScoring() {
 
   // Filtered contestants for the selected sub-event
   const filteredContestants = useMemo(() => {
-    return registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)) ?? [];
+    const list = registrations?.filter(r => r.status !== "rejected" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)) ?? [];
+    // Sort by sort_order (matches organiser's registration order)
+    return [...list].sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0));
   }, [registrations, subEventId]);
 
   useEffect(() => {
