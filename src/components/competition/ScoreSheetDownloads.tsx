@@ -322,6 +322,32 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
     }
   };
 
+  const handleBlankTemplate = async (subEventId: string, subEventName: string) => {
+    setLoading((p) => ({ ...p, [subEventId + "_blank"]: true }));
+    try {
+      const data = await fetchSubEventData(competitionId, subEventId);
+      if (data.assignedJudges.length === 0) {
+        toast({ title: "No judges assigned", description: "Assign judges to this sub-event first.", variant: "destructive" });
+        return;
+      }
+      const masterRows = buildBlankMasterSheet(data);
+      const judgeSheets = data.assignedJudges.map((j) => ({
+        name: j.name.slice(0, 28),
+        rows: buildBlankJudgeSheet(data),
+      }));
+      const sheets = [
+        { name: "Master", rows: masterRows },
+        ...judgeSheets.map((js) => ({ name: js.name, rows: js.rows })),
+      ];
+      exportMultiSheetXLSX(sheets, `${subEventName.replace(/[^a-zA-Z0-9 ]/g, "")}_Blank_Template`);
+      toast({ title: "Blank template downloaded" });
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading((p) => ({ ...p, [subEventId + "_blank"]: false }));
+    }
+  };
+
   if (subEventsByLevel.length === 0) return null;
 
   return (
