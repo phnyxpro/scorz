@@ -191,8 +191,17 @@ export default function JudgeScoring() {
   useEffect(() => {
     if (!allScored || isCertified || !selectedContestant || !subEventId) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => {
-      handleSaveRef.current();
+    setAutoSaveStatus("idle");
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      try {
+        await handleSaveRef.current();
+        setAutoSaveStatus("saved");
+        if (autoSaveStatusTimerRef.current) clearTimeout(autoSaveStatusTimerRef.current);
+        autoSaveStatusTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 2500);
+      } catch {
+        setAutoSaveStatus("idle");
+      }
     }, 1200);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
   }, [scores, allScored, isCertified, selectedContestant, subEventId]);
