@@ -19,7 +19,38 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { brightness, contrast } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const effectiveUserId = isMasquerading ? masquerade?.userId : user?.id;
+  const effectiveEmail = isMasquerading ? masquerade?.email : user?.email;
   const needsFilter = brightness !== 100 || contrast !== 100;
+
+  // Check if user has chief judge designation via assignments or pending invitations
+  const { data: isChiefJudge } = useQuery({
+    queryKey: ["chief-judge-badge", effectiveUserId, effectiveEmail],
+    enabled: !!effectiveUserId,
+    queryFn: async () => {
+      // Check sub_event_assignments
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("id")
+        .eq("user_id", effectiveUserId!)
+        .eq("is_chief", true)
+        .limit(1);
+      if (assignments && assignments.length > 0) return true;
+
+      // Check pending staff_invitations by email
+      if (effectiveEmail) {
+        const { data: invites } = await supabase
+          .from("staff_invitations")
+          .select("id")
+          .ilike("email", effectiveEmail)
+          .eq("is_chief", true)
+          .is("accepted_at", null)
+          .limit(1);
+        if (invites && invites.length > 0) return true;
+      }
+      return false;
+    },
+  });
 
   const handleSignOut = async () => {
     await signOut();
