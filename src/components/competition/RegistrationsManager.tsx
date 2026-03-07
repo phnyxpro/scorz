@@ -416,6 +416,9 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Button size="sm" onClick={() => setShowAddContestant(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
+                <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
               </Button>
