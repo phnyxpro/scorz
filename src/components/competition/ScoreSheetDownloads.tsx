@@ -31,8 +31,9 @@ export interface FetchedData {
   }[];
   criteria: { id: string; name: string; sort_order: number }[];
   judgeProfiles: Record<string, string>;
-  timerData: Record<string, number>; // contestant_registration_id -> elapsed_seconds
+  timerData: Record<string, number>;
   penaltyRules: PenaltyRule[];
+  assignedJudges: { user_id: string; name: string }[];
 }
 
 export interface PreviewData {
