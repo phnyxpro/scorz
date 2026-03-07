@@ -163,6 +163,53 @@ export default function Dashboard() {
   const selectedComp = assignedComps.find(c => c.id === selectedCompId);
   const hasChiefForSelected = selectedComp?.hasChiefAssignment ?? false;
 
+  // Fetch active scoring sub-event for selected competition
+  const { data: selectedCompData } = useQuery({
+    queryKey: ["comp-active-scoring", selectedCompId],
+    enabled: !!selectedCompId && isJudgeRole,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("competitions")
+        .select("active_scoring_sub_event_id")
+        .eq("id", selectedCompId)
+        .single();
+      return data;
+    },
+  });
+
+  // Fetch assigned sub-events with level info for the selected competition
+  const { data: assignedSubEvents } = useQuery({
+    queryKey: ["judge-assigned-sub-events", effectiveUserId, selectedCompId],
+    enabled: !!effectiveUserId && !!selectedCompId && isJudgeRole,
+    queryFn: async () => {
+      // Get assignments for user
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("sub_event_id")
+        .eq("user_id", effectiveUserId!);
+      if (!assignments?.length) return [];
+
+      const seIds = assignments.map(a => a.sub_event_id);
+
+      // Get sub-events with level info
+      const { data: subEvents } = await supabase
+        .from("sub_events")
+        .select("id, name, level_id, competition_levels!inner(id, name, competition_id)")
+        .in("id", seIds);
+
+      // Filter to selected competition
+      return (subEvents || []).filter(
+        (se: any) => se.competition_levels?.competition_id === selectedCompId
+      ).map((se: any) => ({
+        id: se.id,
+        name: se.name,
+        levelName: se.competition_levels?.name || "",
+      }));
+    },
+  });
+
+  const activeScoringSubEventId = selectedCompData?.active_scoring_sub_event_id;
+
   const cards = useMemo(() => {
     if (isJudgeRole && selectedCompId) {
       return buildJudgeCards(selectedCompId, hasChiefForSelected);
