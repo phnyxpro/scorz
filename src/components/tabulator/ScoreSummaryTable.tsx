@@ -11,6 +11,7 @@ interface Props {
   contestantName: (id: string) => string;
   contestantUserId?: (id: string) => string | undefined;
   rubricNames: string[];
+  indexToName?: Record<string, string>;
   scoringMethod?: string;
 }
 
