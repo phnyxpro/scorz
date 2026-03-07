@@ -18,7 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft } from "lucide-react";
+import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft, MessageSquare } from "lucide-react";
+import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { PublicRubric } from "@/components/public/PublicRubric";
@@ -44,6 +46,8 @@ export default function JudgeScoring() {
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const unreadCount = useChatUnreadCount(competitionId);
 
   // Use active scoring config if available
   useEffect(() => {
@@ -431,6 +435,14 @@ export default function JudgeScoring() {
               {isMobile && swipeHintVisible && selectedContestant && filteredContestants.length > 1 && (
                 <span className="text-[10px] text-muted-foreground/60 font-mono">Swipe ← →</span>
               )}
+              <Button variant="ghost" size="icon" className="relative shrink-0" onClick={() => setShowChatModal(true)}>
+                <MessageSquare className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Button>
             </div>
           </div>
 
@@ -626,6 +638,17 @@ export default function JudgeScoring() {
               {certifyAllPending ? "Certifying…" : "Certify All Scorecards"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Event Chat</DialogTitle>
+            <DialogDescription>Chat with competition staff</DialogDescription>
+          </DialogHeader>
+          {competitionId && <EventChat competitionId={competitionId} />}
         </DialogContent>
       </Dialog>
     </div>
