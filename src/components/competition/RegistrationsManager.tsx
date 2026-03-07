@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { BulkUploadDialog } from "./BulkUploadDialog";
+import { getAgeCategoryLabel } from "@/lib/age-categories";
 import {
   DndContext,
   closestCenter,
