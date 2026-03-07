@@ -210,7 +210,7 @@ export default function Dashboard() {
 
   // Fetch assigned sub-events with level info for the selected competition
   const { data: assignedSubEvents } = useQuery({
-    queryKey: ["judge-assigned-sub-events", effectiveUserId, selectedCompId],
+    queryKey: ["judge-assigned-sub-events", effectiveUserId, effectiveEmail, selectedCompId],
     enabled: !!effectiveUserId && !!selectedCompId && isJudgeRole,
     queryFn: async () => {
       // Get assignments for user
@@ -218,9 +218,29 @@ export default function Dashboard() {
         .from("sub_event_assignments")
         .select("sub_event_id")
         .eq("user_id", effectiveUserId!);
-      if (!assignments?.length) return [];
 
-      const seIds = assignments.map(a => a.sub_event_id);
+      let seIds: string[] = [];
+
+      if (assignments && assignments.length > 0) {
+        seIds = assignments.map(a => a.sub_event_id);
+      } else if (effectiveEmail) {
+        // Fall back to pending invitations
+        const { data: invites } = await supabase
+          .from("staff_invitations")
+          .select("id")
+          .ilike("email", effectiveEmail)
+          .is("accepted_at", null);
+
+        if (invites?.length) {
+          const { data: invSubEvents } = await supabase
+            .from("staff_invitation_sub_events")
+            .select("sub_event_id")
+            .in("staff_invitation_id", invites.map(i => i.id));
+          seIds = (invSubEvents || []).map(s => s.sub_event_id);
+        }
+      }
+
+      if (!seIds.length) return [];
 
       // Get sub-events with level info
       const { data: subEvents } = await supabase
