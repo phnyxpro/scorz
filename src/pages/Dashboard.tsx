@@ -56,7 +56,7 @@ interface AssignedCompetition {
   hasChiefAssignment: boolean;
 }
 
-function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolean) {
+function useAssignedCompetitions(userId: string | undefined, userEmail: string | undefined, isJudgeRole: boolean) {
   const [competitions, setCompetitions] = useState<AssignedCompetition[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -70,10 +70,40 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
         .select("sub_event_id, is_chief")
         .eq("user_id", userId);
 
-      if (!assignments?.length) { setLoading(false); return; }
+      let subEventIds: string[] = [];
+      let chiefSubEventIds = new Set<string>();
 
-      const subEventIds = assignments.map(a => a.sub_event_id);
-      const chiefSubEventIds = new Set(assignments.filter((a: any) => a.is_chief).map(a => a.sub_event_id));
+      if (assignments && assignments.length > 0) {
+        subEventIds = assignments.map(a => a.sub_event_id);
+        chiefSubEventIds = new Set(assignments.filter((a: any) => a.is_chief).map(a => a.sub_event_id));
+      } else if (userEmail) {
+        // Fall back to pending staff_invitations
+        const { data: invites } = await supabase
+          .from("staff_invitations")
+          .select("id, is_chief, role")
+          .ilike("email", userEmail)
+          .is("accepted_at", null);
+
+        if (!invites?.length) { setLoading(false); return; }
+
+        const inviteIds = invites.map(i => i.id);
+
+        // Get sub-event mappings from staff_invitation_sub_events
+        const { data: invSubEvents } = await supabase
+          .from("staff_invitation_sub_events")
+          .select("sub_event_id, staff_invitation_id")
+          .in("staff_invitation_id", inviteIds);
+
+        if (!invSubEvents?.length) { setLoading(false); return; }
+
+        subEventIds = invSubEvents.map(s => s.sub_event_id);
+        const chiefInviteIds = new Set(invites.filter(i => i.is_chief).map(i => i.id));
+        chiefSubEventIds = new Set(
+          invSubEvents.filter(s => chiefInviteIds.has(s.staff_invitation_id)).map(s => s.sub_event_id)
+        );
+      }
+
+      if (!subEventIds.length) { setLoading(false); return; }
 
       // Get level IDs from sub-events
       const { data: subEvents } = await supabase
@@ -116,7 +146,7 @@ function useAssignedCompetitions(userId: string | undefined, isJudgeRole: boolea
       setCompetitions((comps || []).map(c => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
       setLoading(false);
     })();
-  }, [userId, isJudgeRole]);
+  }, [userId, userEmail, isJudgeRole]);
 
   return { competitions, loading };
 }
