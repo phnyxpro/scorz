@@ -255,6 +255,14 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
         levels={levels || []}
         subEvents={(allSubEvents || []).map(se => ({ id: se.id, name: se.name, level_id: se.level_id, status: se.status }))}
       />
+
+      {/* PDF Score Card Export */}
+      <ScoreCardExportSection
+        competitionId={competitionId}
+        competitionName={competition?.name || ""}
+        levels={levels || []}
+        subEvents={(allSubEvents || []).map(se => ({ id: se.id, name: se.name, level_id: se.level_id, status: se.status }))}
+      />
     </div>
   );
 }
