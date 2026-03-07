@@ -1,47 +1,31 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Problem
 
-The app appears blank in headless browser testing due to two compounding issues:
+Masquerade mode only swaps the **roles** displayed in the UI — it does not swap the **user identity** used by data-fetching hooks. The Dashboard has two issues:
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+1. **Welcome message** (line 183): Uses `user.user_metadata.full_name` which is the real logged-in user (Stefan), not the masquerade target (Shivanee).
+2. **Data queries**: `useAssignedCompetitions` (line 146) and `useDashboardStats` both use `user.id` — the real user's ID — so the dashboard shows Stefan's assignments and stats, not Shivanee's.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+The masquerade feature is client-side only (no session swap), so the fix is to thread the masquerade target's identity through the Dashboard UI and queries.
 
----
+## Plan
 
-### Fix 1: Conditionally apply auditorium filter
+### 1. Update Dashboard welcome message
 
-**File: `src/contexts/ThemeContext.tsx`**
+Use `masquerade.fullName` when masquerading, falling back to `user.user_metadata.full_name` otherwise.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+### 2. Update `useAssignedCompetitions` to accept a `userId` parameter
 
-### Fix 2: Remove filter class when at defaults
+Instead of always using `user?.id`, pass the effective user ID:
+- Normal mode: `user.id`
+- Masquerade mode: `masquerade.userId`
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+### 3. Update `useDashboardStats` to use the effective user ID
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+Same pattern — accept or derive the effective user ID from masquerade context. Queries that filter by `user.id` (judge assignments, uncertified scores, contestant registrations) should use `masquerade.userId` when masquerading.
 
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+- `src/pages/Dashboard.tsx` — use masquerade identity for welcome text and pass effective userId to hooks
+- `src/hooks/useDashboardStats.ts` — accept effective userId parameter, use it in queries
 
