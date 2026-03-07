@@ -458,24 +458,35 @@ export default function JudgeScoring() {
               )}
 
               {!isCertified && (
-                <div className="flex gap-2">
-                  <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
-                    <Save className="h-4 w-4 mr-1" />
-                    {upsert.isPending ? "Saving…" : "Save Draft"}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (!existingScore?.id) {
-                        toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
-                        return;
-                      }
-                      setShowCertifyDialog(true);
-                    }}
-                    disabled={!allScored || !existingScore?.id}
-                    className="flex-1"
-                  >
-                    <Lock className="h-4 w-4 mr-1" /> Certify & Lock
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                      <Save className="h-4 w-4 mr-1" />
+                      {upsert.isPending ? "Saving…" : "Save Draft"}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (!existingScore?.id) {
+                          toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
+                          return;
+                        }
+                        setShowCertifyDialog(true);
+                      }}
+                      disabled={!allScored || !existingScore?.id}
+                      className="flex-1"
+                    >
+                      <Lock className="h-4 w-4 mr-1" /> Certify & Lock
+                    </Button>
+                  </div>
+                  {allContestantsDrafted && (
+                    <Button
+                      onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyAllDialog(true); }}
+                      variant="secondary"
+                      className="w-full"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" /> Certify All Results
+                    </Button>
+                  )}
                 </div>
               )}
             </motion.div>
