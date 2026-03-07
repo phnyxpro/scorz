@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
@@ -92,9 +92,12 @@ export default function JudgeScoring() {
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
+  const [showCertifyAllDialog, setShowCertifyAllDialog] = useState(false);
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
+  const [certifyAllPending, setCertifyAllPending] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
@@ -179,6 +182,48 @@ export default function JudgeScoring() {
   };
 
   const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
+
+  // Debounced auto-save when scores change
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+  useEffect(() => {
+    if (!allScored || isCertified || !selectedContestant || !subEventId) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSaveRef.current();
+    }, 1200);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [scores, allScored, isCertified, selectedContestant, subEventId]);
+
+  // Check if all contestants have drafts (scored but not all certified)
+  const allContestantsDrafted = useMemo(() => {
+    if (!filteredContestants.length || !myScores?.length) return false;
+    const hasUncertified = filteredContestants.some(r => scoreStatusMap.get(r.id) === "scored");
+    if (!hasUncertified) return false;
+    return filteredContestants.every(r => scoreStatusMap.has(r.id));
+  }, [filteredContestants, myScores, scoreStatusMap]);
+
+  const handleCertifyAll = async () => {
+    if (!signature || !certifyConfirmed || !myScores) return;
+    setCertifyAllPending(true);
+    try {
+      const uncertified = myScores.filter(s => !s.is_certified);
+      for (const score of uncertified) {
+        await certify.mutateAsync({
+          id: score.id,
+          judge_signature: signature,
+          sub_event_id: score.sub_event_id,
+          contestant_registration_id: score.contestant_registration_id,
+        });
+      }
+      setShowCertifyAllDialog(false);
+      toast({ title: "All scorecards certified" });
+    } catch (err: any) {
+      toast({ title: "Error certifying", description: err.message, variant: "destructive" });
+    } finally {
+      setCertifyAllPending(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -413,24 +458,35 @@ export default function JudgeScoring() {
               )}
 
               {!isCertified && (
-                <div className="flex gap-2">
-                  <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
-                    <Save className="h-4 w-4 mr-1" />
-                    {upsert.isPending ? "Saving…" : "Save Draft"}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (!existingScore?.id) {
-                        toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
-                        return;
-                      }
-                      setShowCertifyDialog(true);
-                    }}
-                    disabled={!allScored || !existingScore?.id}
-                    className="flex-1"
-                  >
-                    <Lock className="h-4 w-4 mr-1" /> Certify & Lock
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                      <Save className="h-4 w-4 mr-1" />
+                      {upsert.isPending ? "Saving…" : "Save Draft"}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (!existingScore?.id) {
+                          toast({ title: "Save first", description: "Save your scores before certifying", variant: "destructive" });
+                          return;
+                        }
+                        setShowCertifyDialog(true);
+                      }}
+                      disabled={!allScored || !existingScore?.id}
+                      className="flex-1"
+                    >
+                      <Lock className="h-4 w-4 mr-1" /> Certify & Lock
+                    </Button>
+                  </div>
+                  {allContestantsDrafted && (
+                    <Button
+                      onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyAllDialog(true); }}
+                      variant="secondary"
+                      className="w-full"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" /> Certify All Results
+                    </Button>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -473,6 +529,40 @@ export default function JudgeScoring() {
             <Button onClick={handleCertify} disabled={!signature || !certifyConfirmed || certify.isPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certify.isPending ? "Certifying…" : "Certify Scorecard"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Certify All Dialog */}
+      <Dialog open={showCertifyAllDialog} onOpenChange={(open) => { setShowCertifyAllDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Certify All Scorecards</DialogTitle>
+            <DialogDescription>
+              Sign once to certify all {myScores?.filter(s => !s.is_certified).length ?? 0} remaining scorecards. This action is irreversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground">
+                By signing, you confirm that all scores across all contestants are accurate and final.
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-all-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-all-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed all scores for every contestant and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
+            <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
+            <Button onClick={handleCertifyAll} disabled={!signature || !certifyConfirmed || certifyAllPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" />
+              {certifyAllPending ? "Certifying…" : "Certify All Scorecards"}
             </Button>
           </div>
         </DialogContent>

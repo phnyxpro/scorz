@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Eraser, Check, PenTool, Type } from "lucide-react";
+import { Eraser, PenTool, Type } from "lucide-react";
 
 interface SignaturePadProps {
   onSignature: (dataUrl: string) => void;
@@ -148,8 +148,12 @@ export function SignaturePad({
     onSignature("");
   };
 
-  const confirmTyped = () => {
-    if (!typedName.trim()) return;
+  // Auto-emit typed signature whenever typedName changes
+  useEffect(() => {
+    if (!typedName.trim()) {
+      onSignature("");
+      return;
+    }
     const canvas = document.createElement("canvas");
     const w = 400;
     const h = 120;
@@ -158,7 +162,6 @@ export function SignaturePad({
     const ctx = canvas.getContext("2d")!;
     ctx.scale(2, 2);
 
-    // Render typed name in cursive
     ctx.fillStyle = "hsl(220, 25%, 10%)";
     ctx.font = "36px 'Dancing Script', cursive";
     ctx.textBaseline = "middle";
@@ -166,7 +169,7 @@ export function SignaturePad({
     ctx.fillText(typedName, w / 2, h / 2);
 
     onSignature(stampSignature(canvas, signerRole));
-  };
+  }, [typedName, signerRole]);
 
   return (
     <div className="space-y-2">
@@ -229,15 +232,6 @@ export function SignaturePad({
               </span>
             </div>
           )}
-          <Button
-            type="button"
-            onClick={confirmTyped}
-            disabled={!typedName.trim()}
-            size="sm"
-            className="w-full gap-1.5"
-          >
-            <Check className="h-3.5 w-3.5" /> Confirm Signature
-          </Button>
         </TabsContent>
       </Tabs>
 
