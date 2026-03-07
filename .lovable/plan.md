@@ -1,47 +1,23 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Problem
 
-The app appears blank in headless browser testing due to two compounding issues:
+The Judging Hub (`/judging`) uses `useCompetitions()` which fetches **all** competitions from the database. Staff roles like tabulators and judges should only see competitions they are assigned to via `sub_event_assignments`. The existing `useStaffView` hook already solves this — it returns `assignedCompetitions` filtered by the user's assignments.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+## Plan
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Update `JudgingHubContent` to scope competitions by role
 
----
+In `src/pages/JudgingHub.tsx`:
 
-### Fix 1: Conditionally apply auditorium filter
+1. Import `useAuth` and `useStaffView`
+2. Check if the user has an admin or organizer role using `hasRole()`
+3. **If admin/organizer**: continue using `useCompetitions()` (see all competitions)
+4. **If judge/tabulator (staff)**: use `useStaffView()` and show only `assignedCompetitions`
+5. Merge the two loading states and pass the correct competition list to the existing filtering/rendering logic
 
-**File: `src/contexts/ThemeContext.tsx`**
+The change is isolated to `JudgingHubContent` — roughly 10 lines of logic at the top of the component. No database or RLS changes needed.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### File changed
+- `src/pages/JudgingHub.tsx`
 
