@@ -156,6 +156,7 @@ const SELECTED_COMP_KEY = "scorz_selected_competition";
 export default function Dashboard() {
   const { user, roles, hasRole, masquerade, isMasquerading } = useAuth();
   const effectiveUserId = isMasquerading ? masquerade?.userId : user?.id;
+  const effectiveEmail = isMasquerading ? masquerade?.email : user?.email;
   const { stats, loading: statsLoading } = useDashboardStats(effectiveUserId);
   const isAdmin = hasRole("admin");
   const isTabulator = hasRole("tabulator");
