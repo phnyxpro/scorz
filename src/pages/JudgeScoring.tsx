@@ -7,7 +7,7 @@ import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, 
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
 import { ReadOnlyTimer } from "@/components/scoring/ReadOnlyTimer";
-import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
+import { usePerformanceDurations, useDurationsRealtime, getAvgDuration, useLatestTimerEvent, useTimerEventsRealtime } from "@/hooks/usePerformanceTimer";
 import { CriterionSlider } from "@/components/scoring/CriterionSlider";
 import { SpeechComments } from "@/components/scoring/SpeechComments";
 import { SignaturePad } from "@/components/registration/SignaturePad";
@@ -72,6 +72,21 @@ export default function JudgeScoring() {
   const { data: myScores } = useMyScores(subEventId || undefined);
   const { data: perfDurations } = usePerformanceDurations(subEventId || undefined);
   useDurationsRealtime(subEventId || undefined);
+  const { data: latestTimerEvent } = useLatestTimerEvent(subEventId || undefined);
+  useTimerEventsRealtime(subEventId || undefined);
+
+  // Auto-sync on-stage contestant from tabulator broadcast
+  useEffect(() => {
+    if (!latestTimerEvent) return;
+    const { event_type, contestant_registration_id } = latestTimerEvent;
+    if (event_type === "on_stage" || event_type === "start") {
+      setOnStageContestant(contestant_registration_id);
+      setIsLive(event_type === "start");
+    } else if (event_type === "off_stage" || event_type === "stop") {
+      if (event_type === "off_stage") setOnStageContestant(null);
+      setIsLive(false);
+    }
+  }, [latestTimerEvent?.id]);
 
   // Build lookup: contestant_registration_id -> score status
   const scoreStatusMap = useMemo(() => {
@@ -96,6 +111,7 @@ export default function JudgeScoring() {
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
+  const [isLive, setIsLive] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autoSaveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [certifyAllPending, setCertifyAllPending] = useState(false);
@@ -323,31 +339,23 @@ export default function JudgeScoring() {
                         "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
                         selectedContestant === r.id
                           ? "bg-primary/10 text-primary font-medium"
-                          : "text-foreground/80 hover:bg-muted/50"
+                          : "text-foreground/80 hover:bg-muted/50",
+                        onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
                       )}
                     >
                       <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
                         {idx + 1}
                       </span>
                       <span className="truncate text-xs flex-1">{r.full_name}</span>
+                      {onStageContestant === r.id && (
+                        <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                      )}
                       {scoreStatusMap.get(r.id) === "certified" && (
                         <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
                       )}
                       {scoreStatusMap.get(r.id) === "scored" && (
                         <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       )}
-                    </button>
-                    <button
-                      onClick={() => setOnStageContestant(onStageContestant === r.id ? null : r.id)}
-                      className={cn(
-                        "h-6 w-6 rounded flex items-center justify-center transition-colors shrink-0",
-                        onStageContestant === r.id
-                          ? "bg-red-500/30 text-red-600 ring-1 ring-red-500/50"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                      )}
-                      title="On Stage"
-                    >
-                      <span className="h-2 w-2 rounded-full bg-current"></span>
                     </button>
                   </div>
                 ))}
@@ -402,10 +410,16 @@ export default function JudgeScoring() {
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {onStageContestant === selectedContestant && (
-                <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                  <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+              {onStageContestant === selectedContestant && selectedContestant && (
+                <Badge variant="outline" className="shrink-0 gap-1 border-secondary/50 text-secondary">
+                  <span className="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
                   On Stage
+                </Badge>
+              )}
+              {isLive && onStageContestant === selectedContestant && (
+                <Badge variant="default" className="shrink-0 gap-1 bg-destructive/20 text-destructive border border-destructive/30">
+                  <span className="h-2 w-2 rounded-full bg-destructive animate-pulse"></span>
+                  LIVE
                 </Badge>
               )}
             {selectedContestantName && (

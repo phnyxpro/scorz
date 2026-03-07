@@ -16,6 +16,7 @@ import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
+import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
 import { TabulatorTimer } from "@/components/scoring/TabulatorTimer";
@@ -128,10 +129,12 @@ function SubEventWorkspace({
   const { data: chiefCert } = useCertification(subEventId);
   const { data: tabCert } = useTabulatorCertification(subEventId);
   const { data: witnessCert } = useWitnessCertification(subEventId);
+  const { data: perfDurations } = usePerformanceDurations(subEventId);
   useJudgeScoresRealtime(subEventId);
   useCertificationRealtime(subEventId);
   useTabulatorCertificationRealtime(subEventId);
   useWitnessCertificationRealtime(subEventId);
+  useDurationsRealtime(subEventId);
 
   const upsertTab = useUpsertTabulatorCert();
   const certifyTab = useCertifyTabulator();
@@ -273,6 +276,7 @@ function SubEventWorkspace({
                 contestantUserId={contestantUserId}
                 rubricNames={rubricNames}
                 indexToName={indexToName}
+                durations={perfDurations}
               />
             </CardContent>
           </Card>
@@ -290,6 +294,7 @@ function SubEventWorkspace({
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
                     judgeProfiles={judgeProfiles}
+                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, regId) : undefined}
                   />
                 </CardContent>
               </Card>

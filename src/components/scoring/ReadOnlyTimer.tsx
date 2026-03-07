@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Timer, User } from "lucide-react";
+import { Timer, User, Radio } from "lucide-react";
 import { useLatestTimerEvent, useTimerEventsRealtime } from "@/hooks/usePerformanceTimer";
 
 interface ReadOnlyTimerProps {
@@ -25,10 +25,10 @@ export function ReadOnlyTimer({
   const startTimeRef = useRef<number>(0);
 
   const isRunning = latestEvent?.event_type === "start";
+  const isOnStage = latestEvent?.event_type === "on_stage" || latestEvent?.event_type === "start";
   const contestantRegId = latestEvent?.contestant_registration_id;
   const name = contestantRegId && contestantName ? contestantName(contestantRegId) : null;
 
-  // When a start event comes in, begin local counting from its elapsed_seconds
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -48,9 +48,11 @@ export function ReadOnlyTimer({
       intervalRef.current = setInterval(() => {
         setDisplayElapsed((Date.now() - startTimeRef.current) / 1000);
       }, 100);
-    } else {
-      // stopped - show final elapsed
+    } else if (latestEvent.event_type === "stop") {
       setDisplayElapsed(Number(latestEvent.elapsed_seconds) || 0);
+    } else {
+      // on_stage or off_stage — reset display
+      setDisplayElapsed(0);
     }
 
     return () => {
@@ -58,7 +60,7 @@ export function ReadOnlyTimer({
     };
   }, [latestEvent?.id, latestEvent?.event_type]);
 
-  if (!latestEvent) return null;
+  if (!latestEvent || latestEvent.event_type === "off_stage") return null;
 
   const graceStart = timeLimitSeconds;
   const penaltyStart = timeLimitSeconds + gracePeriodSeconds;
@@ -92,9 +94,15 @@ export function ReadOnlyTimer({
               <User className="h-3 w-3" />
               {name}
             </Badge>
+            {isOnStage && !isRunning && (
+              <Badge variant="outline" className="gap-1 border-secondary/50 text-secondary text-[10px]">
+                <Radio className="h-2.5 w-2.5" />
+                On Stage
+              </Badge>
+            )}
             {isRunning && (
-              <Badge variant="default" className="gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
+              <Badge variant="default" className="gap-1 bg-destructive/20 text-destructive border border-destructive/30">
+                <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
                 LIVE
               </Badge>
             )}

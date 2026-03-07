@@ -88,7 +88,7 @@ export function useInsertTimerEvent() {
       sub_event_id: string;
       contestant_registration_id: string;
       tabulator_id: string;
-      event_type: "start" | "stop";
+      event_type: "start" | "stop" | "on_stage" | "off_stage";
       elapsed_seconds: number;
     }) => {
       const { error } = await supabase
