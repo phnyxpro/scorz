@@ -400,7 +400,9 @@ export function RegistrationsManager({ competitionId }: Props) {
     let list = [...registrations];
 
     // Sub-event tab filter
-    if (activeSubEventTab !== "all") {
+    if (activeSubEventTab === "unassigned") {
+      list = list.filter((r) => !r.sub_event_id);
+    } else if (activeSubEventTab !== "all") {
       list = list.filter((r) => r.sub_event_id === activeSubEventTab);
     }
 
