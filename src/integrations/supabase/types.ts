@@ -462,6 +462,9 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          registration_enabled: boolean
+          registration_end_at: string | null
+          registration_start_at: string | null
           rubric_content: string | null
           rubric_document_url: string | null
           rubric_scale_labels: Json
@@ -492,6 +495,9 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          registration_enabled?: boolean
+          registration_end_at?: string | null
+          registration_start_at?: string | null
           rubric_content?: string | null
           rubric_document_url?: string | null
           rubric_scale_labels?: Json
@@ -522,6 +528,9 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          registration_enabled?: boolean
+          registration_end_at?: string | null
+          registration_start_at?: string | null
           rubric_content?: string | null
           rubric_document_url?: string | null
           rubric_scale_labels?: Json
