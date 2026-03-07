@@ -103,10 +103,11 @@ function useJudgingOverview(competitionId: string | undefined) {
 
 /* ─── Sub-event Workspace ─── */
 function SubEventWorkspace({
-  subEventId, competitionId, registrations, rubricNames, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
+  subEventId, competitionId, registrations, rubricNames, indexToName, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
 }: {
   subEventId: string; competitionId: string;
   registrations: any[]; rubricNames: string[];
+  indexToName: Record<string, string>;
   onOpenChat: () => void; unreadCount: number;
   onContestantChange: (id: string) => void;
 }) {
@@ -271,6 +272,7 @@ function SubEventWorkspace({
                 contestantName={contestantName}
                 contestantUserId={contestantUserId}
                 rubricNames={rubricNames}
+                indexToName={indexToName}
               />
             </CardContent>
           </Card>
@@ -284,6 +286,7 @@ function SubEventWorkspace({
                   <SideBySideScores
                     scores={scores}
                     rubricNames={rubricNames}
+                    indexToName={indexToName}
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
                     judgeProfiles={judgeProfiles}
@@ -457,6 +460,12 @@ export default function TabulatorDashboard() {
   const rubricNames = useMemo(
     () => (overview?.rubric || []).map((r: any) => r.name), [overview?.rubric]
   );
+
+  const indexToName = useMemo(() => {
+    const m: Record<string, string> = {};
+    (overview?.rubric || []).forEach((r: any, i: number) => { m[String(i)] = r.name; });
+    return m;
+  }, [overview?.rubric]);
 
   const unreadCount = useChatUnreadCount(selectedCompId || "");
 
@@ -701,6 +710,7 @@ export default function TabulatorDashboard() {
                                                             <SideBySideScores
                                                               scores={cScores.map((s) => ({ ...s, judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…" })) as any}
                                                               rubricNames={rubricNames}
+                                                              indexToName={indexToName}
                                                               contestantName={c.full_name}
                                                               contestantUserId={c.user_id}
                                                             />
@@ -748,6 +758,7 @@ export default function TabulatorDashboard() {
             competitionId={selectedCompId}
             registrations={overview.registrations}
             rubricNames={rubricNames}
+            indexToName={indexToName}
             onOpenChat={() => setShowChatModal(true)}
             unreadCount={unreadCount}
             onContestantChange={setOnStageContestantId}

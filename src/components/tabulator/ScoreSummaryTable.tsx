@@ -11,10 +11,11 @@ interface Props {
   contestantName: (id: string) => string;
   contestantUserId?: (id: string) => string | undefined;
   rubricNames: string[];
+  indexToName?: Record<string, string>;
   scoringMethod?: string;
 }
 
-export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, scoringMethod = "olympic" }: Props) {
+export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, indexToName = {}, scoringMethod = "olympic" }: Props) {
   const rows = useMemo(() => {
     return Object.entries(scoresByContestant)
       .map(([regId, scores]) => {
@@ -28,7 +29,8 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
           for (const s of scores) {
             const cs = s.criterion_scores as Record<string, number>;
             for (const [k, v] of Object.entries(cs)) {
-              criterionAvgs[k] = (criterionAvgs[k] || 0) + v;
+              const name = indexToName[k] ?? k;
+              criterionAvgs[name] = (criterionAvgs[name] || 0) + v;
             }
           }
           for (const k of Object.keys(criterionAvgs)) {
