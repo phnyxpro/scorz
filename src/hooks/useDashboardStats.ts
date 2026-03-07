@@ -8,13 +8,14 @@ export interface DashboardStat {
   to: string;
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(effectiveUserId?: string) {
   const { user, roles } = useAuth();
+  const uid = effectiveUserId || user?.id;
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
-    if (!user) {
+    if (!uid) {
       setStats([]);
       setLoading(false);
       return;
