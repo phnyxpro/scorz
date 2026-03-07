@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Award } from "lucide-react";
+import { friendlyDisplayName } from "@/lib/utils";
 
 export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
   const { data } = useQuery({
