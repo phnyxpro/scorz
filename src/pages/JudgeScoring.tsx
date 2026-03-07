@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
-import { useRegistrations } from "@/hooks/useRegistrations";
+import { useRegistrations, useRegistrationsRealtime } from "@/hooks/useRegistrations";
 import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { PerformanceTimer } from "@/components/scoring/PerformanceTimer";
@@ -38,6 +38,7 @@ export default function JudgeScoring() {
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  useRegistrationsRealtime(competitionId);
   const { data: myAssignments } = useMyAssignedSubEvents("judge");
 
   const [selectedLevelId, setSelectedLevelId] = useState("");

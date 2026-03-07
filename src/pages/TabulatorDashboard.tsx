@@ -7,8 +7,9 @@ import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } f
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
 import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWitnessCertificationRealtime } from "@/hooks/useWitness";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
@@ -68,8 +69,9 @@ function useJudgingOverview(competitionId: string | undefined) {
 
       const { data: registrations, error: re } = subEventIds.length
         ? await supabase.from("contestant_registrations")
-            .select("id, full_name, sub_event_id, status, competition_id, user_id")
+            .select("id, full_name, sub_event_id, status, competition_id, user_id, sort_order")
             .eq("competition_id", competitionId!).neq("status", "rejected")
+            .order("sort_order", { ascending: true })
         : { data: [] as any[], error: null };
       if (re) throw re;
 
@@ -110,7 +112,7 @@ function SubEventWorkspace({
   const { data: penalties } = usePenaltyRules(competitionId);
 
    const [performanceDuration, setPerformanceDuration] = useState(0);
-   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected"), [registrations, subEventId]);
+   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected").sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)), [registrations, subEventId]);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [certifyMode, setCertifyMode] = useState<"tabulator" | "witness">("tabulator");
   const [signature, setSignature] = useState("");
@@ -413,6 +415,7 @@ export default function TabulatorDashboard() {
   const [onStageContestantId, setOnStageContestantId] = useState("");
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
+  useRegistrationsRealtime(selectedCompId || undefined);
 
   const filteredComps = useMemo(() => {
     if (!searchQuery.trim()) return activeComps;
