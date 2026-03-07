@@ -31,3 +31,5 @@ project_id = "dwcdxofvxsmpbziosvbo"
     verify_jwt = false
   [functions.notify-admin-activity]
     verify_jwt = false
+  [functions.notify-scoring-events]
+    verify_jwt = false

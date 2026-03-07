@@ -158,7 +158,7 @@ export function useCertifyScore() {
 
       // Notify scoring events — judge certified
       supabase.functions.invoke("notify-scoring-events", {
-        body: { type: "judge_certified", sub_event_id: v.sub_event_id, judge_id: v.id ? undefined : undefined },
+        body: { type: "judge_certified", sub_event_id: v.sub_event_id },
       }).catch(() => {});
     },
     onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
