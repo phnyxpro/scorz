@@ -68,6 +68,16 @@ export interface PenaltyRule {
   penalty_points: number;
 }
 
+export interface Infraction {
+  id: string;
+  competition_id: string;
+  category: "penalty" | "disqualification";
+  title: string;
+  description: string | null;
+  penalty_points: number;
+  sort_order: number;
+}
+
 export function useCompetitions() {
   return useQuery({
     queryKey: ["competitions"],
@@ -207,6 +217,18 @@ export function usePenaltyRules(competitionId: string | undefined) {
   });
 }
 
+const DEFAULT_INFRACTIONS: Omit<Infraction, "id" | "competition_id">[] = [
+  { category: "penalty", title: "Using Props", description: "The use of props is not allowed, and doing so will result in a point deduction from the final score.", penalty_points: 20, sort_order: 0 },
+  { category: "penalty", title: "Using Music or Instruments", description: "Using pre-recorded audio or live instruments will result in a point deduction. Beatboxing or using your body to create rhythm is allowed.", penalty_points: 20, sort_order: 1 },
+  { category: "penalty", title: "Unauthorized Assistance", description: "Receiving assistance from anyone on or off stage (unless it's an approved translator or natural crowd call-and-response) will result in a point deduction.", penalty_points: 20, sort_order: 2 },
+  { category: "penalty", title: "Late Arrival", description: "Arriving more than 20 minutes past the communicated call time without a verifiable extenuating circumstance will result in a point deduction.", penalty_points: 5, sort_order: 3 },
+  { category: "disqualification", title: "Plagiarism or AI Use", description: "Performers who plagiarize, have a poem composed for them, or use generative AI to craft their poems will be disqualified. This can be enforced retroactively.", penalty_points: 0, sort_order: 0 },
+  { category: "disqualification", title: "Reusing Poems at Finals", description: "Performing a poem that is not new, has been used in a previous round, or was entered into any prior competition will result in disqualification.", penalty_points: 0, sort_order: 1 },
+  { category: "disqualification", title: "Prohibited Content", description: "Using hate speech, discriminatory, defamatory, or obscene language may result in disqualification after a review.", penalty_points: 0, sort_order: 2 },
+  { category: "disqualification", title: "Skipping the Photoshoot", description: "Finalists who fail to participate in the mandatory photoshoot without an adequate reason will be disqualified for breaching the terms of agreement.", penalty_points: 0, sort_order: 3 },
+  { category: "disqualification", title: "No-Shows", description: "If the live event or broadcast recording begins and a performer is not present, they forfeit their spot and will be replaced by a standby poet.", penalty_points: 0, sort_order: 4 },
+];
+
 export function useCreateCompetition() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -220,6 +242,14 @@ export function useCreateCompetition() {
         .select()
         .single();
       if (error) throw error;
+
+      // Seed default infractions
+      const infractions = DEFAULT_INFRACTIONS.map(inf => ({
+        ...inf,
+        competition_id: data.id,
+      }));
+      await supabase.from("competition_infractions").insert(infractions);
+
       return data;
     },
     onSuccess: () => {
@@ -255,7 +285,7 @@ export function useUpdateActiveScoringConfig() {
         .update({ 
           active_scoring_level_id: levelId,
           active_scoring_sub_event_id: subEventId 
-        } as any)
+        })
         .eq("id", competitionId);
       if (error) throw error;
     },
@@ -391,6 +421,55 @@ export function useDeleteRubricCriterion() {
     onSuccess: (cid) => {
       qc.invalidateQueries({ queryKey: ["rubric_criteria", cid] });
       toast({ title: "Criterion deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+// Infraction hooks
+export function useInfractions(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["infractions", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_infractions")
+        .select("*")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data as Infraction[];
+    },
+  });
+}
+
+export function useCreateInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Omit<Infraction, "id">) => {
+      const { data, error } = await supabase.from("competition_infractions").insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["infractions", v.competition_id] });
+      toast({ title: "Infraction rule added" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useDeleteInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, competition_id }: { id: string; competition_id: string }) => {
+      const { error } = await supabase.from("competition_infractions").delete().eq("id", id);
+      if (error) throw error;
+      return competition_id;
+    },
+    onSuccess: (cid) => {
+      qc.invalidateQueries({ queryKey: ["infractions", cid] });
+      toast({ title: "Infraction rule deleted" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

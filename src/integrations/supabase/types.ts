@@ -280,6 +280,50 @@ export type Database = {
           },
         ]
       }
+      competition_infractions: {
+        Row: {
+          category: string
+          competition_id: string
+          created_at: string
+          description: string | null
+          id: string
+          penalty_points: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          competition_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          penalty_points?: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          competition_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          penalty_points?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_infractions_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_levels: {
         Row: {
           banner_url: string | null
@@ -405,6 +449,8 @@ export type Database = {
       }
       competitions: {
         Row: {
+          active_scoring_level_id: string | null
+          active_scoring_sub_event_id: string | null
           banner_url: string | null
           branding_accent_color: string | null
           branding_font: string | null
@@ -433,6 +479,8 @@ export type Database = {
           white_label: boolean
         }
         Insert: {
+          active_scoring_level_id?: string | null
+          active_scoring_sub_event_id?: string | null
           banner_url?: string | null
           branding_accent_color?: string | null
           branding_font?: string | null
@@ -461,6 +509,8 @@ export type Database = {
           white_label?: boolean
         }
         Update: {
+          active_scoring_level_id?: string | null
+          active_scoring_sub_event_id?: string | null
           banner_url?: string | null
           branding_accent_color?: string | null
           branding_font?: string | null
@@ -488,7 +538,22 @@ export type Database = {
           voting_enabled?: boolean
           white_label?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitions_active_scoring_level_id_fkey"
+            columns: ["active_scoring_level_id"]
+            isOneToOne: false
+            referencedRelation: "competition_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_active_scoring_sub_event_id_fkey"
+            columns: ["active_scoring_sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contestant_registrations: {
         Row: {
@@ -1097,6 +1162,102 @@ export type Database = {
           },
         ]
       }
+      staff_invitation_sub_events: {
+        Row: {
+          created_at: string
+          id: string
+          staff_invitation_id: string
+          sub_event_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          staff_invitation_id: string
+          sub_event_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          staff_invitation_id?: string
+          sub_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitation_sub_events_staff_invitation_id_fkey"
+            columns: ["staff_invitation_id"]
+            isOneToOne: false
+            referencedRelation: "staff_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invitation_sub_events_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_invitations: {
+        Row: {
+          accepted_at: string | null
+          competition_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_at: string | null
+          invited_by: string
+          is_chief: boolean
+          name: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          sub_event_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          competition_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          invited_by: string
+          is_chief?: boolean
+          name?: string | null
+          phone?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          sub_event_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          competition_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string
+          is_chief?: boolean
+          name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          sub_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitations_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_invitations_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_event_assignments: {
         Row: {
           created_at: string
@@ -1135,6 +1296,7 @@ export type Database = {
       sub_events: {
         Row: {
           banner_url: string | null
+          comments_visible: boolean
           created_at: string
           end_time: string | null
           event_date: string | null
@@ -1147,11 +1309,13 @@ export type Database = {
           status: string
           ticket_price: number | null
           ticketing_type: string
+          timer_visible: boolean
           updated_at: string
           voting_enabled: boolean
         }
         Insert: {
           banner_url?: string | null
+          comments_visible?: boolean
           created_at?: string
           end_time?: string | null
           event_date?: string | null
@@ -1164,11 +1328,13 @@ export type Database = {
           status?: string
           ticket_price?: number | null
           ticketing_type?: string
+          timer_visible?: boolean
           updated_at?: string
           voting_enabled?: boolean
         }
         Update: {
           banner_url?: string | null
+          comments_visible?: boolean
           created_at?: string
           end_time?: string | null
           event_date?: string | null
@@ -1181,6 +1347,7 @@ export type Database = {
           status?: string
           ticket_price?: number | null
           ticketing_type?: string
+          timer_visible?: boolean
           updated_at?: string
           voting_enabled?: boolean
         }
@@ -1391,6 +1558,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_staff_invitations: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_assigned_competitions: {
         Args: { _user_id: string }

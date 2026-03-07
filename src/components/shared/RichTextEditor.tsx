@@ -59,6 +59,7 @@ import {
   AlignJustify,
   Highlighter,
   Palette,
+  Pilcrow,
   TableIcon,
   Plus,
   Trash2,
@@ -389,7 +390,14 @@ export function RichTextEditor({
             active={editor.isActive("heading", { level: 3 })}
             title="Heading 3"
           >
-            <Heading3 className="h-3.5 w-3.5" />
+          <Heading3 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            active={editor.isActive("paragraph")}
+            title="Paragraph"
+          >
+            <Pilcrow className="h-3.5 w-3.5" />
           </ToolbarButton>
 
           <Divider />
@@ -525,6 +533,33 @@ export function RichTextEditor({
             title="Numbered List"
           >
             <ListOrdered className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (editor.isActive("orderedList")) {
+                // If currently in an ordered list, check if it's alpha
+                const domEl = editor.view.domAtPos(editor.state.selection.from);
+                const ol = (domEl.node as HTMLElement).closest?.("ol") || (domEl.node.parentElement?.closest?.("ol"));
+                if (ol?.classList.contains("list-alpha")) {
+                  // Remove alpha, turn back to numbered
+                  ol.classList.remove("list-alpha");
+                } else {
+                  // Turn off the list entirely
+                  editor.chain().focus().toggleOrderedList().run();
+                }
+              } else {
+                // Create ordered list then mark as alpha
+                editor.chain().focus().toggleOrderedList().run();
+                setTimeout(() => {
+                  const domEl = editor.view.domAtPos(editor.state.selection.from);
+                  const ol = (domEl.node as HTMLElement).closest?.("ol") || (domEl.node.parentElement?.closest?.("ol"));
+                  if (ol) ol.classList.add("list-alpha");
+                }, 10);
+              }
+            }}
+            title="Alphabet List (a, b, c)"
+          >
+            <span className="text-[10px] font-bold leading-none">A.</span>
           </ToolbarButton>
 
           {/* Indent / Outdent */}
@@ -844,6 +879,13 @@ export function RichTextEditor({
             title="Heading 3"
           >
             <Heading3 className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            active={editor.isActive("paragraph")}
+            title="Paragraph"
+          >
+            <Pilcrow className="h-3.5 w-3.5" />
           </ToolbarButton>
           <Divider />
           <ToolbarButton

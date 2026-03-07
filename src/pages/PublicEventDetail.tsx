@@ -15,8 +15,23 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered, Video, Globe, ChevronRight
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Clock,
+  UserPlus,
+  Ticket,
+  FileText,
+  Users,
+  Award,
+  Info,
+  Heart,
+  ExternalLink,
+  Newspaper,
+  ListOrdered,
+  Video,
+  Globe,
+  ChevronRight,
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
@@ -51,16 +66,22 @@ function usePublicLevelsWithSubEvents(compId: string | undefined) {
     enabled: !!compId,
     queryFn: async () => {
       const { data: levels, error: le } = await supabase
-        .from("competition_levels").select("*").eq("competition_id", compId!).order("sort_order");
+        .from("competition_levels")
+        .select("*")
+        .eq("competition_id", compId!)
+        .order("sort_order");
       if (le) throw le;
-      const allLevelIds = (levels || []).map(l => l.id);
+      const allLevelIds = (levels || []).map((l) => l.id);
       if (allLevelIds.length === 0) return [];
       const { data: subEvents, error: se } = await supabase
-        .from("sub_events").select("*").in("level_id", allLevelIds).order("event_date");
+        .from("sub_events")
+        .select("*")
+        .in("level_id", allLevelIds)
+        .order("event_date");
       if (se) throw se;
-      return (levels || []).map(l => ({
+      return (levels || []).map((l) => ({
         ...l,
-        sub_events: (subEvents || []).filter(s => s.level_id === l.id),
+        sub_events: (subEvents || []).filter((s) => s.level_id === l.id),
       }));
     },
   });
@@ -74,7 +95,9 @@ function useLineup(subEventIds: string[]) {
       // Use safe public_contestants view (no PII)
       const { data: contestants, error } = await (supabase
         .from("public_contestants" as any)
-        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id")
+        .select(
+          "id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id",
+        )
         .in("sub_event_id", subEventIds)
         .order("sort_order", { ascending: true }) as any);
       if (error) throw error;
@@ -87,13 +110,13 @@ function useLineup(subEventIds: string[]) {
         .eq("is_booked", true);
 
       const slotMap = new Map<string, { start_time: string; end_time: string }>();
-      (slots || []).forEach(s => {
+      (slots || []).forEach((s) => {
         if (s.contestant_registration_id) {
           slotMap.set(s.contestant_registration_id, { start_time: s.start_time, end_time: s.end_time });
         }
       });
 
-      return (contestants || []).map(c => ({
+      return (contestants || []).map((c) => ({
         ...c,
         slot: slotMap.get(c.id) || null,
       }));
@@ -123,23 +146,27 @@ export default function PublicEventDetail() {
   const rulesContent = (comp as any)?.rules_content as string | undefined;
   const rulesDocumentUrl = (comp as any)?.rules_document_url as string | undefined;
 
-  if (isLoading) return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
-        <DetailPageSkeleton />
+  if (isLoading)
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+          <DetailPageSkeleton />
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (!comp) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <p className="text-muted-foreground">Event not found</p>
-      <Button asChild variant="outline"><Link to="/">Back to Events</Link></Button>
-    </div>
-  );
+  if (!comp)
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Event not found</p>
+        <Button asChild variant="outline">
+          <Link to="/">Back to Events</Link>
+        </Button>
+      </div>
+    );
 
-  const allSubEventIds = levels?.flatMap(l => l.sub_events.map((s: any) => s.id)) || [];
-  const anyVotingEnabled = levels?.some(l => l.sub_events?.some((se: any) => se.voting_enabled)) || false;
+  const allSubEventIds = levels?.flatMap((l) => l.sub_events.map((s: any) => s.id)) || [];
+  const anyVotingEnabled = levels?.some((l) => l.sub_events?.some((se: any) => se.voting_enabled)) || false;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
@@ -159,16 +186,22 @@ export default function PublicEventDetail() {
             ) : (
               <>
                 <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-                <span className="font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></span>
+                <span className="font-bold tracking-tighter text-foreground font-mono">
+                  SCOR<span className="text-accent">Z</span>
+                </span>
               </>
             )}
           </Link>
           <div className="flex items-center gap-2">
             {socialLinks && <SocialLinks links={socialLinks} />}
             {user ? (
-              <Button asChild size="sm" variant="outline"><Link to="/dashboard">Dashboard</Link></Button>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
             ) : (
-              <Button asChild size="sm"><Link to="/auth">Sign In</Link></Button>
+              <Button asChild size="sm">
+                <Link to="/auth">Sign In</Link>
+              </Button>
             )}
           </div>
         </div>
@@ -186,7 +219,9 @@ export default function PublicEventDetail() {
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 max-w-5xl mx-auto">
           <Button asChild variant="ghost" size="sm" className="mb-2 text-foreground/70 -ml-2">
-            <Link to="/"><ArrowLeft className="h-3 w-3 mr-1" /> All Events</Link>
+            <Link to="/">
+              <ArrowLeft className="h-3 w-3 mr-1" /> All Events
+            </Link>
           </Button>
           <h1 className="text-2xl sm:text-4xl font-bold text-foreground font-mono">{comp.name}</h1>
           <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
@@ -209,27 +244,26 @@ export default function PublicEventDetail() {
           <div className="px-4 sm:px-0 overflow-x-auto no-scrollbar">
             <TabsList className="w-full sm:w-auto flex justify-start sm:justify-center mb-6 bg-muted/20 backdrop-blur p-1">
               <TabsTrigger value="schedule" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <Calendar className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Schedule</span>
-              </TabsTrigger>
-              <TabsTrigger value="contestants" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <Users className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Contestants</span>
-              </TabsTrigger>
-              <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <Award className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Judges</span>
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Schedule</span>
               </TabsTrigger>
               {anyVotingEnabled && (
                 <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                  <Heart className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Voting</span>
+                  <Heart className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Voting</span>
                 </TabsTrigger>
               )}
               <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <ListOrdered className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Lineup</span>
+                <ListOrdered className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Lineup</span>
               </TabsTrigger>
               <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <FileText className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Rules</span>
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Rules</span>
               </TabsTrigger>
               <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
-                <Info className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">Rubric</span>
+                <Info className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Rubric</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -239,68 +273,118 @@ export default function PublicEventDetail() {
             <TabsContent value="schedule" className="space-y-6">
               <div className="max-w-3xl mx-auto space-y-6">
                 {comp.description && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-muted-foreground leading-relaxed text-sm">
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-muted-foreground leading-relaxed text-sm"
+                  >
                     {comp.description}
                   </motion.p>
                 )}
 
                 {comp.status === "active" && (
-                  <Button size="lg" className="w-full sm:w-auto" onClick={() => {
-                    if (user) navigate(`/competitions/${compId}/register`);
-                    else navigate(`/auth?redirect=/competitions/${compId}/register`);
-                  }}>
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      if (user) navigate(`/competitions/${compId}/register`);
+                      else navigate(`/auth?redirect=/competitions/${compId}/register`);
+                    }}
+                  >
                     <UserPlus className="h-4 w-4 mr-2" /> Register as Contestant
                   </Button>
                 )}
 
                 <div className="space-y-4">
-                  {levels && levels.length > 0 ? levels.map(level => (
-                    <Card key={level.id} className="border-border/50 bg-card/80 overflow-hidden shadow-sm">
-                      {level.banner_url && (
-                        <div className="h-32 overflow-hidden">
-                          <img src={level.banner_url} alt={level.name} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{level.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <LevelParticipants subEventIds={level.sub_events.map((s: any) => s.id)} />
-
-                        {level.sub_events.length > 0 ? level.sub_events.map((se: any) => (
-                          <div key={se.id} className="border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/10">
-                            <div className="space-y-2">
-                              {se.banner_url && (
-                                <img src={se.banner_url} alt={se.name} className="w-full sm:w-48 h-24 object-cover rounded-md" />
-                              )}
-                              <div>
-                                <p className="font-bold text-base text-foreground">{se.name}</p>
-                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
-                                  {se.event_date && <span className="flex items-center gap-1 font-mono"><Calendar className="h-3 w-3" />{format(new Date(se.event_date), "MMM d, yyyy")}</span>}
-                                  {se.start_time && <span className="flex items-center gap-1 font-mono"><Clock className="h-3 w-3" />{se.start_time}{se.end_time ? ` – ${se.end_time}` : ""}</span>}
-                                  {se.location && <span className="flex items-center gap-1 font-mono"><MapPin className="h-3 w-3" />{se.location}</span>}
-                                </div>
-                              </div>
-                            </div>
-                            <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSelectedTicketEvent(selectedTicketEvent === se.id ? null : se.id)}>
-                              <Ticket className="h-4 w-4 mr-2" /> Get Ticket
-                            </Button>
+                  {levels && levels.length > 0 ? (
+                    levels.map((level) => (
+                      <Card key={level.id} className="border-border/50 bg-card/80 overflow-hidden shadow-sm">
+                        {level.banner_url && (
+                          <div className="h-32 overflow-hidden">
+                            <img src={level.banner_url} alt={level.name} className="w-full h-full object-cover" />
                           </div>
-                        )) : (
-                          <p className="text-sm text-muted-foreground italic text-center py-4">No sessions scheduled yet.</p>
                         )}
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">{level.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <LevelParticipants subEventIds={level.sub_events.map((s: any) => s.id)} />
 
-                        {level.sub_events.map((se: any) => (
-                          selectedTicketEvent === se.id && (
-                            <motion.div key={`ticket-${se.id}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="border border-primary/20 rounded-lg p-4 bg-primary/5 mt-2">
-                              <AudienceTicketForm subEventId={se.id} subEventName={se.name} />
-                            </motion.div>
-                          )
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )) : (
-                    <p className="text-muted-foreground text-center py-12 font-mono">No levels defined for this competition yet.</p>
+                          {level.sub_events.length > 0 ? (
+                            level.sub_events.map((se: any) => (
+                              <div
+                                key={se.id}
+                                className="border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/10"
+                              >
+                                <div className="space-y-2">
+                                  {se.banner_url && (
+                                    <img
+                                      src={se.banner_url}
+                                      alt={se.name}
+                                      className="w-full sm:w-48 h-24 object-cover rounded-md"
+                                    />
+                                  )}
+                                  <div>
+                                    <p className="font-bold text-base text-foreground">{se.name}</p>
+                                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
+                                      {se.event_date && (
+                                        <span className="flex items-center gap-1 font-mono">
+                                          <Calendar className="h-3 w-3" />
+                                          {format(new Date(se.event_date), "MMM d, yyyy")}
+                                        </span>
+                                      )}
+                                      {se.start_time && (
+                                        <span className="flex items-center gap-1 font-mono">
+                                          <Clock className="h-3 w-3" />
+                                          {se.start_time}
+                                          {se.end_time ? ` – ${se.end_time}` : ""}
+                                        </span>
+                                      )}
+                                      {se.location && (
+                                        <span className="flex items-center gap-1 font-mono">
+                                          <MapPin className="h-3 w-3" />
+                                          {se.location}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="shrink-0"
+                                  onClick={() => setSelectedTicketEvent(selectedTicketEvent === se.id ? null : se.id)}
+                                >
+                                  <Ticket className="h-4 w-4 mr-2" /> Get Ticket
+                                </Button>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic text-center py-4">
+                              No sessions scheduled yet.
+                            </p>
+                          )}
+
+                          {level.sub_events.map(
+                            (se: any) =>
+                              selectedTicketEvent === se.id && (
+                                <motion.div
+                                  key={`ticket-${se.id}`}
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  className="border border-primary/20 rounded-lg p-4 bg-primary/5 mt-2"
+                                >
+                                  <AudienceTicketForm subEventId={se.id} subEventName={se.name} />
+                                </motion.div>
+                              ),
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12 font-mono">
+                      No levels defined for this competition yet.
+                    </p>
                   )}
                 </div>
               </div>
@@ -309,11 +393,7 @@ export default function PublicEventDetail() {
             {/* Contestants Tab */}
             <TabsContent value="contestants">
               <div className="max-w-4xl mx-auto">
-                <PublicRoleList
-                  subEventIds={allSubEventIds}
-                  competitionId={id}
-                  role="contestants"
-                />
+                <PublicRoleList subEventIds={allSubEventIds} competitionId={id} role="contestants" />
               </div>
             </TabsContent>
 
@@ -344,19 +424,21 @@ export default function PublicEventDetail() {
                     <CardContent className="p-6">
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none text-foreground"
-                        dangerouslySetInnerHTML={{ __html: (() => {
-                          // Fix content where HTML tags were stored as escaped text
-                          const text = rulesContent;
-                          // Check if content contains literal HTML tags as visible text (e.g., "&lt;p&gt;" or "<p>" inside a wrapping tag)
-                          const div = document.createElement("div");
-                          div.innerHTML = text;
-                          const innerText = div.textContent || "";
-                          // If the text content starts with <p> or contains </p><p>, the HTML was double-escaped
-                          if (innerText.trimStart().startsWith("<p>") || innerText.includes("</p><p>")) {
-                            return innerText; // The "text" is actually HTML that was escaped
-                          }
-                          return text;
-                        })() }}
+                        dangerouslySetInnerHTML={{
+                          __html: (() => {
+                            // Fix content where HTML tags were stored as escaped text
+                            const text = rulesContent;
+                            // Check if content contains literal HTML tags as visible text (e.g., "&lt;p&gt;" or "<p>" inside a wrapping tag)
+                            const div = document.createElement("div");
+                            div.innerHTML = text;
+                            const innerText = div.textContent || "";
+                            // If the text content starts with <p> or contains </p><p>, the HTML was double-escaped
+                            if (innerText.trimStart().startsWith("<p>") || innerText.includes("</p><p>")) {
+                              return innerText; // The "text" is actually HTML that was escaped
+                            }
+                            return text;
+                          })(),
+                        }}
                       />
                     </CardContent>
                   </Card>
@@ -401,7 +483,9 @@ export default function PublicEventDetail() {
                 )}
 
                 {!rulesContent && !rulesUrl && !rulesDocumentUrl && (
-                  <p className="text-sm text-muted-foreground italic text-center py-8">No official rules document has been published yet.</p>
+                  <p className="text-sm text-muted-foreground italic text-center py-8">
+                    No official rules document has been published yet.
+                  </p>
                 )}
               </div>
             </TabsContent>
@@ -443,7 +527,8 @@ export default function PublicEventDetail() {
       <footer className="border-t border-border/50 py-10 px-4 text-center space-y-6">
         {socialLinks && <SocialLinks links={socialLinks} />}
         <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-          @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+          @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ{" "}
+          <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
       </footer>
     </div>
@@ -472,7 +557,7 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
 
   // Group by sub-event
   const grouped: Record<string, typeof lineup> = {};
-  lineup.forEach(c => {
+  lineup.forEach((c) => {
     const key = c.sub_event_id || "unassigned";
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(c);
@@ -542,7 +627,7 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                         "flex items-center gap-3 p-2 rounded-md transition-colors relative cursor-pointer",
                         performing && "bg-primary/10 border border-primary/30 shadow-sm",
                         upNext && !performing && "bg-accent/10 border border-accent/20",
-                        !performing && !upNext && "hover:bg-muted/30"
+                        !performing && !upNext && "hover:bg-muted/30",
                       )}
                     >
                       {performing && (
@@ -551,42 +636,56 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
                         </span>
                       )}
-                      <span className={cn(
-                        "text-lg font-bold font-mono w-8 text-center",
-                        performing ? "text-primary" : "text-muted-foreground"
-                      )}>{idx + 1}</span>
+                      <span
+                        className={cn(
+                          "text-lg font-bold font-mono w-8 text-center",
+                          performing ? "text-primary" : "text-muted-foreground",
+                        )}
+                      >
+                        {idx + 1}
+                      </span>
                       {c.profile_photo_url ? (
-                        <img src={c.profile_photo_url} alt={c.full_name} className={cn(
-                          "w-8 h-8 rounded-full object-cover",
-                          performing && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )} />
+                        <img
+                          src={c.profile_photo_url}
+                          alt={c.full_name}
+                          className={cn(
+                            "w-8 h-8 rounded-full object-cover",
+                            performing && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                          )}
+                        />
                       ) : (
-                        <div className={cn(
-                          "w-8 h-8 rounded-full bg-muted flex items-center justify-center",
-                          performing && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )}>
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-full bg-muted flex items-center justify-center",
+                            performing && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                          )}
+                        >
                           <Users className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className={cn(
-                            "text-sm font-medium",
-                            performing ? "text-primary" : "text-foreground"
-                          )}>{c.full_name}</p>
+                          <p className={cn("text-sm font-medium", performing ? "text-primary" : "text-foreground")}>
+                            {c.full_name}
+                          </p>
                           {performing && (
                             <Badge className="text-[9px] px-1.5 py-0 bg-primary text-primary-foreground animate-pulse">
                               NOW PERFORMING
                             </Badge>
                           )}
                           {upNext && !performing && (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-accent text-accent-foreground">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] px-1.5 py-0 border-accent text-accent-foreground"
+                            >
                               UP NEXT
                             </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {c.age_category}
+                          </Badge>
                           {slot && (
                             <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
@@ -616,14 +715,24 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
               {/* Avatar & Name */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedContestant.profile_photo_url || undefined} alt={selectedContestant.full_name} />
+                  <AvatarImage
+                    src={selectedContestant.profile_photo_url || undefined}
+                    alt={selectedContestant.full_name}
+                  />
                   <AvatarFallback className="text-lg bg-muted">
-                    {selectedContestant.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    {selectedContestant.full_name
+                      ?.split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-bold text-foreground">{selectedContestant.full_name}</h3>
-                  <Badge variant="outline" className="text-xs">{selectedContestant.age_category}</Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedContestant.age_category}
+                  </Badge>
                 </div>
               </div>
 
@@ -650,7 +759,9 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
               {selectedContestant.slot && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span className="font-mono">{selectedContestant.slot.start_time} – {selectedContestant.slot.end_time}</span>
+                  <span className="font-mono">
+                    {selectedContestant.slot.start_time} – {selectedContestant.slot.end_time}
+                  </span>
                 </div>
               )}
 
@@ -670,24 +781,33 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
               )}
 
               {/* Social Handles */}
-              {selectedContestant.social_handles && Object.keys(selectedContestant.social_handles).some((k: string) => selectedContestant.social_handles[k]) && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Social Media</p>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(selectedContestant.social_handles as Record<string, string>).filter(([, v]) => v).map(([platform, url]) => (
-                        <Button key={platform} asChild variant="outline" size="sm">
-                          <a href={url.startsWith("http") ? url : `https://${url}`} target="_blank" rel="noopener noreferrer">
-                            <Globe className="h-3 w-3 mr-1" />
-                            {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                          </a>
-                        </Button>
-                      ))}
+              {selectedContestant.social_handles &&
+                Object.keys(selectedContestant.social_handles).some(
+                  (k: string) => selectedContestant.social_handles[k],
+                ) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Social Media</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(selectedContestant.social_handles as Record<string, string>)
+                          .filter(([, v]) => v)
+                          .map(([platform, url]) => (
+                            <Button key={platform} asChild variant="outline" size="sm">
+                              <a
+                                href={url.startsWith("http") ? url : `https://${url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Globe className="h-3 w-3 mr-1" />
+                                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                              </a>
+                            </Button>
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
             </div>
           )}
         </SheetContent>

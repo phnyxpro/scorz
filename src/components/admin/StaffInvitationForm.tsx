@@ -17,7 +17,9 @@ interface StaffInvitationFormProps {
 }
 
 export function StaffInvitationForm({ competitionId, competitionName }: StaffInvitationFormProps) {
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [role, setRole] = useState<AppRole>("judge");
     const { data: invitations, isLoading } = useStaffInvitations(competitionId);
     const invite = useInviteStaff();
@@ -26,8 +28,10 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
-        await invite.mutateAsync({ email, role, competitionId, competitionName });
+        await invite.mutateAsync({ name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName });
+        setName("");
         setEmail("");
+        setPhone("");
     };
 
     return (
@@ -40,9 +44,19 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                     <CardDescription>Invite judges and tabulators to your competition</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleInvite} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px] space-y-2">
-                            <Label htmlFor="staff-email">Email Address</Label>
+                    <form onSubmit={handleInvite} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-name">Name</Label>
+                            <Input
+                                id="staff-name"
+                                type="text"
+                                placeholder="John Doe"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-email">Email Address *</Label>
                             <Input
                                 id="staff-email"
                                 type="email"
@@ -52,7 +66,17 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                 required
                             />
                         </div>
-                        <div className="w-[180px] space-y-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-phone">Phone (optional)</Label>
+                            <Input
+                                id="staff-phone"
+                                type="tel"
+                                placeholder="+1 234 567 8900"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="staff-role">Role</Label>
                             <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
                                 <SelectTrigger id="staff-role">
@@ -64,9 +88,11 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button type="submit" disabled={invite.isPending || !email}>
-                            <Mail className="h-4 w-4 mr-2" /> Send Invite
-                        </Button>
+                        <div className="sm:col-span-2 flex justify-end">
+                            <Button type="submit" disabled={invite.isPending || !email}>
+                                <Mail className="h-4 w-4 mr-2" /> Send Invite
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>
@@ -91,7 +117,8 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                         <Mail className={`h-4 w-4 ${inv.accepted_at ? "text-secondary" : "text-primary"}`} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-foreground">{inv.email}</p>
+                                        <p className="text-sm font-medium text-foreground">{inv.name || inv.email}</p>
+                                        {inv.name && <p className="text-xs text-muted-foreground">{inv.email}</p>}
                                         <div className="flex items-center gap-2 mt-1">
                                             <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
                                                 {inv.role}

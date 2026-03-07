@@ -74,7 +74,12 @@ export function useCreateRegistration() {
         .insert(values)
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("This contestant is already registered for this competition.");
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: (_, v) => {

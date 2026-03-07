@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import {
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
+import { InfractionApplicator } from "@/components/chief-judge/InfractionApplicator";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -282,6 +283,7 @@ export default function ChiefJudgeDashboard() {
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
+              <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
             </TabsList>
 
@@ -306,6 +308,16 @@ export default function ChiefJudgeDashboard() {
                   adjustPenalty.mutate({ scoreId, newPenalty, subEventId: selectedSubEventId })
                 }
                 isAdjusting={adjustPenalty.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="infractions">
+              <InfractionApplicator
+                competitionId={competitionId!}
+                subEventId={selectedSubEventId}
+                contestantIds={Object.keys(scoresByContestant)}
+                contestantName={contestantName}
+                isCertified={isCertified}
               />
             </TabsContent>
 

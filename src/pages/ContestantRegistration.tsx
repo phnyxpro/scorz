@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useRubricCriteria, usePenaltyRules, useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useQuery } from "@tanstack/react-query";
@@ -22,11 +22,12 @@ import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 const registrationSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
-  ageCategory: z.enum(["adult", "minor"]),
+  ageCategory: z.enum(["adult", "minor"]).optional().default("adult"),
   bio: z.string().optional(),
   videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   guardianName: z.string().optional(),
@@ -38,14 +39,6 @@ const registrationSchema = z.object({
   selectedLevelId: z.string().optional(),
   selectedSubEventId: z.string().optional(),
   selectedSlotId: z.string().optional(),
-}).refine(data => {
-  if (data.ageCategory === "minor") {
-    return !!data.guardianName && !!data.guardianSig;
-  }
-  return true;
-}, {
-  message: "Guardian information and signature are required for minors",
-  path: ["guardianName"],
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -59,12 +52,151 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
+// Reusable on-behalf registration form (used in modal from RegistrationsManager)
+export function OnBehalfRegistrationForm({
+  competitionId,
+  onComplete,
+}: {
+  competitionId: string;
+  onComplete: () => void;
+}) {
+  const { user } = useAuth();
+  const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
+  const createReg = useCreateRegistration();
+  const { toast } = useToast();
+
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const availableSteps = useMemo(() => {
+    return STEPS.filter(s => s.id !== "account");
+  }, []);
+
+  const methods = useForm<RegistrationFormData>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      ageCategory: "adult",
+      rulesAcknowledged: false,
+      contestantSig: "",
+    },
+  });
+
+  const handleNext = async () => {
+    const stepId = availableSteps[currentStep].id;
+    let fieldsToValidate: (keyof RegistrationFormData)[] = [];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
+    if (stepId === "bio") fieldsToValidate = ["videoUrl"];
+    if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
+    if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
+
+    const isValid = await methods.trigger(fieldsToValidate);
+    if (isValid) setCurrentStep(s => s + 1);
+  };
+
+  const onSubmit = async (data: RegistrationFormData) => {
+    if (!user || !competitionId) return;
+
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("email", data.email)
+      .maybeSingle();
+    const registrationUserId = existingProfile?.user_id || user.id;
+
+    createReg.mutate({
+      user_id: registrationUserId,
+      competition_id: competitionId,
+      full_name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      phone: data.phone,
+      location: data.location,
+      age_category: data.ageCategory,
+      bio: data.bio,
+      performance_video_url: data.videoUrl,
+      guardian_name: data.guardianName,
+      guardian_email: data.guardianEmail,
+      guardian_phone: data.guardianPhone,
+      rules_acknowledged: data.rulesAcknowledged,
+      rules_acknowledged_at: new Date().toISOString(),
+      contestant_signature: data.contestantSig,
+      contestant_signed_at: new Date().toISOString(),
+      guardian_signature: data.guardianSig,
+      guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
+      sub_event_id: data.selectedSubEventId,
+      status: "approved",
+    } as any, {
+      onSuccess: async (createdReg: any) => {
+        if (data.selectedSlotId && createdReg?.id) {
+          await supabase
+            .from("performance_slots")
+            .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
+            .eq("id", data.selectedSlotId);
+        }
+        toast({ title: "Contestant added", description: "Registration has been created and auto-approved." });
+        onComplete();
+      },
+    });
+  };
+
+  if (compLoading) return <LoadingSpinner />;
+
+  return (
+    <div className="pb-4">
+      <StepIndicator steps={availableSteps} currentStep={currentStep} />
+
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={availableSteps[currentStep].id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {availableSteps[currentStep].id === "personal" && <PersonalStep />}
+              {availableSteps[currentStep].id === "bio" && <BioStep />}
+              {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId} />}
+              {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
+              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId} />}
+            </motion.div>
+          </AnimatePresence>
+
+          <footer className="flex justify-between pt-4 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={currentStep === 0}
+              onClick={() => setCurrentStep(s => s - 1)}
+            >
+              Back
+            </Button>
+            {currentStep < availableSteps.length - 1 ? (
+              <Button type="button" onClick={handleNext}>
+                Continue <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={createReg.isPending}>
+                {createReg.isPending ? "Adding…" : "Add & Approve"}
+              </Button>
+            )}
+          </footer>
+        </form>
+      </FormProvider>
+    </div>
+  );
+}
+
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isOnBehalf = searchParams.get("behalf") === "true";
   const navigate = useNavigate();
   const { user, signUp } = useAuth();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
-  const { data: existing, isLoading: regLoading } = useMyRegistration(competitionId);
+  const { data: existing, isLoading: regLoading } = useMyRegistration(isOnBehalf ? undefined : competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
 
@@ -73,15 +205,17 @@ export default function ContestantRegistration() {
   const [authData, setAuthData] = useState({ email: "", password: "", fullName: "" });
 
   const availableSteps = useMemo(() => {
+    if (isOnBehalf) return STEPS.filter(s => s.id !== "account");
     if (user) return STEPS.filter(s => s.id !== "account");
     return STEPS;
-  }, [user]);
+  }, [user, isOnBehalf]);
 
   const methods = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      fullName: user?.user_metadata?.full_name || "",
-      email: user?.email || "",
+      firstName: isOnBehalf ? "" : (user?.user_metadata?.full_name?.split(" ")[0] || ""),
+      lastName: isOnBehalf ? "" : (user?.user_metadata?.full_name?.split(" ").slice(1).join(" ") || ""),
+      email: isOnBehalf ? "" : (user?.email || ""),
       ageCategory: "adult",
       rulesAcknowledged: false,
       contestantSig: "",
@@ -89,11 +223,13 @@ export default function ContestantRegistration() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && !isOnBehalf) {
       methods.setValue("email", user.email || "");
-      methods.setValue("fullName", user.user_metadata?.full_name || "");
+      const fullName = user.user_metadata?.full_name || "";
+      methods.setValue("firstName", fullName.split(" ")[0] || "");
+      methods.setValue("lastName", fullName.split(" ").slice(1).join(" ") || "");
     }
-  }, [user, methods]);
+  }, [user, methods, isOnBehalf]);
 
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
@@ -113,9 +249,8 @@ export default function ContestantRegistration() {
       toast({ title: "Account Created", description: "Verification email sent. You can now complete your registration." });
     }
 
-    // Partial validation for the current step
     let fieldsToValidate: (keyof RegistrationFormData)[] = [];
-    if (stepId === "personal") fieldsToValidate = ["fullName", "email", "ageCategory", "guardianName"];
+    if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
@@ -129,13 +264,22 @@ export default function ContestantRegistration() {
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user || !competitionId) return;
 
-    // Ensure user has contestant role
-    await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    let registrationUserId = user.id;
+    if (isOnBehalf) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("email", data.email)
+        .maybeSingle();
+      registrationUserId = existingProfile?.user_id || user.id;
+    } else {
+      await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
+    }
 
     createReg.mutate({
-      user_id: user.id,
+      user_id: registrationUserId,
       competition_id: competitionId,
-      full_name: data.fullName,
+      full_name: `${data.firstName} ${data.lastName}`.trim(),
       email: data.email,
       phone: data.phone,
       location: data.location,
@@ -152,17 +296,20 @@ export default function ContestantRegistration() {
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {
-        // Book the selected time slot if one was chosen
         if (data.selectedSlotId && createdReg?.id) {
           await supabase
             .from("performance_slots")
             .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
             .eq("id", data.selectedSlotId);
         }
-        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
-        navigate(`/competitions`);
+        const successMsg = isOnBehalf
+          ? "Contestant has been added and auto-approved."
+          : "Your details have been submitted successfully.";
+        toast({ title: "Registration complete", description: successMsg });
+        navigate(isOnBehalf ? `/competitions/${competitionId}` : `/competitions`);
       },
     });
   };
@@ -176,12 +323,16 @@ export default function ContestantRegistration() {
   return (
     <div className="max-w-2xl mx-auto pb-12">
       <header className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/competitions")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(isOnBehalf ? `/competitions/${competitionId}` : "/competitions")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Registration</h1>
-          <p className="text-muted-foreground">{comp?.name}</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isOnBehalf ? "Add Contestant" : "Registration"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isOnBehalf ? `Registering on behalf · ${comp?.name}` : comp?.name}
+          </p>
         </div>
       </header>
 
@@ -305,10 +456,15 @@ function PersonalStep() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2 col-span-full">
-            <Label>Full Name *</Label>
-            <Input {...register("fullName")} placeholder="Legal Name" />
-            {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
+          <div className="space-y-2">
+            <Label>First Name *</Label>
+            <Input {...register("firstName")} placeholder="First Name" />
+            {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label>Last Name *</Label>
+            <Input {...register("lastName")} placeholder="Last Name" />
+            {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Email *</Label>
@@ -324,7 +480,7 @@ function PersonalStep() {
             <Input {...register("location")} placeholder="City, State" />
           </div>
           <div className="space-y-2">
-            <Label>Age Category *</Label>
+            <Label>Age Category</Label>
             <select
               {...register("ageCategory")}
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -345,12 +501,12 @@ function PersonalStep() {
               <User className="h-4 w-4 text-secondary" /> Parent / Guardian Info
             </h3>
             <div className="space-y-2">
-              <Label>Guardian Name *</Label>
+              <Label>Guardian Name</Label>
               <Input {...register("guardianName")} placeholder="Full Name" />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Guardian Email *</Label>
+                <Label>Guardian Email</Label>
                 <Input {...register("guardianEmail")} type="email" />
               </div>
               <div className="space-y-2">
