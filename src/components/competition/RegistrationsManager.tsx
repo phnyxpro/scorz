@@ -53,22 +53,23 @@ type SortDir = "asc" | "desc";
 // ─── Slot Picker Cell ──────────────────────────────────────────────
 interface SlotPickerCellProps {
   regId: string;
+  subEventId: string | null;
   slot?: { id: string; start_time: string; end_time: string };
-  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onAssign: (regId: string, slotId: string) => void;
   onUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
 }
 
-function SlotPickerCell({ regId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
+function SlotPickerCell({ regId, subEventId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
 
-  // Available slots: unbooked OR currently assigned to this reg
+  // Available slots: same sub-event, unbooked OR currently assigned to this reg
   const available = allSlots.filter(
-    (s) => !s.is_booked || s.contestant_registration_id === regId
+    (s) => s.sub_event_id === subEventId && (!s.is_booked || s.contestant_registration_id === regId)
   );
 
   const handleSelectSlot = (slotId: string) => {
@@ -169,7 +170,7 @@ interface SortableRowProps {
   reg: ContestantRegistration;
   idx: number;
   slot?: { id: string; start_time: string; end_time: string };
-  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onSlotAssign: (regId: string, slotId: string) => void;
   onSlotUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
@@ -219,6 +220,7 @@ function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, for
       <TableCell>
         <SlotPickerCell
           regId={reg.id}
+          subEventId={reg.sub_event_id}
           slot={slot}
           allSlots={allSlots}
           onAssign={onSlotAssign}
@@ -335,32 +337,29 @@ export function RegistrationsManager({ competitionId }: Props) {
     },
   });
 
-  // Also fetch all unbooked slots for the active sub-event tab
-  const { data: availableSlots } = useQuery({
-    queryKey: ["available_slots", activeSubEventTab],
-    enabled: activeSubEventTab !== "all",
+  // Fetch ALL slots for all sub-events in this competition so the picker always works
+  const allSubEventIds = allSubEvents?.map((se) => se.id) || [];
+  const { data: allSlotsRaw } = useQuery({
+    queryKey: ["available_slots", competitionId, allSubEventIds.length],
+    enabled: allSubEventIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_slots")
         .select("id, contestant_registration_id, start_time, end_time, sub_event_id, is_booked")
-        .eq("sub_event_id", activeSubEventTab)
+        .in("sub_event_id", allSubEventIds)
         .order("start_time");
       if (error) throw error;
       return data;
     },
   });
 
-  // Combine booked + available slots for the slot picker
+  // Combine all slots (from both queries) for the picker, keyed by sub-event
   const allSlotsForPicker = useMemo(() => {
-    const combined = [...(availableSlots || [])];
-    // Add any slots from slotsData that belong to other sub-events (for current reg assignments)
-    slotsData?.forEach((s) => {
-      if (!combined.find((c) => c.id === s.id)) {
-        combined.push(s);
-      }
-    });
-    return combined;
-  }, [availableSlots, slotsData]);
+    const map = new Map<string, typeof allSlotsRaw extends (infer T)[] | undefined ? T : never>();
+    allSlotsRaw?.forEach((s) => map.set(s.id, s));
+    slotsData?.forEach((s) => { if (!map.has(s.id)) map.set(s.id, s); });
+    return Array.from(map.values());
+  }, [allSlotsRaw, slotsData]);
 
   // Map registration id -> slot
   const slotsByRegId = useMemo(() => {
