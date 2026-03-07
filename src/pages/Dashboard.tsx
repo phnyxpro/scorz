@@ -181,7 +181,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
+              Welcome back{isMasquerading && masquerade?.fullName ? `, ${masquerade.fullName}` : user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
             </p>
           </div>
 
