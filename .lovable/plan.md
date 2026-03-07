@@ -1,47 +1,25 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Add Chat Icon with Modal to Judge Scoring Page Header
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Current State
+- **TabulatorDashboard**: Already has a chat button with unread badge in the header, plus a Dialog modal for `EventChat`. No changes needed here.
+- **JudgeScoring**: Has no chat functionality. Needs a chat icon button added to the header row, plus a modal.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**`src/pages/JudgeScoring.tsx`**
 
----
+1. Import `EventChat`, `useChatUnreadCount`, and `MessageSquare` (MessageSquare is not currently imported)
+2. Add `useChatUnreadCount(competitionId)` hook call
+3. Add `showChatModal` state
+4. In the header row (line ~412, the `flex items-center gap-2` div), add a `MessageSquare` icon button with unread badge — placed after the existing badges (On Stage, LIVE, contestant name)
+5. Add a `Dialog` at the bottom of the component containing `EventChat` (same pattern as TabulatorDashboard)
 
-### Fix 1: Conditionally apply auditorium filter
+The button will be a ghost/outline icon button with `MessageSquare`, showing an unread count badge when > 0. Visible to all roles (judge, admin, organizer, tabulator) since the `EventChat` component and its RLS policies already restrict access to competition staff.
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+| File | Changes |
+|---|---|
+| `src/pages/JudgeScoring.tsx` | Add chat icon button in header, chat modal dialog, unread count hook |
 
