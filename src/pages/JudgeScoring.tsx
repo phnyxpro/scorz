@@ -365,7 +365,7 @@ export default function JudgeScoring() {
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             {!sidebarOpen && (
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="shrink-0">
                 <PanelLeft className="h-4 w-4" />
@@ -375,28 +375,30 @@ export default function JudgeScoring() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold text-foreground truncate">Judge Scoring</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Judge Scoring</h1>
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
-            {onStageContestant === selectedContestant && (
-              <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
-                On Stage
-              </Badge>
-            )}
-            {selectedContestantName && (
-              <Badge variant="secondary" className="shrink-0 gap-1">
-                <User className="h-3 w-3" />
-                <span className="truncate max-w-[120px]">{selectedContestantName}</span>
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {onStageContestant === selectedContestant && (
+                <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
+                  <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+                  On Stage
+                </Badge>
+              )}
+              {selectedContestantName && (
+                <Badge variant="secondary" className="shrink-0 gap-1">
+                  <User className="h-3 w-3" />
+                  <span className="truncate max-w-[120px]">{selectedContestantName}</span>
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Rubric reference */}
           <Collapsible>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 text-xs text-muted-foreground mb-2">
-                <Info className="h-3.5 w-3.5" /> View Full Rubric & Penalties
+                <Info className="h-3.5 w-3.5" /> <span className="hidden sm:inline">View Full Rubric & Penalties</span><span className="sm:hidden">Rubric</span>
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mb-4">
@@ -452,7 +454,7 @@ export default function JudgeScoring() {
               </Card>
 
               <Card className="border-border/50 bg-card/80">
-                <CardContent className="pt-4">
+                <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">Raw Total</p>
                     <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(1)}</p>
@@ -479,7 +481,7 @@ export default function JudgeScoring() {
               {!isCertified && (
                 <div className="space-y-2">
                   <div className="flex gap-2">
-                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1 h-12 sm:h-10" variant="outline">
                       <Save className="h-4 w-4 mr-1" />
                       {upsert.isPending ? "Saving…" : "Save Draft"}
                     </Button>
@@ -492,7 +494,7 @@ export default function JudgeScoring() {
                         setShowCertifyDialog(true);
                       }}
                       disabled={!allScored || !existingScore?.id}
-                      className="flex-1"
+                      className="flex-1 h-12 sm:h-10"
                     >
                       <Lock className="h-4 w-4 mr-1" /> Certify & Lock
                     </Button>
@@ -501,7 +503,7 @@ export default function JudgeScoring() {
                     <Button
                       onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyAllDialog(true); }}
                       variant="secondary"
-                      className="w-full"
+                      className="w-full h-12 sm:h-10"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" /> Certify All Results
                     </Button>
@@ -515,7 +517,7 @@ export default function JudgeScoring() {
 
       {/* Certify Dialog */}
       <Dialog open={showCertifyDialog} onOpenChange={(open) => { setShowCertifyDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Certify Scorecard</DialogTitle>
             <DialogDescription>
@@ -554,7 +556,7 @@ export default function JudgeScoring() {
       </Dialog>
       {/* Certify All Dialog */}
       <Dialog open={showCertifyAllDialog} onOpenChange={(open) => { setShowCertifyAllDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Certify All Scorecards</DialogTitle>
             <DialogDescription>
