@@ -60,7 +60,7 @@ export const TIERS: SubscriptionTier[] = [
     name: "Start Scorz",
     priceId: "price_1T7t57ERVeYk2KQ9qbilZ1NA",
     productId: "prod_U65F5A4sKTnuVF",
-    price: 15,
+    price: 49,
     description: "One competition with all core features—perfect for small events",
     limits: { organizers: 2, judges: 7, tabulators: 2 },
     features: [
@@ -77,7 +77,7 @@ export const TIERS: SubscriptionTier[] = [
     name: "Pro Scorz",
     priceId: "price_1T7t5VERVeYk2KQ9Ul4CAyq7",
     productId: "prod_U65GjQ5kHCWQRe",
-    price: 49,
+    price: 99,
     description: "One competition with advanced features for serious organisers",
     highlight: true,
     limits: { organizers: 4, judges: 10, tabulators: 4 },
