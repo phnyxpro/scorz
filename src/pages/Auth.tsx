@@ -28,8 +28,8 @@ const SIGNIN_ROLES: { role: SigninRole; label: string; desc: string; icon: typeo
   { role: "organizer", label: "Organiser", desc: "Manage your events", icon: Briefcase, magicLink: false },
   { role: "contestant", label: "Contestant", desc: "Access your profile", icon: Star, magicLink: false },
   { role: "audience", label: "Audience", desc: "View & vote", icon: Users, magicLink: false },
-  { role: "judge", label: "Judge", desc: "Sign in via email link", icon: Scale, magicLink: true },
-  { role: "tabulator", label: "Tabulator", desc: "Sign in via email link", icon: Calculator, magicLink: true },
+  { role: "judge", label: "Judge", desc: "Password or magic link", icon: Scale, magicLink: true },
+  { role: "tabulator", label: "Tabulator", desc: "Password or magic link", icon: Calculator, magicLink: true },
 ];
 
 const DEMO_ACCOUNTS = [
