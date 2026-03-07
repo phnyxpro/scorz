@@ -168,7 +168,6 @@ function SubEventWorkspace({
   const judgeProfiles = useMemo(() => {
     const m: Record<string, string> = {};
     judgeProfilesData?.forEach(p => {
-      const { friendlyDisplayName } = require("@/lib/utils");
       m[p.user_id] = friendlyDisplayName(p.full_name, p.email);
     });
     return m;
