@@ -63,7 +63,7 @@ function computePenalty(elapsedSeconds: number | undefined, rules: PenaltyRule[]
 }
 
 async function fetchSubEventData(competitionId: string, subEventId: string): Promise<FetchedData> {
-  const [contestantsRes, scoresRes, criteriaRes, timerRes, penaltyRes] = await Promise.all([
+  const [contestantsRes, scoresRes, criteriaRes, timerRes, penaltyRes, assignmentsRes] = await Promise.all([
     supabase
       .from("contestant_registrations")
       .select("id, full_name, sort_order")
@@ -90,6 +90,11 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
       .select("from_seconds, to_seconds, penalty_points")
       .eq("competition_id", competitionId)
       .order("sort_order"),
+    supabase
+      .from("sub_event_assignments")
+      .select("user_id")
+      .eq("sub_event_id", subEventId)
+      .eq("role", "judge"),
   ]);
 
   if (contestantsRes.error) throw contestantsRes.error;
