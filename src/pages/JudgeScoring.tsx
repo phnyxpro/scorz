@@ -454,7 +454,7 @@ export default function JudgeScoring() {
               </Card>
 
               <Card className="border-border/50 bg-card/80">
-                <CardContent className="pt-4">
+                <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">Raw Total</p>
                     <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(1)}</p>
