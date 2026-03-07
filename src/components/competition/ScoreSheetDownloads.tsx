@@ -102,6 +102,7 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
   if (criteriaRes.error) throw criteriaRes.error;
   if (timerRes.error) throw timerRes.error;
   if (penaltyRes.error) throw penaltyRes.error;
+  if (assignmentsRes.error) throw assignmentsRes.error;
 
   // Build timer data map — use last stop event per contestant
   const timerData: Record<string, number> = {};
@@ -111,19 +112,26 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
     }
   }
 
-  // Get unique judge IDs and fetch their names
-  const judgeIds = [...new Set((scoresRes.data || []).map((s) => s.judge_id))];
+  // Merge judge IDs from scores + assignments
+  const assignedJudgeIds = (assignmentsRes.data || []).map((a) => a.user_id);
+  const scoreJudgeIds = [...new Set((scoresRes.data || []).map((s) => s.judge_id))];
+  const allJudgeIds = [...new Set([...assignedJudgeIds, ...scoreJudgeIds])];
   const judgeProfiles: Record<string, string> = {};
 
-  if (judgeIds.length > 0) {
+  if (allJudgeIds.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name")
-      .in("user_id", judgeIds);
+      .in("user_id", allJudgeIds);
     for (const p of profiles || []) {
       judgeProfiles[p.user_id] = p.full_name || "Unknown Judge";
     }
   }
+
+  const assignedJudges = assignedJudgeIds.map((uid) => ({
+    user_id: uid,
+    name: judgeProfiles[uid] || "Unknown Judge",
+  }));
 
   return {
     contestants: contestantsRes.data || [],
@@ -140,6 +148,7 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
       to_seconds: r.to_seconds,
       penalty_points: Number(r.penalty_points),
     })),
+    assignedJudges,
   };
 }
 
