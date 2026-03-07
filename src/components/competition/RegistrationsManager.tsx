@@ -547,6 +547,13 @@ export function RegistrationsManager({ competitionId }: Props) {
         onApprove={handleApprove}
         onReject={handleReject}
       />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog
+        competitionId={competitionId}
+        open={showBulkUpload}
+        onOpenChange={setShowBulkUpload}
+      />
     </div>
   );
 }
