@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText, MessageSquare } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText, MessageSquare, Zap } from "lucide-react";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -184,14 +184,64 @@ export default function ChiefJudgeDashboard() {
         )}
       </div>
 
-      {/* Active Scoring Manager */}
-      {comp && (
-        <ActiveScoringManager
-          competitionId={competitionId}
-          activeLevelId={comp?.active_scoring_level_id}
-          activeSubEventId={comp?.active_scoring_sub_event_id}
-        />
-      )}
+      {/* Action Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Active Scoring Card */}
+        <Collapsible>
+          <Card className="border-border/50 bg-card/80">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm font-medium">Active Scoring Control</CardTitle>
+                  </div>
+                  {comp?.active_scoring_sub_event_id && (
+                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">LIVE</Badge>
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-3">
+                {comp && (
+                  <ActiveScoringManager
+                    competitionId={competitionId}
+                    activeLevelId={comp.active_scoring_level_id}
+                    activeSubEventId={comp.active_scoring_sub_event_id}
+                  />
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Production Chat Card */}
+        <Collapsible>
+          <Card className="border-border/50 bg-card/80">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm font-medium">Production Chat</CardTitle>
+                  </div>
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="text-[10px] h-5 min-w-5 px-1.5">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-3">
+                <EventChat competitionId={competitionId!} />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </div>
 
       {/* Sub-event selector */}
       <Card className="border-border/50 bg-card/80 mb-4">
@@ -367,22 +417,6 @@ export default function ChiefJudgeDashboard() {
         </motion.div>
       )}
 
-      {/* Production Chat */}
-      <Collapsible className="mt-4">
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full gap-2 text-xs relative">
-            <MessageSquare className="h-4 w-4" /> Production Chat
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3">
-          <EventChat competitionId={competitionId!} />
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Certify Dialog */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
