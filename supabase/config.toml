@@ -29,3 +29,5 @@ project_id = "dwcdxofvxsmpbziosvbo"
     verify_jwt = false
   [functions.send-welcome-email]
     verify_jwt = false
+  [functions.notify-admin-activity]
+    verify_jwt = false
