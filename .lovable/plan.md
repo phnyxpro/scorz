@@ -1,41 +1,47 @@
 
 
-## Problem
+## Fix Blank Rendering in Browser Automation
 
-Staff invitations are being accepted (the `accepted_at` timestamp is set), but the system never creates the corresponding `sub_event_assignments` records. The `accept_staff_invitations` database function only marks invitations as accepted — it does not provision the actual assignments that the Judge/Tabulator dashboards query.
+The app appears blank in headless browser testing due to two compounding issues:
 
-The dashboards use `useStaffView` → `useMyAssignedSubEvents` → queries `sub_event_assignments`, which is currently empty for NPS 2026.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-## Root Cause
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-The `accept_staff_invitations` RPC function is:
-```sql
-UPDATE public.staff_invitations SET accepted_at = now()
-WHERE lower(email) = lower(_email) AND accepted_at IS NULL;
+---
+
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
-It never inserts into `sub_event_assignments` or provisions `user_roles`.
 
-## Plan
+This ensures no filter is applied when properties are unset, which is the default state.
 
-### 1. Update the `accept_staff_invitations` database function
+---
 
-Rewrite it to also:
-- Look up sub-events from `staff_invitation_sub_events` for each accepted invitation
-- Insert into `sub_event_assignments` (with `ON CONFLICT DO NOTHING` to be idempotent)
-- Insert the invitation's role into `user_roles` (with `ON CONFLICT DO NOTHING`)
+### Summary
 
-This is a single SQL migration.
-
-### 2. Backfill existing accepted invitations
-
-Run a one-time migration that creates `sub_event_assignments` and `user_roles` entries for the 3 already-accepted invitations (Shivanee, Mtmima, Stefan) based on their `staff_invitation_sub_events` data.
-
-### Technical Details
-
-The updated function will loop through newly-accepted invitations and for each:
-1. Resolve `user_id` from `auth.users` by email
-2. Insert into `user_roles` (role from invitation)
-3. For each linked sub-event in `staff_invitation_sub_events`, insert into `sub_event_assignments` with the role and `is_chief` flag
-
-Both steps use `ON CONFLICT DO NOTHING` to prevent duplicates on re-login.
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
