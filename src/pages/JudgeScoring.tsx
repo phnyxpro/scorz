@@ -92,9 +92,12 @@ export default function JudgeScoring() {
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
+  const [showCertifyAllDialog, setShowCertifyAllDialog] = useState(false);
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
+  const [certifyAllPending, setCertifyAllPending] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
