@@ -98,13 +98,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
           {/* Right: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {roles.length > 0 && (
+            {(roles.length > 0 || isChiefJudge) && (
               <div className="hidden sm:flex gap-1">
                 {roles.map((r) => (
                   <span key={r} className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {formatRoleName(r)}
                   </span>
                 ))}
+                {isChiefJudge && !roles.includes("chief_judge") && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                    Chief Judge
+                  </span>
+                )}
               </div>
             )}
             <AuditoriumControls />
