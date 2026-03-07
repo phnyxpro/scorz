@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Clock, MessageSquare, Settings, Calculator } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
+import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
 
 interface ScoringSettingsManagerProps {
   competitionId: string;
@@ -246,6 +247,13 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
           </CardContent>
         </Card>
       )}
+
+      {/* Score Sheet Downloads */}
+      <ScoreSheetDownloads
+        competitionId={competitionId}
+        levels={levels || []}
+        subEvents={(allSubEvents || []).map(se => ({ id: se.id, name: se.name, level_id: se.level_id, status: se.status }))}
+      />
     </div>
   );
 }
