@@ -102,7 +102,7 @@ export function useDashboardStats(effectiveUserId?: string) {
         const { count: myRegs } = await supabase
           .from("contestant_registrations")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id);
+          .eq("user_id", uid);
         results.push({ label: "My Registrations", value: myRegs ?? 0, to: "/profile" });
       }
     } catch (err) {
