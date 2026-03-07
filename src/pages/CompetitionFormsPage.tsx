@@ -43,80 +43,34 @@ export default function CompetitionFormsPage() {
     },
   });
 
-  // Fetch registration forms for this competition
-  const { data: forms, isLoading } = useQuery({
-    queryKey: ["registration_forms", id],
-    enabled: !!id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registration_forms")
-        .select("id, name, description, created_at, updated_at")
-        .eq("competition_id", id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  // registration_forms table doesn't exist yet — stub empty
+  const forms: { id: string; name: string; description: string | null; created_at: string; updated_at: string }[] = [];
+  const isLoading = false;
 
-  // Create form mutation
+  // Create form mutation (stub — table doesn't exist yet)
   const createForm = useMutation({
     mutationFn: async (data: { name: string; description: string }) => {
-      const { error } = await supabase
-        .from("registration_forms")
-        .insert([
-          {
-            competition_id: id,
-            name: data.name,
-            description: data.description,
-            created_by: user?.id,
-          },
-        ]);
-      if (error) throw error;
+      toast({ title: "Registration forms feature coming soon", variant: "destructive" });
+      throw new Error("registration_forms table not yet created");
     },
     onSuccess: () => {
-      toast({ title: "Registration form created" });
       setFormName("");
       setFormDescription("");
       setIsCreateOpen(false);
-      qc.invalidateQueries({ queryKey: ["registration_forms", id] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error creating form", description: error.message, variant: "destructive" });
     },
   });
 
-  // Update form mutation
+  // Update form mutation (stub)
   const updateForm = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
-      if (!editingForm) return;
-      const { error } = await supabase
-        .from("registration_forms")
-        .update({ name: data.name, description: data.description })
-        .eq("id", editingForm.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Registration form updated" });
-      setEditingForm(null);
-      setFormName("");
-      setFormDescription("");
-      setIsEditOpen(false);
-      qc.invalidateQueries({ queryKey: ["registration_forms", id] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error updating form", description: error.message, variant: "destructive" });
+    mutationFn: async (_data: { name: string; description: string }) => {
+      throw new Error("registration_forms table not yet created");
     },
   });
 
-  // Delete form mutation
+  // Delete form mutation (stub)
   const deleteForm = useMutation({
     mutationFn: async () => {
-      if (!editingForm) return;
-      const { error } = await supabase
-        .from("registration_forms")
-        .delete()
-        .eq("id", editingForm.id);
-      if (error) throw error;
+      throw new Error("registration_forms table not yet created");
     },
     onSuccess: () => {
       toast({ title: "Registration form deleted" });

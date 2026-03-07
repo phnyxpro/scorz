@@ -255,9 +255,9 @@ export default function CompetitionDetail() {
     "description": comp.description || eventDescription,
     "startDate": comp.start_date,
     "endDate": comp.end_date,
-    "location": comp.location ? {
+    "location": (comp as any).location ? {
       "@type": "Place",
-      "name": comp.location
+      "name": (comp as any).location
     } : {
       "@type": "VirtualLocation",
       "url": canonicalUrl
