@@ -141,6 +141,17 @@ export async function exportMultipleElementsAsPDF(
   pdf.save(`${filename}.pdf`);
 }
 
+/** Export multi-sheet XLSX workbook */
+export function exportMultiSheetXLSX(sheets: { name: string; rows: SheetRow[] }[], filename: string) {
+  if (!sheets.length) return;
+  const wb = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    const ws = XLSX.utils.json_to_sheet(sheet.rows.length ? sheet.rows : [{}]);
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31)); // Excel 31-char tab limit
+  }
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+}
+
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
