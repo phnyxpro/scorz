@@ -220,6 +220,7 @@ function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, for
       <TableCell>
         <SlotPickerCell
           regId={reg.id}
+          subEventId={reg.sub_event_id}
           slot={slot}
           allSlots={allSlots}
           onAssign={onSlotAssign}
