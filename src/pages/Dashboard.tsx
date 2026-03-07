@@ -175,7 +175,7 @@ export default function Dashboard() {
   });
   const isJudgeRole = roles.includes("judge");
 
-  const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(effectiveUserId, isJudgeRole);
+  const { competitions: assignedComps, loading: compsLoading } = useAssignedCompetitions(effectiveUserId, effectiveEmail, isJudgeRole);
 
   const [selectedCompId, setSelectedCompId] = useState(() => localStorage.getItem(SELECTED_COMP_KEY) || "");
 
