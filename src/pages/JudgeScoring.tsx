@@ -471,7 +471,7 @@ export default function JudgeScoring() {
               {!isCertified && (
                 <div className="space-y-2">
                   <div className="flex gap-2">
-                    <Button onClick={handleSave} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
+                    <Button onClick={() => handleSave()} disabled={upsert.isPending || !allScored} className="flex-1" variant="outline">
                       <Save className="h-4 w-4 mr-1" />
                       {upsert.isPending ? "Saving…" : "Save Draft"}
                     </Button>
