@@ -29,7 +29,6 @@ interface Props {
 export function ContestantDetailSheet({ registration, open, onOpenChange, onApprove, onReject }: Props) {
   const reg = registration;
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  if (!reg) return null;
 
   const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
 
@@ -57,6 +56,8 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
         }));
     },
   });
+
+  if (!reg) return null;
 
   const socialHandles = reg.social_handles as Record<string, string> | null;
   const hasSocials = socialHandles && Object.keys(socialHandles).length > 0;
