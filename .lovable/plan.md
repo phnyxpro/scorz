@@ -1,47 +1,36 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Mobile Responsiveness Optimisation — Judge Scoring
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Current Issues
+- Header takes up significant vertical space on mobile with badges side-by-side
+- CriterionSlider label + number input + "Press 1-5" hint crowd the row on narrow screens
+- Criterion descriptions show below slider even on tiny screens, consuming vertical space
+- Action buttons ("Save Draft" / "Certify & Lock") are small touch targets
+- Certify dialogs have desktop-sized padding
+- The sidebar toggle + back button + badges row wraps awkwardly on 390px
+- "View Full Rubric" button uses horizontal space for an icon + text
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. `src/pages/JudgeScoring.tsx` — Mobile layout tweaks**
+- **Header**: Stack contestant badge below the title row on mobile (`flex-wrap` + full-width badge on `sm:` breakpoint)
+- **Action buttons**: Make Save/Certify buttons taller on mobile (`h-12` vs default) for easier touch targets
+- **Certify dialogs**: Add `max-h-[90vh] overflow-y-auto` to dialog content for small screens so signature pad doesn't overflow
+- **Raw Total card**: Reduce vertical padding on mobile
+- **"View Full Rubric" button**: Icon-only on mobile, text on `sm:`+
 
----
+**2. `src/components/scoring/CriterionSlider.tsx` — Compact mobile layout**
+- Hide "Press 1-5" keyboard hint on mobile (it's a desktop shortcut)
+- Stack criterion name above the input+slider on very narrow screens using responsive flex direction
+- Make the slider thumb larger on touch devices (`h-6 w-6` on mobile) for easier dragging
+- Reduce padding from `p-2` to `p-1.5` on mobile
 
-### Fix 1: Conditionally apply auditorium filter
+**3. `src/components/ui/slider.tsx` — Larger touch target**
+- Increase thumb size on mobile: `h-6 w-6 sm:h-5 sm:w-5` and track height `h-2.5 sm:h-2`
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+- `src/pages/JudgeScoring.tsx` — responsive header, taller buttons, dialog scroll, compact spacing
+- `src/components/scoring/CriterionSlider.tsx` — hide keyboard hint on mobile, reduce padding
+- `src/components/ui/slider.tsx` — larger thumb and track for touch
 
