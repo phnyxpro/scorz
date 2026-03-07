@@ -101,6 +101,10 @@ export default function JudgeScoring() {
   const [certifyAllPending, setCertifyAllPending] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Swipe gesture state
+  const touchStartX = useRef<number | null>(null);
+  const [swipeHintVisible, setSwipeHintVisible] = useState(true);
+
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
 
@@ -362,7 +366,26 @@ export default function JudgeScoring() {
       )}
 
       {/* Main scoring area */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div
+        className="flex-1 min-w-0 overflow-y-auto"
+        onTouchStart={(e) => {
+          if (!isMobile || filteredContestants.length < 2) return;
+          touchStartX.current = e.touches[0].clientX;
+        }}
+        onTouchEnd={(e) => {
+          if (!isMobile || touchStartX.current === null || filteredContestants.length < 2 || isCertified) return;
+          const diff = e.changedTouches[0].clientX - touchStartX.current;
+          touchStartX.current = null;
+          if (Math.abs(diff) < 50) return;
+          setSwipeHintVisible(false);
+          const currentIdx = filteredContestants.findIndex(r => r.id === selectedContestant);
+          if (diff < 0 && currentIdx < filteredContestants.length - 1) {
+            setSelectedContestant(filteredContestants[currentIdx + 1].id);
+          } else if (diff > 0 && currentIdx > 0) {
+            setSelectedContestant(filteredContestants[currentIdx - 1].id);
+          }
+        }}
+      >
         <div className="px-3 sm:px-6 py-4 sm:py-6">
           {/* Header */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
@@ -385,11 +408,14 @@ export default function JudgeScoring() {
                   On Stage
                 </Badge>
               )}
-              {selectedContestantName && (
+            {selectedContestantName && (
                 <Badge variant="secondary" className="shrink-0 gap-1">
                   <User className="h-3 w-3" />
                   <span className="truncate max-w-[120px]">{selectedContestantName}</span>
                 </Badge>
+              )}
+              {isMobile && swipeHintVisible && selectedContestant && filteredContestants.length > 1 && (
+                <span className="text-[10px] text-muted-foreground/60 font-mono">Swipe ← →</span>
               )}
             </div>
           </div>

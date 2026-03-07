@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,9 +82,9 @@ export function useMyScoreForContestant(subEventId: string | undefined, contesta
 
 export function useUpsertScore() {
   const qc = useQueryClient();
+  const hasFiredScoringStarted = useRef<Set<string>>(new Set());
   return useMutation({
     mutationFn: async (values: Partial<JudgeScore> & { sub_event_id: string; judge_id: string; contestant_registration_id: string }) => {
-      // Try update first, then insert
       if (values.id) {
         const { error } = await supabase
           .from("judge_scores")
@@ -103,23 +103,16 @@ export function useUpsertScore() {
       }
     },
     onMutate: async (newScore) => {
-      // Cancel outgoing refetches
       await qc.cancelQueries({ queryKey: ["my_score", newScore.sub_event_id, newScore.contestant_registration_id] });
       await qc.cancelQueries({ queryKey: ["my_scores", newScore.sub_event_id] });
-
-      // Snapshot the previous value
       const previousScore = qc.getQueryData(["my_score", newScore.sub_event_id, newScore.contestant_registration_id]);
-
-      // Optimistically update to the new value
       qc.setQueryData(
         ["my_score", newScore.sub_event_id, newScore.contestant_registration_id],
         (old: any) => ({ ...old, ...newScore })
       );
-
       return { previousScore };
     },
     onError: (err: any, newScore, context) => {
-      // Rollback on error
       if (context?.previousScore) {
         qc.setQueryData(
           ["my_score", newScore.sub_event_id, newScore.contestant_registration_id],
@@ -129,10 +122,17 @@ export function useUpsertScore() {
       toast({ title: "Error saving score", description: err.message, variant: "destructive" });
     },
     onSettled: (data, error, variables) => {
-      // Always refetch after error or success
       qc.invalidateQueries({ queryKey: ["my_scores", variables.sub_event_id] });
       qc.invalidateQueries({ queryKey: ["my_score", variables.sub_event_id, variables.contestant_registration_id] });
       qc.invalidateQueries({ queryKey: ["all_scores", variables.sub_event_id] });
+
+      // Fire scoring_started once per sub-event (only on first insert, not update)
+      if (!error && !variables.id && !hasFiredScoringStarted.current.has(variables.sub_event_id)) {
+        hasFiredScoringStarted.current.add(variables.sub_event_id);
+        supabase.functions.invoke("notify-scoring-events", {
+          body: { type: "scoring_started", sub_event_id: variables.sub_event_id },
+        }).catch(() => {});
+      }
     },
   });
 }
@@ -155,6 +155,11 @@ export function useCertifyScore() {
       qc.invalidateQueries({ queryKey: ["my_scores", v.sub_event_id] });
       qc.invalidateQueries({ queryKey: ["my_score", v.sub_event_id, v.contestant_registration_id] });
       toast({ title: "Score certified and locked" });
+
+      // Notify scoring events — judge certified
+      supabase.functions.invoke("notify-scoring-events", {
+        body: { type: "judge_certified", sub_event_id: v.sub_event_id },
+      }).catch(() => {});
     },
     onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
   });
