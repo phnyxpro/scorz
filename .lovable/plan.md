@@ -1,47 +1,41 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Display Judge Full Names in Tabulator Dashboard & Public Event Page
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+1. **SideBySideScores** (Side-by-Side Detail tab) shows raw judge UUIDs instead of names
+2. **JudgeActivityIndicator** and **LevelParticipants** fall back to email usernames when `full_name` is null in profiles (e.g. "msolwazi.rootsfoundation", "pattianneali")
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. `src/components/tabulator/SideBySideScores.tsx`**
+- Add a `judgeProfiles` prop: `Record<string, string>` mapping judge_id → display name
+- Replace `{s.judge_id}` (line 53) with `{judgeProfiles?.[s.judge_id] || s.judge_id}`
 
----
+**2. `src/pages/TabulatorDashboard.tsx`**
+- In `SubEventWorkspace`, build a `judgeProfiles` map from the already-fetched `JudgeActivityIndicator` data pattern (query `profiles` table for all unique judge IDs from `allScores`)
+- Pass this map to `SideBySideScores` as the new prop
 
-### Fix 1: Conditionally apply auditorium filter
+**3. `src/components/chief-judge/JudgeActivityIndicator.tsx`**
+- Improve the fallback on line 44: when `full_name` is null, extract a friendly name from email (strip domain, replace dots/underscores with spaces, title-case) instead of showing the raw email prefix
 
-**File: `src/contexts/ThemeContext.tsx`**
+**4. `src/components/public/LevelParticipants.tsx`**
+- Same friendly email-to-name fallback when `full_name` is null (line 47)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+### Friendly email fallback logic
+```typescript
+function friendlyName(fullName: string | null, email: string | null): string {
+  if (fullName) return fullName;
+  if (!email) return "Unknown";
+  const local = email.split("@")[0];
+  return local.replace(/[._-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 ```
+This turns "msolwazi.rootsfoundation" → "Msolwazi Rootsfoundation" as a readable fallback.
 
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files changed
+- `src/components/tabulator/SideBySideScores.tsx` — add `judgeProfiles` prop, display names
+- `src/pages/TabulatorDashboard.tsx` — fetch judge profiles, pass to SideBySideScores
+- `src/components/chief-judge/JudgeActivityIndicator.tsx` — friendly email fallback
+- `src/components/public/LevelParticipants.tsx` — friendly email fallback
 
