@@ -11,6 +11,8 @@ import { mainNavItems } from "@/lib/navigation";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { AuditoriumControls } from "@/components/AuditoriumControls";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, roles, hasRole, masquerade, stopMasquerade, isMasquerading } = useAuth();
