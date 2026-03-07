@@ -59,15 +59,15 @@ export default function Onboarding() {
   const [created, setCreated] = useState(false);
 
   // load competition details after creation
-  const { data: competition, refetch: refetchComp } = useQuery(
-    ["competition", competitionId],
-    async () => {
+  const { data: competition, refetch: refetchComp } = useQuery({
+    queryKey: ["competition", competitionId],
+    queryFn: async () => {
       if (!competitionId) return null;
       const { data } = await supabase.from("competitions").select("*").eq("id", competitionId).single();
       return data;
     },
-    { enabled: !!competitionId }
-  );
+    enabled: !!competitionId,
+  });
 
   // safety: if user signs in and is not organiser, show message
   if (user && !hasRole("organizer")) {
