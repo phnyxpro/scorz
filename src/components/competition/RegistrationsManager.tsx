@@ -138,7 +138,7 @@ function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApp
       <TableCell>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px]">
-            {reg.age_category}
+            {getAgeCategoryLabel(reg.age_category)}
           </Badge>
           {reg.age_category === "minor" && !reg.guardian_name && (
             <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
