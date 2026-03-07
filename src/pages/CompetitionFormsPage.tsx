@@ -43,20 +43,9 @@ export default function CompetitionFormsPage() {
     },
   });
 
-  // Fetch registration forms for this competition
-  const { data: forms, isLoading } = useQuery({
-    queryKey: ["registration_forms", id],
-    enabled: !!id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registration_forms")
-        .select("id, name, description, created_at, updated_at")
-        .eq("competition_id", id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  // registration_forms table doesn't exist yet — stub empty
+  const forms: { id: string; name: string; description: string | null; created_at: string; updated_at: string }[] = [];
+  const isLoading = false;
 
   // Create form mutation
   const createForm = useMutation({
