@@ -410,10 +410,16 @@ export default function JudgeScoring() {
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {onStageContestant === selectedContestant && (
-                <Badge variant="default" className="shrink-0 gap-1 bg-red-500/20 text-red-600 border border-red-500/50">
-                  <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+              {onStageContestant === selectedContestant && selectedContestant && (
+                <Badge variant="outline" className="shrink-0 gap-1 border-secondary/50 text-secondary">
+                  <span className="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
                   On Stage
+                </Badge>
+              )}
+              {isLive && onStageContestant === selectedContestant && (
+                <Badge variant="default" className="shrink-0 gap-1 bg-destructive/20 text-destructive border border-destructive/30">
+                  <span className="h-2 w-2 rounded-full bg-destructive animate-pulse"></span>
+                  LIVE
                 </Badge>
               )}
             {selectedContestantName && (
