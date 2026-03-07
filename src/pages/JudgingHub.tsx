@@ -95,7 +95,14 @@ function useJudgingOverview(competitionId: string | undefined) {
 }
 
 export function JudgingHubContent() {
-  const { data: competitions, isLoading: compsLoading } = useCompetitions();
+  const { hasRole } = useAuth();
+  const isPrivileged = hasRole("admin") || hasRole("organizer");
+  const { data: allCompetitions, isLoading: allCompsLoading } = useCompetitions();
+  const { assignedCompetitions, isLoading: staffLoading } = useStaffView();
+
+  const compsLoading = isPrivileged ? allCompsLoading : staffLoading;
+  const competitions = isPrivileged ? allCompetitions : assignedCompetitions;
+
   const activeComps = useMemo(
     () => (competitions || []).filter((c) => c.status === "active" || c.status === "completed"),
     [competitions]
