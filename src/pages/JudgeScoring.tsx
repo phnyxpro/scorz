@@ -533,6 +533,40 @@ export default function JudgeScoring() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Certify All Dialog */}
+      <Dialog open={showCertifyAllDialog} onOpenChange={(open) => { setShowCertifyAllDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Certify All Scorecards</DialogTitle>
+            <DialogDescription>
+              Sign once to certify all {myScores?.filter(s => !s.is_certified).length ?? 0} remaining scorecards. This action is irreversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground">
+                By signing, you confirm that all scores across all contestants are accurate and final.
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-all-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-all-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed all scores for every contestant and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
+            <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
+            <Button onClick={handleCertifyAll} disabled={!signature || !certifyConfirmed || certifyAllPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" />
+              {certifyAllPending ? "Certifying…" : "Certify All Scorecards"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
