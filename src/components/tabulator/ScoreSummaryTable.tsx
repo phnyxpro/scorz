@@ -24,25 +24,25 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
 
         // Average per criterion across judges
         const criterionAvgs: Record<string, number> = {};
-        if (certifiedScores.length > 0) {
-          for (const s of certifiedScores) {
+        if (scores.length > 0) {
+          for (const s of scores) {
             const cs = s.criterion_scores as Record<string, number>;
             for (const [k, v] of Object.entries(cs)) {
               criterionAvgs[k] = (criterionAvgs[k] || 0) + v;
             }
           }
           for (const k of Object.keys(criterionAvgs)) {
-            criterionAvgs[k] = criterionAvgs[k] / certifiedScores.length;
+            criterionAvgs[k] = criterionAvgs[k] / scores.length;
           }
         }
 
         // Use scoring method for final aggregation
-        const rawTotals = certifiedScores.map((s) => s.raw_total);
+        const rawTotals = scores.map((s) => s.raw_total);
         const avgPenalty =
-          certifiedScores.length > 0
-            ? certifiedScores.reduce((a, s) => a + s.time_penalty, 0) / certifiedScores.length
+          scores.length > 0
+            ? scores.reduce((a, s) => a + s.time_penalty, 0) / scores.length
             : 0;
-        const avgFinal = certifiedScores.length > 0
+        const avgFinal = scores.length > 0
           ? calculateMethodScore(scoringMethod, rawTotals, avgPenalty)
           : 0;
 
