@@ -8,6 +8,7 @@ import { useTabulatorCertification } from "@/hooks/useTabulator";
 import { useWitnessCertification } from "@/hooks/useWitness";
 import { useVoteCounts } from "@/hooks/useAudienceVoting";
 import { PrintableResults } from "@/components/results/PrintableResults";
+import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -223,6 +224,17 @@ export default function ResultsHub() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Score Card Export */}
+          {canExport && (
+            <ScoreCardExporter
+              contestants={registrations?.filter(r => r.sub_event_id === selectedSubEventId) || []}
+              subEventName={selectedSubEvent?.name || ""}
+              competitionName={comp?.name || ""}
+              judgeScores={allScores || []}
+              availableJudges={[]} // Could be populated with actual judge data if needed
+            />
           )}
 
           {voteCounts && Object.keys(voteCounts).length > 0 && (

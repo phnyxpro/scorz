@@ -20,6 +20,7 @@ import { SignaturePad } from "@/components/registration/SignaturePad";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
+import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -324,6 +325,16 @@ function SubEventWorkspace({
         </Card>
       )}
 
+      {/* Score Card Exporter */}
+      {tabCertified && (
+        <ScoreCardExporter
+          subEventId={subEventId}
+          competitionId={competitionId}
+          contestants={seContestants}
+          scoresByContestant={scoresByContestant}
+          rubricNames={rubricNames}
+        />
+      )}
 
       {/* Certify Dialog (shared for tabulator & witness) */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
