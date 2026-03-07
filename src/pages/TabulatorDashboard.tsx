@@ -294,6 +294,7 @@ function SubEventWorkspace({
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
                     judgeProfiles={judgeProfiles}
+                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, regId) : undefined}
                   />
                 </CardContent>
               </Card>
