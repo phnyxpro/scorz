@@ -567,12 +567,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     }
   };
 
-  if (isLoading) return <div className="text-muted-foreground text-sm animate-pulse">Loading registrations…</div>;
-
-  const pendingCount = registrations?.filter((r) => r.status === "pending").length || 0;
-  const hasSubEvents = subEventIds.length > 0;
-
-  // Count per sub-event
+  // Count per sub-event (must be before early return)
   const countBySubEvent = useMemo(() => {
     const map: Record<string, number> = { all: registrations?.length || 0 };
     registrations?.forEach((r) => {
@@ -581,6 +576,11 @@ export function RegistrationsManager({ competitionId }: Props) {
     });
     return map;
   }, [registrations]);
+
+  if (isLoading) return <div className="text-muted-foreground text-sm animate-pulse">Loading registrations…</div>;
+
+  const pendingCount = registrations?.filter((r) => r.status === "pending").length || 0;
+  const hasSubEvents = subEventIds.length > 0;
 
   const renderTable = () => (
     <div className="overflow-x-auto">
