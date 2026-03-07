@@ -2,9 +2,18 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, FileText } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import { calculateMethodScore } from "@/lib/scoring-methods";
+import { getAvgDuration } from "@/hooks/usePerformanceTimer";
+
+interface PerformanceDuration {
+  id: string;
+  sub_event_id: string;
+  contestant_registration_id: string;
+  tabulator_id: string;
+  duration_seconds: number;
+}
 
 interface Props {
   scoresByContestant: Record<string, JudgeScore[]>;
@@ -13,9 +22,17 @@ interface Props {
   rubricNames: string[];
   indexToName?: Record<string, string>;
   scoringMethod?: string;
+  durations?: PerformanceDuration[];
 }
 
-export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, indexToName = {}, scoringMethod = "olympic" }: Props) {
+function formatDuration(secs: number): string {
+  if (secs <= 0) return "—";
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, indexToName = {}, scoringMethod = "olympic", durations }: Props) {
   const rows = useMemo(() => {
     return Object.entries(scoresByContestant)
       .map(([regId, scores]) => {
@@ -23,7 +40,6 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
         const allCertified = scores.length > 0 && scores.every((s) => s.is_certified);
         const judgeCount = scores.length;
 
-        // Average per criterion across judges
         const criterionAvgs: Record<string, number> = {};
         if (scores.length > 0) {
           for (const s of scores) {
@@ -38,7 +54,6 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
           }
         }
 
-        // Use scoring method for final aggregation
         const rawTotals = scores.map((s) => s.raw_total);
         const avgPenalty =
           scores.length > 0
@@ -47,6 +62,8 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
         const avgFinal = scores.length > 0
           ? calculateMethodScore(scoringMethod, rawTotals, avgPenalty)
           : 0;
+
+        const avgDur = durations ? getAvgDuration(durations, regId) : 0;
 
         return {
           regId,
@@ -57,10 +74,11 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
           criterionAvgs,
           avgPenalty,
           avgFinal,
+          avgDuration: avgDur,
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal);
-  }, [scoresByContestant, contestantName, scoringMethod]);
+  }, [scoresByContestant, contestantName, scoringMethod, durations]);
 
   if (rows.length === 0) {
     return (
@@ -81,6 +99,7 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
                 {n}
               </TableHead>
             ))}
+            <TableHead className="text-center text-xs">Duration</TableHead>
             <TableHead className="text-center">Penalty</TableHead>
             <TableHead className="text-center font-bold">Final Avg</TableHead>
             <TableHead className="text-center">Status</TableHead>
@@ -118,6 +137,7 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
                   {r.criterionAvgs[n] != null ? r.criterionAvgs[n].toFixed(2) : "—"}
                 </TableCell>
               ))}
+              <TableCell className="text-center font-mono text-xs">{formatDuration(r.avgDuration)}</TableCell>
               <TableCell className="text-center font-mono text-xs text-destructive">
                 {r.avgPenalty > 0 ? `-${r.avgPenalty.toFixed(1)}` : "0"}
               </TableCell>

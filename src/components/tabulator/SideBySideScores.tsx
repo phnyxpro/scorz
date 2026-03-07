@@ -1,32 +1,45 @@
 import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Timer } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 interface Props {
   scores: JudgeScore[];
   rubricNames: string[];
-  /** Map from numeric index ("0","1",...) to rubric name */
   indexToName?: Record<string, string>;
   contestantName: string;
   contestantUserId?: string;
-  /** Map judge_id → display name */
   judgeProfiles?: Record<string, string>;
+  durationSeconds?: number;
 }
 
-export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId, judgeProfiles = {} }: Props) {
+function formatDuration(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId, judgeProfiles = {}, durationSeconds }: Props) {
   if (scores.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-foreground">
-        {contestantUserId ? (
-          <Link to={`/profile/${contestantUserId}`} className="hover:text-secondary hover:underline transition-colors">
-            {contestantName}
-          </Link>
-        ) : contestantName}
-      </h4>
+      <div className="flex items-center gap-2 flex-wrap">
+        <h4 className="text-sm font-medium text-foreground">
+          {contestantUserId ? (
+            <Link to={`/profile/${contestantUserId}`} className="hover:text-secondary hover:underline transition-colors">
+              {contestantName}
+            </Link>
+          ) : contestantName}
+        </h4>
+        {durationSeconds != null && durationSeconds > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-mono">
+            <Timer className="h-2.5 w-2.5" />
+            {formatDuration(durationSeconds)}
+          </Badge>
+        )}
+      </div>
       <div className="overflow-x-auto border border-border rounded-md">
         <Table>
           <TableHeader>
@@ -44,7 +57,6 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
           <TableBody>
             {scores.map((s) => {
               const cs = s.criterion_scores as Record<string, number>;
-              // Remap numeric indices to rubric names
               const mapped: Record<string, number> = {};
               for (const [k, v] of Object.entries(cs)) {
                 mapped[indexToName[k] ?? k] = v;
