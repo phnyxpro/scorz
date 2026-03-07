@@ -68,8 +68,9 @@ function useJudgingOverview(competitionId: string | undefined) {
 
       const { data: registrations, error: re } = subEventIds.length
         ? await supabase.from("contestant_registrations")
-            .select("id, full_name, sub_event_id, status, competition_id, user_id")
+            .select("id, full_name, sub_event_id, status, competition_id, user_id, sort_order")
             .eq("competition_id", competitionId!).neq("status", "rejected")
+            .order("sort_order", { ascending: true })
         : { data: [] as any[], error: null };
       if (re) throw re;
 
