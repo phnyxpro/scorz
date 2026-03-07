@@ -285,6 +285,7 @@ function SubEventWorkspace({
                   <SideBySideScores
                     scores={scores}
                     rubricNames={rubricNames}
+                    indexToName={indexToName}
                     contestantName={contestantName(regId)}
                     contestantUserId={contestantUserId(regId)}
                     judgeProfiles={judgeProfiles}
