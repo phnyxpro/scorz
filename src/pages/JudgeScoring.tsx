@@ -640,6 +640,17 @@ export default function JudgeScoring() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Event Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Event Chat</DialogTitle>
+            <DialogDescription>Chat with competition staff</DialogDescription>
+          </DialogHeader>
+          {competitionId && <EventChat competitionId={competitionId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
