@@ -139,7 +139,7 @@ export default function HelpArticle() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        <p>Can't find what you're looking for? Contact us at support@scorz.app</p>
+        <p>Can't find what you're looking for? Contact us at dev@phnyx.pro</p>
       </footer>
       </div>
     </>
