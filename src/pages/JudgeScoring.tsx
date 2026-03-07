@@ -195,7 +195,7 @@ export default function JudgeScoring() {
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaveStatus("saving");
       try {
-        await handleSaveRef.current();
+        await handleSaveRef.current(true);
         setAutoSaveStatus("saved");
         if (autoSaveStatusTimerRef.current) clearTimeout(autoSaveStatusTimerRef.current);
         autoSaveStatusTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 2500);
