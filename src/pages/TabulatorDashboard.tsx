@@ -758,6 +758,7 @@ export default function TabulatorDashboard() {
             competitionId={selectedCompId}
             registrations={overview.registrations}
             rubricNames={rubricNames}
+            indexToName={indexToName}
             onOpenChat={() => setShowChatModal(true)}
             unreadCount={unreadCount}
             onContestantChange={setOnStageContestantId}
