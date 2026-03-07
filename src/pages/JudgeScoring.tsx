@@ -339,31 +339,23 @@ export default function JudgeScoring() {
                         "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
                         selectedContestant === r.id
                           ? "bg-primary/10 text-primary font-medium"
-                          : "text-foreground/80 hover:bg-muted/50"
+                          : "text-foreground/80 hover:bg-muted/50",
+                        onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
                       )}
                     >
                       <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
                         {idx + 1}
                       </span>
                       <span className="truncate text-xs flex-1">{r.full_name}</span>
+                      {onStageContestant === r.id && (
+                        <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                      )}
                       {scoreStatusMap.get(r.id) === "certified" && (
                         <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
                       )}
                       {scoreStatusMap.get(r.id) === "scored" && (
                         <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       )}
-                    </button>
-                    <button
-                      onClick={() => setOnStageContestant(onStageContestant === r.id ? null : r.id)}
-                      className={cn(
-                        "h-6 w-6 rounded flex items-center justify-center transition-colors shrink-0",
-                        onStageContestant === r.id
-                          ? "bg-red-500/30 text-red-600 ring-1 ring-red-500/50"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                      )}
-                      title="On Stage"
-                    >
-                      <span className="h-2 w-2 rounded-full bg-current"></span>
                     </button>
                   </div>
                 ))}
