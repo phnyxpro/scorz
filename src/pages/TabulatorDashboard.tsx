@@ -129,10 +129,12 @@ function SubEventWorkspace({
   const { data: chiefCert } = useCertification(subEventId);
   const { data: tabCert } = useTabulatorCertification(subEventId);
   const { data: witnessCert } = useWitnessCertification(subEventId);
+  const { data: perfDurations } = usePerformanceDurations(subEventId);
   useJudgeScoresRealtime(subEventId);
   useCertificationRealtime(subEventId);
   useTabulatorCertificationRealtime(subEventId);
   useWitnessCertificationRealtime(subEventId);
+  useDurationsRealtime(subEventId);
 
   const upsertTab = useUpsertTabulatorCert();
   const certifyTab = useCertifyTabulator();
