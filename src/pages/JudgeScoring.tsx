@@ -151,7 +151,7 @@ export default function JudgeScoring() {
   const finalScore = Math.max(0, rawTotal - timePenalty);
   const isCertified = existingScore?.is_certified ?? false;
 
-  const handleSave = async () => {
+  const handleSave = async (silent = false) => {
     if (!user || !subEventId || !selectedContestant) return;
     await upsert.mutateAsync({
       id: existingScore?.id,
@@ -165,7 +165,7 @@ export default function JudgeScoring() {
       final_score: finalScore,
       comments: comments || undefined,
     } as any);
-    toast({ title: "Score saved" });
+    if (!silent) toast({ title: "Score saved" });
   };
 
   const handleCertify = async () => {
