@@ -15,7 +15,7 @@ interface Props {
   scoringMethod?: string;
 }
 
-export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, scoringMethod = "olympic" }: Props) {
+export function ScoreSummaryTable({ scoresByContestant, contestantName, contestantUserId, rubricNames, indexToName = {}, scoringMethod = "olympic" }: Props) {
   const rows = useMemo(() => {
     return Object.entries(scoresByContestant)
       .map(([regId, scores]) => {
