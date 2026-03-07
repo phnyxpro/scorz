@@ -28,29 +28,11 @@ export function RegistrationSettingsPanel({ competitionId }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
-        .select("registration_enabled, registration_start_date, registration_end_date")
+        .select("id, status, description")
         .eq("id", competitionId)
         .single();
       if (error) throw error;
-
-      if (data) {
-        setRegistrationEnabled(data.registration_enabled ?? true);
-        if (data.registration_start_date) {
-          const startDt = new Date(data.registration_start_date);
-          setStartDate(startDt.toISOString().split("T")[0]);
-          setStartTime(
-            `${String(startDt.getHours()).padStart(2, "0")}:${String(startDt.getMinutes()).padStart(2, "0")}`
-          );
-        }
-        if (data.registration_end_date) {
-          const endDt = new Date(data.registration_end_date);
-          setEndDate(endDt.toISOString().split("T")[0]);
-          setEndTime(
-            `${String(endDt.getHours()).padStart(2, "0")}:${String(endDt.getMinutes()).padStart(2, "0")}`
-          );
-        }
-      }
-
+      // registration_enabled/start/end columns don't exist yet — use defaults
       return data;
     },
   });
