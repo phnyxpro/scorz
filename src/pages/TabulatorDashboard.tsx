@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePenaltyRules } from "@/hooks/useCompetitions";
+import { usePenaltyRules, useSetActiveScoring } from "@/hooks/useCompetitions";
+import { Switch } from "@/components/ui/switch";
 import { useStaffView } from "@/hooks/useStaffView";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
@@ -37,7 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronDown, ClipboardList, Zap, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronDown, ClipboardList, Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
@@ -435,6 +436,23 @@ export default function TabulatorDashboard() {
 
   const unreadCount = useChatUnreadCount(selectedCompId || "");
 
+  // Active scoring config for the selected competition
+  const { data: activeComp } = useQuery({
+    queryKey: ["active_scoring", selectedCompId],
+    enabled: !!selectedCompId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("active_scoring_level_id, active_scoring_sub_event_id")
+        .eq("id", selectedCompId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const activeScoringSubEventId = activeComp?.active_scoring_sub_event_id;
+  const setActiveScoring = useSetActiveScoring();
+
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
 
   if (compsLoading) return <CardGridSkeleton cards={3} />;
@@ -572,12 +590,21 @@ export default function TabulatorDashboard() {
                                       }>
                                         {se.status}
                                       </Badge>
+                                      <Switch
+                                        checked={activeScoringSubEventId === se.id}
+                                        onCheckedChange={(checked) => {
+                                          setActiveScoring.mutate({
+                                            competitionId: selectedCompId!,
+                                            levelId: checked ? level.id : null,
+                                            subEventId: checked ? se.id : null,
+                                          });
+                                        }}
+                                      />
                                       <Button
                                         size="sm"
                                         variant={isActive ? "secondary" : "default"}
                                         onClick={() => setActiveSubEventId(isActive ? "" : se.id)}
                                       >
-                                        <Zap className="h-3.5 w-3.5 mr-1" />
                                         {isActive ? "Close" : "Select"}
                                       </Button>
                                     </div>

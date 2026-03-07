@@ -297,6 +297,26 @@ export function useUpdateActiveScoringConfig() {
   });
 }
 
+export function useSetActiveScoring() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ competitionId, levelId, subEventId }: { competitionId: string; levelId: string | null; subEventId: string | null }) => {
+      const { error } = await supabase.rpc("set_active_scoring", {
+        _competition_id: competitionId,
+        _level_id: levelId,
+        _sub_event_id: subEventId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["competition", v.competitionId] });
+      qc.invalidateQueries({ queryKey: ["active_scoring", v.competitionId] });
+      toast({ title: "Active scoring updated" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
 export function useDeleteCompetition() {
   const qc = useQueryClient();
   return useMutation({

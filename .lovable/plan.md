@@ -1,33 +1,47 @@
 
 
-## Add "Activate Scoring" Toggle for Tabulators
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The tabulator dashboard sub-event cards show a status badge and a Select/Close button. The user wants a toggle switch between them to let tabulators activate/deactivate scoring for a sub-event. The Select/Close button icon should also be removed.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Challenge: RLS Permissions
-Tabulators cannot update the `competitions` table (only admin/organizer have write access). A new **security definer function** is needed to allow tabulators to safely update only the `active_scoring_level_id` and `active_scoring_sub_event_id` fields.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Plan
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**1. Database migration** — Create a security definer function `set_active_scoring` that:
-- Accepts `_competition_id`, `_level_id` (nullable), `_sub_event_id` (nullable)
-- Checks the caller has tabulator, admin, or organizer role
-- Updates only the two active scoring columns on the competition
+---
 
-**2. `src/hooks/useCompetitions.ts`** — Add a new `useSetActiveScoring` hook that calls the RPC function instead of direct table update, so tabulators can use it.
+### Fix 1: Conditionally apply auditorium filter
 
-**3. `src/pages/TabulatorDashboard.tsx`** — In the sub-event card header (lines 567-583):
-- Import `Switch` component and the new hook
-- Fetch the competition's current `active_scoring_sub_event_id` via a query on the `competitions` table
-- Add a `Switch` toggle between the status badge and the Select/Close button
-- Toggle ON: calls `set_active_scoring(compId, level.id, se.id)`
-- Toggle OFF: calls `set_active_scoring(compId, null, null)`
-- Show the switch as checked when `active_scoring_sub_event_id === se.id`
-- Remove the `<Zap>` icon from the Select/Close button
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Files changed
-- Database migration (new RPC function)
-- `src/hooks/useCompetitions.ts` — new `useSetActiveScoring` hook
-- `src/pages/TabulatorDashboard.tsx` — toggle + button icon removal
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
