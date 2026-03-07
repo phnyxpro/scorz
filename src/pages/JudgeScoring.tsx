@@ -46,6 +46,8 @@ export default function JudgeScoring() {
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const unreadCount = useChatUnreadCount(competitionId);
 
   // Use active scoring config if available
   useEffect(() => {
