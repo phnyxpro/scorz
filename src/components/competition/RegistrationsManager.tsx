@@ -170,7 +170,7 @@ interface SortableRowProps {
   reg: ContestantRegistration;
   idx: number;
   slot?: { id: string; start_time: string; end_time: string };
-  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean }[];
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onSlotAssign: (regId: string, slotId: string) => void;
   onSlotUpdate: (slotId: string, startTime: string, endTime: string) => void;
   formatTime: (time: string) => string;
