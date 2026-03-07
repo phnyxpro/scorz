@@ -27,7 +27,7 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
-  ageCategory: z.enum(["adult", "minor"]).optional().default("adult"),
+  ageCategory: z.enum(["adult", "adult_18_24", "adult_25_34", "adult_35_44", "adult_45_54", "adult_55_plus", "minor"]).optional().default("adult"),
   bio: z.string().optional(),
   videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   guardianName: z.string().optional(),
