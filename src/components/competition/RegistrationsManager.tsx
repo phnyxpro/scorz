@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical } from "lucide-react";
+import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { OnBehalfRegistrationForm } from "@/pages/ContestantRegistration";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { BulkUploadDialog } from "./BulkUploadDialog";
+import { getAgeCategoryLabel } from "@/lib/age-categories";
 import {
   DndContext,
   closestCenter,
@@ -136,7 +138,7 @@ function SortableRow({ reg, idx, slot, onSlotUpdate, formatTime, onSelect, onApp
       <TableCell>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px]">
-            {reg.age_category}
+            {getAgeCategoryLabel(reg.age_category)}
           </Badge>
           {reg.age_category === "minor" && !reg.guardian_name && (
             <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
@@ -221,6 +223,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
   const [search, setSearch] = useState("");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showAddContestant, setShowAddContestant] = useState(false);
   const [walkInName, setWalkInName] = useState("");
@@ -413,6 +416,9 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Button size="sm" onClick={() => setShowAddContestant(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Contestant
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
+                <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
               </Button>
@@ -540,6 +546,13 @@ export function RegistrationsManager({ competitionId }: Props) {
         onOpenChange={(open) => { if (!open) setSelectedReg(null); }}
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog
+        competitionId={competitionId}
+        open={showBulkUpload}
+        onOpenChange={setShowBulkUpload}
       />
     </div>
   );

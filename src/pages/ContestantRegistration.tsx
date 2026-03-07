@@ -27,7 +27,7 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
-  ageCategory: z.enum(["adult", "minor"]).optional().default("adult"),
+  ageCategory: z.enum(["adult", "adult_18_24", "adult_25_34", "adult_35_44", "adult_45_54", "adult_55_plus", "minor"]).optional().default("adult"),
   bio: z.string().optional(),
   videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   guardianName: z.string().optional(),
@@ -505,7 +505,12 @@ function PersonalStep() {
               {...register("ageCategory")}
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
             >
-              <option value="adult">Adult (18+)</option>
+              <option value="adult">Adult</option>
+              <option value="adult_18_24">Adult | 18-24</option>
+              <option value="adult_25_34">Adult | 25-34</option>
+              <option value="adult_35_44">Adult | 35-44</option>
+              <option value="adult_45_54">Adult | 45-54</option>
+              <option value="adult_55_plus">Adult | 55+</option>
               <option value="minor">Minor (Under 18)</option>
             </select>
           </div>
