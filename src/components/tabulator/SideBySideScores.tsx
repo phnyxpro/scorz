@@ -15,7 +15,7 @@ interface Props {
   judgeProfiles?: Record<string, string>;
 }
 
-export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId }: Props) {
+export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId, judgeProfiles = {} }: Props) {
   if (scores.length === 0) return null;
 
   return (
