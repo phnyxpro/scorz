@@ -458,6 +458,12 @@ export default function TabulatorDashboard() {
     () => (overview?.rubric || []).map((r: any) => r.name), [overview?.rubric]
   );
 
+  const indexToName = useMemo(() => {
+    const m: Record<string, string> = {};
+    (overview?.rubric || []).forEach((r: any, i: number) => { m[String(i)] = r.name; });
+    return m;
+  }, [overview?.rubric]);
+
   const unreadCount = useChatUnreadCount(selectedCompId || "");
 
   // Active scoring config for the selected competition
