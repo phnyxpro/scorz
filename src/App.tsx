@@ -59,6 +59,7 @@ const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const HelpCategory = lazy(() => import("./pages/HelpCategory"));
 const HelpArticle = lazy(() => import("./pages/HelpArticle"));
+const CompetitionFormsPage = lazy(() => import("./pages/CompetitionFormsPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -112,6 +113,7 @@ const App = () => (
                 <Route path="/judge-dashboard" element={<ProtectedPage><JudgeDashboard /></ProtectedPage>} />
                 <Route path="/competitions" element={<ProtectedPage><Competitions /></ProtectedPage>} />
                 <Route path="/competitions/:id" element={<ProtectedPage><CompetitionDetail /></ProtectedPage>} />
+                <Route path="/competitions/:id/forms" element={<ProtectedPage><CompetitionFormsPage /></ProtectedPage>} />
                 <Route path="/competitions/:id/register" element={<ProtectedPage><ContestantRegistration /></ProtectedPage>} />
                 <Route path="/competitions/:id/score" element={<ProtectedPage><JudgeScoring /></ProtectedPage>} />
                 <Route path="/competitions/:id/chief-judge" element={<ProtectedPage><ChiefJudgeDashboard /></ProtectedPage>} />

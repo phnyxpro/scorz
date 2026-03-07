@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, TicketCheck, Users, CheckCircle2, Clock } from "lucide-react";
+import { CheckInScanner } from "@/components/CheckInScanner";
 
 export default function CheckInHub() {
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
@@ -84,8 +85,8 @@ export default function CheckInHub() {
     },
   });
 
-  const handleScan = () => {
-    const trimmed = scanInput.trim();
+  const handleScan = (ticketNumber: string) => {
+    const trimmed = ticketNumber.trim();
     if (!trimmed) return;
     // Check if already checked in
     const match = tickets?.find((t) => t.ticket_number === trimmed);
@@ -95,6 +96,11 @@ export default function CheckInHub() {
       return;
     }
     checkInMutation.mutate(trimmed);
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleScan(scanInput);
   };
 
   return (
@@ -139,7 +145,7 @@ export default function CheckInHub() {
           {/* Scan input */}
           <Card>
             <CardContent className="pt-6">
-              <form onSubmit={(e) => { e.preventDefault(); handleScan(); }} className="flex gap-2">
+              <form onSubmit={handleManualSubmit} className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -156,6 +162,13 @@ export default function CheckInHub() {
               </form>
             </CardContent>
           </Card>
+
+          {/* QR Code Scanner */}
+          <CheckInScanner 
+            enabled={!!selectedCompetitionId}
+            onDetected={(code) => handleScan(code)}
+            isChecking={checkInMutation.isPending}
+          />
 
           {/* Tickets table */}
            <Card>
