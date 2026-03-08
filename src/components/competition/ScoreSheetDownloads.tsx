@@ -380,6 +380,36 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
       setLoading((p) => ({ ...p, [subEventId + "_bulk"]: false }));
     }
   };
+
+  const handleExportTemplate = async (subEventId: string, subEventName: string) => {
+    setLoading((p) => ({ ...p, [subEventId + "_template"]: true }));
+    try {
+      const data = await fetchSubEventData(competitionId, subEventId);
+      if (data.assignedJudges.length === 0) {
+        toast({ title: "No judges assigned", description: "Assign judges to this sub-event first.", variant: "destructive" });
+        return;
+      }
+      const safeName = subEventName.replace(/[^a-zA-Z0-9 ]/g, "");
+      if (data.assignedJudges.length === 1) {
+        // Single judge — export one CSV
+        const rows = buildBlankJudgeSheet(data);
+        exportCSV(rows, `${safeName}_${data.assignedJudges[0].name.replace(/[^a-zA-Z0-9 ]/g, "")}_Template`);
+      } else {
+        // Multiple judges — export multi-tab Excel with one sheet per judge
+        const sheets = data.assignedJudges.map((j) => ({
+          name: j.name.slice(0, 28),
+          rows: buildBlankJudgeSheet(data),
+        }));
+        exportMultiSheetXLSX(sheets, `${safeName}_Judge_Templates`);
+      }
+      toast({ title: "Template exported", description: `${data.assignedJudges.length} judge template(s) ready for offline scoring` });
+    } catch (err: any) {
+      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading((p) => ({ ...p, [subEventId + "_template"]: false }));
+    }
+  };
+
   if (subEventsByLevel.length === 0) return null;
 
   return (
