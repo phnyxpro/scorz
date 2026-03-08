@@ -37,11 +37,12 @@ import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronDown, ClipboardList, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronLeft, ChevronDown, ClipboardList, Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
@@ -125,6 +126,7 @@ function SubEventWorkspace({
   const [physicalMatch, setPhysicalMatch] = useState(false);
   const [discrepancyNotes, setDiscrepancyNotes] = useState("");
   const [observations, setObservations] = useState("");
+  const [selectedDetailRegId, setSelectedDetailRegId] = useState("");
 
   const { data: allScores } = useAllScoresForSubEvent(subEventId);
   const { data: chiefCert } = useCertification(subEventId);
@@ -272,21 +274,31 @@ function SubEventWorkspace({
 
         <TabsContent value="detail">
           <div className="space-y-4">
-            {Object.entries(scoresByContestant).map(([regId, scores]) => (
-              <Card key={regId} className="border-border/50 bg-card/80">
+            <Select value={selectedDetailRegId} onValueChange={setSelectedDetailRegId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a contestant…" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(scoresByContestant).map((regId) => (
+                  <SelectItem key={regId} value={regId}>{contestantName(regId)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedDetailRegId && scoresByContestant[selectedDetailRegId] && (
+              <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4">
                   <SideBySideScores
-                    scores={scores}
+                    scores={scoresByContestant[selectedDetailRegId]}
                     rubricNames={rubricNames}
                     indexToName={indexToName}
-                    contestantName={contestantName(regId)}
-                    contestantUserId={contestantUserId(regId)}
+                    contestantName={contestantName(selectedDetailRegId)}
+                    contestantUserId={contestantUserId(selectedDetailRegId)}
                     judgeProfiles={judgeProfiles}
-                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, regId) : undefined}
+                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, selectedDetailRegId) : undefined}
                   />
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 
@@ -434,6 +446,7 @@ export default function TabulatorDashboard() {
   const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [onStageContestantId, setOnStageContestantId] = useState("");
+  const [contestantPages, setContestantPages] = useState<Record<string, number>>({});
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
   useRegistrationsRealtime(selectedCompId || undefined);
@@ -650,72 +663,94 @@ export default function TabulatorDashboard() {
                                     )}
                                   </div>
 
-                                  {/* Contestants */}
+                                   {/* Contestants */}
                                   <div>
                                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Contestants ({contestants.length})</p>
                                     {contestants.length === 0 ? (
                                       <p className="text-xs text-muted-foreground italic">No contestants registered</p>
-                                    ) : (
-                                      <div className="border border-border/40 rounded-md overflow-hidden">
-                                        <Table>
-                                          <TableHeader>
-                                            <TableRow>
-                                              <TableHead className="w-8">#</TableHead>
-                                              <TableHead>Name</TableHead>
-                                              <TableHead className="text-center">Scores</TableHead>
-                                              <TableHead className="w-8"></TableHead>
-                                            </TableRow>
-                                          </TableHeader>
-                                          <TableBody>
-                                            {contestants.map((c: any, idx: number) => {
-                                              const cScores = seScores.filter((s) => s.contestant_registration_id === c.id);
-                                              const toggleKey = `${se.id}-${c.id}`;
-                                              const isExpanded = expandedContestant === toggleKey;
-                                              return (
-                                                <>
-                                                  <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
-                                                    onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
-                                                    <TableCell className="font-mono text-muted-foreground text-xs">{idx + 1}</TableCell>
-                                                    <TableCell className="font-medium text-sm">
-                                                      <span className="flex items-center gap-1.5">
-                                                        {c.full_name}
-                                                        {onStageContestantId === c.id && (
-                                                          <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1.5 py-0">On Stage</Badge>
-                                                        )}
-                                                      </span>
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                      <Badge variant="outline" className="text-xs">{cScores.length} judge{cScores.length !== 1 ? "s" : ""}</Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                                                    </TableCell>
-                                                  </TableRow>
-                                                  {isExpanded && cScores.length > 0 && rubricNames.length > 0 && (
-                                                    <TableRow key={`${c.id}-scores`}>
-                                                      <TableCell colSpan={4} className="p-0 border-0">
-                                                        <AnimatePresence>
-                                                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden bg-muted/20 p-3">
-                                                            <SideBySideScores
-                                                              scores={cScores.map((s) => ({ ...s, judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…" })) as any}
-                                                              rubricNames={rubricNames}
-                                                              indexToName={indexToName}
-                                                              contestantName={c.full_name}
-                                                              contestantUserId={c.user_id}
-                                                            />
-                                                          </motion.div>
-                                                        </AnimatePresence>
-                                                      </TableCell>
-                                                    </TableRow>
-                                                  )}
-                                                </>
-                                              );
-                                            })}
-                                          </TableBody>
-                                        </Table>
-                                      </div>
-                                    )}
+                                    ) : (() => {
+                                      const cPage = contestantPages[se.id] || 0;
+                                      const cPageSize = 5;
+                                      const cTotalPages = Math.ceil(contestants.length / cPageSize);
+                                      const pagedContestants = contestants.slice(cPage * cPageSize, (cPage + 1) * cPageSize);
+                                      return (
+                                        <div className="space-y-2">
+                                          <div className="border border-border/40 rounded-md overflow-hidden">
+                                            <Table>
+                                              <TableHeader>
+                                                <TableRow>
+                                                  <TableHead className="w-8">#</TableHead>
+                                                  <TableHead>Name</TableHead>
+                                                  <TableHead className="text-center">Scores</TableHead>
+                                                  <TableHead className="w-8"></TableHead>
+                                                </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                {pagedContestants.map((c: any) => {
+                                                  const globalIdx = contestants.indexOf(c);
+                                                  const cScores = seScores.filter((s) => s.contestant_registration_id === c.id);
+                                                  const toggleKey = `${se.id}-${c.id}`;
+                                                  const isExpanded = expandedContestant === toggleKey;
+                                                  return (
+                                                    <>
+                                                      <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
+                                                        onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
+                                                        <TableCell className="font-mono text-muted-foreground text-xs">{globalIdx + 1}</TableCell>
+                                                        <TableCell className="font-medium text-sm">
+                                                          <span className="flex items-center gap-1.5">
+                                                            {c.full_name}
+                                                            {onStageContestantId === c.id && (
+                                                              <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1.5 py-0">On Stage</Badge>
+                                                            )}
+                                                          </span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                          <Badge variant="outline" className="text-xs">{cScores.length} judge{cScores.length !== 1 ? "s" : ""}</Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                                        </TableCell>
+                                                      </TableRow>
+                                                      {isExpanded && cScores.length > 0 && rubricNames.length > 0 && (
+                                                        <TableRow key={`${c.id}-scores`}>
+                                                          <TableCell colSpan={4} className="p-0 border-0">
+                                                            <AnimatePresence>
+                                                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden bg-muted/20 p-3">
+                                                                <SideBySideScores
+                                                                  scores={cScores.map((s) => ({ ...s, judge_id: profileMap.get(s.judge_id) || s.judge_id.slice(0, 8) + "…" })) as any}
+                                                                  rubricNames={rubricNames}
+                                                                  indexToName={indexToName}
+                                                                  contestantName={c.full_name}
+                                                                  contestantUserId={c.user_id}
+                                                                />
+                                                              </motion.div>
+                                                            </AnimatePresence>
+                                                          </TableCell>
+                                                        </TableRow>
+                                                      )}
+                                                    </>
+                                                  );
+                                                })}
+                                              </TableBody>
+                                            </Table>
+                                          </div>
+                                          {cTotalPages > 1 && (
+                                            <div className="flex items-center justify-center gap-2">
+                                              <Button variant="outline" size="sm" disabled={cPage === 0}
+                                                onClick={() => setContestantPages((prev) => ({ ...prev, [se.id]: cPage - 1 }))}>
+                                                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Prev
+                                              </Button>
+                                              <span className="text-xs text-muted-foreground font-mono">{cPage + 1} / {cTotalPages}</span>
+                                              <Button variant="outline" size="sm" disabled={cPage >= cTotalPages - 1}
+                                                onClick={() => setContestantPages((prev) => ({ ...prev, [se.id]: cPage + 1 }))}>
+                                                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
 
                                   {/* Score sheet link */}
