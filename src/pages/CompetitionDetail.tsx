@@ -58,6 +58,8 @@ interface ScannedCriterion {
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general");
   // Fix content where HTML tags were stored as escaped text (e.g. from bad paste)
   const fixEscapedHtml = (html: string): string => {
     if (!html) return html;
