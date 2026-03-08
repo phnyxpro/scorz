@@ -75,7 +75,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               Viewing as <strong>{masquerade.fullName || masquerade.email}</strong>
             </span>
           </div>
-          <Button variant="ghost" size="sm" className="h-7 text-destructive-foreground hover:bg-destructive-foreground/20" onClick={stopMasquerade}>
+          <Button variant="ghost" size="sm" className="h-7 text-destructive-foreground hover:bg-destructive-foreground/20" onClick={() => {
+            const compId = masquerade?.competitionId;
+            stopMasquerade();
+            if (compId) {
+              navigate(`/competitions/${compId}?tab=assignments`);
+            }
+          }}>
             <X className="h-3 w-3 mr-1" /> Exit
           </Button>
         </div>

@@ -9,6 +9,7 @@ interface MasqueradeTarget {
   userId: string;
   email: string;
   fullName: string;
+  competitionId?: string;
 }
 
 export interface SubscriptionStatus {

@@ -75,6 +75,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       userId: profile.user_id,
       email: inv.email,
       fullName: inv.name || inv.email,
+      competitionId,
     });
     navigate("/dashboard");
   };
