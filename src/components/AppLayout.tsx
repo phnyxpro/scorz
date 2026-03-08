@@ -86,7 +86,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </div>
       )}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header role="banner" className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center px-3 sm:px-6">
           {/* Left: Logo + Brand */}
           <div className="flex items-center gap-2 shrink-0">
@@ -137,12 +137,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
+      <main role="main" className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
         <PageBreadcrumbs />
         {children}
       </main>
 
-      <footer className="container py-6 px-3 sm:px-6 border-t border-border/10">
+      <footer role="contentinfo" className="container py-6 px-3 sm:px-6 border-t border-border/10">
         <p className="text-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
           @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>
