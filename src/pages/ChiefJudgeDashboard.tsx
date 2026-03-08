@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
@@ -40,7 +41,8 @@ export default function ChiefJudgeDashboard() {
   const unreadCount = useChatUnreadCount(competitionId);
   const navigate = useNavigate();
   const { user } = useAuth();
-
+  const isMobile = useIsMobile();
+  const [cjTab, setCjTab] = useState("panel");
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
@@ -329,13 +331,27 @@ export default function ChiefJudgeDashboard() {
             contestantCount={Object.keys(scoresByContestant).length}
           />
 
-          <Tabs defaultValue="panel" className="space-y-4 mt-4">
+          <Tabs value={cjTab} onValueChange={setCjTab} className="space-y-4 mt-4">
+            {isMobile ? (
+              <Select value={cjTab} onValueChange={setCjTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="panel">Panel Monitor</SelectItem>
+                  <SelectItem value="penalties">Penalty Review</SelectItem>
+                  <SelectItem value="infractions">Infractions</SelectItem>
+                  <SelectItem value="ties">Tie Breaking</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
             </TabsList>
+            )}
 
             <TabsContent value="panel">
               <PanelMonitor

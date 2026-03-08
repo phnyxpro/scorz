@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProfileSkeleton } from "@/components/shared/PageSkeletons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +31,8 @@ export default function ContestantProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("details");
   const isJudgeViewer = hasRole("judge") && userId && userId !== user?.id;
 
   const profileUserId = userId || user?.id;
@@ -182,7 +186,21 @@ export default function ContestantProfile() {
       </motion.div>
 
       {/* Tabs */}
-      <Tabs defaultValue="details" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select section" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="details">Details</SelectItem>
+              <SelectItem value="media">Media</SelectItem>
+              <SelectItem value="history">History</SelectItem>
+              {!isJudgeViewer && <SelectItem value="scores">Scores</SelectItem>}
+              {!isJudgeViewer && <SelectItem value="votes">Votes</SelectItem>}
+            </SelectContent>
+          </Select>
+        ) : (
         <TabsList className={`grid w-full ${isJudgeViewer ? "grid-cols-3" : "grid-cols-5"}`}>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="media">Media</TabsTrigger>
@@ -190,6 +208,7 @@ export default function ContestantProfile() {
           {!isJudgeViewer && <TabsTrigger value="scores">Scores</TabsTrigger>}
           {!isJudgeViewer && <TabsTrigger value="votes">Votes</TabsTrigger>}
         </TabsList>
+        )}
 
         {/* Media Gallery Tab */}
         <TabsContent value="media">

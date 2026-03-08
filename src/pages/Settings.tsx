@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select as SettingsSelect, SelectContent as SettingsSelectContent, SelectItem as SettingsSelectItem, SelectTrigger as SettingsSelectTrigger, SelectValue as SettingsSelectValue } from "@/components/ui/select";
 import { formatRoleName } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -20,6 +22,8 @@ export default function Settings() {
   const { user, roles, signOut } = useAuth();
   const { isDark, toggleTheme, brightness, setBrightness, contrast, setContrast } = useTheme();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const [settingsTab, setSettingsTab] = useState("profile");
 
   // ── Profile tab state ──
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -105,7 +109,20 @@ export default function Settings() {
         <p className="text-muted-foreground text-sm mt-1">Manage your account preferences</p>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs value={settingsTab} onValueChange={setSettingsTab} className="w-full">
+        {isMobile ? (
+          <SettingsSelect value={settingsTab} onValueChange={setSettingsTab}>
+            <SettingsSelectTrigger className="w-full">
+              <SettingsSelectValue placeholder="Select section" />
+            </SettingsSelectTrigger>
+            <SettingsSelectContent>
+              <SettingsSelectItem value="profile">Profile</SettingsSelectItem>
+              <SettingsSelectItem value="notifications">Alerts</SettingsSelectItem>
+              <SettingsSelectItem value="security">Security</SettingsSelectItem>
+              <SettingsSelectItem value="appearance">Theme</SettingsSelectItem>
+            </SettingsSelectContent>
+          </SettingsSelect>
+        ) : (
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm">
             <User className="h-3.5 w-3.5" /> Profile
@@ -120,6 +137,7 @@ export default function Settings() {
             <Palette className="h-3.5 w-3.5" /> Theme
           </TabsTrigger>
         </TabsList>
+        )}
 
         {/* ── Profile ── */}
         <TabsContent value="profile" className="space-y-4 mt-4">
