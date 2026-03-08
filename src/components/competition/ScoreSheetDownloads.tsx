@@ -379,8 +379,7 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
     } finally {
       setLoading((p) => ({ ...p, [subEventId + "_bulk"]: false }));
     }
-  
-
+  };
   if (subEventsByLevel.length === 0) return null;
 
   return (
