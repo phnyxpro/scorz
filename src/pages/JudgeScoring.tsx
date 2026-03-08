@@ -328,10 +328,20 @@ export default function JudgeScoring() {
         {/* Contestant list */}
         {selectedSubEventId && (
           <>
-            <div className="px-3 pt-1 pb-1.5 border-t border-border/30">
+            <div className="px-3 pt-1 pb-1.5 border-t border-border/30 space-y-1.5">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 Contestants ({filteredContestants.length})
               </span>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={contestantSearch}
+                  onChange={(e) => setContestantSearch(e.target.value)}
+                  placeholder="Search…"
+                  className="w-full h-7 pl-7 pr-2 text-xs rounded-md border border-border/50 bg-background/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
             </div>
             <ScrollArea className="flex-1 min-h-0">
               <div className="px-2 pb-3 space-y-0.5">
