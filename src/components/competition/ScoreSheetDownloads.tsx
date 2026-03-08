@@ -475,6 +475,19 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       )}
                       Import Scores
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!!loading[se.id + "_bulk"]}
+                      onClick={() => handleBulkImport(se.id, se.name)}
+                    >
+                      {loading[se.id + "_bulk"] ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <Files className="h-4 w-4 mr-1.5" />
+                      )}
+                      Bulk Import
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -498,6 +511,16 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
           subEventId={importTarget.subEventId}
           subEventName={importTarget.subEventName}
           fetchedData={importTarget.data}
+        />
+      )}
+
+      {bulkImportTarget && (
+        <BulkScoreImportDialog
+          open={!!bulkImportTarget}
+          onOpenChange={(open) => !open && setBulkImportTarget(null)}
+          subEventId={bulkImportTarget.subEventId}
+          subEventName={bulkImportTarget.subEventName}
+          fetchedData={bulkImportTarget.data}
         />
       )}
     </>
