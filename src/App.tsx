@@ -79,13 +79,12 @@ const queryClient = new QueryClient({
   },
 });
 
-function PageLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>
-    </div>
-  );
-}
+const PageLoader = React.forwardRef<HTMLDivElement>((_props, ref) => (
+  <div ref={ref} className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>
+  </div>
+));
+PageLoader.displayName = "PageLoader";
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return (
