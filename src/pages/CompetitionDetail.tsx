@@ -17,6 +17,7 @@ import { ScoringSettingsManager } from "@/components/competition/ScoringSettings
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
 import { BrandingManager } from "@/components/competition/BrandingManager";
 import { EventChat } from "@/components/chat/EventChat";
+import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
