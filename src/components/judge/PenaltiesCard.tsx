@@ -43,6 +43,14 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
     if (key === "dq") return disqualifications.length > 0;
     return false;
   });
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = availableCategories.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < availableCategories.length ? availableCategories[next] : prev;
+    });
+  }, [availableCategories]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
     <div className="space-y-3">
