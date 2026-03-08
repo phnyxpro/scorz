@@ -1734,6 +1734,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      withdraw_contestant: {
+        Args: { _new_status: string; _registration_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
