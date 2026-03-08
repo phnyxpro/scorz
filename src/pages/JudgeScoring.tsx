@@ -613,7 +613,7 @@ export default function JudgeScoring() {
                     <p className="text-xs text-muted-foreground">Raw Total</p>
                     <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(2)}</p>
                     {hasOfflineCache && (
-                      <p className="text-[10px] text-amber-500 mt-1 flex items-center justify-center gap-1">
+                      <p className="text-[10px] text-destructive mt-1 flex items-center justify-center gap-1">
                         <AlertTriangle className="h-3 w-3" /> Offline — saved locally
                       </p>
                     )}
