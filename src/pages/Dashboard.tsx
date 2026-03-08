@@ -359,9 +359,25 @@ export default function Dashboard() {
           {/* Sub-event quick links for judges */}
           {isJudgeRole && selectedCompId && assignedSubEvents && assignedSubEvents.length > 0 && (
             <div className="mb-6">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
-                Your Sub-Events
-              </p>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  Your Sub-Events
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-6 w-6"
+                  onClick={() => setShowChatModal(true)}
+                  title="Production Chat"
+                >
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground px-0.5">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {assignedSubEvents.map((se) => {
                   const isActive = se.id === activeScoringSubEventId;
