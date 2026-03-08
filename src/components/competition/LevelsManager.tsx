@@ -152,6 +152,10 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       await supabase.from("sub_events").update({
         name, location: location || null, event_date: eventDate || null,
         start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
+        ticketing_type: ticketingType,
+        ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
+        max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : null,
+        external_ticket_url: ticketingType === "external" ? externalTicketUrl || null : null,
       } as any).eq("id", editingId);
       qc.invalidateQueries({ queryKey: ["sub_events", levelId] });
       setSaving(false);
@@ -159,7 +163,14 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       setModalOpen(false);
     } else {
       create.mutate(
-        { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
+        {
+          level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined,
+          start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled,
+          ticketing_type: ticketingType,
+          ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
+          max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : undefined,
+          external_ticket_url: ticketingType === "external" ? externalTicketUrl || undefined : undefined,
+        } as any,
         { onSuccess: () => { resetForm(); setModalOpen(false); } }
       );
     }
