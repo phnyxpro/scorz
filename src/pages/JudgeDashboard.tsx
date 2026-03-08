@@ -77,14 +77,16 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                     </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="text-xs">
+                    <Link to={`/competitions/${competition.id}/penalties`}>
+                        <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Penalties
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
                     <Link to={`/competitions/${competition.id}/rubric`}>
                         <Info className="h-3.5 w-3.5 mr-1" /> Rubric
                     </Link>
                 </Button>
             </div>
-
-            {/* Penalties Action Card */}
-            <PenaltiesCard competitionId={competition.id} />
 
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                 {subEventDetails.map((se) => {
