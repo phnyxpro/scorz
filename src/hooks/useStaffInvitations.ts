@@ -15,6 +15,7 @@ export interface StaffInvitation {
   competition_id: string;
   sub_event_id: string | null;
   is_chief: boolean;
+  is_production_assistant: boolean;
   invited_by: string;
   created_at: string;
   accepted_at: string | null;

@@ -66,6 +66,7 @@ const CompetitionFormsPage = lazy(() => import("./pages/CompetitionFormsPage"));
 const TicketSuccess = lazy(() => import("./pages/TicketSuccess"));
 const WitnessDashboard = lazy(() => import("./pages/WitnessDashboard"));
 const ContestantRegistrationProfile = lazy(() => import("./pages/ContestantRegistrationProfile"));
+const ProductionAssistantDashboard = lazy(() => import("./pages/ProductionAssistantDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
