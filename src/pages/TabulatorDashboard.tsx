@@ -87,7 +87,7 @@ function useJudgingOverview(competitionId: string | undefined) {
       if (pe) throw pe;
 
       const { data: scores, error: sce } = subEventIds.length
-        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds)
+        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds).limit(5000)
         : { data: [] as any[], error: null };
       if (sce) throw sce;
 
