@@ -1,47 +1,47 @@
 
 
-## Plan: Email Broadcast Feature in Competition Chat Tab
+## Fix Blank Rendering in Browser Automation
 
-### What
-Add an "Email Broadcast" composer within the Chat tab of Competition Detail. Organisers/admins can compose a branded email, select recipient groups (organisers, tabulators, judges, contestants, audience), optionally add custom email addresses, and send it using the existing Scorz branded email template via Resend.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Recipient Groups
-Emails are gathered per competition:
-- **Organisers** — profiles with `admin`/`organizer` role
-- **Judges** — users in `sub_event_assignments` for this competition with role `judge`
-- **Tabulators** — users in `sub_event_assignments` with role `tabulator`
-- **Contestants** — `contestant_registrations` with status `approved` for this competition
-- **Audience** — `event_tickets` for sub-events in this competition (email column)
-- **Custom** — free-text input for additional email addresses (comma-separated)
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### UI Component: `EmailBroadcast`
-New file: `src/components/chat/EmailBroadcast.tsx`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-- Collapsible card below the EventChat in the Chat tab (or as a sibling section)
-- Checkbox group for recipient categories with count badges (e.g. "Judges (5)")
-- Text input for additional email addresses
-- Subject line input
-- Rich text body (reuse `RichTextEditor` or simple `Textarea`)
-- Preview count: "This will send to X recipients"
-- Send button calling the edge function
+---
 
-### Edge Function: `send-broadcast-email`
-New file: `supabase/functions/send-broadcast-email/index.ts`
+### Fix 1: Conditionally apply auditorium filter
 
-- Auth check: must be admin or organizer
-- Accepts: `competition_id`, `subject`, `content` (HTML), `recipient_groups` (string[]), `extra_emails` (string[])
-- Resolves recipient emails server-side by querying the relevant tables based on selected groups
-- Deduplicates all emails
-- Sends individually via Resend using the existing `buildEmail` + `ctaButton` shared template from `_shared/email-html.ts`
-- Sender: `Scorz <notify@scorz.live>` (verified domain)
-- Returns `{ success: true, sent: number }`
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Integration
-- In `CompetitionDetail.tsx` Chat tab content, render `<EmailBroadcast competitionId={id!} />` below `<EventChat>`
-- No database schema changes needed — all recipient data comes from existing tables
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### Security
-- Edge function validates caller is admin/organizer via `has_any_role` RPC
-- Custom emails are validated server-side (basic email format check)
-- Rate limiting: client-side disable after send, edge function logs activity
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
