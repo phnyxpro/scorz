@@ -173,7 +173,7 @@ export default function ContestantProfile() {
               {/* Stats */}
               <div className="flex md:flex-col gap-4 md:gap-2 md:text-right">
                 <StatBadge icon={Trophy} label="Competitions" value={totalComps} />
-                <StatBadge icon={Star} label="Avg Score" value={avgScore > 0 ? avgScore.toFixed(1) : "–"} />
+                <StatBadge icon={Star} label="Avg Score" value={avgScore > 0 ? avgScore.toFixed(2) : "–"} />
                 <StatBadge icon={Heart} label="People's Choice" value={totalVotes} />
               </div>
             </div>

@@ -585,7 +585,7 @@ export default function JudgeScoring() {
             </div>
             <div className="text-sm space-y-1">
               <div className="flex justify-between font-bold text-foreground">
-                <span>Raw Total</span><span className="font-mono">{rawTotal.toFixed(1)}</span>
+                <span>Raw Total</span><span className="font-mono">{rawTotal.toFixed(2)}</span>
               </div>
             </div>
             <div className="flex items-start gap-2">

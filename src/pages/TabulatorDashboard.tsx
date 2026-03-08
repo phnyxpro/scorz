@@ -694,9 +694,9 @@ export default function TabulatorDashboard() {
                                                   const cScores = seScores.filter((s) => s.contestant_registration_id === c.id);
                                                   const toggleKey = `${se.id}-${c.id}`;
                                                   const isExpanded = expandedContestant === toggleKey;
-                                                  return (
-                                                    <>
-                                                      <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
+                                                    return (
+                                                     <Fragment key={c.id}>
+                                                       <TableRow className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
                                                         onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
                                                         <TableCell className="font-mono text-muted-foreground text-xs">{globalIdx + 1}</TableCell>
                                                         <TableCell className="font-medium text-sm">
