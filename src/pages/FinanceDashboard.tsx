@@ -145,55 +145,55 @@ export default function FinanceDashboard() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Finance Dashboard</h2>
-                <p className="text-muted-foreground">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Finance Dashboard</h2>
+                <p className="text-sm text-muted-foreground">
                     {isAdmin ? "Platform-wide revenue and financial metrics." : "Revenue and financial metrics for your events."}
                 </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <Card className="bg-primary/5 border-primary/20 col-span-2 sm:col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
                         <DollarSign className="h-4 w-4 text-primary" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                             ${ticketRevenue.toFixed(2)} tickets · ${creditRevenue.toFixed(2)} credits
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Registrations</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Registrations</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalRegistrations}</div>
-                        <p className="text-xs text-muted-foreground">Total contestant registrations</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{totalRegistrations}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Total registrations</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Events</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Active Events</CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{activeEventsCount}</div>
-                        <p className="text-xs text-muted-foreground">Currently active competitions</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{activeEventsCount}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Active competitions</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Approval Rate</CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{approvalRate}%</div>
-                        <p className="text-xs text-muted-foreground">Approved vs total registrations</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{approvalRate}%</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Approved registrations</p>
                     </CardContent>
                 </Card>
             </div>
