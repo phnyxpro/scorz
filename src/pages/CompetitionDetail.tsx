@@ -24,6 +24,7 @@ import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsPillLayout } from "@/components/competition/RegistrationsPillLayout";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, Navigate } from "react-router-dom";
