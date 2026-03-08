@@ -334,8 +334,6 @@ export default function Dashboard() {
                 )}
               </Button>
             )}
-          </div>
-          </div>
         </div>
       )}
 
