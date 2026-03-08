@@ -7,6 +7,7 @@ import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown } from "lucide
 import { toast } from "@/hooks/use-toast";
 import { exportMultiSheetXLSX, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { ScoreSheetPreviewModal } from "./ScoreSheetPreviewModal";
+import { ScoreImportDialog } from "./ScoreImportDialog";
 import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 
 interface ScoreSheetDownloadsProps {

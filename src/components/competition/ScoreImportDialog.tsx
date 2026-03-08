@@ -405,7 +405,7 @@ export function ScoreImportDialog({
                           <TableCell className="text-right font-mono text-sm">
                             {row.csvTotal ?? "—"}
                             {row.csvTotal !== null && !totalMatch && (
-                              <AlertTriangle className="inline h-3 w-3 text-yellow-500 ml-1" />
+                              <AlertTriangle className="inline h-3 w-3 text-destructive ml-1" />
                             )}
                           </TableCell>
                           <TableCell>
