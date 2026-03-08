@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ClipboardList, ChevronRight, ChevronDown, Trophy, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
-import type { JudgeScore } from "@/hooks/useJudgeScores";
+
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
