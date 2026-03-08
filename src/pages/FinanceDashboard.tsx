@@ -229,33 +229,33 @@ export default function FinanceDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Recent Transactions</CardTitle>
-                        <CardDescription>Latest credit purchases.</CardDescription>
+                <Card className="lg:col-span-3">
+                    <CardHeader className="px-4 pt-4 pb-2">
+                        <CardTitle className="text-sm sm:text-base">Recent Transactions</CardTitle>
+                        <CardDescription className="text-xs">Latest credit purchases.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
+                    <CardContent className="px-4 pb-4">
+                        <div className="space-y-3 sm:space-y-4">
                             {recentTransactions.map((tx: any) => (
-                                <div key={tx.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 bg-primary/10 rounded-full flex items-center justify-center">
-                                            <CreditCard className="h-4 w-4 text-primary" />
+                                <div key={tx.id} className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                        <div className="h-8 w-8 sm:h-9 sm:w-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                                            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-medium leading-none">{tx.label}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">
+                                        <div className="min-w-0">
+                                            <p className="text-xs sm:text-sm font-medium leading-none truncate">{tx.label}</p>
+                                            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                                                 {format(new Date(tx.date), "MMM d, yyyy")}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="font-bold text-sm">
+                                    <div className="font-bold text-xs sm:text-sm shrink-0">
                                         +${tx.amount.toFixed(2)}
                                     </div>
                                 </div>
                             ))}
                             {recentTransactions.length === 0 && (
-                                <div className="text-center text-sm text-muted-foreground py-8">
+                                <div className="text-center text-xs sm:text-sm text-muted-foreground py-6 sm:py-8">
                                     No transactions yet.
                                 </div>
                             )}

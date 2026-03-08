@@ -154,13 +154,13 @@ export default function AdminLogs() {
       />
 
       {/* Pagination */}
-      <div className="flex items-center justify-center gap-3 mt-4">
-        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+      <div className="flex items-center justify-center gap-2 sm:gap-3 mt-4">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="h-10 px-3">
+          <ChevronLeft className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Previous</span>
         </Button>
-        <span className="text-sm text-muted-foreground font-mono">Page {page}</span>
-        <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)}>
-          Next <ChevronRight className="h-4 w-4 ml-1" />
+        <span className="text-xs sm:text-sm text-muted-foreground font-mono">Page {page}</span>
+        <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} className="h-10 px-3">
+          <span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4 sm:ml-1" />
         </Button>
       </div>
     </div>

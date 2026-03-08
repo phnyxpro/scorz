@@ -236,15 +236,15 @@ export default function AdminUsers() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 mt-4">
-          <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>
-            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mt-4">
+          <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)} className="h-10 px-3">
+            <ChevronLeft className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Previous</span>
           </Button>
-          <span className="text-sm text-muted-foreground font-mono">
-            Page {currentPage} of {totalPages}
+          <span className="text-xs sm:text-sm text-muted-foreground font-mono">
+            {currentPage} / {totalPages}
           </span>
-          <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>
-            Next <ChevronRight className="h-4 w-4 ml-1" />
+          <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)} className="h-10 px-3">
+            <span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4 sm:ml-1" />
           </Button>
         </div>
       )}
