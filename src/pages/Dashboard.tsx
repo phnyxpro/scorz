@@ -40,14 +40,16 @@ interface CardConfig {
 function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): CardConfig[] {
   const cards: CardConfig[] = [
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-secondary", to: `/competitions/${competitionId}/score` },
-    { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
-    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-secondary", to: `/competitions/${competitionId}/rules` },
-    { title: "Penalties", desc: "Deductions & disqualifications", icon: AlertTriangle, color: "text-secondary", to: `/competitions/${competitionId}/penalties` },
-    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
   ];
   if (hasChiefAssignments) {
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-secondary", to: `/competitions/${competitionId}/chief-judge` });
   }
+  cards.push(
+    { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
+    { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-secondary", to: `/competitions/${competitionId}/rules` },
+    { title: "Penalties", desc: "Deductions & disqualifications", icon: AlertTriangle, color: "text-secondary", to: `/competitions/${competitionId}/penalties` },
+    { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
+  );
   return cards;
 }
 
