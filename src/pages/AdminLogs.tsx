@@ -50,11 +50,11 @@ export default function AdminLogs() {
     },
   });
 
-  if (!hasRole("admin")) {
+  if (!hasRole("admin") && !hasRole("organizer")) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <ShieldAlert className="h-12 w-12" />
-        <p className="font-mono text-sm">Access denied. Admin role required.</p>
+        <p className="font-mono text-sm">Access denied. Admin or Organiser role required.</p>
       </div>
     );
   }
@@ -88,13 +88,13 @@ export default function AdminLogs() {
           />
         </div>
 
-        <Select value={eventType} onValueChange={(v) => { setEventType(v); setPage(1); }}>
+        <Select value={eventType} onValueChange={(v) => { setEventType(v === "all" ? "" : v); setPage(1); }}>
           <SelectTrigger className="h-9 text-sm">
             <SelectValue placeholder="All event types" />
           </SelectTrigger>
           <SelectContent>
             {EVENT_TYPES.map((et) => (
-              <SelectItem key={et.value} value={et.value || "all"} className="text-sm">
+              <SelectItem key={et.value || "all"} value={et.value || "all"} className="text-sm">
                 {et.label}
               </SelectItem>
             ))}
