@@ -61,7 +61,9 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
 
       {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
       {activeCategory === "contestants" && (
-        <RegistrationsManager competitionId={competitionId} />
+        <div {...swipeHandlers}>
+          <RegistrationsManager competitionId={competitionId} />
+        </div>
       )}
 
       {/* Settings & Forms — wrapped in the pill card pattern */}
