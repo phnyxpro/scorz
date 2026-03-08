@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, RotateCcw, User, Timer, GripVertical, Radio, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, Pause, RotateCcw, User, Timer, GripVertical, Radio, ChevronLeft, ChevronRight, ListOrdered } from "lucide-react";
+import { ContestantReorderModal } from "./ContestantReorderModal";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ export function TabulatorTimer({
   elapsedRef.current = elapsed;
 
   // Pagination state for contestant grid
+  const [showReorderModal, setShowReorderModal] = useState(false);
   const [gridPage, setGridPage] = useState(0);
   const gridPageSize = 5;
 
@@ -286,7 +288,17 @@ export function TabulatorTimer({
 
         {/* Draggable contestant grid with pagination */}
         <div>
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">Contestant on Stage</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Contestant on Stage</label>
+            <button
+              type="button"
+              className="text-[11px] text-primary hover:underline flex items-center gap-1"
+              onClick={() => setShowReorderModal(true)}
+              disabled={running}
+            >
+              <ListOrdered className="h-3 w-3" /> Edit Order
+            </button>
+          </div>
           {(() => {
             const totalPages = Math.ceil(contestants.length / gridPageSize);
             const pageContestants = contestants.slice(gridPage * gridPageSize, (gridPage + 1) * gridPageSize);
@@ -432,6 +444,12 @@ export function TabulatorTimer({
           </>
         )}
       </CardContent>
+      <ContestantReorderModal
+        open={showReorderModal}
+        onOpenChange={setShowReorderModal}
+        contestants={contestants}
+        subEventId={subEventId}
+      />
     </Card>
   );
 }
