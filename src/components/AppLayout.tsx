@@ -86,7 +86,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </div>
       )}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header role="banner" className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center px-3 sm:px-6">
           {/* Left: Logo + Brand */}
           <div className="flex items-center gap-2 shrink-0">
