@@ -234,12 +234,26 @@ export function TabulatorTimer({
     const reordered = [...contestants];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(targetIdx, 0, moved);
-    const updates = reordered.map((c, i) =>
-      supabase.from("contestant_registrations").update({ sort_order: i + 1 }).eq("id", c.id)
-    );
-    await Promise.all(updates);
-    queryClient.invalidateQueries({ queryKey: ["judging_overview"] });
-    queryClient.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+
+    // Optimistic update
+    const withOrder = reordered.map((c, i) => ({ ...c, sort_order: i + 1 }));
+    const applyOrder = (old: any) => {
+      if (!old) return old;
+      const orderMap = new Map(withOrder.map(c => [c.id, c.sort_order]));
+      return old.map((r: any) => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id) } : r)
+        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    };
+    queryClient.setQueriesData({ queryKey: ["judging_overview"] }, applyOrder);
+    queryClient.setQueriesData({ queryKey: ["approved-contestants-order"] }, applyOrder);
+
+    try {
+      await Promise.all(withOrder.map(c =>
+        supabase.from("contestant_registrations").update({ sort_order: c.sort_order }).eq("id", c.id)
+      ));
+    } catch {
+      queryClient.invalidateQueries({ queryKey: ["judging_overview"] });
+      queryClient.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+    }
     toast({ title: "Moved after last timed contestant" });
   }, [contestants, durations, timedContestantIds, queryClient]);
 

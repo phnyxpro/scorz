@@ -29,18 +29,14 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
   const persistOrder = async (ordered: Array<{ id: string; full_name: string }>) => {
     // Optimistic cache updates
     const withOrder = ordered.map((c, i) => ({ ...c, sort_order: i + 1 }));
-    qc.setQueryData(["judging_overview"], (old: any) => {
+    const applyOrder = (old: any) => {
       if (!old) return old;
       const orderMap = new Map(withOrder.map(c => [c.id, c.sort_order]));
       return old.map((r: any) => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id) } : r)
         .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    });
-    qc.setQueryData(["approved-contestants-order"], (old: any) => {
-      if (!old) return old;
-      const orderMap = new Map(withOrder.map(c => [c.id, c.sort_order]));
-      return old.map((r: any) => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id) } : r)
-        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    });
+    };
+    qc.setQueriesData({ queryKey: ["judging_overview"] }, applyOrder);
+    qc.setQueriesData({ queryKey: ["approved-contestants-order"] }, applyOrder);
 
     try {
       await Promise.all(withOrder.map(c =>
