@@ -298,6 +298,7 @@ export default function ContestantRegistration() {
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      special_entry_type: data.specialEntryType || null,
       status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {

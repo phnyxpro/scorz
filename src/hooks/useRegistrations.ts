@@ -28,6 +28,7 @@ export interface ContestantRegistration {
   guardian_signature: string | null;
   guardian_signed_at: string | null;
   status: string;
+  special_entry_type: string | null;
   created_at: string;
   updated_at: string;
 }
