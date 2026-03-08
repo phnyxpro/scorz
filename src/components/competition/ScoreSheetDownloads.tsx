@@ -365,6 +365,22 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
     }
   };
 
+  const handleBulkImport = async (subEventId: string, subEventName: string) => {
+    setLoading((p) => ({ ...p, [subEventId + "_bulk"]: true }));
+    try {
+      const data = await fetchSubEventData(competitionId, subEventId);
+      if (data.assignedJudges.length === 0) {
+        toast({ title: "No judges assigned", description: "Assign judges to this sub-event first.", variant: "destructive" });
+        return;
+      }
+      setBulkImportTarget({ subEventId, subEventName, data });
+    } catch (err: any) {
+      toast({ title: "Failed to load data", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading((p) => ({ ...p, [subEventId + "_bulk"]: false }));
+    }
+  
+
   if (subEventsByLevel.length === 0) return null;
 
   return (
