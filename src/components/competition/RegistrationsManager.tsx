@@ -761,6 +761,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                     key={reg.id}
                     reg={reg}
                     idx={(safePage - 1) * pageSize + idx}
+                    totalCount={filtered.length}
                     slot={slotsByRegId[reg.id]}
                     allSlots={allSlotsForPicker}
                     onSlotAssign={handleSlotAssign}
@@ -769,6 +770,10 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onSelect={setSelectedReg}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onInlineNameSave={handleInlineNameSave}
+                    onInlineNumberSave={handleInlineNumberSave}
                   />
                 ))}
               </TableBody>
