@@ -16,8 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClipboardList, ChevronRight, ChevronDown, Trophy, Search } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
+import { motion } from "framer-motion";
 
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
