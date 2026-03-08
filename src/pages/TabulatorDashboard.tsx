@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from "react";
+import { Fragment, useState, useMemo, useEffect } from "react";
 import { friendlyDisplayName } from "@/lib/utils";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { useParams, Link } from "react-router-dom";
@@ -454,6 +454,30 @@ export default function TabulatorDashboard() {
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
   useRegistrationsRealtime(selectedCompId || undefined);
+
+  // Real-time: invalidate judging_overview when judge_scores change for this competition's sub-events
+  const overviewSubEventIds = useMemo(
+    () => (overview?.subEvents || []).map((se: any) => se.id as string),
+    [overview?.subEvents]
+  );
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!selectedCompId || overviewSubEventIds.length === 0) return;
+    const channel = supabase
+      .channel(`tab_overview_scores_${selectedCompId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "judge_scores" },
+        (payload: any) => {
+          const subEventId = payload.new?.sub_event_id || payload.old?.sub_event_id;
+          if (overviewSubEventIds.includes(subEventId)) {
+            qc.invalidateQueries({ queryKey: ["judging_overview", selectedCompId] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCompId, overviewSubEventIds, qc]);
 
   const filteredComps = useMemo(() => {
     if (!searchQuery.trim()) return activeComps;

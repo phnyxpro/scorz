@@ -1,21 +1,47 @@
 
 
-## Plan: Enable Real-Time Score Updates in Tabulator Overview
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The tabulator dashboard has two data paths:
-1. **SubEventWorkspace** (the "Score Summary" / "Side-by-Side Detail" tabs) — uses `useAllScoresForSubEvent` which IS invalidated by the `useJudgeScoresRealtime` hook. This already updates in real-time.
-2. **Overview contestant list** (the expandable rows showing per-contestant scores and judge counts) — uses `useJudgingOverview` with query key `["judging_overview", competitionId]`. This query is **never invalidated** when judges submit or update scores, so the outer list stays stale until a manual refresh.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Solution
-Add a realtime subscription on the `judge_scores` table (scoped to the sub-events of the selected competition) that invalidates `["judging_overview", competitionId]` when any score changes.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Changes
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**`src/pages/TabulatorDashboard.tsx`**
-- After `useRegistrationsRealtime(selectedCompId)` (line 456), add a `useEffect` that subscribes to `postgres_changes` on `judge_scores` for all sub-event IDs from the overview data
-- On any change event, call `qc.invalidateQueries({ queryKey: ["judging_overview", selectedCompId] })`
-- This ensures the outer contestant list (score counts, expanded side-by-side views) updates live as judges enter scores
+---
 
-The subscription will use a single channel filtered by `sub_event_id` values from `overview.subEvents`, re-subscribing when the selected competition or sub-event list changes.
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
