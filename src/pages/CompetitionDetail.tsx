@@ -498,7 +498,7 @@ export default function CompetitionDetail() {
                 />
               </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button onClick={handleSave} disabled={update.isPending}>
                     {update.isPending ? "Saving…" : "Save Changes"}
                   </Button>

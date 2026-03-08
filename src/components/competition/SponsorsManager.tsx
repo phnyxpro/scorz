@@ -59,7 +59,7 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
         ))}
 
         {/* Add new */}
-        <div className="border border-dashed border-border rounded-md p-4 space-y-3">
+        <div className="border border-dashed border-border rounded-md p-3 sm:p-4 space-y-3">
           <p className="text-xs text-muted-foreground font-medium">Add Sponsor</p>
           <Input placeholder="Sponsor name" value={name} onChange={e => setName(e.target.value)} />
           <BannerUpload

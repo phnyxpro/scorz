@@ -736,7 +736,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
           Assign to sub-event
         </Button>
       ) : (
-        <div className="flex flex-wrap gap-2 items-end pl-11">
+        <div className="flex flex-wrap gap-2 items-end pl-4 sm:pl-11">
           <div className="min-w-[140px]">
             <label className="text-[10px] text-muted-foreground">Level</label>
             <Select value={assignLevelId} onValueChange={setAssignLevelId}>

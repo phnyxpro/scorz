@@ -149,7 +149,7 @@ export function SlotsManager({ competitionId }: Props) {
             <>
               <div className="border border-border/30 rounded-md p-3 bg-muted/20 space-y-3">
                 <p className="text-xs font-medium text-foreground">Generate Slots</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-[10px] text-muted-foreground">Start Time</label>
                     <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="h-9 text-sm" />

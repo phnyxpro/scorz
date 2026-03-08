@@ -159,7 +159,7 @@ export function BrandingManager({ competitionId, competition }: BrandingManagerP
           </div>
           <CardDescription>When enabled, the public event page will use your competition logo and branding instead of the Scorz brand.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="wl-toggle" className="text-sm font-medium">Enable White-Label</Label>
