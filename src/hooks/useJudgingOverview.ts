@@ -31,6 +31,7 @@ export function useJudgingOverview(competitionId: string | undefined) {
   return useQuery({
     queryKey: ["judging_overview", competitionId],
     enabled: !!competitionId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
     queryFn: async (): Promise<JudgingOverviewData> => {
       // ── Wave 1: levels + rubric (parallel) ──
       const [levelsRes, rubricRes] = await Promise.all([
