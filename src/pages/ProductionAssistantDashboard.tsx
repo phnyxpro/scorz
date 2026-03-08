@@ -122,6 +122,7 @@ export default function ProductionAssistantDashboard() {
           <h1 className="text-xl font-bold font-mono tracking-tight flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-accent" />
             Production Assistant
+            <ConnectionIndicator />
           </h1>
           {competitions.length > 1 && (
             <Select value={activeCompId} onValueChange={setSelectedCompId}>
