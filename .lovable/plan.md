@@ -1,47 +1,31 @@
 
+## Plan: Update Performance Durations for 5 Contestants
 
-## Fix Blank Rendering in Browser Automation
+### What
+Add performance durations for **5 contestants** in the **Trinidad** sub-event who were previously missing time recordings. All contestants performed under the 4-minute time limit, so no penalties will apply.
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Found Contestant Records
+| Contestant | Registration ID | New Duration | Penalty Status |
+|---|---|---|---|
+| Cheyenne Calliste | `c18a6d97-97a4-4c27-9580-97be9423920c` | 233.10s (3:53.10) | No penalty |
+| Jabari Lynch | `41ea1c51-894f-442d-82dc-abcb000ce6f0` | 224.15s (3:44.15) | No penalty |
+| Jayda Jackman | `393156f7-fcbf-4e49-8a3e-a42700f5e6cf` | 137.06s (2:17.06) | No penalty |
+| Demetri Stroude | `5490ab0c-b319-4b82-8dec-c825b545b30c` | 177.58s (2:57.58) | No penalty |
+| Tehilla Jeffrey | `cea7c98b-e25e-46d8-8d1e-acbf9dd2e030` | 235.07s (3:55.07) | No penalty |
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Current Status
+- All 5 contestants have **complete judge scores** (5 scores each)
+- Currently have `time_penalty = 0` and no duration recorded
+- Competition time limit: **240 seconds** (4:00) + 15s grace period
+- No existing `performance_durations` records for these contestants
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Implementation
+1. **Insert Duration Records**: Add 5 records to `performance_durations` table with the tabulator ID from `robinsonjeanluc`
+2. **Update Judge Scores**: Set `performance_duration_seconds` field for all 25 judge score records (5 judges × 5 contestants)
+3. **Verify Penalties**: Since all times are under 240s, `time_penalty` remains 0 and `final_score` stays unchanged
 
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
-
+### Technical Details
+- Sub-event ID: `14ae92f2-a730-4c72-9aa1-19b0e3561722` (Trinidad)
+- Tabulator ID: `e5622288-b755-4f71-a126-c92f41db3ef5` (robinsonjeanluc)
+- All times converted from MM:SS.cs format to decimal seconds
+- Automatic timestamp handling (`created_at`/`updated_at`)
