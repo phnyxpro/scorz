@@ -473,6 +473,16 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
           onOpenChange={(open) => !open && setPreviewData(null)}
         />
       )}
+
+      {importTarget && (
+        <ScoreImportDialog
+          open={!!importTarget}
+          onOpenChange={(open) => !open && setImportTarget(null)}
+          subEventId={importTarget.subEventId}
+          subEventName={importTarget.subEventName}
+          fetchedData={importTarget.data}
+        />
+      )}
     </>
   );
 }
