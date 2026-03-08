@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio, AlertTriangle
+  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio, AlertTriangle, MessageSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -18,6 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 
 const container = {
   hidden: { opacity: 0 },
@@ -275,6 +278,9 @@ export default function Dashboard() {
     });
   }, [isJudgeRole, hasChiefForSelected, selectedCompId, roles]);
 
+  const [showChatModal, setShowChatModal] = useState(false);
+  const unreadCount = useChatUnreadCount(selectedCompId || "");
+
   return (
     <div>
       {!isTabulator && (
@@ -310,6 +316,23 @@ export default function Dashboard() {
                   </Select>
                 )}
               </div>
+            )}
+            {/* Production Chat icon */}
+            {isJudgeRole && selectedCompId && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative mt-4 sm:mt-0"
+                onClick={() => setShowChatModal(true)}
+                title="Production Chat"
+              >
+                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
             )}
           </div>
         </div>
@@ -471,6 +494,16 @@ export default function Dashboard() {
           </motion.div>
         </>
       )}
+      {/* Production Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Production Chat</DialogTitle>
+            <DialogDescription>Chat with competition staff</DialogDescription>
+          </DialogHeader>
+          {selectedCompId && <EventChat competitionId={selectedCompId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
