@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, ArrowLeft, Copy, Check, Briefcase, Star, Users, Scale, Calculator, Mail, ChevronLeft } from "lucide-react";
+import { Zap, ArrowLeft, Copy, Check, Briefcase, Star, Users, Scale, Calculator, Mail, ChevronLeft, Home, Info } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import scorzLogo from "@/assets/scorz-logo.svg";
