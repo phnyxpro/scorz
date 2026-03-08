@@ -138,7 +138,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
       </div>
 
       {/* Active category card */}
-      <Card className="rounded-xl border-border/50 bg-card/80">
+      <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
           {/* Title pill */}
           <div className="space-y-2">
