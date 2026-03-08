@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import scorzLogo from "@/assets/scorz-logo.svg";
+import ServicePackageSection from "@/components/about/ServicePackageSection";
 
 const ROLES = [
   {
@@ -314,6 +315,11 @@ export default function About() {
           </p>
         </div>
       </section>
+
+      <Separator className="max-w-5xl mx-auto" />
+
+      {/* ── Service Package ── */}
+      <ServicePackageSection />
 
       <Separator className="max-w-5xl mx-auto" />
 

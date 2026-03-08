@@ -1219,6 +1219,48 @@ export type Database = {
           },
         ]
       }
+      service_requests: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string
+          event_type: string
+          expected_contestants: string
+          full_name: string
+          id: string
+          location: string
+          organisation: string
+          phone: string | null
+          preferred_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email: string
+          event_type: string
+          expected_contestants: string
+          full_name: string
+          id?: string
+          location: string
+          organisation: string
+          phone?: string | null
+          preferred_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string
+          event_type?: string
+          expected_contestants?: string
+          full_name?: string
+          id?: string
+          location?: string
+          organisation?: string
+          phone?: string | null
+          preferred_date?: string | null
+        }
+        Relationships: []
+      }
       staff_invitation_sub_events: {
         Row: {
           created_at: string
