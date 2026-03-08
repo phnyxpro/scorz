@@ -91,6 +91,7 @@ export function useAddStaffMember() {
           competition_id: competitionId,
           invited_by: user?.id,
           is_chief: isChief || false,
+          is_production_assistant: isProductionAssistant || false,
           invited_at: new Date().toISOString(),
         })
         .select()
