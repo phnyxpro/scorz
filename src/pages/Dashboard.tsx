@@ -495,6 +495,16 @@ export default function Dashboard() {
           </motion.div>
         </>
       )}
+      {/* Production Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Production Chat</DialogTitle>
+            <DialogDescription>Chat with competition staff</DialogDescription>
+          </DialogHeader>
+          {selectedCompId && <EventChat competitionId={selectedCompId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
