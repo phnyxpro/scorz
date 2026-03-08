@@ -23,6 +23,7 @@ import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { RegistrationSettingsPanel } from "@/components/competition/RegistrationSettingsPanel";
+import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
