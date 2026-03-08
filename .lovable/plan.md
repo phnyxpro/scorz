@@ -1,47 +1,48 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Remove from Sub-Event on Withdrawal + Connection Status Icon
 
-The app appears blank in headless browser testing due to two compounding issues:
+### 1. Update `withdraw_contestant` DB Function
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+Add `sub_event_id = NULL` when withdrawing (status != 'approved'). This removes the contestant from the sub-event listing that judges see.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
-
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+**Migration SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.withdraw_contestant(...)
+  -- existing logic, plus:
+  IF _new_status != 'approved' THEN
+    UPDATE public.contestant_registrations
+    SET status = _new_status, sub_event_id = NULL, updated_at = now()
+    WHERE id = _registration_id;
+    -- ... existing deletes
+  END IF;
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+This ensures withdrawn contestants no longer appear in any sub-event-filtered queries (judge scoring, tabulator timer, etc.).
 
----
+### 2. Create `ConnectionIndicator` Component
 
-### Summary
+A small shared component that shows a wifi/signal icon reflecting the browser's online status using `navigator.onLine` + `online`/`offline` events.
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+- Green wifi icon when online
+- Red/muted wifi-off icon when offline
+- Tooltip showing "Connected" / "Offline"
+
+**File:** `src/components/shared/ConnectionIndicator.tsx`
+
+### 3. Add Connection Icon to Dashboard Headers
+
+Insert `<ConnectionIndicator />` into the header area of each dashboard page:
+
+- `src/pages/Dashboard.tsx` — main dashboard header
+- `src/pages/JudgeDashboard.tsx` — judge dashboard header
+- `src/pages/TabulatorDashboard.tsx` — tabulator workspace headers
+- `src/pages/ChiefJudgeDashboard.tsx` — chief judge header
+- `src/pages/WitnessDashboard.tsx` — witness header
+- `src/pages/ProductionAssistantDashboard.tsx` — PA header
+
+### Files to Create/Edit
+- **Migration**: Update `withdraw_contestant` to set `sub_event_id = NULL` on withdrawal
+- **Create**: `src/components/shared/ConnectionIndicator.tsx`
+- **Edit**: 6 dashboard pages (add ConnectionIndicator to headers)
 
