@@ -93,15 +93,13 @@ export default function MasterScoreSheet() {
 
   const { data, isLoading } = useMasterSheet(competitionId, subEventId);
 
-  const judgeUserIds = useMemo(() => (data?.profiles || []).map((p: any) => p.user_id), [data?.profiles]);
-  const profileMap = useStaffDisplayNames(judgeUserIds);
-
-  // Ordered list of judge user_ids
+  // Ordered list of judge user_ids (used for both name resolution and column ordering)
   const judgeUserIds = useMemo(() => {
     const fromAssignments = (data?.assignments || []).map((a: any) => a.user_id as string);
     const fromScores = (data?.scores || []).map((s) => s.judge_id as string);
     return [...new Set([...fromAssignments, ...fromScores])];
   }, [data?.assignments, data?.scores]);
+  const profileMap = useStaffDisplayNames(judgeUserIds);
 
   const rubricNames = useMemo(
     () => (data?.rubric || []).map((r: any) => r.name as string),

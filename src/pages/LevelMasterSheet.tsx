@@ -86,21 +86,11 @@ export default function LevelMasterSheet() {
 
   const { data, isLoading } = useLevelMasterSheet(competitionId, levelId);
 
-  const judgeUserIds = useMemo(() => (data?.profiles || []).map((p: any) => p.user_id), [data?.profiles]);
-  const profileMap = useStaffDisplayNames(judgeUserIds);
-
-  const subEventMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const se of data?.subEvents || []) {
-      m.set(se.id, se.name);
-    }
-    return m;
-  }, [data?.subEvents]);
-
   // All unique judge IDs from scores
   const judgeUserIds = useMemo(() => {
     return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
   }, [data?.scores]);
+  const profileMap = useStaffDisplayNames(judgeUserIds);
 
   // Build rows: one per contestant across all sub-events
   const rows = useMemo(() => {
