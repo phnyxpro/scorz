@@ -25,6 +25,7 @@ import { SignaturePad } from "@/components/registration/SignaturePad";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -503,6 +504,7 @@ export default function TabulatorDashboard() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
+            <ConnectionIndicator />
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Select a competition, then choose a sub-event to open the workspace.

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { ClipboardList, UserX, Ban, LogOut as DropOutIcon, RotateCcw } from "lucide-react";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 const statusColors: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary-foreground",
@@ -122,6 +123,7 @@ export default function ProductionAssistantDashboard() {
           <h1 className="text-xl font-bold font-mono tracking-tight flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-accent" />
             Production Assistant
+            <ConnectionIndicator />
           </h1>
           {competitions.length > 1 && (
             <Select value={activeCompId} onValueChange={setSelectedCompId}>

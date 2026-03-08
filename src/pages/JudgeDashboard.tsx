@@ -10,6 +10,7 @@ import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Shield
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");
@@ -39,6 +40,7 @@ export default function JudgeDashboard() {
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                     <Star className="h-6 w-6 text-primary" /> Judge Dashboard
+                    <ConnectionIndicator />
                 </h1>
                 <p className="text-muted-foreground">
                     Welcome back. You have assignments in {assignedCompetitions.length} competition(s).
