@@ -1,47 +1,28 @@
 
 
-## Fix Blank Rendering in Browser Automation
-
-The app appears blank in headless browser testing due to two compounding issues:
-
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
-
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
-
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
+## Plan: Level Advancement Settings & Special Contestants
 
 ### Summary
+Add two new features to each competition level: (1) how many contestants advance to the next level, and (2) support for special contestant entries (previous winners, wild cards, sub-competition winners) that get added to the level.
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Database Migration
+Add columns to `competition_levels`:
+- `advancement_count` (integer, nullable) — number of contestants advancing from this level to the next
+- `special_entries` (jsonb, default `'[]'`) — array of objects like `{ type: "previous_winner" | "wild_card" | "sub_competition_winner", label: string }` describing special contestants included in this level
+
+### UI Changes (LevelsManager.tsx)
+Within each level's collapsible content, add an editable settings section:
+
+1. **Advancement Count** — a numeric input labeled "Contestants advancing to next level" that saves on blur/change via direct Supabase update
+2. **Special Entries** — a multi-select or tag-style UI with preset options (Previous Winners, Wild Cards, Sub-Competition Winners) plus a custom label input. Displayed as badges. Add/remove updates the `special_entries` JSONB array.
+
+Both fields update via `supabase.from("competition_levels").update(...)` with query invalidation, following the same pattern used for `banner_url` updates.
+
+### Display
+- Show advancement count as a badge on the level header (e.g., "Top 10 advance")
+- Show special entry badges (e.g., "Wild Cards", "Previous Winners") on the level header
+
+### Files Changed
+- **Migration**: Add `advancement_count` and `special_entries` columns to `competition_levels`
+- **`src/components/competition/LevelsManager.tsx`**: Add advancement input and special entries manager inside each level's collapsible content
 
