@@ -15,6 +15,7 @@ export interface StaffInvitation {
   competition_id: string;
   sub_event_id: string | null;
   is_chief: boolean;
+  is_production_assistant: boolean;
   invited_by: string;
   created_at: string;
   accepted_at: string | null;
@@ -76,9 +77,9 @@ export function useAddStaffMember() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, email, phone, role, competitionId, competitionName, isChief, levelName, subEventNames }: {
+    mutationFn: async ({ name, email, phone, role, competitionId, competitionName, isChief, isProductionAssistant, levelName, subEventNames }: {
       name?: string; email: string; phone?: string; role: AppRole; competitionId: string;
-      competitionName?: string; isChief?: boolean; levelName?: string; subEventNames?: string[];
+      competitionName?: string; isChief?: boolean; isProductionAssistant?: boolean; levelName?: string; subEventNames?: string[];
     }) => {
       const { data, error } = await (supabase
         .from("staff_invitations" as any)
@@ -90,6 +91,7 @@ export function useAddStaffMember() {
           competition_id: competitionId,
           invited_by: user?.id,
           is_chief: isChief || false,
+          is_production_assistant: isProductionAssistant || false,
           invited_at: new Date().toISOString(),
         })
         .select()
@@ -301,7 +303,7 @@ export function useUpdateStaffInvitation() {
     mutationFn: async ({ id, competitionId, updates }: {
       id: string;
       competitionId: string;
-      updates: { name?: string | null; email?: string; phone?: string | null; role?: AppRole; is_chief?: boolean };
+      updates: { name?: string | null; email?: string; phone?: string | null; role?: AppRole; is_chief?: boolean; is_production_assistant?: boolean };
     }) => {
       const { error } = await (supabase
         .from("staff_invitations" as any)

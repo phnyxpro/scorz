@@ -28,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
@@ -86,6 +86,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const [staffPhone, setStaffPhone] = useState("");
   const [staffRole, setStaffRole] = useState<string>("judge");
   const [staffIsChief, setStaffIsChief] = useState(false);
+  const [staffIsPA, setStaffIsPA] = useState(false);
 
   const handleAddStaff = () => {
     if (!staffEmail || !staffRole) return;
@@ -97,11 +98,13 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       competitionId,
       competitionName,
       isChief: staffRole === "judge" ? staffIsChief : false,
+      isProductionAssistant: staffRole === "organizer" ? staffIsPA : false,
     });
     setStaffName("");
     setStaffEmail("");
     setStaffPhone("");
     setStaffIsChief(false);
+    setStaffIsPA(false);
   };
 
   const handleSendInvite = (inv: { id: string; email: string; role: any }) => {
@@ -212,7 +215,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Role</Label>
-              <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); }}>
+              <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); if (v !== "organizer") setStaffIsPA(false); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ASSIGNABLE_ROLES.map((r) => (
@@ -232,6 +235,19 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
               <label htmlFor="chief-judge-check" className="text-sm cursor-pointer flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                 Designate as Chief Judge
+              </label>
+            </div>
+          )}
+          {staffRole === "organizer" && (
+            <div className="flex items-center gap-2 mt-3">
+              <Checkbox
+                id="production-assistant-check"
+                checked={staffIsPA}
+                onCheckedChange={(v) => setStaffIsPA(v === true)}
+              />
+              <label htmlFor="production-assistant-check" className="text-sm cursor-pointer flex items-center gap-1.5">
+                <ClipboardList className="h-3.5 w-3.5 text-accent" />
+                Designate as Production Assistant
               </label>
             </div>
           )}
@@ -372,7 +388,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
   inv: StaffInvitation | null;
   competitionId: string;
   onClose: () => void;
-  onSave: (updates: { name?: string | null; email?: string; phone?: string | null; role?: any; is_chief?: boolean }) => void;
+  onSave: (updates: { name?: string | null; email?: string; phone?: string | null; role?: any; is_chief?: boolean; is_production_assistant?: boolean }) => void;
   saving: boolean;
 }) {
   const [name, setName] = useState("");
@@ -380,6 +396,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
   const [isChief, setIsChief] = useState(false);
+  const [isPA, setIsPA] = useState(false);
   const [confirmingEmailChange, setConfirmingEmailChange] = useState(false);
 
   useEffect(() => {
@@ -389,6 +406,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
       setPhone(inv.phone || "");
       setRole(inv.role);
       setIsChief(inv.is_chief);
+      setIsPA(inv.is_production_assistant);
       setConfirmingEmailChange(false);
     }
   }, [inv]);
@@ -409,6 +427,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
       phone: phone.trim() || null,
       role: role as any,
       is_chief: role === "judge" ? isChief : false,
+      is_production_assistant: role === "organizer" ? isPA : false,
     });
   };
 
@@ -468,6 +487,12 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
               <div className="flex items-center gap-2">
                 <Checkbox id="edit-chief" checked={isChief} onCheckedChange={(c) => setIsChief(!!c)} />
                 <Label htmlFor="edit-chief" className="text-xs">Chief Judge</Label>
+              </div>
+            )}
+            {role === "organizer" && (
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-pa" checked={isPA} onCheckedChange={(c) => setIsPA(!!c)} />
+                <Label htmlFor="edit-pa" className="text-xs">Production Assistant</Label>
               </div>
             )}
             <div className="flex justify-end gap-2 pt-2">
@@ -624,6 +649,11 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               {inv.is_chief && (
                 <Badge variant="outline" className="text-[10px] py-0 h-4 gap-0.5 border-primary/50 text-primary">
                   <ShieldCheck className="h-2.5 w-2.5" /> Chief Judge
+                </Badge>
+              )}
+              {inv.is_production_assistant && (
+                <Badge variant="outline" className="text-[10px] py-0 h-4 gap-0.5 border-accent/50 text-accent">
+                  <ClipboardList className="h-2.5 w-2.5" /> Production Assistant
                 </Badge>
               )}
               {inv.accepted_at ? (
