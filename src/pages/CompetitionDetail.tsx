@@ -24,6 +24,7 @@ import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsPillLayout } from "@/components/competition/RegistrationsPillLayout";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, Navigate } from "react-router-dom";
@@ -57,6 +58,8 @@ interface ScannedCriterion {
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general");
   // Fix content where HTML tags were stored as escaped text (e.g. from bad paste)
   const fixEscapedHtml = (html: string): string => {
     if (!html) return html;
@@ -290,21 +293,43 @@ export default function CompetitionDetail() {
           </div>
         </div>
 
-        <Tabs defaultValue={searchParams.get("tab") || "general"} className="space-y-4">
-          <TabsList className="w-full flex overflow-x-auto no-scrollbar min-h-[44px]">
-            <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
-            <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
-          <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
-          <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
-          <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
-          <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
-          <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
-          <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
-          <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
-          <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
-          <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
-          <TabsTrigger value="chat" className="flex-shrink-0">Chat</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          {isMobile ? (
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="levels">Schedule</SelectItem>
+                <SelectItem value="rules">Rules</SelectItem>
+                <SelectItem value="rubric">Rubric</SelectItem>
+                <SelectItem value="penalties">Penalties</SelectItem>
+                <SelectItem value="scoring">Scoring</SelectItem>
+                <SelectItem value="registrations">Registrations</SelectItem>
+                <SelectItem value="slots">Time Slots</SelectItem>
+                <SelectItem value="assignments">Staff</SelectItem>
+                <SelectItem value="sponsors">Sponsors</SelectItem>
+                <SelectItem value="branding">Branding</SelectItem>
+                <SelectItem value="chat">Chat</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <TabsList className="w-full flex overflow-x-auto no-scrollbar min-h-[44px]">
+              <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
+              <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
+              <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
+              <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
+              <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+              <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
+              <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
+              <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
+              <TabsTrigger value="assignments" className="flex-shrink-0">Staff</TabsTrigger>
+              <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
+              <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>
+              <TabsTrigger value="chat" className="flex-shrink-0">Chat</TabsTrigger>
+            </TabsList>
+          )}
 
         <TabsContent value="general">
           {isLocked && (
