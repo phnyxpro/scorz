@@ -180,7 +180,7 @@ export default function JudgeScoring() {
 
   const handleSave = async (silent = false) => {
     if (!user || !subEventId || !selectedContestant) return;
-    await upsert.mutateAsync({
+    const payload = {
       id: existingScore?.id,
       sub_event_id: subEventId,
       judge_id: user.id,
@@ -191,8 +191,21 @@ export default function JudgeScoring() {
       time_penalty: timePenalty,
       final_score: finalScore,
       comments: comments || undefined,
-    } as any);
-    if (!silent) toast({ title: "Score saved" });
+    } as any;
+    try {
+      await upsert.mutateAsync(payload);
+      // Clear any offline cache for this contestant on success
+      const cacheKey = `scorz_pending_scores_${user.id}_${subEventId}_${selectedContestant}`;
+      localStorage.removeItem(cacheKey);
+      setHasOfflineCache(Object.keys(localStorage).some(k => k.startsWith("scorz_pending_scores_")));
+      if (!silent) toast({ title: "Score saved" });
+    } catch (err) {
+      // Network failure — cache locally
+      const cacheKey = `scorz_pending_scores_${user.id}_${subEventId}_${selectedContestant}`;
+      localStorage.setItem(cacheKey, JSON.stringify(payload));
+      setHasOfflineCache(true);
+      if (!silent) toast({ title: "Saved locally", description: "Will sync when back online", variant: "destructive" });
+    }
   };
 
   const handleCertify = async () => {
