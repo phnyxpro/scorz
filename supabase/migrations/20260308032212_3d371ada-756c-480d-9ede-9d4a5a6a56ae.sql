@@ -1,0 +1,1 @@
+ALTER TABLE public.contestant_registrations ADD COLUMN special_entry_type text;
