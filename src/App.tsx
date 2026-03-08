@@ -67,6 +67,7 @@ const TicketSuccess = lazy(() => import("./pages/TicketSuccess"));
 const WitnessDashboard = lazy(() => import("./pages/WitnessDashboard"));
 const ContestantRegistrationProfile = lazy(() => import("./pages/ContestantRegistrationProfile"));
 const ProductionAssistantDashboard = lazy(() => import("./pages/ProductionAssistantDashboard"));
+const ScoreTablesPage = lazy(() => import("./pages/ScoreTablesPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -130,6 +131,7 @@ const App = () => (
                 <Route path="/competitions/:id/results" element={<ProtectedPage><Results /></ProtectedPage>} />
                 <Route path="/competitions/:id/post-event" element={<ProtectedPage><PostEventPortal /></ProtectedPage>} />
                 <Route path="/competitions/:id/witness" element={<ProtectedPage><WitnessDashboard /></ProtectedPage>} />
+                <Route path="/competitions/:id/score-tables" element={<ProtectedPage><ScoreTablesPage /></ProtectedPage>} />
                 <Route path="/competitions/:id/contestant/:registrationId" element={<ProtectedPage><ContestantRegistrationProfile /></ProtectedPage>} />
                 <Route path="/competitions/:id/vote" element={<ProtectedPage><AudienceVoting /></ProtectedPage>} />
                 <Route path="/profile" element={<ProtectedPage><ContestantProfile /></ProtectedPage>} />

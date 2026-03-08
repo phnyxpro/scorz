@@ -1,43 +1,47 @@
 
 
-## Plan: Extract Score Tables to Dedicated Page + Remove Auto-Save from Judge Scoring
+## Fix Blank Rendering in Browser Automation
 
-### 1. New page: `src/pages/ScoreTablesPage.tsx`
+The app appears blank in headless browser testing due to two compounding issues:
 
-Extract **only** the three tabs (Score Summary, Side-by-Side Detail, Vote Audit) from `SubEventWorkspace` into a standalone page.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-- Route: `/competitions/:id/score-tables?sub_event=<subEventId>`
-- The page will fetch its own data using the same hooks (`useAllScoresForSubEvent`, `useJudgeScoresRealtime`, `usePerformanceDurations`, `useDurationsRealtime`, `useStaffDisplayNames`)
-- Accept `competitionId` and `subEventId` from route params/query params
-- Pull registrations from existing `useJudgingOverview` or a lighter query
-- Render the `Tabs` block (lines 257-312 of current `SubEventWorkspace`) with `ScoreSummaryTable`, `SideBySideScores`, and `VoteAudit`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-### 2. Update `src/pages/TabulatorDashboard.tsx`
+---
 
-- Remove the three-tab `Tabs` block (lines 256-312) from `SubEventWorkspace`, keeping everything else (timer, progress bar, judge activity, certification controls, certify dialog, score card exporter)
-- Add a navigation link/button "Score Tables" after the Judge Activity section, linking to `/competitions/${competitionId}/score-tables?sub_event=${subEventId}`
+### Fix 1: Conditionally apply auditorium filter
 
-### 3. Add route in `src/App.tsx`
+**File: `src/contexts/ThemeContext.tsx`**
 
-- Add `ScoreTablesPage` lazy import and protected route at `/competitions/:id/score-tables`
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### 4. Remove auto-save from `src/pages/JudgeScoring.tsx`
+### Fix 2: Remove filter class when at defaults
 
-**Remove:**
-- `autoSaveStatus` state (line 121)
-- `autoSaveTimerRef` and `autoSaveStatusTimerRef` refs (lines 123, 125)
-- The debounced auto-save `useEffect` (lines 217-236)
-- The "Saving…" / "Auto-saved" UI indicators (lines 600-607)
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-**Add offline cache fallback:**
-- Wrap `handleSave` DB call in try/catch; on network failure, serialize scores to `localStorage` key `scorz_pending_scores_{judgeId}_{subEventId}_{contestantId}`
-- Show a small "Offline — saved locally" indicator when cached data exists
-- Add a `useEffect` listening to `window.addEventListener("online", ...)` that attempts to flush any cached scores back to the database on reconnect
-- On page load, check for cached scores and attempt to sync them
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-### Files to edit
-1. `src/pages/ScoreTablesPage.tsx` — **new** — extracted score tabs page
-2. `src/pages/TabulatorDashboard.tsx` — remove tabs from SubEventWorkspace, add "Score Tables" link
-3. `src/App.tsx` — add route
-4. `src/pages/JudgeScoring.tsx` — remove auto-save, add offline cache
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
