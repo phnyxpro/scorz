@@ -216,91 +216,16 @@ export function JudgingHubContent() {
                                     )}
                                   </div>
 
-                                  {/* Contestants table – click to expand scorecard */}
+                                  {/* Contestants – link to overview */}
                                   <div>
                                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
                                       Contestants ({contestants.length})
                                     </p>
-                                    {contestants.length === 0 ? (
-                                      <p className="text-xs text-muted-foreground italic">No contestants registered</p>
-                                    ) : (
-                                      <div className="border border-border/40 rounded-md overflow-hidden">
-                                        <Table>
-                                          <TableHeader>
-                                            <TableRow>
-                                              <TableHead className="w-8">#</TableHead>
-                                              <TableHead>Name</TableHead>
-                                              <TableHead className="text-center">Scores</TableHead>
-                                              <TableHead className="w-8"></TableHead>
-                                            </TableRow>
-                                          </TableHeader>
-                                          <TableBody>
-                                            {contestants.map((c: any, idx: number) => {
-                                              const cScores = seScores.filter(
-                                                (s) => s.contestant_registration_id === c.id
-                                              );
-                                              const isExpanded = expandedContestant === `${se.id}-${c.id}`;
-                                              const toggleKey = `${se.id}-${c.id}`;
-                                              return (
-                                                <>
-                                                  <TableRow
-                                                    key={c.id}
-                                                    className="cursor-pointer hover:bg-muted/50"
-                                                    onClick={() =>
-                                                      setExpandedContestant(isExpanded ? null : toggleKey)
-                                                    }
-                                                  >
-                                                    <TableCell className="font-mono text-muted-foreground text-xs">
-                                                      {idx + 1}
-                                                    </TableCell>
-                                                    <TableCell className="font-medium text-sm">{c.full_name}</TableCell>
-                                                    <TableCell className="text-center">
-                                                      <Badge variant="outline" className="text-xs">
-                                                        {cScores.length} judge{cScores.length !== 1 ? "s" : ""}
-                                                      </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                      <ChevronDown
-                                                        className={`h-4 w-4 text-muted-foreground transition-transform ${
-                                                          isExpanded ? "rotate-180" : ""
-                                                        }`}
-                                                      />
-                                                    </TableCell>
-                                                  </TableRow>
-                                                  {isExpanded && cScores.length > 0 && rubricNames.length > 0 && (
-                                                    <TableRow key={`${c.id}-scores`}>
-                                                      <TableCell colSpan={4} className="p-0 border-0">
-                                                        <AnimatePresence>
-                                                          <motion.div
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: "auto", opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }}
-                                                            transition={{ duration: 0.2 }}
-                                                            className="overflow-hidden bg-muted/20 p-3"
-                                                          >
-                                                            <SideBySideScores
-                                                              scores={cScores.map((s) => ({
-                                                                ...s,
-                                                                judge_id:
-                                                                  profileMap.get(s.judge_id) ||
-                                                                  s.judge_id.slice(0, 8) + "…",
-                                                              })) as any}
-                                                              rubricNames={rubricNames}
-                                                              contestantName={c.full_name}
-                                                              contestantUserId={c.user_id}
-                                                            />
-                                                          </motion.div>
-                                                        </AnimatePresence>
-                                                      </TableCell>
-                                                    </TableRow>
-                                                  )}
-                                                </>
-                                              );
-                                            })}
-                                          </TableBody>
-                                        </Table>
-                                      </div>
-                                    )}
+                                    <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                                      <Link to={`/competitions/${selectedCompId}/contestant-scores?sub_event=${se.id}`}>
+                                        <ChevronRight className="h-3.5 w-3.5 mr-1.5" /> Contestant Scores Overview
+                                      </Link>
+                                    </Button>
                                   </div>
 
                                   {/* Score sheet link */}
