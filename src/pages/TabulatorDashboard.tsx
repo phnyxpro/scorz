@@ -155,27 +155,14 @@ function SubEventWorkspace({
     return map;
   }, [allScores]);
 
-  // Build judge profiles map for display names
+  // Build judge profiles map for display names (staff invitation name → profile name → friendly email)
   const judgeIds = useMemo(() => [...new Set((allScores || []).map(s => s.judge_id))], [allScores]);
-  const { data: judgeProfilesData } = useQuery({
-    queryKey: ["judge-profiles-tab", judgeIds],
-    enabled: judgeIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", judgeIds);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const staffNameMap = useStaffDisplayNames(judgeIds);
   const judgeProfiles = useMemo(() => {
     const m: Record<string, string> = {};
-    judgeProfilesData?.forEach(p => {
-      m[p.user_id] = friendlyDisplayName(p.full_name, p.email);
-    });
+    for (const [uid, name] of staffNameMap.entries()) m[uid] = name;
     return m;
-  }, [judgeProfilesData]);
+  }, [staffNameMap]);
 
   const contestantName = (regId: string) =>
     registrations.find((r: any) => r.id === regId)?.full_name ?? "Unknown";
