@@ -616,17 +616,31 @@ export function RegistrationsManager({ competitionId }: Props) {
     qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
   };
 
+  const optimisticReorder = async (reordered: ContestantRegistration[]) => {
+    const withNewOrder = reordered.map((r, i) => ({ ...r, sort_order: i }));
+    qc.setQueryData(["registrations", competitionId], (old: ContestantRegistration[] | undefined) => {
+      if (!old) return old;
+      const orderMap = new Map(withNewOrder.map(r => [r.id, r.sort_order]));
+      return old.map(r => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id)! } : r)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+    try {
+      await Promise.all(withNewOrder.map(r =>
+        supabase.from("contestant_registrations").update({ sort_order: r.sort_order } as any).eq("id", r.id)
+      ));
+    } catch {
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    }
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
   const handleMoveUp = async (regId: string) => {
     const idx = filtered.findIndex(r => r.id === regId);
     if (idx <= 0) return;
     const reordered = [...filtered];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(idx - 1, 0, moved);
-    for (let i = 0; i < reordered.length; i++) {
-      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
-    }
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+    await optimisticReorder(reordered);
   };
 
   const handleMoveDown = async (regId: string) => {
@@ -635,11 +649,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     const reordered = [...filtered];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(idx + 1, 0, moved);
-    for (let i = 0; i < reordered.length; i++) {
-      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
-    }
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+    await optimisticReorder(reordered);
   };
 
   const handleInlineNameSave = (regId: string, newName: string) => {
