@@ -470,6 +470,7 @@ export type Database = {
           name: string
           registration_enabled: boolean
           registration_end_at: string | null
+          registration_form_config: Json
           registration_start_at: string | null
           rubric_content: string | null
           rubric_document_url: string | null
@@ -503,6 +504,7 @@ export type Database = {
           name: string
           registration_enabled?: boolean
           registration_end_at?: string | null
+          registration_form_config?: Json
           registration_start_at?: string | null
           rubric_content?: string | null
           rubric_document_url?: string | null
@@ -536,6 +538,7 @@ export type Database = {
           name?: string
           registration_enabled?: boolean
           registration_end_at?: string | null
+          registration_form_config?: Json
           registration_start_at?: string | null
           rubric_content?: string | null
           rubric_document_url?: string | null
