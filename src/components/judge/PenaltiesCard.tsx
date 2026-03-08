@@ -29,14 +29,6 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
 
   const [activeCategory, setActiveCategory] = useState<Category>("time");
 
-  if (isLoading) return <Skeleton className="h-48 w-full" />;
-
-  const hasPenalties = (penalties && penalties.length > 0) || generalPenalties.length > 0 || disqualifications.length > 0;
-  if (!hasPenalties) return null;
-
-  const ActiveIcon = categories[activeCategory].icon;
-
-  // Determine available categories
   const availableCategories = (Object.keys(categories) as Category[]).filter((key) => {
     if (key === "time") return penalties && penalties.length > 0;
     if (key === "general") return generalPenalties.length > 0;
@@ -51,6 +43,13 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
     });
   }, [availableCategories]);
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
+  if (isLoading) return <Skeleton className="h-48 w-full" />;
+
+  const hasPenalties = (penalties && penalties.length > 0) || generalPenalties.length > 0 || disqualifications.length > 0;
+  if (!hasPenalties) return null;
+
+  const ActiveIcon = categories[activeCategory].icon;
 
   return (
     <div className="space-y-3">
