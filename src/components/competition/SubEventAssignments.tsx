@@ -642,7 +642,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap justify-end">
           {isAdmin && onPreviewEmail && (
             <Button
               variant="ghost"
@@ -712,7 +712,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
 
       {/* Assigned sub-events */}
       {invitationSubEvents.length > 0 && (
-        <div className="pl-11 flex flex-wrap gap-1.5">
+        <div className="pl-4 sm:pl-11 flex flex-wrap gap-1.5">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider self-center mr-1">Assigned:</span>
           {invitationSubEvents.map((ise) => (
             <SubEventBadge
@@ -736,7 +736,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
           Assign to sub-event
         </Button>
       ) : (
-        <div className="flex flex-wrap gap-2 items-end pl-11">
+        <div className="flex flex-wrap gap-2 items-end pl-4 sm:pl-11">
           <div className="min-w-[140px]">
             <label className="text-[10px] text-muted-foreground">Level</label>
             <Select value={assignLevelId} onValueChange={setAssignLevelId}>

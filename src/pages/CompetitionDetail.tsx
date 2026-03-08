@@ -317,7 +317,7 @@ export default function CompetitionDetail() {
           )}
           <Card className="border-border/50 bg-card/80">
             <CardHeader><CardTitle className="text-base">Competition Details</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-3 sm:p-6">
               <BannerUpload
                 currentUrl={(comp as any).banner_url}
                 folder={`competitions/${id}`}
@@ -369,13 +369,15 @@ export default function CompetitionDetail() {
               {/* Social Links */}
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Social Media Links</label>
-                {["facebook", "instagram", "x", "youtube", "tiktok"].map(platform => (
-                  <Input
-                    key={platform}
-                    placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-                    value={socialLinks[platform] || ""}
-                    onChange={e => updateSocial(platform, e.target.value)}
-                  />
+              {["facebook", "instagram", "x", "youtube", "tiktok"].map(platform => (
+                  <div key={platform} className="space-y-1">
+                    <label className="text-xs text-muted-foreground capitalize">{platform === "x" ? "X (Twitter)" : platform}</label>
+                    <Input
+                      placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
+                      value={socialLinks[platform] || ""}
+                      onChange={e => updateSocial(platform, e.target.value)}
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -408,7 +410,7 @@ export default function CompetitionDetail() {
               </div>
               <CardDescription>Add an external rules URL or upload a document (PDF, DOCX, TXT) that contestants and judges can reference.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-3 sm:p-6">
               <div>
                 <label className="text-xs text-muted-foreground">Competition Rules URL</label>
                 <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
@@ -440,7 +442,7 @@ export default function CompetitionDetail() {
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={handleSave} disabled={update.isPending}>
                   {update.isPending ? "Saving…" : "Save Changes"}
                 </Button>
@@ -469,7 +471,7 @@ export default function CompetitionDetail() {
                 </div>
                 <CardDescription>Upload a rubric document (PDF, DOCX, TXT) or build scoring criteria below for judges to use during evaluation.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 p-3 sm:p-6">
                 <DocumentUpload
                   currentUrl={rubricDocumentUrl || null}
                   folder={`rubric/${id}`}
@@ -496,7 +498,7 @@ export default function CompetitionDetail() {
                 />
               </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button onClick={handleSave} disabled={update.isPending}>
                     {update.isPending ? "Saving…" : "Save Changes"}
                   </Button>

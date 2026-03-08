@@ -72,7 +72,7 @@ export function BrandingManager({ competitionId, competition }: BrandingManagerP
           </div>
           <CardDescription>Customise colours, fonts, and logo for this competition's public event page.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-3 sm:p-6">
           {/* Competition Logo */}
           <BannerUpload
             currentUrl={competition?.branding_logo_url}
@@ -130,7 +130,7 @@ export function BrandingManager({ competitionId, competition }: BrandingManagerP
           </div>
 
           {/* Preview */}
-          <div className="rounded-lg border border-border/50 p-4 space-y-2" style={{ fontFamily: font === "mono" ? "monospace" : font === "serif" ? "serif" : font === "rounded" ? "Nunito, sans-serif" : "inherit" }}>
+          <div className="rounded-lg border border-border/50 p-3 sm:p-4 space-y-2" style={{ fontFamily: font === "mono" ? "monospace" : font === "serif" ? "serif" : font === "rounded" ? "Nunito, sans-serif" : "inherit" }}>
             <p className="text-xs text-muted-foreground font-mono uppercase">Preview</p>
             <div className="flex items-center gap-3">
               {competition?.branding_logo_url && (
@@ -159,7 +159,7 @@ export function BrandingManager({ competitionId, competition }: BrandingManagerP
           </div>
           <CardDescription>When enabled, the public event page will use your competition logo and branding instead of the Scorz brand.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="wl-toggle" className="text-sm font-medium">Enable White-Label</Label>

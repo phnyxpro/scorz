@@ -1,51 +1,47 @@
 
 
-## Plan: Mobile Optimisation — Competition Settings Page
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The Competition Detail page (`CompetitionDetail.tsx`) contains 12 tabs with multiple sub-components. Several areas have mobile usability issues at 390px:
-- **General tab**: Social links section has 5 full-width inputs stacked without labels; date grid works but could be tighter
-- **Schedule tab** (`LevelsManager`): Sub-event cards have action buttons that overflow on narrow screens; the "Add level" input + button row can be tight
-- **Time Slots tab** (`SlotsManager`): "Generate Slots" grid uses `grid-cols-3` which gets cramped at 390px; the slots table needs horizontal scroll wrapper; Level/Sub-event selector grid uses `grid-cols-2` which is tight
-- **Staff tab** (`SubEventAssignments`): Staff row action buttons (Preview, Invite, Edit, Delete, View as) overflow horizontally; sub-event assignment selectors use `pl-11` which wastes space on mobile
-- **Sponsors tab** (`SponsorsManager`): Card padding could be responsive; sponsor row layout is fine
-- **Branding tab** (`BrandingManager`): Color picker grid uses `grid-cols-2` which is fine but padding can be responsive; preview card padding is static
-- **Chat tab** (`EventChat`): Channel selector and DM picker may need mobile adjustments (separate scope)
-- **Rules/Rubric tabs**: Card content padding is static `space-y-3`; scan button row can wrap awkwardly
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Changes
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. `CompetitionDetail.tsx` — General tab responsive tweaks**
-- Change `CardContent` from implicit padding to `p-3 sm:p-5`
-- Social links: add small label before each input for clarity on mobile
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. `SlotsManager.tsx` — Collapse generate-slots grid on mobile**
-- Change `grid-cols-3` to `grid-cols-1 sm:grid-cols-3` for the Start Time / Slot Count / Duration fields
-- Change `grid-cols-2` to `grid-cols-1 sm:grid-cols-2` for Level / Sub-event selectors
-- Ensure slots table has `overflow-x-auto` wrapper (already present)
+---
 
-**3. `SubEventAssignments.tsx` — Mobile-friendly staff rows**
-- Staff row action buttons: wrap in `flex-wrap` so they flow to next line on narrow screens
-- Reduce `pl-11` to `pl-4 sm:pl-11` for sub-event assignment area on mobile
-- Staff add form: already uses `grid-cols-1 sm:grid-cols-2` (fine)
+### Fix 1: Conditionally apply auditorium filter
 
-**4. `SponsorsManager.tsx` — Responsive card padding**
-- Change `CardContent` to `p-3 sm:p-5` padding
-- Add form section padding responsive
+**File: `src/contexts/ThemeContext.tsx`**
 
-**5. `BrandingManager.tsx` — Responsive padding and preview**
-- `CardContent` padding to `p-3 sm:p-5`
-- Color grid: keep `grid-cols-2` (works at 390px)
-- Preview section: reduce padding on mobile `p-3 sm:p-4`
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**6. `CompetitionDetail.tsx` — Rules & Rubric tabs**
-- Card content padding responsive `p-3 sm:p-5`
-- Scan button row: add `flex-wrap` so buttons wrap on narrow screens
+### Fix 2: Remove filter class when at defaults
 
-### Files Modified
-- `src/pages/CompetitionDetail.tsx`
-- `src/components/competition/SlotsManager.tsx`
-- `src/components/competition/SubEventAssignments.tsx`
-- `src/components/competition/SponsorsManager.tsx`
-- `src/components/competition/BrandingManager.tsx`
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

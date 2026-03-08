@@ -38,7 +38,7 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
         </div>
         <CardDescription>Add sponsor logos and links that will be displayed on the public event page.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-3 sm:p-6">
         {/* Existing sponsors */}
         {isLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading…</p>}
         {sponsors?.map(s => (
@@ -59,7 +59,7 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
         ))}
 
         {/* Add new */}
-        <div className="border border-dashed border-border rounded-md p-4 space-y-3">
+        <div className="border border-dashed border-border rounded-md p-3 sm:p-4 space-y-3">
           <p className="text-xs text-muted-foreground font-medium">Add Sponsor</p>
           <Input placeholder="Sponsor name" value={name} onChange={e => setName(e.target.value)} />
           <BannerUpload
