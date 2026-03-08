@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type BackendStatus = "healthy" | "degraded" | "offline";
 
-export function ConnectionIndicator() {
+export const ConnectionIndicator = React.forwardRef<HTMLSpanElement>((_props, outerRef) => {
   const [online, setOnline] = useState(navigator.onLine);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("healthy");
   const consecutiveFailures = useRef(0);
