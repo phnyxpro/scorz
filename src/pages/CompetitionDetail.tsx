@@ -521,9 +521,25 @@ export default function CompetitionDetail() {
           <PenaltyConfig competitionId={id!} />
         </TabsContent>
 
-        <TabsContent value="registrations" className="space-y-4">
-          <RegistrationSettingsPanel competitionId={id!} />
-          <RegistrationsManager competitionId={id!} />
+        <TabsContent value="registrations">
+          <Tabs defaultValue="contestants" orientation="vertical" className="flex flex-col sm:flex-row gap-4">
+            <TabsList className="flex sm:flex-col sm:w-48 h-auto bg-muted/50 p-1 sm:items-stretch shrink-0">
+              <TabsTrigger value="contestants" className="justify-start text-xs sm:text-sm">Contestants</TabsTrigger>
+              <TabsTrigger value="reg-settings" className="justify-start text-xs sm:text-sm">Settings</TabsTrigger>
+              <TabsTrigger value="reg-forms" className="justify-start text-xs sm:text-sm">Forms</TabsTrigger>
+            </TabsList>
+            <div className="flex-1 min-w-0">
+              <TabsContent value="contestants" className="mt-0">
+                <RegistrationsManager competitionId={id!} />
+              </TabsContent>
+              <TabsContent value="reg-settings" className="mt-0">
+                <RegistrationSettingsPanel competitionId={id!} />
+              </TabsContent>
+              <TabsContent value="reg-forms" className="mt-0">
+                <RegistrationFormsInline competitionId={id!} />
+              </TabsContent>
+            </div>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="slots">
