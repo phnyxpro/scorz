@@ -3,6 +3,7 @@ import { useCompetition, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Info } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RubricPage() {
   const { id: competitionId } = useParams<{ id: string }>();
