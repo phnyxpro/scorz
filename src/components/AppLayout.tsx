@@ -28,7 +28,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     queryKey: ["chief-judge-badge", effectiveUserId, effectiveEmail],
     enabled: !!effectiveUserId,
     queryFn: async () => {
-      // Check sub_event_assignments
       const { data: assignments } = await supabase
         .from("sub_event_assignments")
         .select("id")
@@ -37,13 +36,39 @@ export function AppLayout({ children }: { children: ReactNode }) {
         .limit(1);
       if (assignments && assignments.length > 0) return true;
 
-      // Check pending staff_invitations by email
       if (effectiveEmail) {
         const { data: invites } = await supabase
           .from("staff_invitations")
           .select("id")
           .ilike("email", effectiveEmail)
           .eq("is_chief", true)
+          .is("accepted_at", null)
+          .limit(1);
+        if (invites && invites.length > 0) return true;
+      }
+      return false;
+    },
+  });
+
+  // Check if user has production assistant designation
+  const { data: isProductionAssistant } = useQuery({
+    queryKey: ["production-assistant-badge", effectiveUserId, effectiveEmail],
+    enabled: !!effectiveUserId,
+    queryFn: async () => {
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("id")
+        .eq("user_id", effectiveUserId!)
+        .eq("is_production_assistant", true)
+        .limit(1);
+      if (assignments && assignments.length > 0) return true;
+
+      if (effectiveEmail) {
+        const { data: invites } = await supabase
+          .from("staff_invitations")
+          .select("id")
+          .ilike("email", effectiveEmail)
+          .eq("is_production_assistant", true)
           .is("accepted_at", null)
           .limit(1);
         if (invites && invites.length > 0) return true;
