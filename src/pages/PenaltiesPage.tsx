@@ -1,11 +1,20 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Clock, AlertTriangle, Ban } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const categories = {
+  time: { label: "Time Penalties", icon: Clock, description: "Penalties applied when contestants exceed their allotted performance time." },
+  general: { label: "General Penalties", icon: AlertTriangle, description: "Point deductions for rule violations unrelated to time." },
+  dq: { label: "Disqualifications", icon: Ban, description: "Offences that result in immediate disqualification or forfeiture." },
+} as const;
+
+type Category = keyof typeof categories;
 
 export default function PenaltiesPage() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -17,6 +26,9 @@ export default function PenaltiesPage() {
 
   const generalPenalties = infractions?.filter(i => i.category === "penalty") || [];
   const disqualifications = infractions?.filter(i => i.category === "disqualification") || [];
+
+  const [activeCategory, setActiveCategory] = useState<Category>("time");
+  const ActiveIcon = categories[activeCategory].icon;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -37,124 +49,140 @@ export default function PenaltiesPage() {
       {isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        <div className="space-y-6">
-          {/* Time Penalties */}
-          {penalties && penalties.length > 0 && (
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-secondary" /> Time Penalties
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs uppercase font-mono">Condition</TableHead>
-                      <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {penalties.map((rule) => {
-                      const timeLimit = Math.floor(rule.time_limit_seconds / 60) + ":" + (rule.time_limit_seconds % 60).toString().padStart(2, '0');
-                      return (
-                        <TableRow key={rule.id}>
-                          <TableCell className="text-sm">
-                            {rule.from_seconds === 0 ? (
-                              <span>Up to {rule.to_seconds} seconds over {timeLimit}</span>
-                            ) : rule.to_seconds ? (
-                              <span>{rule.from_seconds} to {rule.to_seconds} seconds over {timeLimit}</span>
-                            ) : (
-                              <span>More than {rule.from_seconds} seconds over {timeLimit}</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="destructive" className="font-mono">
-                              -{rule.penalty_points} pts
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                <div className="mt-4 flex items-start gap-2 p-3 rounded bg-secondary/10 border border-secondary/20">
-                  <AlertTriangle className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    A grace period of {penalties[0].grace_period_seconds} seconds applies before penalties are calculated.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <>
+          {(!penalties || penalties.length === 0) && generalPenalties.length === 0 && disqualifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No penalty or disqualification rules defined for this competition.</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Category pill bar */}
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(categories) as Category[]).map((key) => {
+                  const cat = categories[key];
+                  const Icon = cat.icon;
+                  const isActive = activeCategory === key;
+                  // Hide pills with no data
+                  if (key === "time" && (!penalties || penalties.length === 0)) return null;
+                  if (key === "general" && generalPenalties.length === 0) return null;
+                  if (key === "dq" && disqualifications.length === 0) return null;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setActiveCategory(key)}
+                      className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* General Penalties */}
-          {generalPenalties.length > 0 && (
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-secondary" /> General Penalties
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs uppercase font-mono">Violation</TableHead>
-                      <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {generalPenalties.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <span className="text-sm font-medium">{p.title}</span>
-                            {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right align-top">
-                          <Badge variant="destructive" className="font-mono">
-                            -{p.penalty_points} pts
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+              {/* Active category card */}
+              <Card className="rounded-xl border-border/50 bg-card/80">
+                <CardContent className="p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
+                      <ActiveIcon className="h-3.5 w-3.5" />
+                      {categories[activeCategory].label}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
+                  </div>
 
-          {/* Disqualifications */}
-          {disqualifications.length > 0 && (
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Ban className="h-4 w-4 text-destructive" /> Disqualifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {disqualifications.map((d) => (
-                    <div key={d.id} className="flex items-start gap-3 p-3 rounded bg-destructive/5 border border-destructive/15">
-                      <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <span className="text-sm font-medium text-foreground">{d.title}</span>
-                        {d.description && <p className="text-xs text-muted-foreground leading-relaxed">{d.description}</p>}
+                  {/* Time Penalties */}
+                  {activeCategory === "time" && penalties && penalties.length > 0 && (
+                    <div className="space-y-3">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs uppercase font-mono">Condition</TableHead>
+                            <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {penalties.map((rule) => {
+                            const timeLimit = Math.floor(rule.time_limit_seconds / 60) + ":" + (rule.time_limit_seconds % 60).toString().padStart(2, '0');
+                            return (
+                              <TableRow key={rule.id}>
+                                <TableCell className="text-sm">
+                                  {rule.from_seconds === 0 ? (
+                                    <span>Up to {rule.to_seconds} seconds over {timeLimit}</span>
+                                  ) : rule.to_seconds ? (
+                                    <span>{rule.from_seconds} to {rule.to_seconds} seconds over {timeLimit}</span>
+                                  ) : (
+                                    <span>More than {rule.from_seconds} seconds over {timeLimit}</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="destructive" className="font-mono">
+                                    -{rule.penalty_points} pts
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                      <div className="flex items-start gap-2 p-3 rounded bg-secondary/10 border border-secondary/20">
+                        <AlertTriangle className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          A grace period of {penalties[0].grace_period_seconds} seconds applies before penalties are calculated.
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  )}
 
-          {/* Empty state */}
-          {(!penalties || penalties.length === 0) && generalPenalties.length === 0 && disqualifications.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">No penalty or disqualification rules defined for this competition.</p>
+                  {/* General Penalties */}
+                  {activeCategory === "general" && generalPenalties.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs uppercase font-mono">Violation</TableHead>
+                          <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {generalPenalties.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <span className="text-sm font-medium">{p.title}</span>
+                                {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right align-top">
+                              <Badge variant="destructive" className="font-mono">
+                                -{p.penalty_points} pts
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+
+                  {/* Disqualifications */}
+                  {activeCategory === "dq" && disqualifications.length > 0 && (
+                    <div className="space-y-3">
+                      {disqualifications.map((d) => (
+                        <div key={d.id} className="flex items-start gap-3 p-3 rounded bg-destructive/5 border border-destructive/15">
+                          <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          <div className="space-y-0.5">
+                            <span className="text-sm font-medium text-foreground">{d.title}</span>
+                            {d.description && <p className="text-xs text-muted-foreground leading-relaxed">{d.description}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
