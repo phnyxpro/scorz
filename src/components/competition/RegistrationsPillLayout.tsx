@@ -25,26 +25,28 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
   return (
     <div className="space-y-4">
       {/* Category pill bar */}
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(categories) as Category[]).map((key) => {
-          const cat = categories[key];
-          const Icon = cat.icon;
-          const isActive = activeCategory === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          );
-        })}
+      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+        <div className="flex gap-2 min-w-max">
+          {(Object.keys(categories) as Category[]).map((key) => {
+            const cat = categories[key];
+            const Icon = cat.icon;
+            const isActive = activeCategory === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCategory(key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium border transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
@@ -55,7 +57,7 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
       {/* Settings & Forms — wrapped in the pill card pattern */}
       {activeCategory === "settings" && (
         <Card className="rounded-xl border-border/50 bg-card/80">
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-3 sm:p-5 space-y-4">
             <div className="space-y-2">
               <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
                 <ActiveIcon className="h-3.5 w-3.5" />
@@ -70,7 +72,7 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
 
       {activeCategory === "forms" && (
         <Card className="rounded-xl border-border/50 bg-card/80">
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-3 sm:p-5 space-y-4">
             <div className="space-y-2">
               <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
                 <ActiveIcon className="h-3.5 w-3.5" />

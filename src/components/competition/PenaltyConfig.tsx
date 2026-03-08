@@ -102,31 +102,33 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
   return (
     <div className="space-y-4">
       {/* Category pill bar */}
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(categories) as Category[]).map((key) => {
-          const cat = categories[key];
-          const Icon = cat.icon;
-          const isActive = activeCategory === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          );
-        })}
+      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+        <div className="flex gap-2 min-w-max">
+          {(Object.keys(categories) as Category[]).map((key) => {
+            const cat = categories[key];
+            const Icon = cat.icon;
+            const isActive = activeCategory === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCategory(key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium border transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Active category card */}
       <Card className="rounded-xl border-border/50 bg-card/80">
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="p-3 sm:p-5 space-y-4">
           {/* Title pill */}
           <div className="space-y-2">
             <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
@@ -139,7 +141,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
           {/* Time Penalties content */}
           {activeCategory === "time" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Time Limit (seconds)</label>
                   <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} className="h-9" />
@@ -170,7 +172,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
 
               <div className="space-y-2 border-t border-border/50 pt-3">
                 <h3 className="text-sm font-medium text-foreground">Add Penalty Tier</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground">From (sec)</label>
                     <Input type="number" value={fromSeconds} onChange={(e) => setFromSeconds(e.target.value)} className="h-8 text-sm" />
