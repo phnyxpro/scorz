@@ -22,6 +22,8 @@ export default function Settings() {
   const { user, roles, signOut } = useAuth();
   const { isDark, toggleTheme, brightness, setBrightness, contrast, setContrast } = useTheme();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const [settingsTab, setSettingsTab] = useState("profile");
 
   // ── Profile tab state ──
   const { data: profile, isLoading: profileLoading } = useQuery({
