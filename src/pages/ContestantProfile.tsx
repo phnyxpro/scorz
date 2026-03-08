@@ -184,7 +184,29 @@ export default function ContestantProfile() {
       </motion.div>
 
       {/* Tabs */}
-      <Tabs defaultValue="details" className="space-y-4">
+      {(() => {
+        const isMobile = useIsMobile();
+        const [activeTab, setActiveTab] = useState("details");
+        const tabOptions = [
+          { value: "details", label: "Details" },
+          { value: "media", label: "Media" },
+          { value: "history", label: "History" },
+          ...(!isJudgeViewer ? [{ value: "scores", label: "Scores" }, { value: "votes", label: "Votes" }] : []),
+        ];
+        return (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        {isMobile ? (
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select section" />
+            </SelectTrigger>
+            <SelectContent>
+              {tabOptions.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
         <TabsList className={`grid w-full ${isJudgeViewer ? "grid-cols-3" : "grid-cols-5"}`}>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="media">Media</TabsTrigger>
@@ -192,6 +214,7 @@ export default function ContestantProfile() {
           {!isJudgeViewer && <TabsTrigger value="scores">Scores</TabsTrigger>}
           {!isJudgeViewer && <TabsTrigger value="votes">Votes</TabsTrigger>}
         </TabsList>
+        )}
 
         {/* Media Gallery Tab */}
         <TabsContent value="media">

@@ -330,13 +330,36 @@ export default function ChiefJudgeDashboard() {
             contestantCount={Object.keys(scoresByContestant).length}
           />
 
-          <Tabs defaultValue="panel" className="space-y-4 mt-4">
+          {(() => {
+            const isMobile = useIsMobile();
+            const [cjTab, setCjTab] = useState("panel");
+            const cjTabOptions = [
+              { value: "panel", label: "Panel Monitor" },
+              { value: "penalties", label: "Penalty Review" },
+              { value: "infractions", label: "Infractions" },
+              { value: "ties", label: "Tie Breaking" },
+            ];
+            return (
+          <Tabs value={cjTab} onValueChange={setCjTab} className="space-y-4 mt-4">
+            {isMobile ? (
+              <Select value={cjTab} onValueChange={setCjTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cjTabOptions.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
             </TabsList>
+            )}
 
             <TabsContent value="panel">
               <PanelMonitor
