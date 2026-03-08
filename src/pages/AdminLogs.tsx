@@ -88,13 +88,13 @@ export default function AdminLogs() {
           />
         </div>
 
-        <Select value={eventType} onValueChange={(v) => { setEventType(v); setPage(1); }}>
+        <Select value={eventType} onValueChange={(v) => { setEventType(v === "all" ? "" : v); setPage(1); }}>
           <SelectTrigger className="h-9 text-sm">
             <SelectValue placeholder="All event types" />
           </SelectTrigger>
           <SelectContent>
             {EVENT_TYPES.map((et) => (
-              <SelectItem key={et.value} value={et.value || "all"} className="text-sm">
+              <SelectItem key={et.value || "all"} value={et.value || "all"} className="text-sm">
                 {et.label}
               </SelectItem>
             ))}
