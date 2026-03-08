@@ -137,7 +137,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
+      <main role="main" className="container py-4 sm:py-6 px-3 sm:px-6 pb-20 sm:pb-6">
         <PageBreadcrumbs />
         {children}
       </main>
