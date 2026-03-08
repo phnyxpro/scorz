@@ -44,7 +44,7 @@ export default function TicketSuccess() {
             <>
               <p className="text-destructive font-medium">{error}</p>
               <Button asChild variant="outline">
-                <Link to="/events">Back to Events</Link>
+                <Link to="/public-events">Back to Events</Link>
               </Button>
             </>
           ) : (
