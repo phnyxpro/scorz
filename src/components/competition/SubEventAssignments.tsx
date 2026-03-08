@@ -642,6 +642,11 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
                   <ShieldCheck className="h-2.5 w-2.5" /> Chief Judge
                 </Badge>
               )}
+              {inv.is_production_assistant && (
+                <Badge variant="outline" className="text-[10px] py-0 h-4 gap-0.5 border-accent/50 text-accent">
+                  <ClipboardList className="h-2.5 w-2.5" /> Production Assistant
+                </Badge>
+              )}
               {inv.accepted_at ? (
                 <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
                   <CheckCircle className="h-2.5 w-2.5" /> Accepted
