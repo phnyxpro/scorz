@@ -92,6 +92,11 @@ export default function ServicePackageSection() {
       return;
     }
 
+    // Fire-and-forget email notification
+    supabase.functions.invoke("notify-service-request", {
+      body: { record: { full_name: data.full_name, email: data.email, phone: data.phone || null, organisation: data.organisation, event_type: data.event_type, expected_contestants: data.expected_contestants, preferred_date: data.preferred_date || null, location: data.location, description: data.description || null } },
+    }).catch(() => {});
+
     setSubmitted(true);
     toast({ title: "Request submitted!", description: "We'll be in touch within 48 hours to schedule your discovery meeting." });
   };
