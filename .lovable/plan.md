@@ -1,47 +1,58 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Production Assistant — Organizer Flag with Limited Dashboard
 
-The app appears blank in headless browser testing due to two compounding issues:
+Production Assistants are organisers assigned with a `is_production_assistant` flag. They see a dedicated dashboard scoped to the entire competition, showing the contestant list in performance order with status management (No Show, Disqualified, Drop Out, Reinstate).
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Database Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+1. **Add `is_production_assistant` column to `staff_invitations`**
+   ```sql
+   ALTER TABLE public.staff_invitations
+     ADD COLUMN is_production_assistant boolean NOT NULL DEFAULT false;
+   ```
 
----
+2. **Add `is_production_assistant` column to `sub_event_assignments`**
+   ```sql
+   ALTER TABLE public.sub_event_assignments
+     ADD COLUMN is_production_assistant boolean NOT NULL DEFAULT false;
+   ```
 
-### Fix 1: Conditionally apply auditorium filter
+3. **Update `accept_staff_invitations` function** to carry the `is_production_assistant` flag from invitations into assignments.
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Frontend Changes
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**1. Staff Roster (`SubEventAssignments.tsx`)**
+- When role is `organizer`, show a "Production Assistant" checkbox (same pattern as Chief Judge checkbox for judges)
+- Pass `is_production_assistant` flag when creating/editing staff invitations
+- Show a "Production Assistant" badge on the roster row when flagged
 
-### Fix 2: Remove filter class when at defaults
+**2. New page: `ProductionAssistantDashboard.tsx`**
+- Uses `useStaffView` pattern (or direct query via `get_assigned_competitions` RPC) to find assigned competitions
+- Fetches all registrations for the competition, filtered to `approved` status by default
+- Displays a table with: Order #, Name, Age Category, Sub-Event, Status
+- Status action buttons: No Show, Disqualified, Drop Out, Reinstate (calls existing `withdraw_contestant` RPC — already allows organizer role)
+- Sorted by `sort_order` (performance order)
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**3. Badge in Header (`AppLayout.tsx`)**
+- Query `sub_event_assignments` or `staff_invitations` for `is_production_assistant = true` (same pattern as chief judge badge check)
+- Display "Production Assistant" badge pill in header
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**4. Dashboard Card (`navigation.ts`)**
+- Add a "Production Assistant" card for the `organizer` role pointing to the new dashboard
 
-### Fix 3: Update CSS to use filter only when properties exist
+**5. Routing (`App.tsx`)**
+- Add route: `/production-assistant` → `ProductionAssistantDashboard`
 
-**File: `src/index.css`**
+**6. Navigation (`navigation.ts` + `AppLayout.tsx`)**
+- Add nav item for production assistants pointing to the dashboard
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files to Create/Edit
+- **Migration**: Add columns + update `accept_staff_invitations` RPC
+- **Create**: `src/pages/ProductionAssistantDashboard.tsx`
+- **Edit**: `src/components/competition/SubEventAssignments.tsx` (checkbox + badge)
+- **Edit**: `src/hooks/useStaffInvitations.ts` (include new field in type)
+- **Edit**: `src/components/AppLayout.tsx` (badge detection)
+- **Edit**: `src/lib/navigation.ts` (dashboard card)
+- **Edit**: `src/App.tsx` (route)
 
