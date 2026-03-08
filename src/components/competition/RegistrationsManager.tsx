@@ -319,7 +319,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
               <button
                 key={s}
                 disabled={s === reg.status}
-                onClick={() => { if (s === "approved") onApprove(reg.id); else onReject(reg.id); }}
+                onClick={() => onStatusChange(reg.id, s)}
                 className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent disabled:opacity-40 flex items-center gap-1.5 ${s === reg.status ? "font-semibold" : ""}`}
               >
                 <Badge variant="outline" className={`text-[9px] ${statusColor[s] || ""}`}>{s}</Badge>
