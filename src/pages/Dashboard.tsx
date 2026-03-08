@@ -401,6 +401,9 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Needs Attention alerts for admins */}
+          {isAdmin && <AdminAlertsPanel />}
+
           {/* Activity Feed for admins/organisers */}
           {(isAdmin || hasRole("organizer")) && (
             <div className="mb-6">
