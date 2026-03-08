@@ -663,11 +663,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     const reordered = [...filtered];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(Math.min(targetIdx, reordered.length), 0, moved);
-    for (let i = 0; i < reordered.length; i++) {
-      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
-    }
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+    await optimisticReorder(reordered);
   };
 
   const sendNotification = async (registrationId: string, status: string) => {

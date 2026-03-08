@@ -87,13 +87,20 @@ export function PerformanceOrder({ subEventId }: Props) {
   const randomizeDraw = async () => {
     if (!contestants || contestants.length === 0) return;
     const shuffled = [...contestants].sort(() => Math.random() - 0.5);
-    const updates = shuffled.map((c, i) =>
-      supabase.from("contestant_registrations").update({ sort_order: i + 1 }).eq("id", c.id)
-    );
-    await Promise.all(updates);
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order", subEventId] });
+    const withOrder = shuffled.map((c, i) => ({ ...c, sort_order: i + 1 }));
+
+    // Optimistic update
+    qc.setQueryData(["approved-contestants-order", subEventId], withOrder);
     setShowConfirm(false);
     toast({ title: "Draw randomized!", description: `${shuffled.length} contestants shuffled.` });
+
+    try {
+      await Promise.all(withOrder.map(c =>
+        supabase.from("contestant_registrations").update({ sort_order: c.sort_order }).eq("id", c.id)
+      ));
+    } catch {
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order", subEventId] });
+    }
   };
 
   const assignToSlots = async () => {

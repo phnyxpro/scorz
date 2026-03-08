@@ -26,13 +26,30 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const [showRandomizeConfirm, setShowRandomizeConfirm] = useState(false);
 
-  const persistOrder = async (ordered: Array<{ id: string }>) => {
-    const updates = ordered.map((c, i) =>
-      supabase.from("contestant_registrations").update({ sort_order: i + 1 }).eq("id", c.id)
-    );
-    await Promise.all(updates);
-    qc.invalidateQueries({ queryKey: ["judging_overview"] });
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  const persistOrder = async (ordered: Array<{ id: string; full_name: string }>) => {
+    // Optimistic cache updates
+    const withOrder = ordered.map((c, i) => ({ ...c, sort_order: i + 1 }));
+    qc.setQueryData(["judging_overview"], (old: any) => {
+      if (!old) return old;
+      const orderMap = new Map(withOrder.map(c => [c.id, c.sort_order]));
+      return old.map((r: any) => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id) } : r)
+        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+    qc.setQueryData(["approved-contestants-order"], (old: any) => {
+      if (!old) return old;
+      const orderMap = new Map(withOrder.map(c => [c.id, c.sort_order]));
+      return old.map((r: any) => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id) } : r)
+        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+
+    try {
+      await Promise.all(withOrder.map(c =>
+        supabase.from("contestant_registrations").update({ sort_order: c.sort_order }).eq("id", c.id)
+      ));
+    } catch {
+      qc.invalidateQueries({ queryKey: ["judging_overview"] });
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+    }
   };
 
   const handleDragStart = (idx: number) => {
