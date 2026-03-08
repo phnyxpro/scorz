@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { friendlyDisplayName } from "@/lib/utils";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePenaltyRules, useSetActiveScoring } from "@/hooks/useCompetitions";
