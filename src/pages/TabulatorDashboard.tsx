@@ -273,21 +273,31 @@ function SubEventWorkspace({
 
         <TabsContent value="detail">
           <div className="space-y-4">
-            {Object.entries(scoresByContestant).map(([regId, scores]) => (
-              <Card key={regId} className="border-border/50 bg-card/80">
+            <Select value={selectedDetailRegId} onValueChange={setSelectedDetailRegId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a contestant…" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(scoresByContestant).map((regId) => (
+                  <SelectItem key={regId} value={regId}>{contestantName(regId)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedDetailRegId && scoresByContestant[selectedDetailRegId] && (
+              <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4">
                   <SideBySideScores
-                    scores={scores}
+                    scores={scoresByContestant[selectedDetailRegId]}
                     rubricNames={rubricNames}
                     indexToName={indexToName}
-                    contestantName={contestantName(regId)}
-                    contestantUserId={contestantUserId(regId)}
+                    contestantName={contestantName(selectedDetailRegId)}
+                    contestantUserId={contestantUserId(selectedDetailRegId)}
                     judgeProfiles={judgeProfiles}
-                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, regId) : undefined}
+                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, selectedDetailRegId) : undefined}
                   />
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 
