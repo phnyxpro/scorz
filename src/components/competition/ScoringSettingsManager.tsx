@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useAllSubEvents, useLevels, useCompetition } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
