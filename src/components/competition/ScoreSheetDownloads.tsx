@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown } from "lucide-react";
+import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportMultiSheetXLSX, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { ScoreSheetPreviewModal } from "./ScoreSheetPreviewModal";
+import { ScoreImportDialog } from "./ScoreImportDialog";
 import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 
 interface ScoreSheetDownloadsProps {
@@ -257,7 +258,7 @@ function buildBlankJudgeSheet(data: FetchedData): SheetRow[] {
 export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreSheetDownloadsProps) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
-
+  const [importTarget, setImportTarget] = useState<{ subEventId: string; subEventName: string; data: FetchedData } | null>(null);
   const subEventsByLevel = levels
     .map((level) => ({
       level,
@@ -346,6 +347,22 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
     }
   };
 
+  const handleImportScores = async (subEventId: string, subEventName: string) => {
+    setLoading((p) => ({ ...p, [subEventId + "_import"]: true }));
+    try {
+      const data = await fetchSubEventData(competitionId, subEventId);
+      if (data.assignedJudges.length === 0) {
+        toast({ title: "No judges assigned", description: "Assign judges to this sub-event first.", variant: "destructive" });
+        return;
+      }
+      setImportTarget({ subEventId, subEventName, data });
+    } catch (err: any) {
+      toast({ title: "Failed to load data", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading((p) => ({ ...p, [subEventId + "_import"]: false }));
+    }
+  };
+
   if (subEventsByLevel.length === 0) return null;
 
   return (
@@ -428,6 +445,19 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       )}
                       Blank Template
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!!loading[se.id + "_import"]}
+                      onClick={() => handleImportScores(se.id, se.name)}
+                    >
+                      {loading[se.id + "_import"] ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-1.5" />
+                      )}
+                      Import Scores
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -441,6 +471,16 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
           data={previewData}
           open={!!previewData}
           onOpenChange={(open) => !open && setPreviewData(null)}
+        />
+      )}
+
+      {importTarget && (
+        <ScoreImportDialog
+          open={!!importTarget}
+          onOpenChange={(open) => !open && setImportTarget(null)}
+          subEventId={importTarget.subEventId}
+          subEventName={importTarget.subEventName}
+          fetchedData={importTarget.data}
         />
       )}
     </>
