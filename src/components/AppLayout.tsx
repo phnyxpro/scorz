@@ -149,7 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
+      <nav role="navigation" aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
         <div className="flex items-stretch h-14">
           {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");

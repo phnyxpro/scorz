@@ -469,6 +469,22 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Empty state for contestant/audience with no cards */}
+          {cards.length === 0 && !isAdmin && !hasRole("organizer") && !isJudgeRole && !isTabulator && (
+            <Card className="border-border/50 bg-card/80 mb-6">
+              <CardContent className="py-8 text-center">
+                <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-foreground mb-1">No active events yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Browse public events to register as a contestant or get audience tickets.
+                </p>
+                <Link to="/events">
+                  <Button variant="outline" size="sm">Browse Events</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
           <motion.div
             variants={container}
             initial="hidden"
