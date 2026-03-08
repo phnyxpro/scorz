@@ -77,4 +77,5 @@ export const ConnectionIndicator = React.forwardRef<HTMLSpanElement>((_props, ou
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
+ConnectionIndicator.displayName = "ConnectionIndicator";
