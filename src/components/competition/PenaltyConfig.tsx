@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { usePenaltyRules, useCreatePenaltyRule, useDeletePenaltyRule, useInfractions, useCreateInfraction, useDeleteInfraction } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
