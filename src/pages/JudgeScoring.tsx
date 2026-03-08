@@ -375,9 +375,19 @@ export default function JudgeScoring() {
         {selectedSubEventId && (
           <>
             <div className="px-3 pt-1 pb-1.5 border-t border-border/30 space-y-1.5">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Contestants ({filteredContestants.length})
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  Contestants ({filteredContestants.length})
+                </span>
+                {batchEligible.size > 0 && (
+                  <button
+                    onClick={toggleSelectAll}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    {selectedForBatch.size === batchEligible.size ? "Deselect all" : "Select all"}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                 <input
@@ -393,6 +403,13 @@ export default function JudgeScoring() {
               <div className="px-2 pb-3 space-y-0.5">
                 {filteredContestants.map((r, idx) => (
                   <div key={r.id} className="flex items-center gap-1">
+                    {batchEligible.has(r.id) && (
+                      <Checkbox
+                        checked={selectedForBatch.has(r.id)}
+                        onCheckedChange={() => toggleBatchSelect(r.id)}
+                        className="h-3.5 w-3.5 shrink-0 ml-1"
+                      />
+                    )}
                     <button
                       onClick={() => {
                         setSelectedContestant(r.id);
@@ -427,6 +444,17 @@ export default function JudgeScoring() {
                 )}
               </div>
             </ScrollArea>
+            {selectedForBatch.size > 0 && (
+              <div className="px-3 py-2 border-t border-border/30">
+                <Button
+                  onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyBatchDialog(true); }}
+                  size="sm"
+                  className="w-full h-8 text-xs"
+                >
+                  <Lock className="h-3 w-3 mr-1" /> Certify Selected ({selectedForBatch.size})
+                </Button>
+              </div>
+            )}
           </>
         )}
       </aside>
