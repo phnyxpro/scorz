@@ -212,26 +212,30 @@ export default function JudgeScoring() {
 
   const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
 
-  // Debounced auto-save when scores change
-  const handleSaveRef = useRef(handleSave);
-  handleSaveRef.current = handleSave;
-  useEffect(() => {
-    if (!allScored || isCertified || !selectedContestant || !subEventId) return;
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    setAutoSaveStatus("idle");
-    autoSaveTimerRef.current = setTimeout(async () => {
-      setAutoSaveStatus("saving");
+  // Offline cache: save to localStorage on network failure, flush on reconnect
+  const CACHE_KEY = `scorz_pending_scores_${user?.id}_${subEventId}_${selectedContestant}`;
+
+  const flushOfflineCache = useCallback(async () => {
+    if (!user || !subEventId) return;
+    const keys = Object.keys(localStorage).filter(k => k.startsWith("scorz_pending_scores_"));
+    for (const key of keys) {
       try {
-        await handleSaveRef.current(true);
-        setAutoSaveStatus("saved");
-        if (autoSaveStatusTimerRef.current) clearTimeout(autoSaveStatusTimerRef.current);
-        autoSaveStatusTimerRef.current = setTimeout(() => setAutoSaveStatus("idle"), 2500);
-      } catch {
-        setAutoSaveStatus("idle");
-      }
-    }, 1200);
-    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-  }, [scores, allScored, isCertified, selectedContestant, subEventId]);
+        const cached = JSON.parse(localStorage.getItem(key) || "");
+        await upsert.mutateAsync(cached);
+        localStorage.removeItem(key);
+      } catch { /* will retry next time */ }
+    }
+    setHasOfflineCache(Object.keys(localStorage).some(k => k.startsWith("scorz_pending_scores_")));
+  }, [user, subEventId, upsert]);
+
+  useEffect(() => {
+    // Check for offline cache on mount
+    setHasOfflineCache(Object.keys(localStorage).some(k => k.startsWith("scorz_pending_scores_")));
+
+    const handleOnline = () => { flushOfflineCache(); };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [flushOfflineCache]);
 
   // Check if all contestants have drafts (scored but not all certified)
   const allContestantsDrafted = useMemo(() => {
