@@ -258,6 +258,11 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
     );
   };
 
+  const updateLevelBanner = async (id: string, url: string | null) => {
+    await supabase.from("competition_levels").update({ banner_url: url } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
