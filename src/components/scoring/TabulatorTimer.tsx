@@ -444,6 +444,12 @@ export function TabulatorTimer({
           </>
         )}
       </CardContent>
+      <ContestantReorderModal
+        open={showReorderModal}
+        onOpenChange={setShowReorderModal}
+        contestants={contestants}
+        subEventId={subEventId}
+      />
     </Card>
   );
 }
