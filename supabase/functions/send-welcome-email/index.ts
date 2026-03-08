@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Scorz <no-reply@scorz.live>",
-        to: [user.email],
+        to: [userEmail],
         subject: `Welcome to Scorz, ${name}! 🎯`,
         html,
       }),
