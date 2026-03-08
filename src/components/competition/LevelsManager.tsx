@@ -249,6 +249,8 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const remove = useDeleteLevel();
   const qc = useQueryClient();
   const [newName, setNewName] = useState("");
+  const [levelsPage, setLevelsPage] = useState(1);
+  const levelsPageSize = 10;
 
   const handleAdd = () => {
     if (!newName.trim()) return;
