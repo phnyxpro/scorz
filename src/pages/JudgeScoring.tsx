@@ -599,12 +599,9 @@ export default function JudgeScoring() {
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">Raw Total</p>
                     <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(2)}</p>
-                    {autoSaveStatus === "saving" && (
-                      <p className="text-[10px] text-muted-foreground mt-1 animate-pulse">Saving…</p>
-                    )}
-                    {autoSaveStatus === "saved" && (
-                      <p className="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> Auto-saved
+                    {hasOfflineCache && (
+                      <p className="text-[10px] text-amber-500 mt-1 flex items-center justify-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Offline — saved locally
                       </p>
                     )}
                   </div>
