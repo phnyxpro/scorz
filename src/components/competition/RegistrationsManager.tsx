@@ -476,6 +476,15 @@ export function RegistrationsManager({ competitionId }: Props) {
     return list;
   }, [registrations, search, filterStatus, filterAge, activeSubEventTab, sortField, sortDir, slotsByRegId]);
 
+  // Reset page when filters change
+  const filteredLen = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filteredLen / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedFiltered = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // Reset to page 1 when filters change
+  useMemo(() => { setCurrentPage(1); }, [search, filterStatus, filterAge, activeSubEventTab]);
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
