@@ -5,7 +5,8 @@ import { useRegistrations } from "@/hooks/useRegistrations";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Clock, ShieldCheck, MessageSquare } from "lucide-react";
+import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, ShieldCheck, MessageSquare } from "lucide-react";
+import { PenaltiesCard } from "@/components/judge/PenaltiesCard";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -69,7 +70,7 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                 <h2 className="text-lg font-bold">{competition.name}</h2>
             </div>
 
-            {/* Quick links to Rules, Rubric, Penalties */}
+            {/* Quick links to Rules & Rubric */}
             <div className="flex flex-wrap gap-2">
                 <Button asChild variant="outline" size="sm" className="text-xs">
                     <Link to={`/competitions/${competition.id}/rules`}>
@@ -81,12 +82,10 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                         <Info className="h-3.5 w-3.5 mr-1" /> Rubric
                     </Link>
                 </Button>
-                <Button asChild variant="outline" size="sm" className="text-xs">
-                    <Link to={`/competitions/${competition.id}/penalties`}>
-                        <Clock className="h-3.5 w-3.5 mr-1" /> Penalties
-                    </Link>
-                </Button>
             </div>
+
+            {/* Penalties Action Card */}
+            <PenaltiesCard competitionId={competition.id} />
 
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                 {subEventDetails.map((se) => {
