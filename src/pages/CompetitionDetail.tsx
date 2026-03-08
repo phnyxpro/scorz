@@ -410,7 +410,7 @@ export default function CompetitionDetail() {
               </div>
               <CardDescription>Add an external rules URL or upload a document (PDF, DOCX, TXT) that contestants and judges can reference.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-3 sm:p-6">
               <div>
                 <label className="text-xs text-muted-foreground">Competition Rules URL</label>
                 <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
