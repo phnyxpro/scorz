@@ -51,6 +51,10 @@ export function TabulatorTimer({
   const elapsedRef = useRef(elapsed);
   elapsedRef.current = elapsed;
 
+  // Pagination state for contestant grid
+  const [gridPage, setGridPage] = useState(0);
+  const gridPageSize = 5;
+
   // Drag state
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
