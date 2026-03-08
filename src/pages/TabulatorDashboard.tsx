@@ -126,6 +126,7 @@ function SubEventWorkspace({
   const [physicalMatch, setPhysicalMatch] = useState(false);
   const [discrepancyNotes, setDiscrepancyNotes] = useState("");
   const [observations, setObservations] = useState("");
+  const [selectedDetailRegId, setSelectedDetailRegId] = useState("");
 
   const { data: allScores } = useAllScoresForSubEvent(subEventId);
   const { data: chiefCert } = useCertification(subEventId);
