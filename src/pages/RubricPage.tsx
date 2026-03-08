@@ -39,7 +39,10 @@ export default function RubricPage() {
               <Card key={criterion.id} className="border-border/50 bg-card/80">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{criterion.name}</CardTitle>
-                  <CardDescription className="text-xs">Judged on a scale of 1-5</CardDescription>
+                  {(criterion as any).guidelines && (
+                    <p className="text-sm text-muted-foreground mt-1">{(criterion as any).guidelines}</p>
+                  )}
+                  <CardDescription className="text-xs">Judged on a scale of 1-5 · Weight: {criterion.weight_percent}%</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
