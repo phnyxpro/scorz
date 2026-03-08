@@ -318,6 +318,11 @@ export default function About() {
 
       <Separator className="max-w-5xl mx-auto" />
 
+      {/* ── Service Package ── */}
+      <ServicePackageSection />
+
+      <Separator className="max-w-5xl mx-auto" />
+
       {/* ── FAQ ── */}
       <section id="faq" className="py-20 px-4">
         <div className="max-w-3xl mx-auto">
