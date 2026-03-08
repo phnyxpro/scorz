@@ -127,6 +127,7 @@ const App = () => (
                 <Route path="/competitions/:id/tabulator" element={<ProtectedPage><TabulatorDashboard /></ProtectedPage>} />
                 <Route path="/competitions/:id/results" element={<ProtectedPage><Results /></ProtectedPage>} />
                 <Route path="/competitions/:id/post-event" element={<ProtectedPage><PostEventPortal /></ProtectedPage>} />
+                <Route path="/competitions/:id/witness" element={<ProtectedPage><WitnessDashboard /></ProtectedPage>} />
                 <Route path="/competitions/:id/vote" element={<ProtectedPage><AudienceVoting /></ProtectedPage>} />
                 <Route path="/profile" element={<ProtectedPage><ContestantProfile /></ProtectedPage>} />
                 <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />

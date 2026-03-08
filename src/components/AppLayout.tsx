@@ -124,7 +124,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <BookOpen className="h-4 w-4" />
             </Button>
             {hasRole("admin") && (
-              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel" aria-label="Admin Panel">
+              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin/users")} title="Admin Panel" aria-label="Admin Panel">
                 <Shield className="h-4 w-4" />
               </Button>
             )}

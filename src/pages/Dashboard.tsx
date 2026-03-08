@@ -461,9 +461,9 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Browse public events to register as a contestant or get audience tickets.
                 </p>
-                <Link to="/events">
-                  <Button variant="outline" size="sm">Browse Events</Button>
-                </Link>
+                 <Link to="/public-events">
+                   <Button variant="outline" size="sm">Browse Events</Button>
+                 </Link>
               </CardContent>
             </Card>
           )}
