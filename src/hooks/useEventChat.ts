@@ -170,21 +170,20 @@ export function useEventChat(
         );
       }
 
-      // Fetch sender profiles
+      // Fetch sender profiles with staff invitation name resolution
       const senderIds = [...new Set(msgs.map((m) => m.sender_id))];
       if (senderIds.length) {
-        const { data: profiles } = await supabase
+        const nameMap = await resolveStaffNames(senderIds);
+        const { data: avatars } = await supabase
           .from("profiles")
-          .select("user_id, full_name, avatar_url")
+          .select("user_id, avatar_url")
           .in("user_id", senderIds);
-        const profileMap = new Map(
-          (profiles || []).map((p) => [p.user_id, p])
-        );
+        const avatarMap = new Map((avatars || []).map((p) => [p.user_id, p.avatar_url]));
         for (const msg of msgs) {
-          const p = profileMap.get(msg.sender_id);
-          msg.sender = p
-            ? { full_name: p.full_name, avatar_url: p.avatar_url }
-            : { full_name: "Unknown", avatar_url: null };
+          msg.sender = {
+            full_name: nameMap[msg.sender_id] || "Unknown",
+            avatar_url: avatarMap.get(msg.sender_id) || null,
+          };
         }
       }
       return msgs;
