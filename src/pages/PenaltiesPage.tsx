@@ -138,7 +138,7 @@ export default function PenaltiesPage() {
 
                   {/* General Penalties */}
                   {activeCategory === "general" && generalPenalties.length > 0 && (
-                    <Table>
+                    <div className="overflow-x-auto"><Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-xs uppercase font-mono">Violation</TableHead>
