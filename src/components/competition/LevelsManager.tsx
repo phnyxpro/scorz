@@ -250,6 +250,45 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
               </div>
               <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
             </div>
+
+            {/* Ticketing */}
+            <div className="space-y-2 rounded-lg border border-border/50 p-3">
+              <Label className="text-sm font-medium">Ticketing</Label>
+              <div className="flex gap-2">
+                {(["free", "paid", "external"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTicketingType(t)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      ticketingType === t
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {t === "free" ? "Free" : t === "paid" ? "Paid" : "External"}
+                  </button>
+                ))}
+              </div>
+              {ticketingType === "paid" && (
+                <div>
+                  <Label className="text-xs">Ticket Price ($)</Label>
+                  <Input type="number" min="0" step="0.01" placeholder="e.g. 25.00" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} />
+                </div>
+              )}
+              {(ticketingType === "free" || ticketingType === "paid") && (
+                <div>
+                  <Label className="text-xs">Max Tickets (optional)</Label>
+                  <Input type="number" min="0" placeholder="Unlimited" value={maxTickets} onChange={(e) => setMaxTickets(e.target.value)} />
+                </div>
+              )}
+              {ticketingType === "external" && (
+                <div>
+                  <Label className="text-xs">External Ticket URL</Label>
+                  <Input type="url" placeholder="https://eventbrite.com/…" value={externalTicketUrl} onChange={(e) => setExternalTicketUrl(e.target.value)} />
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setModalOpen(false); }}>Cancel</Button>

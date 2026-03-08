@@ -2,17 +2,50 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Ticket, CheckCircle } from "lucide-react";
+import { Ticket, CheckCircle, ExternalLink, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-export function AudienceTicketForm({ subEventId, subEventName }: { subEventId: string; subEventName: string }) {
+interface AudienceTicketFormProps {
+  subEventId: string;
+  subEventName: string;
+  ticketingType?: string;
+  ticketPrice?: number | null;
+  maxTickets?: number | null;
+  externalTicketUrl?: string | null;
+}
+
+export function AudienceTicketForm({
+  subEventId,
+  subEventName,
+  ticketingType = "free",
+  ticketPrice,
+  maxTickets,
+  externalTicketUrl,
+}: AudienceTicketFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // External mode
+  if (ticketingType === "external" && externalTicketUrl) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Tickets for <span className="font-medium text-foreground">{subEventName}</span> are available on an external platform.
+        </p>
+        <Button className="w-full" asChild>
+          <a href={externalTicketUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Buy Ticket
+          </a>
+        </Button>
+      </div>
+    );
+  }
+
+  const handleFreeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
     setSubmitting(true);
@@ -34,6 +67,23 @@ export function AudienceTicketForm({ subEventId, subEventName }: { subEventId: s
     toast({ title: "Ticket registered!", description: `Your ticket: ${ticket}` });
   };
 
+  const handlePaidSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) return;
+    setSubmitting(true);
+    const { data, error } = await supabase.functions.invoke("create-ticket-checkout", {
+      body: { sub_event_id: subEventId, full_name: name.trim(), email: email.trim(), phone: phone.trim() || null },
+    });
+    setSubmitting(false);
+    if (error || data?.error) {
+      toast({ title: "Error", description: data?.error || error?.message || "Checkout failed", variant: "destructive" });
+      return;
+    }
+    if (data?.url) {
+      window.open(data.url, "_blank");
+    }
+  };
+
   if (ticketNumber) {
     return (
       <div className="flex flex-col items-center py-6 text-center">
@@ -46,15 +96,20 @@ export function AudienceTicketForm({ subEventId, subEventName }: { subEventId: s
     );
   }
 
+  const isPaid = ticketingType === "paid";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <p className="text-xs text-muted-foreground">Register as audience for <span className="font-medium text-foreground">{subEventName}</span></p>
+    <form onSubmit={isPaid ? handlePaidSubmit : handleFreeSubmit} className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Register as audience for <span className="font-medium text-foreground">{subEventName}</span>
+        {isPaid && ticketPrice ? <span className="ml-1 font-semibold text-primary">(${ticketPrice.toFixed(2)})</span> : null}
+      </p>
       <Input placeholder="Full name *" value={name} onChange={e => setName(e.target.value)} required />
       <Input type="email" placeholder="Email *" value={email} onChange={e => setEmail(e.target.value)} required />
       <Input placeholder="Phone (optional)" value={phone} onChange={e => setPhone(e.target.value)} />
       <Button type="submit" className="w-full" disabled={submitting || !name.trim() || !email.trim()}>
-        <Ticket className="h-4 w-4 mr-2" />
-        {submitting ? "Registering…" : "Get Free Ticket"}
+        {isPaid ? <CreditCard className="h-4 w-4 mr-2" /> : <Ticket className="h-4 w-4 mr-2" />}
+        {submitting ? "Processing…" : isPaid ? `Pay $${(ticketPrice ?? 0).toFixed(2)}` : "Get Free Ticket"}
       </Button>
     </form>
   );

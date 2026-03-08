@@ -419,7 +419,14 @@ export default function PublicEventDetail() {
                                   animate={{ opacity: 1, height: "auto" }}
                                   className="border border-primary/20 rounded-lg p-4 bg-primary/5 mt-2"
                                 >
-                                  <AudienceTicketForm subEventId={se.id} subEventName={se.name} />
+                                  <AudienceTicketForm
+                                    subEventId={se.id}
+                                    subEventName={se.name}
+                                    ticketingType={(se as any).ticketing_type}
+                                    ticketPrice={(se as any).ticket_price}
+                                    maxTickets={(se as any).max_tickets}
+                                    externalTicketUrl={(se as any).external_ticket_url}
+                                  />
                                 </motion.div>
                               ),
                           )}

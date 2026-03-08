@@ -111,6 +111,7 @@ const App = () => (
                 <Route path="/help/:category" element={<HelpCategory />} />
                 <Route path="/help/:category/:slug" element={<HelpArticle />} />
                 <Route path="/welcome" element={<MagicLinkLanding />} />
+                <Route path="/ticket-success" element={<TicketSuccess />} />
                 <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
                 <Route path="/audience-events" element={<ProtectedPage><AudienceEvents /></ProtectedPage>} />
                 <Route path="/my-tickets" element={<ProtectedPage><MyTickets /></ProtectedPage>} />
