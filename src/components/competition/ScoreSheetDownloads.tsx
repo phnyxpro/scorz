@@ -445,6 +445,19 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       )}
                       Blank Template
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!!loading[se.id + "_import"]}
+                      onClick={() => handleImportScores(se.id, se.name)}
+                    >
+                      {loading[se.id + "_import"] ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-1.5" />
+                      )}
+                      Import Scores
+                    </Button>
                   </div>
                 </div>
               ))}
