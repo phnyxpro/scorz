@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select as SettingsSelect, SelectContent as SettingsSelectContent, SelectItem as SettingsSelectItem, SelectTrigger as SettingsSelectTrigger, SelectValue as SettingsSelectValue } from "@/components/ui/select";
 import { formatRoleName } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";

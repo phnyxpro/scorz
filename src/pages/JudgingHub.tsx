@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { Link } from "react-router-dom";
