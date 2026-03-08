@@ -113,7 +113,7 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
               </Button>
             )}
             <Button size="sm" variant="outline" asChild>
-              <Link to={`/profile/${reg.user_id}`}>
+              <Link to={`/competitions/${reg.competition_id}/contestant/${reg.id}`}>
                 <User className="h-3.5 w-3.5 mr-1" /> Profile
               </Link>
             </Button>
