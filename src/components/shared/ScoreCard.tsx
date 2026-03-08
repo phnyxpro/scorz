@@ -131,7 +131,7 @@ export function ScoreCard({
             minWidth: '60px',
             textAlign: 'center'
           }}>
-            {judgeScore?.final_score || (isBlank ? '___' : '')}
+            {judgeScore?.final_score != null ? Number(judgeScore.final_score).toFixed(2) : (isBlank ? '___' : '')}
           </div>
         </div>
       </div>
