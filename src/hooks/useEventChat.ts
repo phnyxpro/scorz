@@ -85,12 +85,6 @@ export function useChatStaff(competitionId: string | undefined) {
         if (!userMap.has(a.user_id)) userMap.set(a.user_id, a.role);
       }
 
-      const userIds = [...userMap.keys()];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", userIds);
-
       // Also get organiser/admin via user_roles
       const { data: orgRoles } = await supabase
         .from("user_roles")
@@ -99,17 +93,6 @@ export function useChatStaff(competitionId: string | undefined) {
 
       for (const r of orgRoles || []) {
         if (!userMap.has(r.user_id)) userMap.set(r.user_id, r.role);
-      }
-
-      // Fetch profiles for org roles too
-      const extraIds = (orgRoles || []).map((r) => r.user_id).filter((id) => !userIds.includes(id));
-      let allProfiles = profiles || [];
-      if (extraIds.length) {
-        const { data: extra } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", extraIds);
-        allProfiles = [...allProfiles, ...(extra || [])];
       }
 
       // Resolve names via staff invitation priority
