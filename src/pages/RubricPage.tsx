@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, FileText } from "lucide-react";
 
 export default function RubricPage() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -34,71 +33,6 @@ export default function RubricPage() {
         <Skeleton className="h-48 w-full" />
       ) : (
         <div className="space-y-4">
-          {/* Extracted rubric content (rendered natively) */}
-          {rubricContent && (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="pt-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rubricContent }} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Fallback: iframe for PDF if no extracted content */}
-          {!rubricContent && (comp as any)?.rubric_document_url && (
-            <Card className="border-border/50 bg-card/80 overflow-hidden">
-              <CardContent className="p-0">
-                {(comp as any).rubric_document_url.toLowerCase().endsWith('.pdf') ? (
-                  <iframe
-                    src={(comp as any).rubric_document_url}
-                    className="w-full h-[600px] border-0"
-                    title="Rubric Document"
-                  />
-                ) : (
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex gap-3 items-center">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-sm">Rubric Document</p>
-                        <p className="text-xs text-muted-foreground">Uploaded document</p>
-                      </div>
-                    </div>
-                    <a
-                      href={(comp as any).rubric_document_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary text-sm flex items-center gap-1 hover:underline"
-                    >
-                      <Download className="h-3.5 w-3.5" /> Download
-                    </a>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Download link when extracted content is shown */}
-          {rubricContent && (comp as any)?.rubric_document_url && (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="pt-4 flex items-center justify-between gap-4">
-                <div className="flex gap-3 items-center">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">Original Document</p>
-                    <p className="text-xs text-muted-foreground">Download the full PDF</p>
-                  </div>
-                </div>
-                <a
-                  href={(comp as any).rubric_document_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary text-sm flex items-center gap-1 hover:underline"
-                >
-                  <Download className="h-3.5 w-3.5" /> Download
-                </a>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Criteria cards */}
           <div className="grid gap-4">
             {criteria?.map((criterion) => (
