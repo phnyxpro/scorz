@@ -303,7 +303,7 @@ export function useUpdateStaffInvitation() {
     mutationFn: async ({ id, competitionId, updates }: {
       id: string;
       competitionId: string;
-      updates: { name?: string | null; email?: string; phone?: string | null; role?: AppRole; is_chief?: boolean };
+      updates: { name?: string | null; email?: string; phone?: string | null; role?: AppRole; is_chief?: boolean; is_production_assistant?: boolean };
     }) => {
       const { error } = await (supabase
         .from("staff_invitations" as any)
