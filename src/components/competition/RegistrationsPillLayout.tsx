@@ -72,7 +72,7 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
 
       {activeCategory === "forms" && (
         <Card className="rounded-xl border-border/50 bg-card/80">
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-3 sm:p-5 space-y-4">
             <div className="space-y-2">
               <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
                 <ActiveIcon className="h-3.5 w-3.5" />

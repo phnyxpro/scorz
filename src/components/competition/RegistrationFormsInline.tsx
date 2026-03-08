@@ -238,7 +238,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
 
                       {/* Required toggle */}
                       {!locked && fc.enabled && (
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0 mt-2 sm:mt-0">
                           <Label className="text-[10px] text-muted-foreground">Required</Label>
                           <Switch
                             checked={fc.required}

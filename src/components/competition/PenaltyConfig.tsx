@@ -172,7 +172,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
 
               <div className="space-y-2 border-t border-border/50 pt-3">
                 <h3 className="text-sm font-medium text-foreground">Add Penalty Tier</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground">From (sec)</label>
                     <Input type="number" value={fromSeconds} onChange={(e) => setFromSeconds(e.target.value)} className="h-8 text-sm" />

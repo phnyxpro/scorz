@@ -162,7 +162,7 @@ export default function PenaltiesPage() {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                    </Table></div>
                   )}
 
                   {/* Disqualifications */}

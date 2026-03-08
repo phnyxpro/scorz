@@ -291,7 +291,7 @@ export default function CompetitionDetail() {
         </div>
 
         <Tabs defaultValue={searchParams.get("tab") || "general"} className="space-y-4">
-          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+          <TabsList className="w-full flex overflow-x-auto no-scrollbar min-h-[44px]">
             <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
             <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
           <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
