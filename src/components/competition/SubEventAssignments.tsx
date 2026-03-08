@@ -215,7 +215,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Role</Label>
-              <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); }}>
+              <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); if (v !== "organizer") setStaffIsPA(false); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ASSIGNABLE_ROLES.map((r) => (
@@ -235,6 +235,19 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
               <label htmlFor="chief-judge-check" className="text-sm cursor-pointer flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                 Designate as Chief Judge
+              </label>
+            </div>
+          )}
+          {staffRole === "organizer" && (
+            <div className="flex items-center gap-2 mt-3">
+              <Checkbox
+                id="production-assistant-check"
+                checked={staffIsPA}
+                onCheckedChange={(v) => setStaffIsPA(v === true)}
+              />
+              <label htmlFor="production-assistant-check" className="text-sm cursor-pointer flex items-center gap-1.5">
+                <ClipboardList className="h-3.5 w-3.5 text-accent" />
+                Designate as Production Assistant
               </label>
             </div>
           )}
