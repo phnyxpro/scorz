@@ -326,30 +326,36 @@ export type Database = {
       }
       competition_levels: {
         Row: {
+          advancement_count: number | null
           banner_url: string | null
           competition_id: string
           created_at: string
           id: string
           name: string
           sort_order: number
+          special_entries: Json
           updated_at: string
         }
         Insert: {
+          advancement_count?: number | null
           banner_url?: string | null
           competition_id: string
           created_at?: string
           id?: string
           name: string
           sort_order?: number
+          special_entries?: Json
           updated_at?: string
         }
         Update: {
+          advancement_count?: number | null
           banner_url?: string | null
           competition_id?: string
           created_at?: string
           id?: string
           name?: string
           sort_order?: number
+          special_entries?: Json
           updated_at?: string
         }
         Relationships: [
