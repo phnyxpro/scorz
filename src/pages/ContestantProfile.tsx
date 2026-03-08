@@ -392,7 +392,7 @@ export default function ContestantProfile() {
                                 {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                               </TableCell>
                               <TableCell className="text-center font-mono font-bold text-primary text-sm">
-                                {s.final_score}
+                                {Number(s.final_score).toFixed(2)}
                               </TableCell>
                               <TableCell className="text-center">
                                 {s.is_certified ? (
