@@ -192,7 +192,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         const Icon = sectionIcon[section.key] || User;
         return (
           <Card key={section.key} className="border-border/40 bg-muted/10">
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 sm:p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 <h3 className="text-sm font-medium text-foreground">{section.title}</h3>
