@@ -958,6 +958,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="no_show">No Show</SelectItem>
+                <SelectItem value="disqualified">Disqualified</SelectItem>
+                <SelectItem value="drop_out">Drop Out</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterAge} onValueChange={setFilterAge}>
