@@ -384,7 +384,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInPosition, setWalkInPosition] = useState("");
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(50);
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
