@@ -317,23 +317,6 @@ export default function Dashboard() {
                 )}
               </div>
             )}
-            {/* Production Chat icon */}
-            {isJudgeRole && selectedCompId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative mt-4 sm:mt-0"
-                onClick={() => setShowChatModal(true)}
-                title="Production Chat"
-              >
-                <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
-                    {unreadCount}
-                  </span>
-                )}
-              </Button>
-            )}
           </div>
         </div>
       )}
