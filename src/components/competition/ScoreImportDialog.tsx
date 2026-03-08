@@ -442,7 +442,7 @@ export function ScoreImportDialog({
                   will be upserted into {subEventName}.
                 </p>
                 {unmatchedRows.length > 0 && (
-                  <p className="text-sm text-yellow-600">
+                  <p className="text-sm text-destructive">
                     {unmatchedRows.length} rows with scores will be skipped (no contestant match).
                   </p>
                 )}
