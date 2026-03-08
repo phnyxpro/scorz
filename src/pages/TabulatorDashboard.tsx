@@ -167,10 +167,13 @@ function SubEventWorkspace({
     return m;
   }, [staffNameMap]);
 
-  const contestantName = (regId: string) =>
-    registrations.find((r: any) => r.id === regId)?.full_name ?? "Unknown";
-  const contestantUserId = (regId: string) =>
-    registrations.find((r: any) => r.id === regId)?.user_id;
+  const contestantMap = useMemo(() => {
+    const m = new Map<string, any>();
+    registrations.forEach((r: any) => m.set(r.id, r));
+    return m;
+  }, [registrations]);
+  const contestantName = (regId: string) => contestantMap.get(regId)?.full_name ?? "Unknown";
+  const contestantUserId = (regId: string) => contestantMap.get(regId)?.user_id;
 
   /* ── Tabulator certification ── */
   const handleInitTabCertify = async () => {
