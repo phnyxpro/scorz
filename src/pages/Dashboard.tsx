@@ -420,9 +420,9 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                     You haven't registered for any competitions yet. Browse upcoming events and sign up to showcase your talent.
                   </p>
-                  <Link to="/events">
-                    <Button size="sm" className="gap-2">
-                      <Trophy className="h-4 w-4" /> Browse Competitions
+                   <Link to="/public-events">
+                     <Button size="sm" className="gap-2">
+                       <Trophy className="h-4 w-4" /> Browse Competitions
                     </Button>
                   </Link>
                 </CardContent>
