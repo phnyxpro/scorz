@@ -114,10 +114,15 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [ticketingType, setTicketingType] = useState("free");
+  const [ticketPrice, setTicketPrice] = useState("");
+  const [maxTickets, setMaxTickets] = useState("");
+  const [externalTicketUrl, setExternalTicketUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
-    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false); setEditingId(null);
+    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
+    setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
   };
 
   const openCreate = () => {
@@ -133,6 +138,10 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
     setVotingEnabled(e.voting_enabled || false);
+    setTicketingType(e.ticketing_type || "free");
+    setTicketPrice(e.ticket_price?.toString() || "");
+    setMaxTickets(e.max_tickets?.toString() || "");
+    setExternalTicketUrl(e.external_ticket_url || "");
     setModalOpen(true);
   };
 
@@ -143,6 +152,10 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       await supabase.from("sub_events").update({
         name, location: location || null, event_date: eventDate || null,
         start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
+        ticketing_type: ticketingType,
+        ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
+        max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : null,
+        external_ticket_url: ticketingType === "external" ? externalTicketUrl || null : null,
       } as any).eq("id", editingId);
       qc.invalidateQueries({ queryKey: ["sub_events", levelId] });
       setSaving(false);
@@ -150,7 +163,14 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       setModalOpen(false);
     } else {
       create.mutate(
-        { level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined, start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled },
+        {
+          level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined,
+          start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled,
+          ticketing_type: ticketingType,
+          ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
+          max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : undefined,
+          external_ticket_url: ticketingType === "external" ? externalTicketUrl || undefined : undefined,
+        } as any,
         { onSuccess: () => { resetForm(); setModalOpen(false); } }
       );
     }
@@ -229,6 +249,45 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
                 <p className="text-xs text-muted-foreground">Enable audience voting for this sub-event</p>
               </div>
               <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
+            </div>
+
+            {/* Ticketing */}
+            <div className="space-y-2 rounded-lg border border-border/50 p-3">
+              <Label className="text-sm font-medium">Ticketing</Label>
+              <div className="flex gap-2">
+                {(["free", "paid", "external"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTicketingType(t)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      ticketingType === t
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {t === "free" ? "Free" : t === "paid" ? "Paid" : "External"}
+                  </button>
+                ))}
+              </div>
+              {ticketingType === "paid" && (
+                <div>
+                  <Label className="text-xs">Ticket Price ($)</Label>
+                  <Input type="number" min="0" step="0.01" placeholder="e.g. 25.00" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} />
+                </div>
+              )}
+              {(ticketingType === "free" || ticketingType === "paid") && (
+                <div>
+                  <Label className="text-xs">Max Tickets (optional)</Label>
+                  <Input type="number" min="0" placeholder="Unlimited" value={maxTickets} onChange={(e) => setMaxTickets(e.target.value)} />
+                </div>
+              )}
+              {ticketingType === "external" && (
+                <div>
+                  <Label className="text-xs">External Ticket URL</Label>
+                  <Input type="url" placeholder="https://eventbrite.com/…" value={externalTicketUrl} onChange={(e) => setExternalTicketUrl(e.target.value)} />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

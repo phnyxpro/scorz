@@ -743,6 +743,7 @@ export type Database = {
           full_name: string
           id: string
           is_checked_in: boolean
+          payment_status: string | null
           phone: string | null
           sub_event_id: string
           ticket_number: string
@@ -757,6 +758,7 @@ export type Database = {
           full_name: string
           id?: string
           is_checked_in?: boolean
+          payment_status?: string | null
           phone?: string | null
           sub_event_id: string
           ticket_number: string
@@ -771,6 +773,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_checked_in?: boolean
+          payment_status?: string | null
           phone?: string | null
           sub_event_id?: string
           ticket_number?: string
@@ -1402,6 +1405,7 @@ export type Database = {
           created_at: string
           end_time: string | null
           event_date: string | null
+          external_ticket_url: string | null
           id: string
           level_id: string
           location: string | null
@@ -1421,6 +1425,7 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           event_date?: string | null
+          external_ticket_url?: string | null
           id?: string
           level_id: string
           location?: string | null
@@ -1440,6 +1445,7 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           event_date?: string | null
+          external_ticket_url?: string | null
           id?: string
           level_id?: string
           location?: string | null

@@ -1,67 +1,47 @@
 
 
-## Plan: Enhanced Ticketing System with Payment Support
+## Fix Blank Rendering in Browser Automation
 
-### Current State
-- `sub_events` table has `ticketing_type` (default "free") and `ticket_price` columns, plus `max_tickets` -- but these fields are **never exposed** in the organizer UI for editing
-- `AudienceTicketForm` always creates "free" tickets regardless of `ticketing_type`
-- No paid ticket checkout flow exists (the existing `create-checkout` is for competition credits only)
-- No support for linking to external ticketing platforms (Eventbrite, etc.)
-- The `LevelsManager` sub-event form only manages name, location, date, time, and voting -- no ticketing fields
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Changes
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**1. Database: Add `external_ticket_url` column to `sub_events`**
-- New nullable `text` column for linking to an external ticketing/payment page
-- Migration only; no RLS changes needed (sub_events already has correct policies)
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**2. Update Sub-Event Form in `LevelsManager.tsx`**
-- Add ticketing configuration fields to the sub-event create/edit dialog:
-  - **Ticketing Type** select: `free` | `paid` | `external`
-  - **Ticket Price** input (shown when type is `paid`)
-  - **Max Tickets** input (shown when type is `free` or `paid`)
-  - **External URL** input (shown when type is `external`)
-- Persist these fields on create and update
+---
 
-**3. Update `AudienceTicketForm` to handle all 3 modes**
-- Accept `ticketingType`, `ticketPrice`, `maxTickets`, and `externalTicketUrl` as props
-- **Free mode**: Current behavior (register and get ticket immediately)
-- **Paid mode**: Collect user details, then redirect to a Stripe checkout session via a new `create-ticket-checkout` edge function. On return to success URL, the ticket is created
-- **External mode**: Show an "Buy Ticket" button that opens `externalTicketUrl` in a new tab
+### Fix 1: Conditionally apply auditorium filter
 
-**4. Create `create-ticket-checkout` Edge Function**
-- New Stripe checkout session with `mode: "payment"` using a dynamic `price_data` (since ticket prices vary per event)
-- Stores sub_event_id, full_name, email, phone in session metadata
-- Success URL includes session_id for verification
-- On success page load, a `verify-ticket-payment` edge function checks Stripe session status and creates the `event_tickets` row
+**File: `src/contexts/ThemeContext.tsx`**
 
-**5. Create `verify-ticket-payment` Edge Function**
-- Called from frontend after Stripe redirect
-- Retrieves the Stripe session, confirms payment succeeded
-- Inserts into `event_tickets` with `ticket_type: "paid"`
-- Returns the ticket number to the frontend
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**6. Update `PublicEventDetail.tsx`**
-- Pass sub-event ticketing fields to `AudienceTicketForm`
-- Query already fetches sub_events; just need to include `ticketing_type`, `ticket_price`, `max_tickets`, `external_ticket_url`
+### Fix 2: Remove filter class when at defaults
 
-**7. Update `TicketsHub.tsx`**
-- Store `payment_status` on tickets to distinguish confirmed paid vs pending
-- Add `payment_status` column to `event_tickets` table (nullable text, default null for free tickets)
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-### Files Modified
-- `supabase/migrations/` -- new migration (add `external_ticket_url` to sub_events, `payment_status` to event_tickets)
-- `src/components/competition/LevelsManager.tsx` -- ticketing config in sub-event form
-- `src/components/public/AudienceTicketForm.tsx` -- 3-mode ticket form
-- `src/pages/PublicEventDetail.tsx` -- pass ticketing props
-- `supabase/functions/create-ticket-checkout/index.ts` -- new edge function
-- `supabase/functions/verify-ticket-payment/index.ts` -- new edge function
-- `supabase/config.toml` -- register new functions
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-### Architecture
-```text
-Free:     Form -> Insert event_tickets -> Show ticket #
-Paid:     Form -> create-ticket-checkout -> Stripe -> verify-ticket-payment -> Insert event_tickets
-External: Form -> Open external URL in new tab
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
