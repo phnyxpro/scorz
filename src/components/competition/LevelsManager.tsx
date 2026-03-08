@@ -5,12 +5,83 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+
+const SPECIAL_ENTRY_PRESETS = [
+  { type: "previous_winner", label: "Previous Winners", icon: Trophy },
+  { type: "wild_card", label: "Wild Cards", icon: Star },
+  { type: "sub_competition_winner", label: "Sub-Competition Winners", icon: Award },
+] as const;
+
+type SpecialEntry = { type: string; label: string };
+
+function LevelAdvancementSettings({ level, competitionId }: { level: any; competitionId: string }) {
+  const qc = useQueryClient();
+  const [advCount, setAdvCount] = useState<string>((level as any).advancement_count?.toString() || "");
+  const specialEntries: SpecialEntry[] = (level as any).special_entries || [];
+
+  const saveAdvancement = async (val: string) => {
+    const num = val ? parseInt(val, 10) : null;
+    await supabase.from("competition_levels").update({ advancement_count: num } as any).eq("id", level.id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
+  const toggleSpecialEntry = async (preset: typeof SPECIAL_ENTRY_PRESETS[number]) => {
+    const exists = specialEntries.some((e) => e.type === preset.type);
+    const updated = exists
+      ? specialEntries.filter((e) => e.type !== preset.type)
+      : [...specialEntries, { type: preset.type, label: preset.label }];
+    await supabase.from("competition_levels").update({ special_entries: updated } as any).eq("id", level.id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
+  return (
+    <div className="space-y-3 py-2">
+      <div>
+        <Label className="text-xs text-muted-foreground">Contestants advancing to next level</Label>
+        <Input
+          type="number"
+          min={0}
+          placeholder="e.g. 10"
+          className="h-8 mt-1 w-40"
+          value={advCount}
+          onChange={(e) => setAdvCount(e.target.value)}
+          onBlur={() => saveAdvancement(advCount)}
+        />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">Special Entries in this Level</Label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {SPECIAL_ENTRY_PRESETS.map((preset) => {
+            const active = specialEntries.some((e) => e.type === preset.type);
+            const Icon = preset.icon;
+            return (
+              <button
+                key={preset.type}
+                type="button"
+                onClick={() => toggleSpecialEntry(preset)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SubEventsPanel({ levelId }: { levelId: string }) {
   const { data: events } = useSubEvents(levelId);
@@ -191,31 +262,46 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
-        {levels?.map((l) => (
-          <Collapsible key={l.id}>
-            <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
-                {l.name}
-              </CollapsibleTrigger>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: l.id, competition_id: competitionId })}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-            <CollapsibleContent>
-              <div className="pl-4 mt-2">
-                <BannerUpload
-                  currentUrl={(l as any).banner_url}
-                  folder={`levels/${l.id}`}
-                  aspectLabel="Level Banner"
-                  onUploaded={(url) => updateLevelBanner(l.id, url)}
-                  onRemoved={() => updateLevelBanner(l.id, null)}
-                />
+        {levels?.map((l) => {
+          const advCount = (l as any).advancement_count;
+          const specials: SpecialEntry[] = (l as any).special_entries || [];
+          return (
+            <Collapsible key={l.id}>
+              <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                  {l.name}
+                  {advCount != null && advCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
+                      <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
+                    </Badge>
+                  )}
+                  {specials.map((s) => (
+                    <Badge key={s.type} variant="outline" className="text-[10px] px-1.5 py-0">
+                      {s.label}
+                    </Badge>
+                  ))}
+                </CollapsibleTrigger>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: l.id, competition_id: competitionId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
-              <SubEventsPanel levelId={l.id} />
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
+              <CollapsibleContent>
+                <div className="pl-4 mt-2 space-y-2">
+                  <BannerUpload
+                    currentUrl={(l as any).banner_url}
+                    folder={`levels/${l.id}`}
+                    aspectLabel="Level Banner"
+                    onUploaded={(url) => updateLevelBanner(l.id, url)}
+                    onRemoved={() => updateLevelBanner(l.id, null)}
+                  />
+                  <LevelAdvancementSettings level={l} competitionId={competitionId} />
+                </div>
+                <SubEventsPanel levelId={l.id} />
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </CardContent>
     </Card>
   );
