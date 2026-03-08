@@ -388,7 +388,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
   inv: StaffInvitation | null;
   competitionId: string;
   onClose: () => void;
-  onSave: (updates: { name?: string | null; email?: string; phone?: string | null; role?: any; is_chief?: boolean }) => void;
+  onSave: (updates: { name?: string | null; email?: string; phone?: string | null; role?: any; is_chief?: boolean; is_production_assistant?: boolean }) => void;
   saving: boolean;
 }) {
   const [name, setName] = useState("");
@@ -396,6 +396,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
   const [isChief, setIsChief] = useState(false);
+  const [isPA, setIsPA] = useState(false);
   const [confirmingEmailChange, setConfirmingEmailChange] = useState(false);
 
   useEffect(() => {
@@ -405,6 +406,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
       setPhone(inv.phone || "");
       setRole(inv.role);
       setIsChief(inv.is_chief);
+      setIsPA(inv.is_production_assistant);
       setConfirmingEmailChange(false);
     }
   }, [inv]);
@@ -425,6 +427,7 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
       phone: phone.trim() || null,
       role: role as any,
       is_chief: role === "judge" ? isChief : false,
+      is_production_assistant: role === "organizer" ? isPA : false,
     });
   };
 
