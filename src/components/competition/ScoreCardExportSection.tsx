@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { FileText } from "lucide-react";
 import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
+import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 import type { ContestantRegistration } from "@/hooks/useRegistrations";
 
 interface ScoreCardExportSectionProps {
@@ -47,11 +48,8 @@ export function ScoreCardExportSection({ competitionId, competitionName, levels,
       if (error) throw error;
       const userIds = data.map(a => a.user_id);
       if (userIds.length === 0) return [];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", userIds);
-      return (profiles || []).map(p => ({ id: p.user_id, name: p.full_name || "Unknown Judge" }));
+      const nameMap = await resolveStaffNames(userIds);
+      return userIds.map(uid => ({ id: uid, name: nameMap[uid] || "Unknown Judge" }));
     },
     enabled: !!selectedSubEventId,
   });

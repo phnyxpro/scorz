@@ -7,6 +7,7 @@ import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown } from "lucide
 import { toast } from "@/hooks/use-toast";
 import { exportMultiSheetXLSX, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { ScoreSheetPreviewModal } from "./ScoreSheetPreviewModal";
+import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 
 interface ScoreSheetDownloadsProps {
   competitionId: string;
@@ -119,12 +120,9 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
   const judgeProfiles: Record<string, string> = {};
 
   if (allJudgeIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name")
-      .in("user_id", allJudgeIds);
-    for (const p of profiles || []) {
-      judgeProfiles[p.user_id] = p.full_name || "Unknown Judge";
+    const resolved = await resolveStaffNames(allJudgeIds);
+    for (const [uid, name] of Object.entries(resolved)) {
+      judgeProfiles[uid] = name;
     }
   }
 

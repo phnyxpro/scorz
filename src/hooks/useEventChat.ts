@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 
 /** Play a short notification chime using Web Audio API */
 function playNotificationSound() {
@@ -84,12 +85,6 @@ export function useChatStaff(competitionId: string | undefined) {
         if (!userMap.has(a.user_id)) userMap.set(a.user_id, a.role);
       }
 
-      const userIds = [...userMap.keys()];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", userIds);
-
       // Also get organiser/admin via user_roles
       const { data: orgRoles } = await supabase
         .from("user_roles")
@@ -100,23 +95,14 @@ export function useChatStaff(competitionId: string | undefined) {
         if (!userMap.has(r.user_id)) userMap.set(r.user_id, r.role);
       }
 
-      // Fetch profiles for org roles too
-      const extraIds = (orgRoles || []).map((r) => r.user_id).filter((id) => !userIds.includes(id));
-      let allProfiles = profiles || [];
-      if (extraIds.length) {
-        const { data: extra } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", extraIds);
-        allProfiles = [...allProfiles, ...(extra || [])];
-      }
-
-      const profileMap = new Map(allProfiles.map((p) => [p.user_id, p.full_name]));
+      // Resolve names via staff invitation priority
+      const allUserIds = [...userMap.keys()];
+      const nameMap = await resolveStaffNames(allUserIds);
       const result: ChatStaffMember[] = [];
       for (const [userId, role] of userMap.entries()) {
         result.push({
           user_id: userId,
-          full_name: profileMap.get(userId) || "Unknown",
+          full_name: nameMap[userId] || "Unknown",
           role,
         });
       }
@@ -169,21 +155,20 @@ export function useEventChat(
         );
       }
 
-      // Fetch sender profiles
+      // Fetch sender profiles with staff invitation name resolution
       const senderIds = [...new Set(msgs.map((m) => m.sender_id))];
       if (senderIds.length) {
-        const { data: profiles } = await supabase
+        const nameMap = await resolveStaffNames(senderIds);
+        const { data: avatars } = await supabase
           .from("profiles")
-          .select("user_id, full_name, avatar_url")
+          .select("user_id, avatar_url")
           .in("user_id", senderIds);
-        const profileMap = new Map(
-          (profiles || []).map((p) => [p.user_id, p])
-        );
+        const avatarMap = new Map((avatars || []).map((p) => [p.user_id, p.avatar_url]));
         for (const msg of msgs) {
-          const p = profileMap.get(msg.sender_id);
-          msg.sender = p
-            ? { full_name: p.full_name, avatar_url: p.avatar_url }
-            : { full_name: "Unknown", avatar_url: null };
+          msg.sender = {
+            full_name: nameMap[msg.sender_id] || "Unknown",
+            avatar_url: avatarMap.get(msg.sender_id) || null,
+          };
         }
       }
       return msgs;

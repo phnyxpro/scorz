@@ -1,53 +1,47 @@
 
 
-## Plan: Use Staff Invitation Names Throughout the App
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-Currently, only `JudgeActivityIndicator.tsx` resolves names using the priority: **staff invitation name → profile full_name → friendly email**. All other pages (TabulatorDashboard, MasterScoreSheet, LevelMasterSheet, JudgingHub, EventChat, ScoreCardExportSection, ScoreSheetDownloads, etc.) use `profile.full_name || email || "Unknown"` directly, ignoring the organiser-entered name from `staff_invitations`.
+The app appears blank in headless browser testing due to two compounding issues:
 
-Additionally, when a staff member signs up, the `staff_invitations.name` should be written to their `profiles.full_name` so it propagates automatically.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Approach
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**1. Write staff invitation name to profile on acceptance**
+---
 
-Update the `accept_staff_invitations` RPC (or add a trigger) so that when a staff member accepts their invitation, if their `profiles.full_name` is NULL, it gets populated from `staff_invitations.name`. This ensures the profile carries the organiser-entered name going forward, reducing the need for runtime lookups.
+### Fix 1: Conditionally apply auditorium filter
 
-**Database migration**: Create a trigger function that fires after `staff_invitations.accepted_at` is updated — if the corresponding profile has no `full_name`, copy the invitation `name` into `profiles.full_name`.
+**File: `src/contexts/ThemeContext.tsx`**
 
-**2. Create a shared `useStaffDisplayNames` hook**
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-Extract the pattern from `JudgeActivityIndicator.tsx` into a reusable hook in `src/hooks/useStaffDisplayNames.ts`:
+### Fix 2: Remove filter class when at defaults
 
-```ts
-function useStaffDisplayNames(userIds: string[]): Map<string, string>
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-It will:
-- Fetch profiles for the given user IDs
-- Fetch `staff_invitations` by matching profile emails
-- Return a Map of `userId → resolved name` using the priority chain
+This ensures no filter is applied when properties are unset, which is the default state.
 
-**3. Update all consuming files**
+---
 
-Replace inline name resolution with `useStaffDisplayNames` in:
+### Summary
 
-| File | Current pattern |
-|---|---|
-| `src/pages/TabulatorDashboard.tsx` | `friendlyDisplayName(p.full_name, p.email)` and `p.full_name \|\| p.email \|\| "Unknown"` |
-| `src/pages/MasterScoreSheet.tsx` | `p.full_name \|\| p.email \|\| "Unknown"` |
-| `src/pages/LevelMasterSheet.tsx` | `p.full_name \|\| p.email \|\| "Unknown"` |
-| `src/pages/JudgingHub.tsx` | `p.full_name \|\| p.email \|\| "Unknown"` |
-| `src/hooks/useEventChat.ts` (`useChatStaff`) | `profileMap.get(userId) \|\| "Unknown"` |
-| `src/components/chat/EventChat.tsx` | Uses `staffMembers.full_name` |
-| `src/components/chat/ChatMessage.tsx` | `message.sender?.full_name \|\| "Unknown"` |
-| `src/components/competition/ScoreCardExportSection.tsx` | `p.full_name \|\| "Unknown Judge"` |
-| `src/components/competition/ScoreSheetDownloads.tsx` | `p.full_name \|\| "Unknown Judge"` |
-| `src/components/scoring/TabulatorTimer.tsx` | Already uses `friendlyDisplayName` but no staff lookup |
-| `src/components/public/LevelParticipants.tsx` | `friendlyDisplayName(j.full_name, null)` |
-
-### Files Changed
-- **Migration**: Trigger to copy `staff_invitations.name` → `profiles.full_name` on acceptance
-- **`src/hooks/useStaffDisplayNames.ts`** (new): Shared hook for staff name resolution
-- **10+ consuming files**: Replace inline name lookups with the shared hook or update `useChatStaff` to include staff invitation names
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

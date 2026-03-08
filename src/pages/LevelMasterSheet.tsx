@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useSearchParams, Link } from "react-router-dom";
@@ -85,13 +86,11 @@ export default function LevelMasterSheet() {
 
   const { data, isLoading } = useLevelMasterSheet(competitionId, levelId);
 
-  const profileMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of data?.profiles || []) {
-      m.set(p.user_id, p.full_name || p.email || "Unknown");
-    }
-    return m;
-  }, [data?.profiles]);
+  // All unique judge IDs from scores
+  const judgeUserIds = useMemo(() => {
+    return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
+  }, [data?.scores]);
+  const profileMap = useStaffDisplayNames(judgeUserIds);
 
   const subEventMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -100,11 +99,6 @@ export default function LevelMasterSheet() {
     }
     return m;
   }, [data?.subEvents]);
-
-  // All unique judge IDs from scores
-  const judgeUserIds = useMemo(() => {
-    return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
-  }, [data?.scores]);
 
   // Build rows: one per contestant across all sub-events
   const rows = useMemo(() => {
