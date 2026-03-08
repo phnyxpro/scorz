@@ -38,7 +38,7 @@ export function SponsorsManager({ competitionId }: { competitionId: string }) {
         </div>
         <CardDescription>Add sponsor logos and links that will be displayed on the public event page.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-3 sm:p-6">
         {/* Existing sponsors */}
         {isLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading…</p>}
         {sponsors?.map(s => (
