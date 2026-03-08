@@ -118,11 +118,9 @@ export default function JudgeScoring() {
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
-  const autoSaveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [certifyAllPending, setCertifyAllPending] = useState(false);
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasOfflineCache, setHasOfflineCache] = useState(false);
 
   // Swipe gesture state
   const touchStartX = useRef<number | null>(null);

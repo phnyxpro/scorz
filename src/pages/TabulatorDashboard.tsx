@@ -253,63 +253,13 @@ function SubEventWorkspace({
         />
       </div>
 
-      {/* Score tools tabs */}
-      <Tabs defaultValue="summary" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="summary">Score Summary</TabsTrigger>
-          <TabsTrigger value="detail">Side-by-Side Detail</TabsTrigger>
-          <TabsTrigger value="votes">Vote Audit</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="summary">
-          <Card className="border-border/50 bg-card/80">
-            <CardContent className="pt-4">
-              <ScoreSummaryTable
-                scoresByContestant={scoresByContestant}
-                contestantName={contestantName}
-                contestantUserId={contestantUserId}
-                rubricNames={rubricNames}
-                indexToName={indexToName}
-                durations={perfDurations}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="detail">
-          <div className="space-y-4">
-            <Select value={selectedDetailRegId} onValueChange={setSelectedDetailRegId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a contestant…" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(scoresByContestant).map((regId) => (
-                  <SelectItem key={regId} value={regId}>{contestantName(regId)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedDetailRegId && scoresByContestant[selectedDetailRegId] && (
-              <Card className="border-border/50 bg-card/80">
-                <CardContent className="pt-4">
-                  <SideBySideScores
-                    scores={scoresByContestant[selectedDetailRegId]}
-                    rubricNames={rubricNames}
-                    indexToName={indexToName}
-                    contestantName={contestantName(selectedDetailRegId)}
-                    contestantUserId={contestantUserId(selectedDetailRegId)}
-                    judgeProfiles={judgeProfiles}
-                    durationSeconds={perfDurations ? getAvgDuration(perfDurations, selectedDetailRegId) : undefined}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="votes">
-          <VoteAudit subEventId={subEventId} />
-        </TabsContent>
-      </Tabs>
+      {/* Score Tables link */}
+      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+        <Link to={`/competitions/${competitionId}/score-tables?sub_event=${subEventId}`}>
+          <ClipboardList className="h-3.5 w-3.5" /> Score Tables
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </Button>
 
       {/* Tabulator certification controls */}
       {!tabCertified && (
