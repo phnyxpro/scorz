@@ -169,6 +169,7 @@ function SlotPickerCell({ regId, subEventId, slot, allSlots, onAssign, onUpdate,
 interface SortableRowProps {
   reg: ContestantRegistration;
   idx: number;
+  totalCount: number;
   slot?: { id: string; start_time: string; end_time: string };
   allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onSlotAssign: (regId: string, slotId: string) => void;
@@ -177,10 +178,18 @@ interface SortableRowProps {
   onSelect: (reg: ContestantRegistration) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onMoveUp: (regId: string) => void;
+  onMoveDown: (regId: string) => void;
+  onInlineNameSave: (regId: string, newName: string) => void;
+  onInlineNumberSave: (regId: string, newPosition: number) => void;
 }
 
-function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject }: SortableRowProps) {
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(reg.full_name);
+  const [editingNumber, setEditingNumber] = useState(false);
+  const [editNumber, setEditNumber] = useState(String(idx + 1));
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -188,22 +197,78 @@ function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, for
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const saveName = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== reg.full_name) {
+      onInlineNameSave(reg.id, trimmed);
+    }
+    setEditingName(false);
+  };
+
+  const saveNumber = () => {
+    const num = parseInt(editNumber, 10);
+    if (!isNaN(num) && num >= 1 && num <= totalCount && num !== idx + 1) {
+      onInlineNumberSave(reg.id, num);
+    }
+    setEditingNumber(false);
+  };
+
   return (
     <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
-      <TableCell className="w-[40px]">
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
-          <GripVertical className="h-4 w-4" />
-        </button>
+      <TableCell className="w-[60px]">
+        <div className="flex items-center gap-0.5">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col">
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === 0} onClick={() => onMoveUp(reg.id)}>
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === totalCount - 1} onClick={() => onMoveDown(reg.id)}>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
       </TableCell>
-      <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">
+        {editingNumber ? (
+          <Input
+            value={editNumber}
+            onChange={(e) => setEditNumber(e.target.value)}
+            onBlur={saveNumber}
+            onKeyDown={(e) => { if (e.key === "Enter") saveNumber(); if (e.key === "Escape") setEditingNumber(false); }}
+            className="h-6 w-10 text-xs font-mono px-1 text-center"
+            type="number"
+            min={1}
+            max={totalCount}
+            autoFocus
+          />
+        ) : (
+          <button className="hover:text-foreground hover:underline" onClick={() => { setEditNumber(String(idx + 1)); setEditingNumber(true); }}>
+            {idx + 1}
+          </button>
+        )}
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-1 flex-wrap">
-          <button
-            className="text-sm font-medium text-primary hover:underline text-left"
-            onClick={() => onSelect(reg)}
-          >
-            {reg.full_name}
-          </button>
+          {editingName ? (
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditingName(false); }}
+              className="h-7 text-sm w-48"
+              autoFocus
+            />
+          ) : (
+            <button
+              className="text-sm font-medium text-primary hover:underline text-left"
+              onClick={() => onSelect(reg)}
+              onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
+            >
+              {reg.full_name}
+            </button>
+          )}
           {(reg as any).special_entry_type && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               {(reg as any).special_entry_type === "previous_winner" ? "Previous Winner"
@@ -314,6 +379,9 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
+  const [walkInSubEvent, setWalkInSubEvent] = useState("");
+  const [walkInAfterLastTimed, setWalkInAfterLastTimed] = useState(false);
+  const [walkInPosition, setWalkInPosition] = useState("");
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
@@ -508,6 +576,52 @@ export function RegistrationsManager({ competitionId }: Props) {
       await supabase.from("contestant_registrations").update({ sort_order: u.sort_order } as any).eq("id", u.id);
     }
     qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["judging_overview"] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleMoveUp = async (regId: string) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx <= 0) return;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(idx - 1, 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleMoveDown = async (regId: string) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx < 0 || idx >= filtered.length - 1) return;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(idx + 1, 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleInlineNameSave = (regId: string, newName: string) => {
+    updateReg.mutate({ id: regId, full_name: newName } as any);
+  };
+
+  const handleInlineNumberSave = async (regId: string, newPosition: number) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx < 0) return;
+    const targetIdx = newPosition - 1;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(Math.min(targetIdx, reordered.length), 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
   };
 
   const sendNotification = async (registrationId: string, status: string) => {
@@ -570,6 +684,39 @@ export function RegistrationsManager({ competitionId }: Props) {
     try {
       const { data: existingProfile } = await supabase.from("profiles").select("user_id").eq("email", walkInEmail).maybeSingle();
       const userId = existingProfile?.user_id || user.id;
+
+      // Calculate sort_order based on options
+      let sortOrder = 0;
+      const targetSubEvent = walkInSubEvent || undefined;
+      if (walkInPosition && parseInt(walkInPosition, 10) > 0) {
+        sortOrder = parseInt(walkInPosition, 10);
+        // Shift existing contestants at or after this position
+        const toShift = registrations?.filter(r =>
+          (targetSubEvent ? r.sub_event_id === targetSubEvent : true) &&
+          ((r as any).sort_order || 0) >= sortOrder
+        ) || [];
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else if (walkInAfterLastTimed && targetSubEvent) {
+        // Find last timed contestant position
+        const { data: durs } = await supabase.from("performance_durations").select("contestant_registration_id").eq("sub_event_id", targetSubEvent);
+        const timedIds = new Set(durs?.map(d => d.contestant_registration_id) || []);
+        const subRegs = registrations?.filter(r => r.sub_event_id === targetSubEvent).sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0)) || [];
+        let lastTimedOrder = 0;
+        subRegs.forEach(r => { if (timedIds.has(r.id)) lastTimedOrder = (r as any).sort_order || 0; });
+        sortOrder = lastTimedOrder + 1;
+        // Shift
+        const toShift = subRegs.filter(r => ((r as any).sort_order || 0) >= sortOrder);
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else {
+        // Default: end of list
+        const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
+        sortOrder = maxOrder + 1;
+      }
+
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
@@ -578,12 +725,19 @@ export function RegistrationsManager({ competitionId }: Props) {
         age_category: walkInAge,
         status: "approved",
         rules_acknowledged: true,
-      });
+        ...(targetSubEvent ? { sub_event_id: targetSubEvent } : {}),
+        sort_order: sortOrder,
+      } as any);
       setShowWalkIn(false);
       setWalkInName("");
       setWalkInEmail("");
       setWalkInAge("adult");
       setWalkInConsent(false);
+      setWalkInSubEvent("");
+      setWalkInAfterLastTimed(false);
+      setWalkInPosition("");
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -647,6 +801,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                     key={reg.id}
                     reg={reg}
                     idx={(safePage - 1) * pageSize + idx}
+                    totalCount={filtered.length}
                     slot={slotsByRegId[reg.id]}
                     allSlots={allSlotsForPicker}
                     onSlotAssign={handleSlotAssign}
@@ -655,6 +810,10 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onSelect={setSelectedReg}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onInlineNameSave={handleInlineNameSave}
+                    onInlineNumberSave={handleInlineNumberSave}
                   />
                 ))}
               </TableBody>
@@ -820,6 +979,52 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <SelectItem value="minor">Minor</SelectItem>
               </SelectContent>
             </Select>
+            {/* Sub-event assignment */}
+            {allSubEvents && allSubEvents.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Assign to Event</Label>
+                <Select value={walkInSubEvent} onValueChange={setWalkInSubEvent}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select event (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No event</SelectItem>
+                    {allSubEvents.map(se => (
+                      <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Position options */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="walk-in-after-timed"
+                  checked={walkInAfterLastTimed}
+                  onCheckedChange={(v) => {
+                    setWalkInAfterLastTimed(!!v);
+                    if (v) setWalkInPosition("");
+                  }}
+                  disabled={!walkInSubEvent}
+                />
+                <Label htmlFor="walk-in-after-timed" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                  Place after last timed performer
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Or position #</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 5"
+                  value={walkInPosition}
+                  onChange={(e) => {
+                    setWalkInPosition(e.target.value);
+                    if (e.target.value) setWalkInAfterLastTimed(false);
+                  }}
+                  className="h-8 w-20 text-xs"
+                />
+              </div>
+            </div>
             <div className="flex items-start gap-2">
               <Checkbox id="walk-in-consent" checked={walkInConsent} onCheckedChange={(v) => setWalkInConsent(!!v)} />
               <Label htmlFor="walk-in-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">

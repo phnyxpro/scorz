@@ -1,74 +1,47 @@
 
 
-## Plan: Multiple Enhancements to Registration, Timer, and Dashboards
+## Fix Blank Rendering in Browser Automation
 
-This plan covers 6 distinct changes requested by the user.
+The app appears blank in headless browser testing due to two compounding issues:
 
----
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### 1. Add Arrow Buttons to Reorder Modals (ContestantReorderModal + RegistrationsManager)
-
-**`src/components/scoring/ContestantReorderModal.tsx`**
-- Add up/down arrow buttons (`ChevronUp`/`ChevronDown`) next to each contestant row alongside the existing drag handle
-- Clicking up moves the contestant one position up; clicking down moves one position down
-- Persist order on each arrow click (same `persistOrder` logic)
-
-**`src/components/competition/RegistrationsManager.tsx`**
-- Add up/down arrow buttons to each `SortableRow` in the table (next to the GripVertical drag handle)
-- Clicking arrows reorders `sort_order` values and invalidates queries
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### 2. "Move After Last Timed" Icon in Tabulator Timer Contestant Grid
+### Fix 1: Conditionally apply auditorium filter
 
-**`src/components/scoring/TabulatorTimer.tsx`**
-- For the selected contestant in the paginated grid, add a small icon button (e.g., `ArrowDownToLine`) that moves that contestant to the position right after the last contestant who has a recorded duration
-- Determine "last timed" by checking `durations` data for contestants with existing `performance_durations`
-- After repositioning, persist `sort_order` and invalidate queries
+**File: `src/contexts/ThemeContext.tsx`**
 
-Also add this action in the `ContestantReorderModal`.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
----
+### Fix 2: Remove filter class when at defaults
 
-### 3. Enhance Quick Add Walk-in Contestant Form
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-**`src/components/competition/RegistrationsManager.tsx`** (Walk-in Dialog section)
-- Add a sub-event `<Select>` dropdown populated from `allSubEvents` so the walk-in can be assigned to an event immediately
-- Add a checkbox: "Place after last timed performer" — when checked, sets `sort_order` to position after the last contestant with a recorded duration in that sub-event
-- Add an optional number input: "Or choose position #" — allows specifying an exact position, which shifts subsequent contestants down
-- On submit, set `sub_event_id` and calculate `sort_order` accordingly
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
----
+### Fix 3: Update CSS to use filter only when properties exist
 
-### 4. Inline Edit of Contestant Name and Number in Registration Table
+**File: `src/index.css`**
 
-**`src/components/competition/RegistrationsManager.tsx`** (SortableRow)
-- Make the contestant name clickable to edit inline (show an `<Input>` on click, save on blur/Enter)
-- Make the `#` column editable: clicking the number shows a small input; entering a new number (e.g., 5) moves the contestant to position 5 and shifts others accordingly
-- Persist name changes via `updateReg` mutation
-- Persist number changes by recalculating `sort_order` for all affected contestants in that sub-event filter
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
 
 ---
 
-### 5. Add ConnectionIndicator to ALL Dashboard Headers
+### Summary
 
-The ConnectionIndicator is already present on all 6 dashboards (Dashboard, JudgeDashboard, TabulatorDashboard, ChiefJudgeDashboard, WitnessDashboard, ProductionAssistantDashboard). **No changes needed** — this is already implemented.
-
----
-
-### 6. Editable Recorded Durations in Performance Timer
-
-**`src/components/scoring/TabulatorTimer.tsx`**
-- In the "Recorded Durations" section, make each duration value clickable to edit
-- On click, replace the text with a time input (mm:ss format)
-- On blur/Enter, update the `performance_durations` table via `supabase.from("performance_durations").update({ duration_seconds: newValue }).eq("id", d.id)`
-- Also update `judge_scores.performance_duration_seconds` for that contestant with the new average
-- Invalidate duration queries after save
-
----
-
-### Files to Edit
-1. `src/components/scoring/ContestantReorderModal.tsx` — add arrow buttons + "move after last timed" action
-2. `src/components/scoring/TabulatorTimer.tsx` — add "move after last timed" icon in grid + editable durations
-3. `src/components/competition/RegistrationsManager.tsx` — arrow buttons in rows, inline name/number edit, walk-in form enhancements
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
