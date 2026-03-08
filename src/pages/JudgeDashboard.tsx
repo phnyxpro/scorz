@@ -39,6 +39,7 @@ export default function JudgeDashboard() {
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                     <Star className="h-6 w-6 text-primary" /> Judge Dashboard
+                    <ConnectionIndicator />
                 </h1>
                 <p className="text-muted-foreground">
                     Welcome back. You have assignments in {assignedCompetitions.length} competition(s).
