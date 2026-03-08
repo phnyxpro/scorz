@@ -10,6 +10,7 @@ import { Trophy, User, ChevronRight, Star, ClipboardList, FileText, Info, Shield
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");

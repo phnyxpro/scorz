@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { ClipboardList, UserX, Ban, LogOut as DropOutIcon, RotateCcw } from "lucide-react";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 const statusColors: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary-foreground",

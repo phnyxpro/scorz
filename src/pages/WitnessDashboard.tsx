@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ArrowLeft, Eye, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function WitnessDashboard() {
   const { id: competitionId } = useParams<{ id: string }>();

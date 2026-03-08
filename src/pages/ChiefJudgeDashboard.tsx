@@ -35,6 +35,7 @@ import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { motion } from "framer-motion";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function ChiefJudgeDashboard() {
   const { id: competitionId } = useParams<{ id: string }>();
