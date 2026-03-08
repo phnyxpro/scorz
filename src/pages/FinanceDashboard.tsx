@@ -198,14 +198,14 @@ export default function FinanceDashboard() {
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Revenue Over Time</CardTitle>
-                        <CardDescription>Monthly ticket and credit revenue.</CardDescription>
+            <div className="grid gap-3 sm:gap-4 lg:grid-cols-7">
+                <Card className="lg:col-span-4">
+                    <CardHeader className="px-4 pt-4 pb-2">
+                        <CardTitle className="text-sm sm:text-base">Revenue Over Time</CardTitle>
+                        <CardDescription className="text-xs">Monthly ticket and credit revenue.</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[300px]">
+                    <CardContent className="px-2 sm:px-4 pb-4">
+                        <div className="h-[220px] sm:h-[300px]">
                             {monthlyData.length === 0 ? (
                                 <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                                     No revenue data yet
@@ -214,11 +214,11 @@ export default function FinanceDashboard() {
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={monthlyData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                                        <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
-                                        <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} fontSize={12} />
+                                        <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={10} />
+                                        <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} fontSize={10} width={40} />
                                         <Tooltip
                                             cursor={{ fill: 'hsl(var(--muted))' }}
-                                            contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                                            contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', fontSize: '12px' }}
                                         />
                                         <Bar dataKey="tickets" name="Ticket Revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} stackId="a" />
                                         <Bar dataKey="credits" name="Credit Revenue" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} stackId="a" />
