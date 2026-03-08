@@ -392,7 +392,7 @@ export default function ContestantProfile() {
                                 {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                               </TableCell>
                               <TableCell className="text-center font-mono font-bold text-primary text-sm">
-                                {s.final_score}
+                                {Number(s.final_score).toFixed(2)}
                               </TableCell>
                               <TableCell className="text-center">
                                 {s.is_certified ? (
@@ -432,7 +432,7 @@ export default function ContestantProfile() {
                         <div key={s.id} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-foreground">{comp?.name || "Unknown"}</span>
-                            <span className="text-xs font-mono text-primary font-bold">{s.final_score} pts</span>
+                            <span className="text-xs font-mono text-primary font-bold">{Number(s.final_score).toFixed(2)} pts</span>
                           </div>
                           <p className="text-sm text-muted-foreground leading-relaxed">{s.comments}</p>
                         </div>
