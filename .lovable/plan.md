@@ -1,47 +1,46 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Tabulator Dashboard UI Improvements
 
-The app appears blank in headless browser testing due to two compounding issues:
+Three changes across three areas: Performance Timer contestant layout, Score Summary pagination, Side-by-Side dropdown, and Contestant accordion pagination.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### 1. TabulatorTimer — Horizontal scrollable columns layout
+**File: `src/components/scoring/TabulatorTimer.tsx`** (lines 284-317)
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+Replace the vertical contestant list with a horizontally scrollable grid:
+- Display contestants in a CSS grid with 5 columns (`grid-cols-5`)
+- Wrap in a container with left/right `ChevronLeft`/`ChevronRight` arrow buttons
+- Track a `page` state; each page shows 5 contestants
+- On mobile, reduce to 2-3 columns with responsive classes (`grid-cols-2 sm:grid-cols-3 md:grid-cols-5`)
+- Keep drag-and-drop and click-to-select behavior intact
+- Arrow buttons disabled at boundaries
 
----
+### 2. ScoreSummaryTable — Paginate 5 at a time
+**File: `src/components/tabulator/ScoreSummaryTable.tsx`**
 
-### Fix 1: Conditionally apply auditorium filter
+- Add `page` state, slice `rows` to show 5 per page
+- Add prev/next pagination controls below the table
+- Show "Page X of Y" indicator
 
-**File: `src/contexts/ThemeContext.tsx`**
+### 3. Side-by-Side Detail — Contestant dropdown selector
+**File: `src/pages/TabulatorDashboard.tsx`** (lines 273-290)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+Replace the loop of all contestant cards with:
+- A `Select` dropdown listing all contestants with scores
+- State `selectedDetailRegId` to track selection
+- Render only the selected contestant's `SideBySideScores` card
 
-### Fix 2: Remove filter class when at defaults
+### 4. Contestant accordion in sub-event cards — Paginate 5 at a time
+**File: `src/pages/TabulatorDashboard.tsx`** (lines 653-718)
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+- Add pagination state per sub-event for the contestants table
+- Show 5 contestants at a time with prev/next controls
+- Keep existing expand/collapse accordion behavior
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files touched
+| File | Change |
+|------|--------|
+| `src/components/scoring/TabulatorTimer.tsx` | Horizontal paginated grid with arrows |
+| `src/components/tabulator/ScoreSummaryTable.tsx` | 5-per-page pagination |
+| `src/pages/TabulatorDashboard.tsx` | Dropdown for side-by-side, paginate contestant accordion |
 
