@@ -243,6 +243,27 @@ export default function JudgeScoring() {
     return filteredContestants.every(r => scoreStatusMap.has(r.id));
   }, [filteredContestants, myScores, scoreStatusMap]);
 
+  // Selectable contestants for batch certify (scored but not yet certified)
+  const batchEligible = useMemo(() => {
+    return new Set(filteredContestants.filter(r => scoreStatusMap.get(r.id) === "scored").map(r => r.id));
+  }, [filteredContestants, scoreStatusMap]);
+
+  const toggleBatchSelect = (id: string) => {
+    setSelectedForBatch(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForBatch.size === batchEligible.size) {
+      setSelectedForBatch(new Set());
+    } else {
+      setSelectedForBatch(new Set(batchEligible));
+    }
+  };
+
   const handleCertifyAll = async () => {
     if (!signature || !certifyConfirmed || !myScores) return;
     setCertifyAllPending(true);
@@ -258,6 +279,29 @@ export default function JudgeScoring() {
       }
       setShowCertifyAllDialog(false);
       toast({ title: "All scorecards certified" });
+    } catch (err: any) {
+      toast({ title: "Error certifying", description: err.message, variant: "destructive" });
+    } finally {
+      setCertifyAllPending(false);
+    }
+  };
+
+  const handleCertifyBatch = async () => {
+    if (!signature || !certifyConfirmed || !myScores) return;
+    setCertifyAllPending(true);
+    try {
+      const toCertify = myScores.filter(s => !s.is_certified && selectedForBatch.has(s.contestant_registration_id));
+      for (const score of toCertify) {
+        await certify.mutateAsync({
+          id: score.id,
+          judge_signature: signature,
+          sub_event_id: score.sub_event_id,
+          contestant_registration_id: score.contestant_registration_id,
+        });
+      }
+      setShowCertifyBatchDialog(false);
+      setSelectedForBatch(new Set());
+      toast({ title: `${toCertify.length} scorecard(s) certified` });
     } catch (err: any) {
       toast({ title: "Error certifying", description: err.message, variant: "destructive" });
     } finally {
