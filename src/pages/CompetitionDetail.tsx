@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { DetailPageSkeleton } from "@/components/shared/PageSkeletons";
 import { useCompetition, useUpdateCompetition, useCreateRubricCriterion, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +58,7 @@ interface ScannedCriterion {
 
 export default function CompetitionDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   // Fix content where HTML tags were stored as escaped text (e.g. from bad paste)
   const fixEscapedHtml = (html: string): string => {
     if (!html) return html;
@@ -291,7 +292,7 @@ export default function CompetitionDetail() {
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="space-y-4">
+        <Tabs defaultValue={searchParams.get("tab") || "general"} className="space-y-4">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
             <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
             <TabsTrigger value="levels" className="flex-shrink-0">Schedule</TabsTrigger>
