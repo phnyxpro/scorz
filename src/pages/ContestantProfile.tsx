@@ -31,6 +31,8 @@ export default function ContestantProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("details");
   const isJudgeViewer = hasRole("judge") && userId && userId !== user?.id;
 
   const profileUserId = userId || user?.id;
