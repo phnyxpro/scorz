@@ -186,7 +186,7 @@ export function JudgingHubContent() {
 
       {/* Overview with tabbed levels */}
       {selectedCompId && overviewLoading && (
-        <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading levels…</div>
+        <CardGridSkeleton cards={2} />
       )}
 
       {selectedCompId && overview && (
