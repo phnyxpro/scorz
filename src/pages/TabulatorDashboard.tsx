@@ -503,6 +503,7 @@ export default function TabulatorDashboard() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
+            <ConnectionIndicator />
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Select a competition, then choose a sub-event to open the workspace.
