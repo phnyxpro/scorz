@@ -142,7 +142,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <footer className="container py-6 px-3 sm:px-6 border-t border-border/10">
+      <footer role="contentinfo" className="container py-6 px-3 sm:px-6 border-t border-border/10">
         <p className="text-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
           @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
         </p>

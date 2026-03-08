@@ -117,13 +117,14 @@ export function NotificationCenter() {
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+                <Button variant="ghost" size="icon" className="relative text-muted-foreground" aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}>
                     <Bell className="h-4 w-4" />
                     {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-primary-foreground text-[8px] animate-pulse">
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-primary-foreground text-[8px] animate-pulse" aria-hidden="true">
                             {unreadCount}
                         </Badge>
                     )}
+                    {unreadCount > 0 && <span className="sr-only">{unreadCount} unread notifications</span>}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0 border-border/50 bg-card/95 backdrop-blur-xl" align="end">

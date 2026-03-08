@@ -82,6 +82,7 @@ export function GlobalSearch() {
             <button
                 onClick={() => setOpen(true)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border border-border/50 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors w-full max-w-[200px]"
+                aria-label="Search competitions, contestants, and more"
             >
                 <Search className="h-4 w-4" />
                 <span className="flex-1 text-left">Search...</span>
