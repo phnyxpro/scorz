@@ -45,7 +45,7 @@ import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
   Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
