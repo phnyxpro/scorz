@@ -120,13 +120,8 @@ export function JudgingHubContent() {
     return activeComps.filter((c) => c.name.toLowerCase().includes(q));
   }, [activeComps, searchQuery]);
 
-  const profileMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of overview?.profiles || []) {
-      m.set(p.user_id, p.full_name || p.email || "Unknown");
-    }
-    return m;
-  }, [overview?.profiles]);
+  const overviewUserIds = useMemo(() => (overview?.profiles || []).map((p: any) => p.user_id), [overview?.profiles]);
+  const profileMap = useStaffDisplayNames(overviewUserIds);
 
   const rubricNames = useMemo(
     () => (overview?.rubric || []).map((r: any) => r.name),

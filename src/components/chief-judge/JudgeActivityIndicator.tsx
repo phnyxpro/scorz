@@ -24,58 +24,8 @@ export function JudgeActivityIndicator({ subEventId, allScores, contestantCount 
 
   const judgeUserIds = useMemo(() => judgeAssignments.map((a) => a.user_id), [judgeAssignments]);
 
-  // Fetch judge profiles
-  const { data: profiles } = useQuery({
-    queryKey: ["judge-profiles", judgeUserIds],
-    enabled: judgeUserIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", judgeUserIds);
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Get judge emails for staff invitation lookup
-  const judgeEmails = useMemo(
-    () => (profiles || []).map((p) => p.email).filter(Boolean) as string[],
-    [profiles]
-  );
-
-  // Fetch staff invitation names (organiser-entered names)
-  const { data: staffInvitations } = useQuery({
-    queryKey: ["judge-staff-invitations", judgeEmails],
-    enabled: judgeEmails.length > 0,
-    queryFn: async () => {
-      const { data, error } = await (supabase
-        .from("staff_invitations" as any)
-        .select("email, name")
-        .in("email", judgeEmails) as any);
-      if (error) throw error;
-      return (data || []) as { email: string; name: string | null }[];
-    },
-  });
-
-  // Map email → staff invitation name
-  const staffNameByEmail = useMemo(() => {
-    const m = new Map<string, string>();
-    staffInvitations?.forEach((inv) => {
-      if (inv.name) m.set(inv.email.toLowerCase(), inv.name);
-    });
-    return m;
-  }, [staffInvitations]);
-
-  // Build final name map: invitation name → profile full_name → friendly email
-  const nameMap = useMemo(() => {
-    const m = new Map<string, string>();
-    profiles?.forEach((p) => {
-      const staffName = p.email ? staffNameByEmail.get(p.email.toLowerCase()) : undefined;
-      m.set(p.user_id, staffName || friendlyDisplayName(p.full_name, p.email));
-    });
-    return m;
-  }, [profiles, staffNameByEmail]);
+  // Resolve judge display names via shared hook (staff invitation name → profile name → friendly email)
+  const nameMap = useStaffDisplayNames(judgeUserIds);
 
   // Compute per-judge activity
   const judgeActivity = useMemo(() => {

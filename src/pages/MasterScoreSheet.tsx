@@ -93,13 +93,8 @@ export default function MasterScoreSheet() {
 
   const { data, isLoading } = useMasterSheet(competitionId, subEventId);
 
-  const profileMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of data?.profiles || []) {
-      m.set(p.user_id, p.full_name || p.email || "Unknown");
-    }
-    return m;
-  }, [data?.profiles]);
+  const judgeUserIds = useMemo(() => (data?.profiles || []).map((p: any) => p.user_id), [data?.profiles]);
+  const profileMap = useStaffDisplayNames(judgeUserIds);
 
   // Ordered list of judge user_ids
   const judgeUserIds = useMemo(() => {

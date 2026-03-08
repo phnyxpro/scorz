@@ -112,12 +112,14 @@ export function useChatStaff(competitionId: string | undefined) {
         allProfiles = [...allProfiles, ...(extra || [])];
       }
 
-      const profileMap = new Map(allProfiles.map((p) => [p.user_id, p.full_name]));
+      // Resolve names via staff invitation priority
+      const allUserIds = [...userMap.keys()];
+      const nameMap = await resolveStaffNames(allUserIds);
       const result: ChatStaffMember[] = [];
       for (const [userId, role] of userMap.entries()) {
         result.push({
           user_id: userId,
-          full_name: profileMap.get(userId) || "Unknown",
+          full_name: nameMap[userId] || "Unknown",
           role,
         });
       }

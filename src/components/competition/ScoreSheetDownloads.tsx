@@ -120,12 +120,9 @@ async function fetchSubEventData(competitionId: string, subEventId: string): Pro
   const judgeProfiles: Record<string, string> = {};
 
   if (allJudgeIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name")
-      .in("user_id", allJudgeIds);
-    for (const p of profiles || []) {
-      judgeProfiles[p.user_id] = p.full_name || "Unknown Judge";
+    const resolved = await resolveStaffNames(allJudgeIds);
+    for (const [uid, name] of Object.entries(resolved)) {
+      judgeProfiles[uid] = name;
     }
   }
 
