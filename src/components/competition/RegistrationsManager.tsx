@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload, ArrowUpDown, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -315,6 +315,8 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
@@ -474,6 +476,15 @@ export function RegistrationsManager({ competitionId }: Props) {
     return list;
   }, [registrations, search, filterStatus, filterAge, activeSubEventTab, sortField, sortDir, slotsByRegId]);
 
+  // Reset page when filters change
+  const filteredLen = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filteredLen / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedFiltered = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // Reset to page 1 when filters change
+  useMemo(() => { setCurrentPage(1); }, [search, filterStatus, filterAge, activeSubEventTab]);
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -594,61 +605,112 @@ export function RegistrationsManager({ competitionId }: Props) {
   const hasSubEvents = subEventIds.length > 0;
 
   const renderTable = () => (
-    <div className="overflow-x-auto">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs w-[40px]"></TableHead>
-              <TableHead className="text-xs w-[40px]">
-                <SortHeader label="#" field="sort_order" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">
-                <SortHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">
-                <SortHeader label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">
-                <SortHeader label="Age" field="age" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">
-                <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">
-                <SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <SortableContext items={filtered.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-            <TableBody>
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                    No registrations found.
-                  </TableCell>
-                </TableRow>
+    <div className="space-y-3">
+      <div className="overflow-x-auto">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs w-[40px]"></TableHead>
+                <TableHead className="text-xs w-[40px]">
+                  <SortHeader label="#" field="sort_order" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">
+                  <SortHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">
+                  <SortHeader label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">
+                  <SortHeader label="Age" field="age" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">
+                  <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">
+                  <SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                </TableHead>
+                <TableHead className="text-xs">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <SortableContext items={paginatedFiltered.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+              <TableBody>
+                {paginatedFiltered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                      No registrations found.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {paginatedFiltered.map((reg, idx) => (
+                  <SortableRow
+                    key={reg.id}
+                    reg={reg}
+                    idx={(safePage - 1) * pageSize + idx}
+                    slot={slotsByRegId[reg.id]}
+                    allSlots={allSlotsForPicker}
+                    onSlotAssign={handleSlotAssign}
+                    onSlotUpdate={handleSlotTimeUpdate}
+                    formatTime={formatSlotTime}
+                    onSelect={setSelectedReg}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                  />
+                ))}
+              </TableBody>
+            </SortableContext>
+          </Table>
+        </DndContext>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-xs text-muted-foreground">
+            Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLen)} of {filteredLen}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage(safePage - 1)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "...")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1]) > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`dots-${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={safePage === p ? "default" : "outline"}
+                    size="icon"
+                    className="h-7 w-7 text-xs"
+                    onClick={() => setCurrentPage(p as number)}
+                  >
+                    {p}
+                  </Button>
+                )
               )}
-              {filtered.map((reg, idx) => (
-                <SortableRow
-                  key={reg.id}
-                  reg={reg}
-                  idx={idx}
-                  slot={slotsByRegId[reg.id]}
-                  allSlots={allSlotsForPicker}
-                  onSlotAssign={handleSlotAssign}
-                  onSlotUpdate={handleSlotTimeUpdate}
-                  formatTime={formatSlotTime}
-                  onSelect={setSelectedReg}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                />
-              ))}
-            </TableBody>
-          </SortableContext>
-        </Table>
-      </DndContext>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage(safePage + 1)}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 

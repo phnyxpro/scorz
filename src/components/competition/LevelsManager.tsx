@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -249,6 +249,8 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const remove = useDeleteLevel();
   const qc = useQueryClient();
   const [newName, setNewName] = useState("");
+  const [levelsPage, setLevelsPage] = useState(1);
+  const levelsPageSize = 10;
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -311,16 +313,42 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd}>
           <SortableContext items={levels?.map((l) => l.id) || []} strategy={verticalListSortingStrategy}>
-            {levels?.map((l, idx) => (
-              <SortableLevelItem
-                key={l.id}
-                level={l}
-                index={idx}
-                competitionId={competitionId}
-                onDelete={() => remove.mutate({ id: l.id, competition_id: competitionId })}
-                onUpdateBanner={(url) => updateLevelBanner(l.id, url)}
-              />
-            ))}
+            {(() => {
+              const totalLevels = levels?.length || 0;
+              const totalLevelsPages = Math.max(1, Math.ceil(totalLevels / levelsPageSize));
+              const safeLP = Math.min(levelsPage, totalLevelsPages);
+              const pagedLevels = levels?.slice((safeLP - 1) * levelsPageSize, safeLP * levelsPageSize) || [];
+              return (
+                <>
+                  {pagedLevels.map((l, idx) => (
+                    <SortableLevelItem
+                      key={l.id}
+                      level={l}
+                      index={(safeLP - 1) * levelsPageSize + idx}
+                      competitionId={competitionId}
+                      onDelete={() => remove.mutate({ id: l.id, competition_id: competitionId })}
+                      onUpdateBanner={(url) => updateLevelBanner(l.id, url)}
+                    />
+                  ))}
+                  {totalLevelsPages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Showing {(safeLP - 1) * levelsPageSize + 1}–{Math.min(safeLP * levelsPageSize, totalLevels)} of {totalLevels}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Button variant="outline" size="icon" className="h-7 w-7" disabled={safeLP <= 1} onClick={() => setLevelsPage(safeLP - 1)}>
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground px-2">{safeLP} / {totalLevelsPages}</span>
+                        <Button variant="outline" size="icon" className="h-7 w-7" disabled={safeLP >= totalLevelsPages} onClick={() => setLevelsPage(safeLP + 1)}>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </SortableContext>
         </DndContext>
       </CardContent>
