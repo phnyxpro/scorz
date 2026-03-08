@@ -186,16 +186,6 @@ export default function ContestantProfile() {
       </motion.div>
 
       {/* Tabs */}
-      {(() => {
-        const isMobile = useIsMobile();
-        const [activeTab, setActiveTab] = useState("details");
-        const tabOptions = [
-          { value: "details", label: "Details" },
-          { value: "media", label: "Media" },
-          { value: "history", label: "History" },
-          ...(!isJudgeViewer ? [{ value: "scores", label: "Scores" }, { value: "votes", label: "Votes" }] : []),
-        ];
-        return (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {isMobile ? (
           <Select value={activeTab} onValueChange={setActiveTab}>
@@ -203,9 +193,11 @@ export default function ContestantProfile() {
               <SelectValue placeholder="Select section" />
             </SelectTrigger>
             <SelectContent>
-              {tabOptions.map((t) => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-              ))}
+              <SelectItem value="details">Details</SelectItem>
+              <SelectItem value="media">Media</SelectItem>
+              <SelectItem value="history">History</SelectItem>
+              {!isJudgeViewer && <SelectItem value="scores">Scores</SelectItem>}
+              {!isJudgeViewer && <SelectItem value="votes">Votes</SelectItem>}
             </SelectContent>
           </Select>
         ) : (
