@@ -379,6 +379,9 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
+  const [walkInSubEvent, setWalkInSubEvent] = useState("");
+  const [walkInAfterLastTimed, setWalkInAfterLastTimed] = useState(false);
+  const [walkInPosition, setWalkInPosition] = useState("");
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
