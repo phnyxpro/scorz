@@ -53,6 +53,7 @@ export function TabulatorTimer({
   elapsedRef.current = elapsed;
 
   // Pagination state for contestant grid
+  const [showReorderModal, setShowReorderModal] = useState(false);
   const [gridPage, setGridPage] = useState(0);
   const gridPageSize = 5;
 
