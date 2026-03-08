@@ -141,7 +141,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
           {/* Time Penalties content */}
           {activeCategory === "time" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Time Limit (seconds)</label>
                   <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} className="h-9" />
