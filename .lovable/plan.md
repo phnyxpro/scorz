@@ -1,47 +1,42 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Import 5 Judge Score Sheets into NPS 2026 — Trinidad
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Context
+There are already 203 scores in the Trinidad sub-event across all 5 judges. This import will **update existing scores** for contestants these judges already scored, and **insert new scores** for any missing rows.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Data Mapping
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**Sub-event:** `14ae92f2-a730-4c72-9aa1-19b0e3561722` (Trinidad)
 
----
+**Judges matched from filenames:**
+| CSV File | Judge | user_id |
+|---|---|---|
+| Patti-Anne Ali | pattianneali | `0b8a3d03-...` |
+| Mtmima Solwazi | msolwazi.rootsfoundation | `d9d254f4-...` |
+| Shivanee Ramlochan | Shivanee Ramlochan | `fb0b87cb-...` |
+| Kwame Weekes | kwameweekesbookings | `ace880a5-...` |
+| Jean-Claude Cournand | jeanclaude.cournand | `1254e40d-...` |
 
-### Fix 1: Conditionally apply auditorium filter
+**Criteria mapping (sort_order keys for `criterion_scores` JSONB):**
+- `"0"` = Voice and Articulation
+- `"1"` = Stage Presence
+- `"2"` = Dramatic Appropriateness
+- `"3"` = Literary Devices
+- `"4"` = Use of Language
+- `"5"` = Continuity (Storyline)
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Data Issues Detected
+1. **Patti-Anne Ali** — Miguel Jagarnath's "Voice and Articulation" value is `"4,5"` (comma decimal) → will be parsed as **4.5**
+2. **Shivanee Ramlochan** — Extra trailing column after Total (running cumulative totals, will be ignored). Jabari Collins has an empty Continuity score → will use only the 5 scored criteria
+3. All contestant names match registered contestants exactly (verified against the database)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+### Implementation
+A single **database migration** containing SQL `INSERT ... ON CONFLICT`-style upserts for all ~108 score rows across the 5 judges:
 
-### Fix 2: Remove filter class when at defaults
+- For each row: build `criterion_scores` JSONB (`{"0": 4.5, "1": 3.5, ...}`), compute `raw_total` as sum of criteria values
+- Use a check-and-update pattern: delete existing row for same `(judge_id, sub_event_id, contestant_registration_id)` then insert, since there's no unique constraint — wrapped in a transaction
+- All scores inserted with `is_certified = false` (default)
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+**No code file changes needed** — this is a pure data migration.
 
