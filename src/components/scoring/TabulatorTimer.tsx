@@ -288,7 +288,17 @@ export function TabulatorTimer({
 
         {/* Draggable contestant grid with pagination */}
         <div>
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">Contestant on Stage</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Contestant on Stage</label>
+            <button
+              type="button"
+              className="text-[11px] text-primary hover:underline flex items-center gap-1"
+              onClick={() => setShowReorderModal(true)}
+              disabled={running}
+            >
+              <ListOrdered className="h-3 w-3" /> Edit Order
+            </button>
+          </div>
           {(() => {
             const totalPages = Math.ceil(contestants.length / gridPageSize);
             const pageContestants = contestants.slice(gridPage * gridPageSize, (gridPage + 1) * gridPageSize);
