@@ -197,12 +197,22 @@ function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, for
       </TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
       <TableCell>
-        <button
-          className="text-sm font-medium text-primary hover:underline text-left"
-          onClick={() => onSelect(reg)}
-        >
-          {reg.full_name}
-        </button>
+        <div className="flex items-center gap-1 flex-wrap">
+          <button
+            className="text-sm font-medium text-primary hover:underline text-left"
+            onClick={() => onSelect(reg)}
+          >
+            {reg.full_name}
+          </button>
+          {(reg as any).special_entry_type && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              {(reg as any).special_entry_type === "previous_winner" ? "Previous Winner"
+                : (reg as any).special_entry_type === "wild_card" ? "Wild Card"
+                : (reg as any).special_entry_type === "sub_competition_winner" ? "Sub-Comp Winner"
+                : (reg as any).special_entry_type}
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
       <TableCell>
