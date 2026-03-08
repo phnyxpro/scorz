@@ -126,7 +126,7 @@ export default function PenaltiesPage() {
                             );
                           })}
                         </TableBody>
-                      </Table>
+                      </Table></div>
                       <div className="flex items-start gap-2 p-3 rounded bg-secondary/10 border border-secondary/20">
                         <AlertTriangle className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
                         <p className="text-[10px] text-muted-foreground leading-relaxed">
