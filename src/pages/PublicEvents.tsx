@@ -47,23 +47,35 @@ export default function PublicEvents() {
               <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
               <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <InstallPWA />
-              <Button asChild size="sm" variant="ghost">
-                <Link to="/about">About</Link>
+              <Button asChild size="sm" variant="ghost" className="px-2 sm:px-3">
+                <Link to="/about">
+                  <Info className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">About</span>
+                </Link>
               </Button>
-              <Button asChild size="sm" variant="ghost">
-                <Link to="/help">Knowledge Base</Link>
+              <Button asChild size="sm" variant="ghost" className="px-2 sm:px-3">
+                <Link to="/help">
+                  <BookOpen className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Knowledge Base</span>
+                </Link>
               </Button>
               {user ? (
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
-              <Button asChild size="sm">
-                <Link to="/auth">Sign In</Link>
-              </Button>
-            )}
+                <Button asChild size="sm" variant="outline" className="px-2 sm:px-3">
+                  <Link to="/dashboard">
+                    <LayoutDashboard className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Dashboard</span>
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild size="sm" className="px-2 sm:px-3">
+                  <Link to="/auth">
+                    <LogIn className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Sign In</span>
+                  </Link>
+                </Button>
+              )}
           </div>
         </div>
       </header>
