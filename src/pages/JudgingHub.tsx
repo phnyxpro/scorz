@@ -113,6 +113,8 @@ export function JudgingHubContent() {
   const [selectedCompId, setSelectedCompId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedContestant, setExpandedContestant] = useState<string | null>(null);
+  const [selectedLevelTab, setSelectedLevelTab] = useState("");
+  const isMobile = useIsMobile();
 
   const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
 
