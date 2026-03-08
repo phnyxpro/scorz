@@ -41,7 +41,8 @@ export default function ChiefJudgeDashboard() {
   const unreadCount = useChatUnreadCount(competitionId);
   const navigate = useNavigate();
   const { user } = useAuth();
-
+  const isMobile = useIsMobile();
+  const [cjTab, setCjTab] = useState("panel");
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: rubric } = useRubricCriteria(competitionId);
