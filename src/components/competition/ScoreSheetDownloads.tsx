@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown } from "lucide-react";
+import { Download, FileSpreadsheet, Sheet, Loader2, Eye, FileDown, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportMultiSheetXLSX, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { ScoreSheetPreviewModal } from "./ScoreSheetPreviewModal";
