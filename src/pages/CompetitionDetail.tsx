@@ -317,7 +317,7 @@ export default function CompetitionDetail() {
           )}
           <Card className="border-border/50 bg-card/80">
             <CardHeader><CardTitle className="text-base">Competition Details</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-3 sm:p-6">
               <BannerUpload
                 currentUrl={(comp as any).banner_url}
                 folder={`competitions/${id}`}
