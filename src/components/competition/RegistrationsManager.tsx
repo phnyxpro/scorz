@@ -899,7 +899,6 @@ export function RegistrationsManager({ competitionId }: Props) {
             </Button>
           </div>
         </div>
-      )}
     </div>
   );
 
