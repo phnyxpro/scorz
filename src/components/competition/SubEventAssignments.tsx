@@ -489,6 +489,12 @@ function EditStaffDialog({ inv, competitionId, onClose, onSave, saving }: {
                 <Label htmlFor="edit-chief" className="text-xs">Chief Judge</Label>
               </div>
             )}
+            {role === "organizer" && (
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-pa" checked={isPA} onCheckedChange={(c) => setIsPA(!!c)} />
+                <Label htmlFor="edit-pa" className="text-xs">Production Assistant</Label>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
               <Button size="sm" disabled={saving || !email.trim()} onClick={handleSave}>
