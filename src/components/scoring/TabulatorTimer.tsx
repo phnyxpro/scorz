@@ -284,41 +284,74 @@ export function TabulatorTimer({
           <span className="text-[10px] text-muted-foreground ml-auto font-mono">Space to start/stop</span>
         </div>
 
-        {/* Draggable contestant list */}
+        {/* Draggable contestant grid with pagination */}
         <div>
           <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">Contestant on Stage</label>
-          <div className="space-y-0.5">
-            {contestants.map((c, idx) => (
-              <div
-                key={c.id}
-                draggable={!running}
-                onDragStart={() => !running && handleDragStart(idx)}
-                onDragEnter={() => !running && handleDragEnter(idx)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => e.preventDefault()}
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-md border border-transparent transition-all select-none",
-                  !running && "cursor-grab active:cursor-grabbing",
-                  running && selectedContestantId !== c.id && "opacity-40 cursor-not-allowed",
-                  selectedContestantId === c.id && "bg-primary/10 border-primary/30",
-                  dragIdx === idx && "opacity-40 border-dashed border-primary/50",
-                  overIdx === idx && dragIdx !== idx && "border-primary/40 bg-primary/5",
-                  dragIdx === null && !running && "hover:bg-muted/30"
-                )}
-                onClick={() => {
-                  if (running && selectedContestantId !== c.id) return;
-                  setSelectedContestantId(selectedContestantId === c.id ? "" : c.id);
-                }}
-              >
-                {!running && <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                <span className="font-mono text-[10px] text-muted-foreground w-4 text-center">{idx + 1}</span>
-                <span className="text-xs font-medium text-foreground flex-1 truncate">{c.full_name}</span>
-                {selectedContestantId === c.id && isOnStage && (
-                  <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1.5 py-0">On Stage</Badge>
+          {(() => {
+            const totalPages = Math.ceil(contestants.length / gridPageSize);
+            const pageContestants = contestants.slice(gridPage * gridPageSize, (gridPage + 1) * gridPageSize);
+            return (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-7 w-7 shrink-0"
+                    disabled={gridPage === 0}
+                    onClick={() => setGridPage((p) => Math.max(0, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 flex-1 min-w-0">
+                    {pageContestants.map((c) => {
+                      const realIdx = contestants.indexOf(c);
+                      return (
+                        <div
+                          key={c.id}
+                          draggable={!running}
+                          onDragStart={() => !running && handleDragStart(realIdx)}
+                          onDragEnter={() => !running && handleDragEnter(realIdx)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => e.preventDefault()}
+                          className={cn(
+                            "flex flex-col items-center gap-0.5 px-2 py-2 rounded-md border border-transparent transition-all select-none text-center",
+                            !running && "cursor-grab active:cursor-grabbing",
+                            running && selectedContestantId !== c.id && "opacity-40 cursor-not-allowed",
+                            selectedContestantId === c.id && "bg-primary/10 border-primary/30",
+                            dragIdx === realIdx && "opacity-40 border-dashed border-primary/50",
+                            overIdx === realIdx && dragIdx !== realIdx && "border-primary/40 bg-primary/5",
+                            dragIdx === null && !running && "hover:bg-muted/30"
+                          )}
+                          onClick={() => {
+                            if (running && selectedContestantId !== c.id) return;
+                            setSelectedContestantId(selectedContestantId === c.id ? "" : c.id);
+                          }}
+                        >
+                          <span className="font-mono text-[10px] text-muted-foreground">{realIdx + 1}</span>
+                          <span className="text-xs font-medium text-foreground truncate w-full">{c.full_name}</span>
+                          {selectedContestantId === c.id && isOnStage && (
+                            <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-[9px] px-1 py-0">On Stage</Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-7 w-7 shrink-0"
+                    disabled={gridPage >= totalPages - 1}
+                    onClick={() => setGridPage((p) => Math.min(totalPages - 1, p + 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                {totalPages > 1 && (
+                  <p className="text-[10px] text-muted-foreground text-center font-mono">
+                    {gridPage + 1} / {totalPages}
+                  </p>
                 )}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
 
         {selectedContestantId && (
