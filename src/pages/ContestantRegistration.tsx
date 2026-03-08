@@ -39,6 +39,7 @@ const registrationSchema = z.object({
   selectedLevelId: z.string().optional(),
   selectedSubEventId: z.string().optional(),
   selectedSlotId: z.string().optional(),
+  specialEntryType: z.string().optional(),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
