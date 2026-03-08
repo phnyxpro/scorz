@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { Link } from "react-router-dom";
 import { useCompetitions } from "@/hooks/useCompetitions";
