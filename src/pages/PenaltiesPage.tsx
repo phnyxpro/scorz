@@ -96,7 +96,7 @@ export default function PenaltiesPage() {
                   {/* Time Penalties */}
                   {activeCategory === "time" && penalties && penalties.length > 0 && (
                     <div className="space-y-3">
-                      <Table>
+                      <div className="overflow-x-auto"><Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead className="text-xs uppercase font-mono">Condition</TableHead>
