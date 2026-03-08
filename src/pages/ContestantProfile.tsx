@@ -432,7 +432,7 @@ export default function ContestantProfile() {
                         <div key={s.id} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-foreground">{comp?.name || "Unknown"}</span>
-                            <span className="text-xs font-mono text-primary font-bold">{s.final_score} pts</span>
+                            <span className="text-xs font-mono text-primary font-bold">{Number(s.final_score).toFixed(2)} pts</span>
                           </div>
                           <p className="text-sm text-muted-foreground leading-relaxed">{s.comments}</p>
                         </div>

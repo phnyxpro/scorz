@@ -134,7 +134,7 @@ export default function ContestantFeedback() {
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-sm font-medium">Score Card</CardTitle>
                           <Badge variant="secondary" className="font-mono text-xs">
-                            {score.final_score.toFixed(1)}
+                            {score.final_score.toFixed(2)}
                           </Badge>
                         </div>
                       </CardHeader>

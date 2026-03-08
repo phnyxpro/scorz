@@ -90,7 +90,7 @@ export function PenaltyReview({ allScores, contestantName, contestantUserId, isC
                     )}
                   </TableCell>
                   <TableCell className="text-center font-mono font-bold text-primary text-sm">
-                    {score.final_score}
+                    {Number(score.final_score).toFixed(2)}
                   </TableCell>
                   {!isCertified && (
                     <TableCell className="text-center">
