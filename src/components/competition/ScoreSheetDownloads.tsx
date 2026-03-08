@@ -440,98 +440,71 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
                       {se.status}
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_preview"]}
-                      onClick={() => handlePreview(se.id, se.name)}
-                    >
-                      {loading[se.id + "_preview"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <Eye className="h-4 w-4 mr-1.5" />
-                      )}
+                  {/* Desktop: inline buttons */}
+                  <div className="hidden md:flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_preview"]} onClick={() => handlePreview(se.id, se.name)}>
+                      {loading[se.id + "_preview"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
                       Preview
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_xlsx"]}
-                      onClick={() => handleDownloadExcel(se.id, se.name)}
-                    >
-                      {loading[se.id + "_xlsx"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <FileSpreadsheet className="h-4 w-4 mr-1.5" />
-                      )}
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_xlsx"]} onClick={() => handleDownloadExcel(se.id, se.name)}>
+                      {loading[se.id + "_xlsx"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <FileSpreadsheet className="h-4 w-4 mr-1.5" />}
                       Excel
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_csv"]}
-                      onClick={() => handleDownloadCSV(se.id, se.name)}
-                    >
-                      {loading[se.id + "_csv"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <Sheet className="h-4 w-4 mr-1.5" />
-                      )}
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_csv"]} onClick={() => handleDownloadCSV(se.id, se.name)}>
+                      {loading[se.id + "_csv"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Sheet className="h-4 w-4 mr-1.5" />}
                       Google Sheets
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_blank"]}
-                      onClick={() => handleBlankTemplate(se.id, se.name)}
-                    >
-                      {loading[se.id + "_blank"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <FileDown className="h-4 w-4 mr-1.5" />
-                      )}
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_blank"]} onClick={() => handleBlankTemplate(se.id, se.name)}>
+                      {loading[se.id + "_blank"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <FileDown className="h-4 w-4 mr-1.5" />}
                       Blank Template
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_import"]}
-                      onClick={() => handleImportScores(se.id, se.name)}
-                    >
-                      {loading[se.id + "_import"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <Upload className="h-4 w-4 mr-1.5" />
-                      )}
-                      Import Scores
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_bulk"]}
-                      onClick={() => handleBulkImport(se.id, se.name)}
-                    >
-                      {loading[se.id + "_bulk"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <Files className="h-4 w-4 mr-1.5" />
-                      )}
-                      Bulk Import
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!!loading[se.id + "_template"]}
-                      onClick={() => handleExportTemplate(se.id, se.name)}
-                    >
-                      {loading[se.id + "_template"] ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      ) : (
-                        <ClipboardList className="h-4 w-4 mr-1.5" />
-                      )}
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_template"]} onClick={() => handleExportTemplate(se.id, se.name)}>
+                      {loading[se.id + "_template"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <ClipboardList className="h-4 w-4 mr-1.5" />}
                       Export Template
                     </Button>
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_import"]} onClick={() => handleImportScores(se.id, se.name)}>
+                      {loading[se.id + "_import"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Upload className="h-4 w-4 mr-1.5" />}
+                      Import Scores
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_bulk"]} onClick={() => handleBulkImport(se.id, se.name)}>
+                      {loading[se.id + "_bulk"] ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Files className="h-4 w-4 mr-1.5" />}
+                      Bulk Import
+                    </Button>
+                  </div>
+
+                  {/* Mobile: dropdown menu */}
+                  <div className="flex md:hidden gap-2">
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_preview"]} onClick={() => handlePreview(se.id, se.name)}>
+                      {loading[se.id + "_preview"] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={!!loading[se.id + "_xlsx"]} onClick={() => handleDownloadExcel(se.id, se.name)}>
+                      {loading[se.id + "_xlsx"] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleDownloadCSV(se.id, se.name)} disabled={!!loading[se.id + "_csv"]}>
+                          <Sheet className="h-4 w-4 mr-2" /> Google Sheets
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBlankTemplate(se.id, se.name)} disabled={!!loading[se.id + "_blank"]}>
+                          <FileDown className="h-4 w-4 mr-2" /> Blank Template
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExportTemplate(se.id, se.name)} disabled={!!loading[se.id + "_template"]}>
+                          <ClipboardList className="h-4 w-4 mr-2" /> Export Template
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleImportScores(se.id, se.name)} disabled={!!loading[se.id + "_import"]}>
+                          <Upload className="h-4 w-4 mr-2" /> Import Scores
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkImport(se.id, se.name)} disabled={!!loading[se.id + "_bulk"]}>
+                          <Files className="h-4 w-4 mr-2" /> Bulk Import
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
