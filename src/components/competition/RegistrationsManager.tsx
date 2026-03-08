@@ -830,6 +830,11 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onSelect={setSelectedReg}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onStatusChange={(id, status) => {
+                      updateReg.mutate({ id, status } as any, {
+                        onSuccess: () => sendNotification(id, status),
+                      });
+                    }}
                     onMoveUp={handleMoveUp}
                     onMoveDown={handleMoveDown}
                     onInlineNameSave={handleInlineNameSave}
