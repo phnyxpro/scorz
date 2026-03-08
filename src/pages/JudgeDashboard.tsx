@@ -213,3 +213,100 @@ function SubEventCard({ subEvent, competitionId, isChief }: { subEvent: any, com
         </Card>
     );
 }
+
+function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function PenaltiesOverview({ competitionId }: { competitionId: string }) {
+    const { data: rules } = usePenaltyRules(competitionId);
+    const { data: infractions } = useInfractions(competitionId);
+
+    const penalties = infractions?.filter(i => i.category === "penalty") || [];
+    const disqualifications = infractions?.filter(i => i.category === "disqualification") || [];
+    const hasContent = (rules && rules.length > 0) || penalties.length > 0 || disqualifications.length > 0;
+
+    if (!hasContent) return null;
+
+    return (
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full gap-2 text-xs">
+                    <AlertTriangle className="h-4 w-4" /> Penalties & Disqualifications
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-3 space-y-4">
+                {/* Time Penalties */}
+                {rules && rules.length > 0 && (
+                    <Card className="border-border/50 bg-card/80">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                                <Timer className="h-4 w-4 text-secondary" />
+                                <CardTitle className="text-sm">Time Penalties</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-1.5">
+                            {rules.map((r) => (
+                                <div key={r.id} className="flex items-center gap-2 text-sm bg-muted/30 rounded-md px-3 py-1.5">
+                                    <Timer className="h-3 w-3 text-muted-foreground shrink-0" />
+                                    <span className="font-mono text-foreground">
+                                        {formatTime(r.from_seconds)} {r.to_seconds ? `→ ${formatTime(r.to_seconds)}` : "+"}
+                                    </span>
+                                    <span className="text-destructive font-bold">−{r.penalty_points}pts</span>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* General Penalties */}
+                {penalties.length > 0 && (
+                    <Card className="border-border/50 bg-card/80">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-secondary" />
+                                <CardTitle className="text-sm">General Penalties</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-1.5">
+                            {penalties.map((p) => (
+                                <div key={p.id} className="bg-muted/30 rounded-md px-3 py-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-foreground">{p.title}</span>
+                                        <Badge variant="destructive" className="font-mono text-[10px]">−{p.penalty_points}pts</Badge>
+                                    </div>
+                                    {p.description && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Disqualifications */}
+                {disqualifications.length > 0 && (
+                    <Card className="border-border/50 bg-card/80">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                                <Ban className="h-4 w-4 text-destructive" />
+                                <CardTitle className="text-sm">Disqualification Rules</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-1.5">
+                            {disqualifications.map((d) => (
+                                <div key={d.id} className="bg-muted/30 rounded-md px-3 py-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-foreground">{d.title}</span>
+                                        <Badge variant="destructive" className="text-[10px]">DQ</Badge>
+                                    </div>
+                                    {d.description && <p className="text-xs text-muted-foreground mt-0.5">{d.description}</p>}
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
