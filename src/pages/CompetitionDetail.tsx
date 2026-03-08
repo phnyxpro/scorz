@@ -369,13 +369,15 @@ export default function CompetitionDetail() {
               {/* Social Links */}
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Social Media Links</label>
-                {["facebook", "instagram", "x", "youtube", "tiktok"].map(platform => (
-                  <Input
-                    key={platform}
-                    placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-                    value={socialLinks[platform] || ""}
-                    onChange={e => updateSocial(platform, e.target.value)}
-                  />
+              {["facebook", "instagram", "x", "youtube", "tiktok"].map(platform => (
+                  <div key={platform} className="space-y-1">
+                    <label className="text-xs text-muted-foreground capitalize">{platform === "x" ? "X (Twitter)" : platform}</label>
+                    <Input
+                      placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
+                      value={socialLinks[platform] || ""}
+                      onChange={e => updateSocial(platform, e.target.value)}
+                    />
+                  </div>
                 ))}
               </div>
 
