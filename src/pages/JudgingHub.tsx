@@ -18,84 +18,11 @@ import { Input } from "@/components/ui/input";
 import { ClipboardList, ChevronRight, ChevronDown, Trophy, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
-import type { JudgeScore } from "@/hooks/useJudgeScores";
+
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
-
-/** Fetch levels + sub-events + assignments + profiles for a competition in one go */
-function useJudgingOverview(competitionId: string | undefined) {
-  return useQuery({
-    queryKey: ["judging_overview", competitionId],
-    enabled: !!competitionId,
-    queryFn: async () => {
-      const { data: levels, error: le } = await supabase
-        .from("competition_levels")
-        .select("*")
-        .eq("competition_id", competitionId!)
-        .order("sort_order");
-      if (le) throw le;
-
-      const levelIds = (levels || []).map((l) => l.id);
-      if (!levelIds.length) return { levels: [], subEvents: [], assignments: [], profiles: [], registrations: [], scores: [] as JudgeScore[], rubric: [] };
-
-      const { data: subEvents, error: se } = await supabase
-        .from("sub_events")
-        .select("*")
-        .in("level_id", levelIds)
-        .order("event_date");
-      if (se) throw se;
-
-      const subEventIds = (subEvents || []).map((s) => s.id);
-
-      const { data: assignments, error: ae } = subEventIds.length
-        ? await supabase
-            .from("sub_event_assignments")
-            .select("*")
-            .in("sub_event_id", subEventIds)
-            .eq("role", "judge" as any)
-        : { data: [] as any[], error: null };
-      if (ae) throw ae;
-
-      const { data: registrations, error: re } = subEventIds.length
-        ? await supabase
-            .from("contestant_registrations")
-            .select("id, full_name, sub_event_id, status, competition_id, user_id")
-            .eq("competition_id", competitionId!)
-            .neq("status", "rejected")
-        : { data: [] as any[], error: null };
-      if (re) throw re;
-
-      const userIds = [...new Set((assignments || []).map((a: any) => a.user_id))];
-      const { data: profiles, error: pe } = userIds.length
-        ? await supabase.from("profiles").select("user_id, full_name, email").in("user_id", userIds)
-        : { data: [] as any[], error: null };
-      if (pe) throw pe;
-
-      const { data: scores, error: sce } = subEventIds.length
-        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds)
-        : { data: [] as any[], error: null };
-      if (sce) throw sce;
-
-      const { data: rubric, error: rce } = await supabase
-        .from("rubric_criteria")
-        .select("*")
-        .eq("competition_id", competitionId!)
-        .order("sort_order");
-      if (rce) throw rce;
-
-      return {
-        levels: levels || [],
-        subEvents: subEvents || [],
-        assignments: assignments || [],
-        profiles: profiles || [],
-        registrations: registrations || [],
-        scores: (scores || []) as JudgeScore[],
-        rubric: rubric || [],
-      };
-    },
-  });
-}
+import { useJudgingOverview } from "@/hooks/useJudgingOverview";
 
 export function JudgingHubContent() {
   const { hasRole } = useAuth();
