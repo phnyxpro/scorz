@@ -25,7 +25,7 @@ export function useLatestTimerEvent(subEventId: string | undefined) {
   return useQuery({
     queryKey: ["timer_events_latest", subEventId],
     enabled: !!subEventId,
-    refetchInterval: 1000, // poll every second for near-realtime
+    refetchInterval: 10_000, // fallback poll; primary updates via useTimerEventsRealtime
     queryFn: async () => {
       const { data, error } = await supabase
         .from("performance_timer_events")

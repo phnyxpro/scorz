@@ -148,7 +148,7 @@ export function ScoreSummaryTable({ scoresByContestant, contestantName, contesta
                   ))}
                   <TableCell className="text-center font-mono text-xs">{formatDuration(r.avgDuration)}</TableCell>
                   <TableCell className="text-center font-mono text-xs text-destructive">
-                    {r.avgPenalty > 0 ? `-${r.avgPenalty.toFixed(1)}` : "0"}
+                    {r.avgPenalty > 0 ? `-${r.avgPenalty.toFixed(2)}` : "0"}
                   </TableCell>
                   <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
                   <TableCell className="text-center">

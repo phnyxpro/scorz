@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { friendlyDisplayName } from "@/lib/utils";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { useParams, Link } from "react-router-dom";
@@ -87,7 +87,7 @@ function useJudgingOverview(competitionId: string | undefined) {
       if (pe) throw pe;
 
       const { data: scores, error: sce } = subEventIds.length
-        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds)
+        ? await supabase.from("judge_scores").select("*").in("sub_event_id", subEventIds).limit(5000)
         : { data: [] as any[], error: null };
       if (sce) throw sce;
 
@@ -167,10 +167,13 @@ function SubEventWorkspace({
     return m;
   }, [staffNameMap]);
 
-  const contestantName = (regId: string) =>
-    registrations.find((r: any) => r.id === regId)?.full_name ?? "Unknown";
-  const contestantUserId = (regId: string) =>
-    registrations.find((r: any) => r.id === regId)?.user_id;
+  const contestantMap = useMemo(() => {
+    const m = new Map<string, any>();
+    registrations.forEach((r: any) => m.set(r.id, r));
+    return m;
+  }, [registrations]);
+  const contestantName = (regId: string) => contestantMap.get(regId)?.full_name ?? "Unknown";
+  const contestantUserId = (regId: string) => contestantMap.get(regId)?.user_id;
 
   /* ── Tabulator certification ── */
   const handleInitTabCertify = async () => {
@@ -691,9 +694,9 @@ export default function TabulatorDashboard() {
                                                   const cScores = seScores.filter((s) => s.contestant_registration_id === c.id);
                                                   const toggleKey = `${se.id}-${c.id}`;
                                                   const isExpanded = expandedContestant === toggleKey;
-                                                  return (
-                                                    <>
-                                                      <TableRow key={c.id} className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
+                                                    return (
+                                                     <Fragment key={c.id}>
+                                                       <TableRow className={`cursor-pointer transition-colors ${onStageContestantId === c.id ? "bg-secondary/15 border-l-2 border-l-secondary" : "hover:bg-muted/50"}`}
                                                         onClick={() => setExpandedContestant(isExpanded ? null : toggleKey)}>
                                                         <TableCell className="font-mono text-muted-foreground text-xs">{globalIdx + 1}</TableCell>
                                                         <TableCell className="font-medium text-sm">
@@ -729,7 +732,7 @@ export default function TabulatorDashboard() {
                                                           </TableCell>
                                                         </TableRow>
                                                       )}
-                                                    </>
+                                                     </Fragment>
                                                   );
                                                 })}
                                               </TableBody>

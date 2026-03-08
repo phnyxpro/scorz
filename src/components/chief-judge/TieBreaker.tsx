@@ -59,7 +59,7 @@ export function TieBreaker({ ties, contestantName, rubric, isCertified, certific
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">
-                Tie at {group[0].avg.toFixed(1)} points
+                Tie at {group[0].avg.toFixed(2)} points
               </span>
             </div>
             <div className="flex flex-wrap gap-2">

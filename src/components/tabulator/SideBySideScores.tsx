@@ -69,7 +69,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                       {mapped[n] != null ? mapped[n] : "—"}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(1)}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(2)}</TableCell>
                   <TableCell className="text-center font-mono text-xs text-destructive">
                     {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                   </TableCell>
@@ -108,7 +108,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
               </TableCell>
               <TableCell className="text-center font-mono text-xs text-destructive">
                 {scores.length > 0
-                  ? (scores.reduce((a, s) => a + s.time_penalty, 0) / scores.length).toFixed(1)
+                  ? (scores.reduce((a, s) => a + s.time_penalty, 0) / scores.length).toFixed(2)
                   : "—"}
               </TableCell>
               <TableCell className="text-center font-mono font-bold">
