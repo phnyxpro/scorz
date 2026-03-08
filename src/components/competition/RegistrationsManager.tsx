@@ -573,6 +573,52 @@ export function RegistrationsManager({ competitionId }: Props) {
       await supabase.from("contestant_registrations").update({ sort_order: u.sort_order } as any).eq("id", u.id);
     }
     qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["judging_overview"] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleMoveUp = async (regId: string) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx <= 0) return;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(idx - 1, 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleMoveDown = async (regId: string) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx < 0 || idx >= filtered.length - 1) return;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(idx + 1, 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+  };
+
+  const handleInlineNameSave = (regId: string, newName: string) => {
+    updateReg.mutate({ id: regId, full_name: newName } as any);
+  };
+
+  const handleInlineNumberSave = async (regId: string, newPosition: number) => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx < 0) return;
+    const targetIdx = newPosition - 1;
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(Math.min(targetIdx, reordered.length), 0, moved);
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase.from("contestant_registrations").update({ sort_order: i } as any).eq("id", reordered[i].id);
+    }
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+    qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
   };
 
   const sendNotification = async (registrationId: string, status: string) => {
