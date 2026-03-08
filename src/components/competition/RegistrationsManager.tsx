@@ -320,7 +320,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           </PopoverTrigger>
           <PopoverContent className="w-36 p-1" align="start">
             <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Change status</p>
-            {["approved", "pending", "rejected"].map(s => (
+            {ALL_STATUSES.map(s => (
               <button
                 key={s}
                 disabled={s === reg.status}
