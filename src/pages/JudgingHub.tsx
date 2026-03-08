@@ -199,7 +199,19 @@ export function JudgingHubContent() {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue={overview.levels[0]?.id} className="w-full">
+            <Tabs value={selectedLevelTab || overview.levels[0]?.id} onValueChange={setSelectedLevelTab} className="w-full">
+              {isMobile ? (
+                <Select value={selectedLevelTab || overview.levels[0]?.id} onValueChange={setSelectedLevelTab}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {overview.levels.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>{level.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
               <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
                 {overview.levels.map((level) => (
                   <TabsTrigger key={level.id} value={level.id} className="text-xs sm:text-sm flex-1 min-w-[80px]">
@@ -207,6 +219,7 @@ export function JudgingHubContent() {
                   </TabsTrigger>
                 ))}
               </TabsList>
+              )}
 
               {overview.levels.map((level) => {
                 const levelSubEvents = overview.subEvents.filter((se) => se.level_id === level.id);
