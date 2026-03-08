@@ -114,6 +114,16 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     }
   };
 
+  const catKeys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = catKeys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < catKeys.length ? catKeys[next] : prev;
+    });
+  }, [catKeys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
   if (!allSubEvents || !levels) {
     return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
   }
@@ -126,16 +136,6 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   })).filter(group => group.subEvents.length > 0);
 
   const ActiveIcon = categories[activeCategory].icon;
-
-  const catKeys = Object.keys(categories) as Category[];
-  const swipeNav = useCallback((dir: 1 | -1) => {
-    setActiveCategory(prev => {
-      const i = catKeys.indexOf(prev);
-      const next = i + dir;
-      return next >= 0 && next < catKeys.length ? catKeys[next] : prev;
-    });
-  }, [catKeys]);
-  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
     <div className="space-y-4">
