@@ -260,6 +260,7 @@ export function ScoreSheetDownloads({ competitionId, levels, subEvents }: ScoreS
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [importTarget, setImportTarget] = useState<{ subEventId: string; subEventName: string; data: FetchedData } | null>(null);
+  const [bulkImportTarget, setBulkImportTarget] = useState<{ subEventId: string; subEventName: string; data: FetchedData } | null>(null);
   const subEventsByLevel = levels
     .map((level) => ({
       level,
