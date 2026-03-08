@@ -728,6 +728,51 @@ export default function JudgeScoring() {
         </DialogContent>
       </Dialog>
 
+      {/* Certify Batch Dialog */}
+      <Dialog open={showCertifyBatchDialog} onOpenChange={(open) => { setShowCertifyBatchDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Certify Selected Scorecards</DialogTitle>
+            <DialogDescription>
+              Sign once to certify {selectedForBatch.size} selected scorecard(s). This action is irreversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground">
+                By signing, you confirm that the scores for the selected contestants are accurate and final.
+              </p>
+            </div>
+            <div className="rounded-md border border-border/50 p-2 max-h-32 overflow-y-auto">
+              <ul className="space-y-0.5">
+                {filteredContestants.filter(r => selectedForBatch.has(r.id)).map(r => (
+                  <li key={r.id} className="text-xs text-foreground flex items-center gap-1.5">
+                    <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {r.full_name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-batch-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-batch-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed the scores for the selected contestants and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
+            <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
+            <Button onClick={handleCertifyBatch} disabled={!signature || !certifyConfirmed || certifyAllPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" />
+              {certifyAllPending ? "Certifying…" : `Certify ${selectedForBatch.size} Scorecard(s)`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Event Chat Modal */}
       <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
         <DialogContent className="max-w-lg p-0 overflow-hidden">
