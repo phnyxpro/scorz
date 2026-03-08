@@ -46,26 +46,28 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
   return (
     <div className="space-y-3">
       {/* Category pill bar */}
-      <div className="flex flex-wrap gap-2">
-        {availableCategories.map((key) => {
-          const cat = categories[key];
-          const Icon = cat.icon;
-          const isActive = activeCategory === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          );
-        })}
+      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+        <div className="flex gap-2 min-w-max">
+          {availableCategories.map((key) => {
+            const cat = categories[key];
+            const Icon = cat.icon;
+            const isActive = activeCategory === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCategory(key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium border transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Active category card */}
