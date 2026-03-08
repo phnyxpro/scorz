@@ -49,6 +49,8 @@ export default function GlobalSettingsPanel() {
     setSaving(false);
   };
 
+  const [seeding, setSeeding] = useState(false);
+
   if (loading) {
     return <div className="p-8 text-center text-sm text-muted-foreground animate-pulse font-mono">Loading settings…</div>;
   }
@@ -57,8 +59,6 @@ export default function GlobalSettingsPanel() {
   const regDefaults = settings.registration_defaults || {};
   const emailNotifs = settings.email_notifications || {};
   const featureFlags = settings.feature_flags || {};
-
-  const [seeding, setSeeding] = useState(false);
 
   const handleSeedDemo = async () => {
     setSeeding(true);
