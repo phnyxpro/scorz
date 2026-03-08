@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Settings, FileText } from "lucide-react";
@@ -21,6 +22,15 @@ interface Props {
 export function RegistrationsPillLayout({ competitionId }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category>("contestants");
   const ActiveIcon = categories[activeCategory].icon;
+  const keys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = keys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < keys.length ? keys[next] : prev;
+    });
+  }, [keys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
     <div className="space-y-4">
@@ -51,12 +61,14 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
 
       {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
       {activeCategory === "contestants" && (
-        <RegistrationsManager competitionId={competitionId} />
+        <div {...swipeHandlers}>
+          <RegistrationsManager competitionId={competitionId} />
+        </div>
       )}
 
       {/* Settings & Forms — wrapped in the pill card pattern */}
       {activeCategory === "settings" && (
-        <Card className="rounded-xl border-border/50 bg-card/80">
+        <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
           <CardContent className="p-3 sm:p-5 space-y-4">
             <div className="space-y-2">
               <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
@@ -71,7 +83,7 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
       )}
 
       {activeCategory === "forms" && (
-        <Card className="rounded-xl border-border/50 bg-card/80">
+        <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
           <CardContent className="p-3 sm:p-5 space-y-4">
             <div className="space-y-2">
               <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">

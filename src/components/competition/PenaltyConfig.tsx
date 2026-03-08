@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { usePenaltyRules, useCreatePenaltyRule, useDeletePenaltyRule, useInfractions, useCreateInfraction, useDeleteInfraction } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,16 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
 
   const ActiveIcon = categories[activeCategory].icon;
 
+  const keys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = keys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < keys.length ? keys[next] : prev;
+    });
+  }, [keys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
   return (
     <div className="space-y-4">
       {/* Category pill bar */}
@@ -127,7 +138,7 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
       </div>
 
       {/* Active category card */}
-      <Card className="rounded-xl border-border/50 bg-card/80">
+      <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
           {/* Title pill */}
           <div className="space-y-2">

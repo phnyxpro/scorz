@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +30,21 @@ export default function PenaltiesPage() {
 
   const [activeCategory, setActiveCategory] = useState<Category>("time");
   const ActiveIcon = categories[activeCategory].icon;
+  const catKeys = Object.keys(categories) as Category[];
+  const availableKeys = catKeys.filter(k => {
+    if (k === "time") return penalties && penalties.length > 0;
+    if (k === "general") return (infractions?.filter(i => i.category === "penalty") || []).length > 0;
+    if (k === "dq") return (infractions?.filter(i => i.category === "disqualification") || []).length > 0;
+    return false;
+  });
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = availableKeys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < availableKeys.length ? availableKeys[next] : prev;
+    });
+  }, [availableKeys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -83,7 +99,7 @@ export default function PenaltiesPage() {
               </div>
 
               {/* Active category card */}
-              <Card className="rounded-xl border-border/50 bg-card/80">
+              <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
                 <CardContent className="p-3 sm:p-5 space-y-4">
                   <div className="space-y-2">
                     <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">

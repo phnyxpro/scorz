@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,20 +29,27 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
 
   const [activeCategory, setActiveCategory] = useState<Category>("time");
 
-  if (isLoading) return <Skeleton className="h-48 w-full" />;
-
-  const hasPenalties = (penalties && penalties.length > 0) || generalPenalties.length > 0 || disqualifications.length > 0;
-  if (!hasPenalties) return null;
-
-  const ActiveIcon = categories[activeCategory].icon;
-
-  // Determine available categories
   const availableCategories = (Object.keys(categories) as Category[]).filter((key) => {
     if (key === "time") return penalties && penalties.length > 0;
     if (key === "general") return generalPenalties.length > 0;
     if (key === "dq") return disqualifications.length > 0;
     return false;
   });
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = availableCategories.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < availableCategories.length ? availableCategories[next] : prev;
+    });
+  }, [availableCategories]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
+  if (isLoading) return <Skeleton className="h-48 w-full" />;
+
+  const hasPenalties = (penalties && penalties.length > 0) || generalPenalties.length > 0 || disqualifications.length > 0;
+  if (!hasPenalties) return null;
+
+  const ActiveIcon = categories[activeCategory].icon;
 
   return (
     <div className="space-y-3">
@@ -71,7 +79,7 @@ export function PenaltiesCard({ competitionId }: PenaltiesCardProps) {
       </div>
 
       {/* Active category card */}
-      <Card className="rounded-xl border-border/50 bg-card/80">
+      <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
           <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
             <ActiveIcon className="h-3.5 w-3.5" />

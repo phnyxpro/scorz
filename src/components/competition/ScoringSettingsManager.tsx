@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useAllSubEvents, useLevels, useCompetition } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,6 +114,16 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     }
   };
 
+  const catKeys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = catKeys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < catKeys.length ? catKeys[next] : prev;
+    });
+  }, [catKeys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
   if (!allSubEvents || !levels) {
     return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
   }
@@ -154,7 +165,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       </div>
 
       {/* Active category card */}
-      <Card className="rounded-xl border-border/50 bg-card/80">
+      <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
           <div className="space-y-2">
             <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
