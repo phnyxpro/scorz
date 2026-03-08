@@ -539,7 +539,7 @@ export default function TabulatorDashboard() {
 
       {/* Loading */}
       {selectedCompId && overviewLoading && (
-        <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading levels…</div>
+        <CardGridSkeleton cards={2} />
       )}
 
       {/* Level tabs + sub-event cards */}
