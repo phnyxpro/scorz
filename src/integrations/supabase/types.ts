@@ -1313,6 +1313,7 @@ export type Database = {
           invited_at: string | null
           invited_by: string
           is_chief: boolean
+          is_production_assistant: boolean
           name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
@@ -1327,6 +1328,7 @@ export type Database = {
           invited_at?: string | null
           invited_by: string
           is_chief?: boolean
+          is_production_assistant?: boolean
           name?: string | null
           phone?: string | null
           role: Database["public"]["Enums"]["app_role"]
@@ -1341,6 +1343,7 @@ export type Database = {
           invited_at?: string | null
           invited_by?: string
           is_chief?: boolean
+          is_production_assistant?: boolean
           name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
@@ -1368,6 +1371,7 @@ export type Database = {
           created_at: string
           id: string
           is_chief: boolean
+          is_production_assistant: boolean
           role: Database["public"]["Enums"]["app_role"]
           sub_event_id: string
           user_id: string
@@ -1376,6 +1380,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_chief?: boolean
+          is_production_assistant?: boolean
           role: Database["public"]["Enums"]["app_role"]
           sub_event_id: string
           user_id: string
@@ -1384,6 +1389,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_chief?: boolean
+          is_production_assistant?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           sub_event_id?: string
           user_id?: string
@@ -1681,6 +1687,7 @@ export type Database = {
           competition_slug: string
           competition_status: string
           is_chief: boolean
+          is_production_assistant: boolean
           level_id: string
           level_name: string
           sub_event_id: string
