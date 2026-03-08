@@ -8,10 +8,27 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 const SPECIAL_ENTRY_PRESETS = [
   { type: "previous_winner", label: "Previous Winners", icon: Trophy },
