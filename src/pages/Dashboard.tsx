@@ -288,7 +288,10 @@ export default function Dashboard() {
       {!isTabulator && (
         <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+              <ConnectionIndicator />
+            </div>
             <p className="text-muted-foreground text-sm mt-1">
               Welcome back{isMasquerading && masquerade?.fullName ? `, ${masquerade.fullName}` : user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : user?.email ? `, ${user.email}` : ""}
             </p>
