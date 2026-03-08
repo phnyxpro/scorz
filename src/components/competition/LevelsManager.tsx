@@ -138,6 +138,10 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
     setVotingEnabled(e.voting_enabled || false);
+    setTicketingType(e.ticketing_type || "free");
+    setTicketPrice(e.ticket_price?.toString() || "");
+    setMaxTickets(e.max_tickets?.toString() || "");
+    setExternalTicketUrl(e.external_ticket_url || "");
     setModalOpen(true);
   };
 
