@@ -840,11 +840,22 @@ export function RegistrationsManager({ competitionId }: Props) {
           </Table>
         </DndContext>
       </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-xs text-muted-foreground">
-            Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLen)} of {filteredLen}
-          </p>
+      <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLen)} of {filteredLen}
+            </p>
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="h-7 w-[80px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[20, 50, 100].map(n => (
+                  <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
