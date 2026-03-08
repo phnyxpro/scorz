@@ -1043,10 +1043,10 @@ export function RegistrationsManager({ competitionId }: Props) {
             {allSubEvents && allSubEvents.length > 0 && (
               <div>
                 <Label className="text-xs text-muted-foreground">Assign to Event</Label>
-                <Select value={walkInSubEvent} onValueChange={setWalkInSubEvent}>
+               <Select value={walkInSubEvent || "none"} onValueChange={(v) => setWalkInSubEvent(v === "none" ? "" : v)}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Select event (optional)" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No event</SelectItem>
+                    <SelectItem value="none">No event</SelectItem>
                     {allSubEvents.map(se => (
                       <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>
                     ))}
