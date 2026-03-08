@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { formatRoleName } from "@/lib/utils";
 import { TableSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,10 +17,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Constants } from "@/integrations/supabase/types";
-import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Eye } from "lucide-react";
+import { Shield, Search, UserPlus, X, RefreshCw, ShieldAlert, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ALL_ROLES = Constants.public.Enums.app_role;
+const PAGE_SIZE = 20;
 
 const roleBadgeColor: Record<string, string> = {
   admin: "bg-destructive/15 text-destructive border-destructive/30",
@@ -97,6 +98,8 @@ export default function AdminUsers() {
   const { hasRole, startMasquerade } = useAuth();
   const { users, loading, refetch, assignRole, revokeRole } = useAdminUsers();
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [manageUser, setManageUser] = useState<AdminUser | null>(null);
 
   if (!hasRole("admin")) {
@@ -110,8 +113,14 @@ export default function AdminUsers() {
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
-    return !q || u.email?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q) || u.roles.some((r) => r.includes(q));
+    const matchesSearch = !q || u.email?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q) || u.roles.some((r) => r.includes(q));
+    const matchesRole = !roleFilter || u.roles.includes(roleFilter as any);
+    return matchesSearch && matchesRole;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div>
@@ -127,11 +136,22 @@ export default function AdminUsers() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-base font-mono">All Users ({filtered.length})</CardTitle>
-            <div className="flex gap-2 w-full sm:max-w-xs">
+            <div className="flex gap-2 w-full sm:max-w-md">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+                <Input placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9 h-9 text-sm" />
               </div>
+              <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v === "all" ? "" : v); setPage(1); }}>
+                <SelectTrigger className="w-32 h-9 text-xs">
+                  <SelectValue placeholder="All roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All roles</SelectItem>
+                  {ALL_ROLES.map((r) => (
+                    <SelectItem key={r} value={r} className="text-xs">{formatRoleName(r)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="sm" onClick={refetch} disabled={loading} className="h-9">
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </Button>
@@ -152,12 +172,12 @@ export default function AdminUsers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 && (
+                {paginated.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">No users found.</TableCell>
                   </TableRow>
                 )}
-                {filtered.map((u) => (
+                {paginated.map((u) => (
                   <motion.tr key={u.user_id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b transition-colors hover:bg-muted/50">
                     <TableCell className="text-sm font-medium">
                       {u.full_name || <span className="text-muted-foreground italic">Unnamed</span>}
@@ -213,6 +233,21 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <span className="text-sm text-muted-foreground font-mono">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
