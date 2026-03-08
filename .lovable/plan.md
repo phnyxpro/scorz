@@ -1,47 +1,76 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Evaluation: Platform Admin Dashboard
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Current State
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+The admin experience is split across:
+- **Dashboard** (`/dashboard`) — 4 KPI cards (Users, Competitions, Active Events, Registrations), 30-day trend charts (registrations & scoring), quick access to recent competitions, activity feed, and action cards linking to sub-pages
+- **User Management** (`/admin/users`) — searchable user table with role management dialog and masquerade
+- **Global Settings** (`/admin/settings`) — branding, registration defaults, email notifications, feature flags, demo data seeding
+- **Audit Logs** (`/admin/logs`) — ActivityFeed component with 200-item limit, realtime updates
+- **Billing** (`/admin/billing`) — credit-based tier cards with Stripe checkout, credits summary
+- **Analytics** (`/analytics`) — competition-filterable charts (registrations, scores, status pie, age categories)
+- **Finance** (`/finance`) — revenue metrics with hardcoded placeholder stats ("Active Events: +12", "Conversion Rate: 89%", "+20.1% from last month")
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Issues Found
 
----
+1. **Finance Dashboard has hardcoded fake metrics** — "Active Events: +12", "Conversion Rate: 89%", "+20.1% from last month" are static strings, not computed from data. This is misleading.
 
-### Fix 1: Conditionally apply auditorium filter
+2. **Finance Dashboard references non-existent `registration_fee` column** — `competitions` table has no `registration_fee` field, so `totalRevenue` is always $0. The finance page queries a column that doesn't exist, silently failing.
 
-**File: `src/contexts/ThemeContext.tsx`**
+3. **Activity Feed limited event types** — Only maps icons for 5 event types (`scores_certified`, `chief_certified`, `tabulator_certified`, `witness_certified`, `notification_sent`). Other logged events (registrations, staff logins, etc.) get a generic icon. Should cover more event types.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+4. **Audit Logs page is bare** — No filtering by event type, competition, date range, or actor. Just a long scrollable list. For 200+ entries this becomes unusable.
 
-### Fix 2: Remove filter class when at defaults
+5. **No admin notification/alert system on dashboard** — No pending items panel (e.g., pending registrations count, uncertified sub-events, recent errors). Admins have to navigate to each section to discover issues.
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+6. **Analytics and Dashboard charts overlap** — Both the Dashboard and Analytics page show registration trends independently with different implementations, creating redundancy.
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+7. **User Management lacks pagination** — Fetches all profiles at once. Will degrade with scale.
 
-### Fix 3: Update CSS to use filter only when properties exist
+8. **No export capability on admin pages** — Users table, audit logs, and analytics have no CSV/Excel export option.
 
-**File: `src/index.css`**
+### Recommended Improvements
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+**Priority 1 — Fix Finance Dashboard (broken)**
+- Remove hardcoded placeholder metrics
+- Replace `registration_fee` query with actual ticket revenue from `event_tickets` (paid tickets) and `competition_credits` (credit purchases)
+- Compute real "Active Events" count and remove fake percentage changes
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
+**Priority 2 — Enhance Audit Logs**
+- Add filters: event type dropdown, date range picker, competition selector, search by description
+- Add pagination or infinite scroll
+- Expand icon/color mapping to cover all logged event types (registration, staff login, etc.)
 
-This ensures no filter is applied when properties are unset, which is the default state.
+**Priority 3 — Admin Dashboard Alerts Panel**
+- Add a "Needs Attention" section showing: pending registrations count, uncertified sub-events, recent failed edge function invocations
+- Link each alert to the relevant management page
 
----
+**Priority 4 — User Management Improvements**
+- Add role filter dropdown (show only judges, only admins, etc.)
+- Add pagination (20 users per page)
+- Add CSV export of user list
 
-### Summary
+**Priority 5 — Consolidate Analytics**
+- Remove duplicate trend charts from Dashboard (keep the compact KPI cards)
+- Make Analytics the single source for detailed charts
+- Add ticket revenue chart to Analytics
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Proposed Implementation
+
+| File | Change |
+|---|---|
+| `src/pages/FinanceDashboard.tsx` | Replace fake metrics with real queries against `event_tickets` and `competition_credits`; remove hardcoded strings |
+| `src/pages/AdminLogs.tsx` | Add event type filter, date range picker, competition filter, search input |
+| `src/components/shared/ActivityFeed.tsx` | Expand event type icon/color map; accept filter props |
+| `src/pages/AdminUsers.tsx` | Add role filter dropdown and basic pagination |
+| `src/pages/Dashboard.tsx` | Add "Needs Attention" alerts panel for admins |
+
+### Files Modified
+- `src/pages/FinanceDashboard.tsx`
+- `src/pages/AdminLogs.tsx`
+- `src/components/shared/ActivityFeed.tsx`
+- `src/pages/AdminUsers.tsx`
+- `src/pages/Dashboard.tsx`
 
