@@ -118,6 +118,10 @@ const FAQ = [
     a: "Yes. Each purchase unlocks one competition at the selected tier. You can buy as many credits as you need, and they never expire.",
   },
   {
+    q: "What's included in the Full-Service Package?",
+    a: "Our Full-Service Package covers everything from start to finish. On the adjudication side: judge recruitment and training, custom rubric design consultation, chief judge coordination, real-time scoring oversight, and results certification. On the production side: complete event setup on the Scorz platform, contestant registration management, scheduling and slot coordination, branding and sponsor configuration, on-the-day technical support, and post-event reporting and analytics. Pricing is custom-quoted based on your event's size and requirements — request a free discovery meeting above to get started.",
+  },
+  {
     q: "What if I need a custom solution?",
     a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organisation's needs, including white-label options, API access, and dedicated support.",
   },
