@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     await supabase
       .from("profiles")
       .update({ welcome_email_sent: true } as any)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     const emailRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
