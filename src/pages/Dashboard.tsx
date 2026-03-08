@@ -420,9 +420,9 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                     You haven't registered for any competitions yet. Browse upcoming events and sign up to showcase your talent.
                   </p>
-                  <Link to="/events">
-                    <Button size="sm" className="gap-2">
-                      <Trophy className="h-4 w-4" /> Browse Competitions
+                   <Link to="/public-events">
+                     <Button size="sm" className="gap-2">
+                       <Trophy className="h-4 w-4" /> Browse Competitions
                     </Button>
                   </Link>
                 </CardContent>
@@ -442,9 +442,9 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                     Discover live competitions, grab tickets, and vote for your favourite contestants.
                   </p>
-                  <Link to="/events">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Calendar className="h-4 w-4" /> Explore Events
+                   <Link to="/public-events">
+                     <Button variant="outline" size="sm" className="gap-2">
+                       <Calendar className="h-4 w-4" /> Explore Events
                     </Button>
                   </Link>
                 </CardContent>
@@ -461,9 +461,9 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Browse public events to register as a contestant or get audience tickets.
                 </p>
-                <Link to="/events">
-                  <Button variant="outline" size="sm">Browse Events</Button>
-                </Link>
+                 <Link to="/public-events">
+                   <Button variant="outline" size="sm">Browse Events</Button>
+                 </Link>
               </CardContent>
             </Card>
           )}

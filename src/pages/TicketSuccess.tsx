@@ -44,7 +44,7 @@ export default function TicketSuccess() {
             <>
               <p className="text-destructive font-medium">{error}</p>
               <Button asChild variant="outline">
-                <Link to="/events">Back to Events</Link>
+                <Link to="/public-events">Back to Events</Link>
               </Button>
             </>
           ) : (
@@ -57,7 +57,7 @@ export default function TicketSuccess() {
                 A confirmation email with your QR code has been sent. Save your ticket number for entry.
               </p>
               <Button asChild variant="outline">
-                <Link to="/events">Back to Events</Link>
+                <Link to="/public-events">Back to Events</Link>
               </Button>
             </>
           )}

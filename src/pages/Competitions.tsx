@@ -199,7 +199,7 @@ export default function Competitions() {
           <Lock className="h-4 w-4 text-accent" />
           <AlertDescription className="text-sm">
             You need an active subscription to create competitions.{" "}
-            <Link to="/admin" className="text-accent underline font-medium">Subscribe now</Link>
+            <Link to="/admin/billing" className="text-accent underline font-medium">Subscribe now</Link>
           </AlertDescription>
         </Alert>
       )}
@@ -208,7 +208,7 @@ export default function Competitions() {
         <Alert className="mb-4 border-secondary/30 bg-secondary/5">
           <AlertDescription className="text-sm">
             You have no competition credits remaining.{" "}
-            <Link to="/admin" className="text-secondary underline font-medium">Purchase more</Link>
+            <Link to="/admin/billing" className="text-secondary underline font-medium">Purchase more</Link>
           </AlertDescription>
         </Alert>
       )}

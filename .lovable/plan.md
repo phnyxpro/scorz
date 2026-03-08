@@ -1,41 +1,47 @@
 
 
-## Broken Links, Unbuilt Pages & Bad Redirects — Audit
+## Fix Blank Rendering in Browser Automation
 
-### Issues Found
+The app appears blank in headless browser testing due to two compounding issues:
 
-**1. `/events` — Dead link (no route exists)**
-- **Where used**: `Dashboard.tsx` (3 occurrences — contestant, audience, and generic empty states link to `/events`), `TicketSuccess.tsx` (2 occurrences — "Back to Events" buttons)
-- **Fix**: Change all `/events` links to `/public-events` (which is the actual route serving the public events listing)
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**2. `/admin` — Dead link (no route exists)**
-- **Where used**: `AppLayout.tsx` (admin shield button navigates to `/admin`), `Competitions.tsx` (2 occurrences — "Subscribe now" and "Purchase more" links)
-- **Fix**: Change `/admin` to `/admin/billing` in `Competitions.tsx` (subscription context) and `/admin/users` in `AppLayout.tsx` (general admin landing)
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**3. `WitnessDashboard` — Page exists but has no route**
-- `src/pages/WitnessDashboard.tsx` is built but never registered in `App.tsx`
-- **Fix**: Add route `/competitions/:id/witness` pointing to `WitnessDashboard`
+---
 
-**4. `AdminPanel.tsx` — Page exists but has no route**
-- `src/pages/AdminPanel.tsx` exists but is not imported or routed in `App.tsx`
-- **Fix**: Either add a route (e.g., `/admin`) or remove the dead page if functionality is covered by the split admin pages (`AdminUsers`, `AdminSettings`, `AdminBilling`, `AdminLogs`)
+### Fix 1: Conditionally apply auditorium filter
 
-### Summary of Changes
+**File: `src/contexts/ThemeContext.tsx`**
 
-| File | Change |
-|---|---|
-| `src/pages/Dashboard.tsx` | Replace 3x `to="/events"` → `to="/public-events"` |
-| `src/pages/TicketSuccess.tsx` | Replace 2x `to="/events"` → `to="/public-events"` |
-| `src/components/AppLayout.tsx` | Change `navigate("/admin")` → `navigate("/admin/users")` |
-| `src/pages/Competitions.tsx` | Change 2x `to="/admin"` → `to="/admin/billing"` |
-| `src/App.tsx` | Add lazy import for `WitnessDashboard` and route `/competitions/:id/witness` |
-| `src/pages/AdminPanel.tsx` | Remove file (dead code; split admin pages cover all functionality) |
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-### Files Modified
-- `src/pages/Dashboard.tsx`
-- `src/pages/TicketSuccess.tsx`
-- `src/components/AppLayout.tsx`
-- `src/pages/Competitions.tsx`
-- `src/App.tsx`
-- Delete `src/pages/AdminPanel.tsx`
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
