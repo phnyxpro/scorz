@@ -278,6 +278,9 @@ export default function Dashboard() {
     });
   }, [isJudgeRole, hasChiefForSelected, selectedCompId, roles]);
 
+  const [showChatModal, setShowChatModal] = useState(false);
+  const unreadCount = useChatUnreadCount(selectedCompId || "");
+
   return (
     <div>
       {!isTabulator && (
