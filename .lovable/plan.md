@@ -1,47 +1,46 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Contestant Profile Page with Status Actions
 
-The app appears blank in headless browser testing due to two compounding issues:
+### What We're Building
+A competition-scoped contestant profile page accessible when "Profile" is clicked from the Contestant Details sheet. It will include "No Show", "Disqualified", and "Drop Out" status buttons that update the registration status and delete associated judge scores and tabulator data.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Route & Navigation
+- New route: `/competitions/:id/contestant/:registrationId`
+- Update the "Profile" button in `ContestantDetailSheet.tsx` to link to this new route instead of `/profile/:userId`
+- New page: `src/pages/ContestantRegistrationProfile.tsx`
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Page Layout
+- Back button returning to competition
+- Hero section: avatar, name, status badge, age category, competition name
+- Contact info section (email, phone, location)
+- Bio, social handles, media gallery, compliance/signatures
+- **Status Actions Card** with three destructive buttons:
+  - **No Show** — sets status to `no_show`
+  - **Disqualified** — sets status to `disqualified`  
+  - **Drop Out** — sets status to `dropped_out`
+- Each button requires confirmation via AlertDialog
+- Only visible to admin/organizer roles
 
----
+### Backend: Status Change Logic
+- Create a database function `withdraw_contestant` (security definer) that:
+  1. Updates `contestant_registrations.status` to the new status
+  2. Deletes all `judge_scores` for that `contestant_registration_id`
+  3. Deletes all `performance_durations` for that `contestant_registration_id`
+  4. Deletes all `performance_timer_events` for that `contestant_registration_id`
+  5. Deletes all `audience_votes` for that `contestant_registration_id`
+  6. Deletes associated `performance_slots` assignments
+- The function checks the caller has admin/organizer role
 
-### Fix 1: Conditionally apply auditorium filter
+### Files to Create/Edit
+1. **New migration** — `withdraw_contestant` RPC function
+2. **New file** `src/pages/ContestantRegistrationProfile.tsx` — the profile page
+3. **Edit** `src/App.tsx` — add route
+4. **Edit** `src/components/competition/ContestantDetailSheet.tsx` — update Profile link to include competition context
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Technical Details
+- The page fetches registration by ID, competition details, media files
+- Status buttons call the `withdraw_contestant` RPC then invalidate queries
+- New statuses (`no_show`, `disqualified`, `dropped_out`) added to `statusColor` maps
+- A "Reinstate" button appears for withdrawn contestants to set status back to `approved`
 
