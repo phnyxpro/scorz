@@ -50,11 +50,11 @@ export default function AdminLogs() {
     },
   });
 
-  if (!hasRole("admin")) {
+  if (!hasRole("admin") && !hasRole("organizer")) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <ShieldAlert className="h-12 w-12" />
-        <p className="font-mono text-sm">Access denied. Admin role required.</p>
+        <p className="font-mono text-sm">Access denied. Admin or Organiser role required.</p>
       </div>
     );
   }
