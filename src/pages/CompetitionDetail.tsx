@@ -471,7 +471,7 @@ export default function CompetitionDetail() {
                 </div>
                 <CardDescription>Upload a rubric document (PDF, DOCX, TXT) or build scoring criteria below for judges to use during evaluation.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 p-3 sm:p-6">
                 <DocumentUpload
                   currentUrl={rubricDocumentUrl || null}
                   folder={`rubric/${id}`}
