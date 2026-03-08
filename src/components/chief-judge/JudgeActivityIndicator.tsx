@@ -1,12 +1,10 @@
 import { useMemo } from "react";
 import { useSubEventAssignments } from "@/hooks/useSubEventAssignments";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { PenLine, CheckCircle2, Clock } from "lucide-react";
-import { friendlyDisplayName } from "@/lib/utils";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 interface JudgeActivityIndicatorProps {
