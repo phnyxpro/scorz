@@ -169,6 +169,7 @@ function SlotPickerCell({ regId, subEventId, slot, allSlots, onAssign, onUpdate,
 interface SortableRowProps {
   reg: ContestantRegistration;
   idx: number;
+  totalCount: number;
   slot?: { id: string; start_time: string; end_time: string };
   allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
   onSlotAssign: (regId: string, slotId: string) => void;
@@ -177,10 +178,18 @@ interface SortableRowProps {
   onSelect: (reg: ContestantRegistration) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onMoveUp: (regId: string) => void;
+  onMoveDown: (regId: string) => void;
+  onInlineNameSave: (regId: string, newName: string) => void;
+  onInlineNumberSave: (regId: string, newPosition: number) => void;
 }
 
-function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject }: SortableRowProps) {
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(reg.full_name);
+  const [editingNumber, setEditingNumber] = useState(false);
+  const [editNumber, setEditNumber] = useState(String(idx + 1));
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -188,22 +197,78 @@ function SortableRow({ reg, idx, slot, allSlots, onSlotAssign, onSlotUpdate, for
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const saveName = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== reg.full_name) {
+      onInlineNameSave(reg.id, trimmed);
+    }
+    setEditingName(false);
+  };
+
+  const saveNumber = () => {
+    const num = parseInt(editNumber, 10);
+    if (!isNaN(num) && num >= 1 && num <= totalCount && num !== idx + 1) {
+      onInlineNumberSave(reg.id, num);
+    }
+    setEditingNumber(false);
+  };
+
   return (
     <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
-      <TableCell className="w-[40px]">
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
-          <GripVertical className="h-4 w-4" />
-        </button>
+      <TableCell className="w-[60px]">
+        <div className="flex items-center gap-0.5">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col">
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === 0} onClick={() => onMoveUp(reg.id)}>
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === totalCount - 1} onClick={() => onMoveDown(reg.id)}>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
       </TableCell>
-      <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">
+        {editingNumber ? (
+          <Input
+            value={editNumber}
+            onChange={(e) => setEditNumber(e.target.value)}
+            onBlur={saveNumber}
+            onKeyDown={(e) => { if (e.key === "Enter") saveNumber(); if (e.key === "Escape") setEditingNumber(false); }}
+            className="h-6 w-10 text-xs font-mono px-1 text-center"
+            type="number"
+            min={1}
+            max={totalCount}
+            autoFocus
+          />
+        ) : (
+          <button className="hover:text-foreground hover:underline" onClick={() => { setEditNumber(String(idx + 1)); setEditingNumber(true); }}>
+            {idx + 1}
+          </button>
+        )}
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-1 flex-wrap">
-          <button
-            className="text-sm font-medium text-primary hover:underline text-left"
-            onClick={() => onSelect(reg)}
-          >
-            {reg.full_name}
-          </button>
+          {editingName ? (
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditingName(false); }}
+              className="h-7 text-sm w-48"
+              autoFocus
+            />
+          ) : (
+            <button
+              className="text-sm font-medium text-primary hover:underline text-left"
+              onClick={() => onSelect(reg)}
+              onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
+            >
+              {reg.full_name}
+            </button>
+          )}
           {(reg as any).special_entry_type && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               {(reg as any).special_entry_type === "previous_winner" ? "Previous Winner"
