@@ -68,20 +68,32 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // Use anon client for JWT validation (ES256 compatible)
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) throw new Error("Unauthorized");
+
+    const userId = claimsData.claims.sub as string;
+    const userEmail = claimsData.claims.email as string;
+
+    // Service role client for DB writes
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) throw new Error("Unauthorized");
-
     const { user_name, primary_role } = await req.json();
-    const name = user_name || user.user_metadata?.full_name || "there";
+    const name = user_name || claimsData.claims.user_metadata?.full_name || "there";
     const config = ROLE_CONFIG[primary_role] || DEFAULT_CONFIG;
 
     const siteUrl = req.headers.get("origin") || "https://scorz.lovable.app";
@@ -104,7 +116,7 @@ Deno.serve(async (req) => {
     await supabase
       .from("profiles")
       .update({ welcome_email_sent: true } as any)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     const emailRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -114,7 +126,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Scorz <no-reply@scorz.live>",
-        to: [user.email],
+        to: [userEmail],
         subject: `Welcome to Scorz, ${name}! 🎯`,
         html,
       }),
