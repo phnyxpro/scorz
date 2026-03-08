@@ -584,6 +584,7 @@ export default function CompetitionDetail() {
 
         <TabsContent value="chat">
           <EventChat competitionId={id!} />
+          <EmailBroadcast competitionId={id!} />
         </TabsContent>
       </Tabs>
 
