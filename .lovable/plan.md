@@ -1,47 +1,39 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Import Scores from CSV — Reusable UI + NPS 2026 Import
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Overview
+Build a reusable "Import Scores" CSV upload dialog accessible from the Score Sheet Downloads section. This will allow organizers to parse judge score CSVs, map columns to rubric criteria, match contestants by name, and bulk-insert `judge_scores` rows. Then use it to import the uploaded Kwame Weekes scores.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### How It Works
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+1. **New component: `ScoreImportDialog`** — A 4-step wizard dialog:
+   - **Step 1 — File & Judge Selection**: Upload CSV/Excel file, select the target sub-event, and select which judge the scores belong to (from assigned judges list)
+   - **Step 2 — Column Mapping**: Auto-map CSV column headers to rubric criteria by fuzzy name matching (e.g. "Voice and Articulation" → criterion with that name). Allow manual override via dropdowns. Also detect a "Total" column.
+   - **Step 3 — Preview & Validation**: Show a table of matched contestants (fuzzy name match against `contestant_registrations` for the sub-event). Flag unmatched contestants, highlight rows with scores vs blank rows (skip blanks). Show computed raw_total vs CSV total for verification.
+   - **Step 4 — Import**: Upsert `judge_scores` rows — for each matched contestant, build the `criterion_scores` JSONB (keys = rubric `sort_order` indices), compute `raw_total`, and insert/update.
 
----
+2. **"Import Scores" button** added to each sub-event row in `ScoreSheetDownloads`, alongside existing Preview/Excel/CSV/Blank buttons.
 
-### Fix 1: Conditionally apply auditorium filter
+3. **Data mapping logic**:
+   - CSV criterion columns → matched to `rubric_criteria` by name similarity
+   - Contestant names → matched to `contestant_registrations.full_name` using case-insensitive comparison, with fuzzy fallback
+   - `criterion_scores` keys = `String(rubric_criteria.sort_order)` per existing convention
+   - `raw_total` = sum of all criterion scores
+   - Rows with all-empty scores are skipped
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Technical Details
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**Files to create:**
+- `src/components/competition/ScoreImportDialog.tsx` — The wizard dialog component
 
-### Fix 2: Remove filter class when at defaults
+**Files to modify:**
+- `src/components/competition/ScoreSheetDownloads.tsx` — Add "Import Scores" button per sub-event
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+**Key considerations:**
+- Reuses `xlsx` library already installed for CSV/Excel parsing (same as BulkUploadDialog)
+- Uses existing `fetchSubEventData()` from ScoreSheetDownloads to get contestants, criteria, and assigned judges
+- Upserts scores: if a `judge_scores` row already exists for that judge+contestant+sub_event, it updates; otherwise inserts
+- Only imports for one judge at a time (filename hints at judge name for auto-selection)
+- No database changes needed — uses existing `judge_scores` table structure
 
