@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     );
 
     const { user_name, primary_role } = await req.json();
-    const name = user_name || user.user_metadata?.full_name || "there";
+    const name = user_name || claimsData.claims.user_metadata?.full_name || "there";
     const config = ROLE_CONFIG[primary_role] || DEFAULT_CONFIG;
 
     const siteUrl = req.headers.get("origin") || "https://scorz.lovable.app";
