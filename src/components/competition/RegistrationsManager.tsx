@@ -315,6 +315,8 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInAge, setWalkInAge] = useState("adult");
   const [walkInConsent, setWalkInConsent] = useState(false);
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
