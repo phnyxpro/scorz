@@ -92,6 +92,14 @@ export default function LevelMasterSheet() {
   }, [data?.scores]);
   const profileMap = useStaffDisplayNames(judgeUserIds);
 
+  const subEventMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const se of data?.subEvents || []) {
+      m.set(se.id, se.name);
+    }
+    return m;
+  }, [data?.subEvents]);
+
   // Build rows: one per contestant across all sub-events
   const rows = useMemo(() => {
     if (!data) return [];
