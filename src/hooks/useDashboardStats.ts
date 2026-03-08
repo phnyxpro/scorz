@@ -39,7 +39,7 @@ export function useDashboardStats(effectiveUserId?: string) {
         console.error("Error fetching dashboard stats:", error);
         setStats([]);
       } else {
-        setStats((data as DashboardStat[]) || []);
+        setStats((data as unknown as DashboardStat[]) || []);
       }
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
