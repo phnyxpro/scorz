@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 
 /** Play a short notification chime using Web Audio API */
 function playNotificationSound() {
