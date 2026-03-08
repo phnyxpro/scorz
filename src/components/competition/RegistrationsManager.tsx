@@ -979,6 +979,52 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <SelectItem value="minor">Minor</SelectItem>
               </SelectContent>
             </Select>
+            {/* Sub-event assignment */}
+            {allSubEvents && allSubEvents.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Assign to Event</Label>
+                <Select value={walkInSubEvent} onValueChange={setWalkInSubEvent}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select event (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No event</SelectItem>
+                    {allSubEvents.map(se => (
+                      <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Position options */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="walk-in-after-timed"
+                  checked={walkInAfterLastTimed}
+                  onCheckedChange={(v) => {
+                    setWalkInAfterLastTimed(!!v);
+                    if (v) setWalkInPosition("");
+                  }}
+                  disabled={!walkInSubEvent}
+                />
+                <Label htmlFor="walk-in-after-timed" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                  Place after last timed performer
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Or position #</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 5"
+                  value={walkInPosition}
+                  onChange={(e) => {
+                    setWalkInPosition(e.target.value);
+                    if (e.target.value) setWalkInAfterLastTimed(false);
+                  }}
+                  className="h-8 w-20 text-xs"
+                />
+              </div>
+            </div>
             <div className="flex items-start gap-2">
               <Checkbox id="walk-in-consent" checked={walkInConsent} onCheckedChange={(v) => setWalkInConsent(!!v)} />
               <Label htmlFor="walk-in-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
