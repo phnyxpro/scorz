@@ -509,7 +509,7 @@ export default function JudgeScoring() {
                 <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">Raw Total</p>
-                    <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(1)}</p>
+                    <p className="text-2xl font-mono font-bold text-foreground">{rawTotal.toFixed(2)}</p>
                     {autoSaveStatus === "saving" && (
                       <p className="text-[10px] text-muted-foreground mt-1 animate-pulse">Saving…</p>
                     )}
