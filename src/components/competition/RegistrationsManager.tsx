@@ -304,9 +304,28 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
         />
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
-          {reg.status}
-        </Badge>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="cursor-pointer">
+              <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""} hover:opacity-80 transition-opacity`}>
+                {reg.status}
+              </Badge>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-1" align="start">
+            <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Change status</p>
+            {["approved", "pending", "rejected"].map(s => (
+              <button
+                key={s}
+                disabled={s === reg.status}
+                onClick={() => { if (s === "approved") onApprove(reg.id); else onReject(reg.id); }}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent disabled:opacity-40 flex items-center gap-1.5 ${s === reg.status ? "font-semibold" : ""}`}
+              >
+                <Badge variant="outline" className={`text-[9px] ${statusColor[s] || ""}`}>{s}</Badge>
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       </TableCell>
       <TableCell>
         <div className="flex gap-1">
