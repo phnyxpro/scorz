@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { getAvgDuration } from "@/hooks/usePerformanceTimer";
