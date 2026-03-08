@@ -1,169 +1,129 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { User, Info, Calendar, PenTool } from "lucide-react";
+import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
+import { AGE_CATEGORIES } from "@/lib/age-categories";
 
 interface Props {
   competitionId: string;
 }
 
+const sectionIcon: Record<string, React.ElementType> = {
+  personal: User,
+  bio: Info,
+  event: Calendar,
+  legal: PenTool,
+};
+
 export function RegistrationFormsInline({ competitionId }: Props) {
-  const qc = useQueryClient();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [editingForm, setEditingForm] = useState<any>(null);
-  const [formName, setFormName] = useState("");
-  const [formDescription, setFormDescription] = useState("");
+  const { data: levels } = useLevels(competitionId);
+  const firstLevelId = levels?.[0]?.id;
+  const { data: subEvents } = useSubEvents(firstLevelId);
 
-  // Stub – registration_forms table not yet created
-  const forms: { id: string; name: string; description: string | null; updated_at: string }[] = [];
-
-  const createForm = useMutation({
-    mutationFn: async () => {
-      toast({ title: "Registration forms feature coming soon", variant: "destructive" });
-      throw new Error("registration_forms table not yet created");
+  const sections = [
+    {
+      key: "personal",
+      title: "Personal Info",
+      fields: [
+        { label: "First Name", type: "text", required: true },
+        { label: "Last Name", type: "text", required: true },
+        { label: "Email", type: "email", required: true },
+        { label: "Phone", type: "tel", required: false },
+        { label: "Location", type: "text", required: false },
+        { label: "Age Category", type: "select", required: true, options: AGE_CATEGORIES?.map(c => c.label) || ["Adult", "Minor"] },
+      ],
     },
-    onSuccess: () => {
-      setFormName("");
-      setFormDescription("");
-      setIsCreateOpen(false);
+    {
+      key: "bio",
+      title: "Bio & Media",
+      fields: [
+        { label: "Bio", type: "textarea", required: false },
+        { label: "Performance Video URL", type: "url", required: false },
+      ],
     },
-  });
-
-  const updateForm = useMutation({
-    mutationFn: async () => {
-      throw new Error("registration_forms table not yet created");
+    {
+      key: "event",
+      title: "Event Details",
+      fields: [
+        { label: "Level", type: "select", required: false, options: levels?.map(l => l.name) || [] },
+        { label: "Sub-Event", type: "select", required: false, options: subEvents?.map(se => se.name) || [] },
+      ],
     },
-  });
-
-  const deleteForm = useMutation({
-    mutationFn: async () => {
-      throw new Error("registration_forms table not yet created");
+    {
+      key: "legal",
+      title: "Legal & Consent",
+      fields: [
+        { label: "Rules Acknowledged", type: "checkbox", required: true },
+        { label: "Contestant Signature", type: "signature", required: true },
+        { label: "Guardian Name", type: "text", required: false, note: "Required for minors" },
+        { label: "Guardian Email", type: "email", required: false, note: "Required for minors" },
+        { label: "Guardian Signature", type: "signature", required: false, note: "Required for minors" },
+      ],
     },
-    onSuccess: () => {
-      toast({ title: "Registration form deleted" });
-      setEditingForm(null);
-      setIsDeleteOpen(false);
-      qc.invalidateQueries({ queryKey: ["registration_forms", competitionId] });
-    },
-  });
+  ];
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/50 bg-card/80">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Registration Forms</CardTitle>
-          <CardDescription className="text-xs">
-            Create and manage custom registration forms for this competition
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            size="sm"
-            onClick={() => { setEditingForm(null); setFormName(""); setFormDescription(""); setIsCreateOpen(true); }}
-            className="gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" /> New Form
-          </Button>
+      <p className="text-xs text-muted-foreground">
+        This is a read-only preview of the registration form fields contestants complete when registering.
+      </p>
 
-          {forms.length > 0 ? (
-            <div className="grid gap-3">
-              {forms.map((form) => (
-                <Card key={form.id} className="border-border/40">
-                  <CardHeader className="pb-2 pt-3 px-4">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-sm">{form.name}</CardTitle>
-                        {form.description && <CardDescription className="text-xs mt-0.5">{form.description}</CardDescription>}
-                        <p className="text-[10px] text-muted-foreground mt-1">Updated {new Date(form.updated_at).toLocaleDateString()}</p>
+      {sections.map((section) => {
+        const Icon = sectionIcon[section.key] || User;
+        return (
+          <Card key={section.key} className="border-border/40 bg-muted/10">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-foreground">{section.title}</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {section.fields.map((field) => (
+                  <div key={field.label} className={field.type === "textarea" ? "sm:col-span-2" : ""}>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      {field.label}
+                      {field.required && <span className="text-destructive">*</span>}
+                      {(field as any).note && (
+                        <span className="text-[10px] text-muted-foreground/70">({(field as any).note})</span>
+                      )}
+                    </Label>
+                    {field.type === "textarea" ? (
+                      <Textarea disabled placeholder={field.label} className="mt-1 text-xs min-h-[48px] opacity-60" />
+                    ) : field.type === "select" ? (
+                      <Select disabled>
+                        <SelectTrigger className="mt-1 h-8 text-xs opacity-60">
+                          <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(field.options || []).map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.type === "checkbox" ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Checkbox disabled className="opacity-60" />
+                        <span className="text-xs text-muted-foreground">I acknowledge and accept the rules</span>
                       </div>
-                      <div className="flex gap-1 ml-2">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingForm(form); setFormName(form.name); setFormDescription(form.description || ""); setIsEditOpen(true); }}>
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setEditingForm(form); setIsDeleteOpen(true); }}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                    ) : field.type === "signature" ? (
+                      <div className="mt-1 h-12 rounded border border-dashed border-border/50 bg-muted/20 flex items-center justify-center">
+                        <span className="text-[10px] text-muted-foreground italic">Signature pad</span>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-6">No registration forms yet. Create one to get started.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Registration Form</DialogTitle>
-            <DialogDescription>Add a new registration form for this competition</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div><Label className="text-xs">Form Name</Label><Input placeholder="e.g., Initial Registration" value={formName} onChange={e => setFormName(e.target.value)} className="mt-1 h-9 text-sm" /></div>
-            <div><Label className="text-xs">Description (Optional)</Label><Textarea placeholder="Describe what this form is for…" value={formDescription} onChange={e => setFormDescription(e.target.value)} className="mt-1 resize-none text-sm" rows={3} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => createForm.mutate()} disabled={createForm.isPending}>{createForm.isPending ? "Creating…" : "Create"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Registration Form</DialogTitle>
-            <DialogDescription>Update form details</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div><Label className="text-xs">Form Name</Label><Input value={formName} onChange={e => setFormName(e.target.value)} className="mt-1 h-9 text-sm" /></div>
-            <div><Label className="text-xs">Description</Label><Textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} className="mt-1 resize-none text-sm" rows={3} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => updateForm.mutate()} disabled={updateForm.isPending}>{updateForm.isPending ? "Saving…" : "Save"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Registration Form?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone. "{editingForm?.name}" will be permanently deleted.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteForm.mutate()} disabled={deleteForm.isPending} className="bg-destructive hover:bg-destructive/90">
-              {deleteForm.isPending ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                    ) : (
+                      <Input disabled placeholder={field.label} className="mt-1 h-8 text-xs opacity-60" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
