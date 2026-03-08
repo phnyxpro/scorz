@@ -442,9 +442,9 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                     Discover live competitions, grab tickets, and vote for your favourite contestants.
                   </p>
-                  <Link to="/events">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Calendar className="h-4 w-4" /> Explore Events
+                   <Link to="/public-events">
+                     <Button variant="outline" size="sm" className="gap-2">
+                       <Calendar className="h-4 w-4" /> Explore Events
                     </Button>
                   </Link>
                 </CardContent>
