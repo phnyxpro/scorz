@@ -469,8 +469,52 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Empty state for contestant/audience with no cards */}
-          {cards.length === 0 && !isAdmin && !hasRole("organizer") && !isJudgeRole && !isTabulator && (
+          {/* Empty state for contestants with no registrations */}
+          {hasRole("contestant") && stats.find(s => s.label === "My Registrations")?.value === 0 && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+              <Card className="border-dashed border-2 border-primary/20 bg-primary/5">
+                <CardContent className="py-10 text-center">
+                  <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mic className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Ready to compete?</h3>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
+                    You haven't registered for any competitions yet. Browse upcoming events and sign up to showcase your talent.
+                  </p>
+                  <Link to="/events">
+                    <Button size="sm" className="gap-2">
+                      <Trophy className="h-4 w-4" /> Browse Competitions
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Empty state for audience with no tickets */}
+          {hasRole("audience") && !hasRole("contestant") && !hasRole("organizer") && !isAdmin && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+              <Card className="border-dashed border-2 border-accent/20 bg-accent/5">
+                <CardContent className="py-10 text-center">
+                  <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Eye className="h-7 w-7 text-accent" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Find events near you</h3>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
+                    Discover live competitions, grab tickets, and vote for your favourite contestants.
+                  </p>
+                  <Link to="/events">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Calendar className="h-4 w-4" /> Explore Events
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Generic empty state for users with no dashboard cards */}
+          {cards.length === 0 && !hasRole("contestant") && !hasRole("audience") && !isAdmin && !hasRole("organizer") && !isJudgeRole && !isTabulator && (
             <Card className="border-border/50 bg-card/80 mb-6">
               <CardContent className="py-8 text-center">
                 <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
