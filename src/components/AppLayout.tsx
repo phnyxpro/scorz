@@ -120,18 +120,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             <AuditoriumControls />
             <NotificationCenter />
-            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base">
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base" aria-label="Knowledge Base">
               <BookOpen className="h-4 w-4" />
             </Button>
             {hasRole("admin") && (
-              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
+              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel" aria-label="Admin Panel">
                 <Shield className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings" aria-label="Settings">
               <User className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out">
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out" aria-label="Sign Out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -149,7 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
+      <nav role="navigation" aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
         <div className="flex items-stretch h-14">
           {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");

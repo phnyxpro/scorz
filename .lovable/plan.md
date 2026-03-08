@@ -1,75 +1,47 @@
 
 
-## Improvement Recommendations for Scorz
+## Fix Blank Rendering in Browser Automation
 
-After a thorough review of the codebase, security scan, and architecture, here are the highest-impact improvements grouped by priority.
+The app appears blank in headless browser testing due to two compounding issues:
+
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### 1. CRITICAL: Fix Privilege Escalation — Self-Assignable Organizer Role
+### Fix 1: Conditionally apply auditorium filter
 
-The security scan found that **any authenticated user can self-assign the `organizer` role**, which grants full access to all contestant PII, registrations, tickets, staff invitations, and audience votes across all competitions.
+**File: `src/contexts/ThemeContext.tsx`**
 
-**Fix:** Remove `organizer` from the self-assignable roles in the `user_roles` INSERT policy. Only `contestant` and `audience` should be self-assignable. Organizer role should be admin-assigned only.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-```sql
--- Replace existing policy
-DROP POLICY "Users can self-assign allowed roles" ON public.user_roles;
-CREATE POLICY "Users can self-assign allowed roles" ON public.user_roles
-  FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND role IN ('contestant', 'audience'));
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
----
-
-### 2. CRITICAL: Lock Down Overly Permissive RLS Policies
-
-Several tables have `WITH CHECK (true)` or `USING (true)` policies exposing data to unauthenticated or any authenticated user:
-
-| Table | Issue | Fix |
-|-------|-------|-----|
-| `staff_invitations` | All PII readable by any authenticated user | Restrict SELECT to `email = auth.email()` OR admin/organizer |
-| `notifications` | Public can INSERT to any user | Restrict to `authenticated` role |
-| `activity_log` | Public can INSERT arbitrary entries | Restrict to `authenticated` role or service role |
-| `competition_credits` | Any user can insert credits for any user | Restrict to service role only |
-| `staff_invitation_sub_events` | All mappings readable by any user | Restrict to own invitations or admin/organizer |
-| `platform_settings` | Config readable by anonymous | Restrict to authenticated |
-
-Each fix is a single `DROP POLICY` + `CREATE POLICY` migration.
+This ensures no filter is applied when properties are unset, which is the default state.
 
 ---
 
-### 3. Performance: Dashboard Stats N+1 Queries
+### Summary
 
-`useDashboardStats` makes 5-7 sequential `await` calls on every load. This should be consolidated into a single database function (RPC) that returns all stats in one round-trip, consistent with the existing pattern noted in the architecture memory.
-
----
-
-### 4. UX: Accessibility Improvements
-
-The search found **zero `aria-label` attributes** across all pages. Key improvements:
-- Add `aria-label` to icon-only buttons (sign out, settings, admin, notification bell)
-- Add `aria-live="polite"` to toast/notification regions
-- Add `role="navigation"` to mobile bottom nav
-- Add screen-reader text to badge indicators (unread counts)
-
----
-
-### 5. UX: Empty State for Contestant/Audience Dashboard
-
-When a user with only `contestant` or `audience` role logs in with no registrations or tickets, the dashboard shows minimal content with no guidance. Add a friendly empty state card pointing them to browse public events or register for a competition.
-
----
-
-### Summary of changes
-
-| Priority | Area | Files |
-|----------|------|-------|
-| Critical | Privilege escalation fix | New migration |
-| Critical | RLS policy hardening (6 tables) | New migration |
-| Medium | Dashboard stats RPC | New migration + `useDashboardStats.ts` |
-| Medium | Accessibility | `AppLayout.tsx`, `Auth.tsx`, key page components |
-| Low | Empty states | `Dashboard.tsx` |
-
-I recommend tackling items 1 and 2 first as they are active security vulnerabilities.
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

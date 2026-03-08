@@ -1678,6 +1678,16 @@ export type Database = {
           sub_event_name: string
         }[]
       }
+      get_dashboard_stats: {
+        Args: {
+          _is_admin_or_org: boolean
+          _is_contestant: boolean
+          _is_judge: boolean
+          _is_tabulator: boolean
+          _user_id: string
+        }
+        Returns: Json
+      }
       get_vote_counts: {
         Args: { _sub_event_id: string }
         Returns: {
