@@ -262,31 +262,46 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
-        {levels?.map((l) => (
-          <Collapsible key={l.id}>
-            <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
-                {l.name}
-              </CollapsibleTrigger>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: l.id, competition_id: competitionId })}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-            <CollapsibleContent>
-              <div className="pl-4 mt-2">
-                <BannerUpload
-                  currentUrl={(l as any).banner_url}
-                  folder={`levels/${l.id}`}
-                  aspectLabel="Level Banner"
-                  onUploaded={(url) => updateLevelBanner(l.id, url)}
-                  onRemoved={() => updateLevelBanner(l.id, null)}
-                />
+        {levels?.map((l) => {
+          const advCount = (l as any).advancement_count;
+          const specials: SpecialEntry[] = (l as any).special_entries || [];
+          return (
+            <Collapsible key={l.id}>
+              <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                  {l.name}
+                  {advCount != null && advCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
+                      <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
+                    </Badge>
+                  )}
+                  {specials.map((s) => (
+                    <Badge key={s.type} variant="outline" className="text-[10px] px-1.5 py-0">
+                      {s.label}
+                    </Badge>
+                  ))}
+                </CollapsibleTrigger>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: l.id, competition_id: competitionId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
-              <SubEventsPanel levelId={l.id} />
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
+              <CollapsibleContent>
+                <div className="pl-4 mt-2 space-y-2">
+                  <BannerUpload
+                    currentUrl={(l as any).banner_url}
+                    folder={`levels/${l.id}`}
+                    aspectLabel="Level Banner"
+                    onUploaded={(url) => updateLevelBanner(l.id, url)}
+                    onRemoved={() => updateLevelBanner(l.id, null)}
+                  />
+                  <LevelAdvancementSettings level={l} competitionId={competitionId} />
+                </div>
+                <SubEventsPanel levelId={l.id} />
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </CardContent>
     </Card>
   );
