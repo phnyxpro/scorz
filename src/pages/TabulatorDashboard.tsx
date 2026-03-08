@@ -732,7 +732,7 @@ export default function TabulatorDashboard() {
                                                           </TableCell>
                                                         </TableRow>
                                                       )}
-                                                    </>
+                                                     </Fragment>
                                                   );
                                                 })}
                                               </TableBody>
