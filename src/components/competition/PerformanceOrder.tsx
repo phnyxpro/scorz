@@ -71,12 +71,17 @@ export function PerformanceOrder({ subEventId }: Props) {
     const [moved] = reordered.splice(from, 1);
     reordered.splice(to, 0, moved);
 
-    // Persist new sort_order values
-    const updates = reordered.map((c, i) =>
-      supabase.from("contestant_registrations").update({ sort_order: i + 1 }).eq("id", c.id)
-    );
-    await Promise.all(updates);
-    qc.invalidateQueries({ queryKey: ["approved-contestants-order", subEventId] });
+    // Optimistic update
+    const withOrder = reordered.map((c, i) => ({ ...c, sort_order: i + 1 }));
+    qc.setQueryData(["approved-contestants-order", subEventId], withOrder);
+
+    try {
+      await Promise.all(withOrder.map(c =>
+        supabase.from("contestant_registrations").update({ sort_order: c.sort_order }).eq("id", c.id)
+      ));
+    } catch {
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order", subEventId] });
+    }
   };
 
   const randomizeDraw = async () => {
