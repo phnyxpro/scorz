@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useParams, Link } from "react-router-dom";
 import { useCompetition, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
