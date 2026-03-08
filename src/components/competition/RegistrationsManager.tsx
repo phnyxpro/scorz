@@ -45,7 +45,12 @@ const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
   pending: "bg-primary/20 text-primary border-primary/30",
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
+  no_show: "bg-muted text-muted-foreground border-muted-foreground/30",
+  disqualified: "bg-destructive/20 text-destructive border-destructive/30",
+  drop_out: "bg-muted text-muted-foreground border-muted-foreground/30",
 };
+
+const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"];
 
 type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
 type SortDir = "asc" | "desc";
