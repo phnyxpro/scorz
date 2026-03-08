@@ -120,18 +120,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             <AuditoriumControls />
             <NotificationCenter />
-            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base">
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/help")} title="Knowledge Base" aria-label="Knowledge Base">
               <BookOpen className="h-4 w-4" />
             </Button>
             {hasRole("admin") && (
-              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel">
+              <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => navigate("/admin")} title="Admin Panel" aria-label="Admin Panel">
                 <Shield className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hidden sm:inline-flex" onClick={() => navigate("/settings")} title="Settings" aria-label="Settings">
               <User className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out">
+            <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleSignOut} title="Sign Out" aria-label="Sign Out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
