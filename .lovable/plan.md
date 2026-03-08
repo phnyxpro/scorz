@@ -1,47 +1,53 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Fix Reorder Delay with Optimistic Updates
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+Every reorder action (drag, arrows, move-after-timed) persists all `sort_order` values to the database sequentially, then invalidates queries, causing the UI to only update after the full network round-trip. This creates a noticeable delay.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Solution
+Apply **optimistic cache updates** — immediately update the React Query cache with the new order, then persist to the database in the background. If the DB write fails, roll back.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+### Changes
 
----
+**1. `src/components/competition/RegistrationsManager.tsx`**
+- In `handleDragEnd`, `handleMoveUp`, `handleMoveDown`, and `handleInlineNumberSave`:
+  - Before the DB calls, use `qc.setQueryData(["registrations", competitionId], ...)` to optimistically reorder the cached list
+  - Run DB updates with `Promise.all` instead of sequential `for` loops
+  - On error, invalidate to restore correct state
 
-### Fix 1: Conditionally apply auditorium filter
+**2. `src/components/scoring/ContestantReorderModal.tsx`**
+- The modal receives `contestants` as a prop from the parent query. It cannot set query data directly since it doesn't own the query key.
+- Wrap `persistOrder` to call parent invalidation, but also use `Promise.all` (already done) and add optimistic cache set for `["judging_overview"]` and `["approved-contestants-order"]`
 
-**File: `src/contexts/ThemeContext.tsx`**
+**3. `src/components/competition/PerformanceOrder.tsx`**
+- In `handleDragEnd` and `randomizeDraw`:
+  - Use `qc.setQueryData(["approved-contestants-order", subEventId], reordered)` before the DB writes
+  - Already uses `Promise.all` — keep that
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+### Key Pattern (applied everywhere)
+```typescript
+// Before DB writes — instant UI update
+qc.setQueryData(["registrations", competitionId], (old) => {
+  if (!old) return old;
+  return reordered; // the new order array
+});
 
-### Fix 2: Remove filter class when at defaults
+// DB writes in parallel
+await Promise.all(
+  reordered.map((r, i) =>
+    supabase.from("contestant_registrations")
+      .update({ sort_order: i })
+      .eq("id", r.id)
+  )
+);
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+// Refetch to confirm
+qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files to Edit
+1. `src/components/competition/RegistrationsManager.tsx` — optimistic updates + `Promise.all` for all reorder functions
+2. `src/components/scoring/ContestantReorderModal.tsx` — optimistic cache update in `persistOrder`
+3. `src/components/competition/PerformanceOrder.tsx` — optimistic cache update in drag/randomize handlers
 
