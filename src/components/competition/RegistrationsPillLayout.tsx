@@ -1,0 +1,87 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users, Settings, FileText } from "lucide-react";
+import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
+import { RegistrationSettingsPanel } from "@/components/competition/RegistrationSettingsPanel";
+import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
+
+const categories = {
+  contestants: { label: "Contestants", icon: Users, description: "View and manage contestant registrations, approvals, and performance order." },
+  settings: { label: "Settings", icon: Settings, description: "Control when registrations are open and manage the registration window." },
+  forms: { label: "Forms", icon: FileText, description: "Configure custom registration form fields and requirements." },
+} as const;
+
+type Category = keyof typeof categories;
+
+interface Props {
+  competitionId: string;
+}
+
+export function RegistrationsPillLayout({ competitionId }: Props) {
+  const [activeCategory, setActiveCategory] = useState<Category>("contestants");
+  const ActiveIcon = categories[activeCategory].icon;
+
+  return (
+    <div className="space-y-4">
+      {/* Category pill bar */}
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(categories) as Category[]).map((key) => {
+          const cat = categories[key];
+          const Icon = cat.icon;
+          const isActive = activeCategory === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveCategory(key)}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                isActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
+      {activeCategory === "contestants" && (
+        <RegistrationsManager competitionId={competitionId} />
+      )}
+
+      {/* Settings & Forms — wrapped in the pill card pattern */}
+      {activeCategory === "settings" && (
+        <Card className="rounded-xl border-border/50 bg-card/80">
+          <CardContent className="p-5 space-y-4">
+            <div className="space-y-2">
+              <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
+                <ActiveIcon className="h-3.5 w-3.5" />
+                {categories[activeCategory].label}
+              </Badge>
+              <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
+            </div>
+            <RegistrationSettingsPanel competitionId={competitionId} />
+          </CardContent>
+        </Card>
+      )}
+
+      {activeCategory === "forms" && (
+        <Card className="rounded-xl border-border/50 bg-card/80">
+          <CardContent className="p-5 space-y-4">
+            <div className="space-y-2">
+              <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
+                <ActiveIcon className="h-3.5 w-3.5" />
+                {categories[activeCategory].label}
+              </Badge>
+              <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
+            </div>
+            <RegistrationFormsInline competitionId={competitionId} />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

@@ -21,9 +21,7 @@ import { EventChat } from "@/components/chat/EventChat";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
-import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
-import { RegistrationSettingsPanel } from "@/components/competition/RegistrationSettingsPanel";
-import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
+import { RegistrationsPillLayout } from "@/components/competition/RegistrationsPillLayout";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
@@ -524,22 +522,7 @@ export default function CompetitionDetail() {
         </TabsContent>
 
         <TabsContent value="registrations">
-          <Tabs defaultValue="contestants" className="space-y-4">
-            <TabsList className="w-full">
-              <TabsTrigger value="contestants" className="text-xs sm:text-sm">Contestants</TabsTrigger>
-              <TabsTrigger value="reg-settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
-              <TabsTrigger value="reg-forms" className="text-xs sm:text-sm">Forms</TabsTrigger>
-            </TabsList>
-            <TabsContent value="contestants">
-              <RegistrationsManager competitionId={id!} />
-            </TabsContent>
-            <TabsContent value="reg-settings">
-              <RegistrationSettingsPanel competitionId={id!} />
-            </TabsContent>
-            <TabsContent value="reg-forms">
-              <RegistrationFormsInline competitionId={id!} />
-            </TabsContent>
-          </Tabs>
+          <RegistrationsPillLayout competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="slots">
