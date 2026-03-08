@@ -89,7 +89,9 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
                 </Button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+            {/* Inline Penalties & Disqualifications */}
+            <PenaltiesOverview competitionId={competition.id} />
+
                 {subEventDetails.map((se) => {
                     const isChiefForThis = myAssignments.some(
                         (a: any) => a.sub_event_id === se.id && a.is_chief
