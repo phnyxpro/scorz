@@ -642,7 +642,7 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap justify-end">
           {isAdmin && onPreviewEmail && (
             <Button
               variant="ghost"
