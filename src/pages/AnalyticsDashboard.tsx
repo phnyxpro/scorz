@@ -83,7 +83,7 @@ function useAnalyticsData(competitionId: string | null) {
       const ageCategoryBreakdown = Object.entries(ageMap).map(([name, value]) => ({ name, value }));
 
       const avgScore = scores && scores.length > 0
-        ? (scores.reduce((a, s) => a + Number(s.final_score), 0) / scores.length).toFixed(1)
+        ? (scores.reduce((a, s) => a + Number(s.final_score), 0) / scores.length).toFixed(2)
         : "N/A";
 
       const certifiedPct = scores && scores.length > 0

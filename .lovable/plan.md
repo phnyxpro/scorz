@@ -1,45 +1,47 @@
 
 
-## Code Sync Review — Findings
+## Fix Blank Rendering in Browser Automation
 
-After reviewing the entire codebase for missing real-time subscriptions and inconsistent score formatting, here is what I found:
+The app appears blank in headless browser testing due to two compounding issues:
 
-### 1. Missing Realtime: `audience_votes` table
-The `audience_votes` table has **not** been added to `supabase_realtime` publication. The `useVoteCounts` hook relies on polling (`refetchInterval: 15_000`) and the `VoteAudit` component in the Tabulator Dashboard has no realtime at all — it only fetches once.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**Fix:** Add a migration to enable realtime for `audience_votes`, and add a realtime subscription in `VoteAudit` to auto-refetch when votes change.
-
-### 2. Missing Realtime: `competition_updates` table
-Not added to `supabase_realtime`. Currently fetches once via `useQuery` with no polling or subscription. Low priority since updates are infrequent, but worth noting.
-
-### 3. Score Rounding Gap: `ScoreCard.tsx` (line 134)
-The printable/exportable ScoreCard displays `final_score` without `.toFixed(2)`:
-```tsx
-{judgeScore?.final_score || (isBlank ? '___' : '')}
-```
-Should be `Number(judgeScore.final_score).toFixed(2)`.
-
-### 4. Score Rounding Gap: `AnalyticsDashboard.tsx` (line 86)
-Average score uses `.toFixed(1)` instead of `.toFixed(2)`:
-```tsx
-.toFixed(1)
-```
-
-### 5. All Other Score Displays — OK
-`ScoreSummaryTable`, `SideBySideScores`, `PrintableScorecard`, `Results`, `ResultsHub`, `LevelMasterSheet`, `MasterScoreSheet`, `ContestantProfile`, `ContestantFeedback`, `PenaltyReview` — all correctly use `.toFixed(2)`.
-
-### 6. All Other Realtime Subscriptions — OK
-`judge_scores`, `tabulator_certifications`, `witness_certifications`, `chief_judge_certifications`, `performance_timer_events`, `performance_durations`, `event_messages`, `notifications`, `competitions`, `contestant_registrations`, `sub_event_assignments`, `event_tickets`, `activity_log` — all have realtime enabled and corresponding hooks.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### Proposed Changes
+### Fix 1: Conditionally apply auditorium filter
 
-| File | Change |
-|------|--------|
-| New migration | `ALTER PUBLICATION supabase_realtime ADD TABLE public.audience_votes` |
-| `src/components/tabulator/VoteAudit.tsx` | Add realtime subscription to auto-refetch on vote changes |
-| `src/hooks/useAudienceVoting.ts` | Add `useVoteCountsRealtime` hook (optional, since polling exists) |
-| `src/components/shared/ScoreCard.tsx` | Format `final_score` with `.toFixed(2)` |
-| `src/pages/AnalyticsDashboard.tsx` | Change `.toFixed(1)` → `.toFixed(2)` for avg score |
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,6 +31,23 @@ function useAudienceVotes(subEventId: string | undefined) {
 export function VoteAudit({ subEventId }: Props) {
   const { data: votes, isLoading } = useAudienceVotes(subEventId);
   const qc = useQueryClient();
+
+  // Realtime subscription for audience_votes
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`vote-audit-${subEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "audience_votes", filter: `sub_event_id=eq.${subEventId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["audience-votes-audit", subEventId] });
+          qc.invalidateQueries({ queryKey: ["vote_counts", subEventId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, qc]);
 
   const duplicates = useMemo(() => {
     if (!votes) return new Set<string>();
