@@ -1,41 +1,47 @@
 
 
-## Plan: Fix Query Key Mismatch for Real-Time Reorder Updates
+## Fix Blank Rendering in Browser Automation
 
-### Root Cause
-The tabulator dashboard query uses `["judging_overview", competitionId]` as its key, but all optimistic updates and invalidations in `ContestantReorderModal`, `TabulatorTimer`, and `RegistrationsManager` use just `["judging_overview"]` (without `competitionId`). React Query does **exact matching** for `setQueryData` and partial matching for `invalidateQueries` — but since the second element is missing, neither the optimistic update nor the invalidation hits the actual cache entry.
+The app appears blank in headless browser testing due to two compounding issues:
 
-Same issue with `["approved-contestants-order"]` which is used with `subEventId` in `PerformanceOrder.tsx` (`["approved-contestants-order", subEventId]`).
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Fix
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**1. `src/components/scoring/ContestantReorderModal.tsx`**
-- `persistOrder` optimistic `setQueryData` calls use `["judging_overview"]` — these need to either:
-  - Use partial query matching via `queryClient.setQueriesData({ queryKey: ["judging_overview"] }, ...)` (matches all queries starting with `["judging_overview"]`), OR
-  - Pass `competitionId` as a prop and use the full key
-- Same for `["approved-contestants-order"]`
-- Fix both `setQueryData` calls and `invalidateQueries` calls to use partial matching
+---
 
-**2. `src/components/scoring/TabulatorTimer.tsx`**
-- `moveAfterLastTimed` invalidates `["judging_overview"]` — needs partial match
-- Add optimistic `setQueryData` before the DB writes (currently missing — only invalidates after)
+### Fix 1: Conditionally apply auditorium filter
 
-**3. `src/components/competition/RegistrationsManager.tsx`**
-- `handleStatusChange` invalidates `["judging_overview"]` — needs partial match
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Implementation Detail
-Use `queryClient.invalidateQueries({ queryKey: ["judging_overview"] })` which already does **prefix matching** by default — so this should already work for invalidation. The real problem is `setQueryData` which requires an **exact key match**.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**Solution**: Replace `qc.setQueryData(["judging_overview"], ...)` with:
-```typescript
-qc.setQueriesData({ queryKey: ["judging_overview"] }, (old) => { ... });
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
-This uses the `setQueriesData` (plural) API which matches all queries with that prefix. Same fix for `["approved-contestants-order"]`.
 
-Also add optimistic update in `TabulatorTimer.moveAfterLastTimed` instead of just invalidating.
+This ensures no filter is applied when properties are unset, which is the default state.
 
-### Files to Edit
-1. `src/components/scoring/ContestantReorderModal.tsx` — change `setQueryData` to `setQueriesData` for both keys
-2. `src/components/scoring/TabulatorTimer.tsx` — add optimistic update in `moveAfterLastTimed` using `setQueriesData`
-3. `src/components/competition/RegistrationsManager.tsx` — change `setQueryData` to `setQueriesData` for judging_overview key
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
