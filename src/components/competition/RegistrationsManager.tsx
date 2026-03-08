@@ -684,6 +684,39 @@ export function RegistrationsManager({ competitionId }: Props) {
     try {
       const { data: existingProfile } = await supabase.from("profiles").select("user_id").eq("email", walkInEmail).maybeSingle();
       const userId = existingProfile?.user_id || user.id;
+
+      // Calculate sort_order based on options
+      let sortOrder = 0;
+      const targetSubEvent = walkInSubEvent || undefined;
+      if (walkInPosition && parseInt(walkInPosition, 10) > 0) {
+        sortOrder = parseInt(walkInPosition, 10);
+        // Shift existing contestants at or after this position
+        const toShift = registrations?.filter(r =>
+          (targetSubEvent ? r.sub_event_id === targetSubEvent : true) &&
+          ((r as any).sort_order || 0) >= sortOrder
+        ) || [];
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else if (walkInAfterLastTimed && targetSubEvent) {
+        // Find last timed contestant position
+        const { data: durs } = await supabase.from("performance_durations").select("contestant_registration_id").eq("sub_event_id", targetSubEvent);
+        const timedIds = new Set(durs?.map(d => d.contestant_registration_id) || []);
+        const subRegs = registrations?.filter(r => r.sub_event_id === targetSubEvent).sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0)) || [];
+        let lastTimedOrder = 0;
+        subRegs.forEach(r => { if (timedIds.has(r.id)) lastTimedOrder = (r as any).sort_order || 0; });
+        sortOrder = lastTimedOrder + 1;
+        // Shift
+        const toShift = subRegs.filter(r => ((r as any).sort_order || 0) >= sortOrder);
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else {
+        // Default: end of list
+        const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
+        sortOrder = maxOrder + 1;
+      }
+
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
@@ -692,12 +725,19 @@ export function RegistrationsManager({ competitionId }: Props) {
         age_category: walkInAge,
         status: "approved",
         rules_acknowledged: true,
-      });
+        ...(targetSubEvent ? { sub_event_id: targetSubEvent } : {}),
+        sort_order: sortOrder,
+      } as any);
       setShowWalkIn(false);
       setWalkInName("");
       setWalkInEmail("");
       setWalkInAge("adult");
       setWalkInConsent(false);
+      setWalkInSubEvent("");
+      setWalkInAfterLastTimed(false);
+      setWalkInPosition("");
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
