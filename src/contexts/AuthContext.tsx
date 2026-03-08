@@ -56,21 +56,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionStatus>(DEFAULT_SUB);
   const welcomeSent = useRef(false);
 
-  const fetchRoles = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-      if (error) throw error;
-      const loadedRoles = data?.map((r: any) => r.role as AppRole) || [];
-      setRoles(loadedRoles);
-      return loadedRoles;
-    } catch (err) {
-      console.error("Error fetching roles:", err);
-      setRoles([]);
-      return [] as AppRole[];
+  const fetchRoles = useCallback(async (userId: string, retries = 3) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        if (error) throw error;
+        const loadedRoles = data?.map((r: any) => r.role as AppRole) || [];
+        setRoles(loadedRoles);
+        return loadedRoles;
+      } catch (err) {
+        if (attempt < retries) {
+          const delay = Math.min(1000 * 2 ** attempt, 8000);
+          await new Promise((res) => setTimeout(res, delay));
+        } else {
+          console.error("Error fetching roles after retries:", err);
+          setRoles([]);
+          return [] as AppRole[];
+        }
+      }
     }
+    return [] as AppRole[];
   }, []);
 
   const fireWelcomeEmail = useCallback(async (currentUser: User, userRoles: AppRole[]) => {
