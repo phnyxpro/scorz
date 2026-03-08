@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Trophy, Users, ClipboardList, Mic, Shield, BarChart3, Eye,
   CreditCard, BookOpen, ShieldCheck, User, Calendar, DollarSign,
-  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio
+  FileText, ListChecks, LucideIcon, UserPlus, Calculator as CalcIcon, Radio, AlertTriangle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -42,6 +42,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
     { title: "Score Cards", desc: "Select contestant & enter scores", icon: ListChecks, color: "text-secondary", to: `/competitions/${competitionId}/score` },
     { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
     { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-secondary", to: `/competitions/${competitionId}/rules` },
+    { title: "Penalties", desc: "Deductions & disqualifications", icon: AlertTriangle, color: "text-secondary", to: `/competitions/${competitionId}/penalties` },
     { title: "Rubric", desc: "Scoring criteria & descriptors", icon: BookOpen, color: "text-secondary", to: `/competitions/${competitionId}/rubric` },
   ];
   if (hasChiefAssignments) {
