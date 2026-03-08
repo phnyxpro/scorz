@@ -43,7 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronLeft, ChevronDown, ClipboardList, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";

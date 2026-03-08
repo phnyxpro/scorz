@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClipboardList, ChevronRight, ChevronDown, Trophy, Search } from "lucide-react";
+import { ClipboardList, ChevronRight, Trophy, Search } from "lucide-react";
 import { motion } from "framer-motion";
 
 
