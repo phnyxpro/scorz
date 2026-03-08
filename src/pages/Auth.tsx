@@ -25,7 +25,7 @@ const SIGNUP_ROLES: { role: SignupRole; label: string; desc: string; icon: typeo
 ];
 
 const SIGNIN_ROLES: { role: SigninRole; label: string; desc: string; icon: typeof Briefcase; magicLink: boolean }[] = [
-  { role: "organizer", label: "Organiser", desc: "Manage your events", icon: Briefcase, magicLink: false },
+  { role: "organizer", label: "Organiser", desc: "Password or magic link", icon: Briefcase, magicLink: true },
   { role: "contestant", label: "Contestant", desc: "Access your profile", icon: Star, magicLink: false },
   { role: "audience", label: "Audience", desc: "View & vote", icon: Users, magicLink: false },
   { role: "judge", label: "Judge", desc: "Password or magic link", icon: Scale, magicLink: true },
