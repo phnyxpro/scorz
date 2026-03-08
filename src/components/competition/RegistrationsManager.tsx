@@ -596,11 +596,22 @@ export function RegistrationsManager({ competitionId }: Props) {
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
 
-    const updates = reordered.map((r, i) => ({ id: r.id, sort_order: i }));
-    for (const u of updates) {
-      await supabase.from("contestant_registrations").update({ sort_order: u.sort_order } as any).eq("id", u.id);
+    // Optimistic update
+    const withNewOrder = reordered.map((r, i) => ({ ...r, sort_order: i }));
+    qc.setQueryData(["registrations", competitionId], (old: ContestantRegistration[] | undefined) => {
+      if (!old) return old;
+      const orderMap = new Map(withNewOrder.map(r => [r.id, r.sort_order]));
+      return old.map(r => orderMap.has(r.id) ? { ...r, sort_order: orderMap.get(r.id)! } : r)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+
+    try {
+      await Promise.all(withNewOrder.map(r =>
+        supabase.from("contestant_registrations").update({ sort_order: r.sort_order } as any).eq("id", r.id)
+      ));
+    } catch {
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
     }
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
     qc.invalidateQueries({ queryKey: ["judging_overview"] });
     qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
   };
