@@ -8,10 +8,27 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical } from "lucide-react";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 const SPECIAL_ENTRY_PRESETS = [
   { type: "previous_winner", label: "Previous Winners", icon: Trophy },
@@ -246,6 +263,36 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
     qc.invalidateQueries({ queryKey: ["levels", competitionId] });
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !levels) return;
+
+    const oldIndex = levels.findIndex((l) => l.id === active.id);
+    const newIndex = levels.findIndex((l) => l.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder and persist
+    const reordered = [...levels];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Optimistically update cache
+    qc.setQueryData(["levels", competitionId], reordered);
+
+    // Persist all sort_order values
+    await Promise.all(
+      reordered.map((l, i) =>
+        supabase.from("competition_levels").update({ sort_order: i } as any).eq("id", l.id)
+      )
+    );
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
   return (
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
@@ -253,7 +300,7 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
           <CalendarDays className="h-5 w-5 text-secondary" />
           <CardTitle className="text-base">Levels & Sub-Events</CardTitle>
         </div>
-        <CardDescription>Organize your competition into levels (e.g. Auditions, Finals) and add sub-events with schedules.</CardDescription>
+        <CardDescription>Organize your competition into levels (e.g. Auditions, Finals) and add sub-events with schedules. Drag to reorder.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
@@ -262,47 +309,80 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
-        {levels?.map((l) => {
-          const advCount = (l as any).advancement_count;
-          const specials: SpecialEntry[] = (l as any).special_entries || [];
-          return (
-            <Collapsible key={l.id}>
-              <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
-                  {l.name}
-                  {advCount != null && advCount > 0 && (
-                    <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
-                      <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
-                    </Badge>
-                  )}
-                  {specials.map((s) => (
-                    <Badge key={s.type} variant="outline" className="text-[10px] px-1.5 py-0">
-                      {s.label}
-                    </Badge>
-                  ))}
-                </CollapsibleTrigger>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: l.id, competition_id: competitionId })}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-              <CollapsibleContent>
-                <div className="pl-4 mt-2 space-y-2">
-                  <BannerUpload
-                    currentUrl={(l as any).banner_url}
-                    folder={`levels/${l.id}`}
-                    aspectLabel="Level Banner"
-                    onUploaded={(url) => updateLevelBanner(l.id, url)}
-                    onRemoved={() => updateLevelBanner(l.id, null)}
-                  />
-                  <LevelAdvancementSettings level={l} competitionId={competitionId} />
-                </div>
-                <SubEventsPanel levelId={l.id} />
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd}>
+          <SortableContext items={levels?.map((l) => l.id) || []} strategy={verticalListSortingStrategy}>
+            {levels?.map((l, idx) => (
+              <SortableLevelItem
+                key={l.id}
+                level={l}
+                index={idx}
+                competitionId={competitionId}
+                onDelete={() => remove.mutate({ id: l.id, competition_id: competitionId })}
+                onUpdateBanner={(url) => updateLevelBanner(l.id, url)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </CardContent>
     </Card>
+  );
+}
+
+function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateBanner }: {
+  level: any;
+  index: number;
+  competitionId: string;
+  onDelete: () => void;
+  onUpdateBanner: (url: string | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: l.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  const advCount = l.advancement_count;
+  const specials: SpecialEntry[] = l.special_entries || [];
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Collapsible>
+        <div className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground shrink-0">
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <span className="text-xs font-mono text-muted-foreground shrink-0">{index + 1}</span>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+              {l.name}
+              {advCount != null && advCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
+                  <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
+                </Badge>
+              )}
+              {specials.map((s) => (
+                <Badge key={s.type} variant="outline" className="text-[10px] px-1.5 py-0">
+                  {s.label}
+                </Badge>
+              ))}
+            </CollapsibleTrigger>
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={onDelete}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+        <CollapsibleContent>
+          <div className="pl-4 mt-2 space-y-2">
+            <BannerUpload
+              currentUrl={l.banner_url}
+              folder={`levels/${l.id}`}
+              aspectLabel="Level Banner"
+              onUploaded={(url) => onUpdateBanner(url)}
+              onRemoved={() => onUpdateBanner(null)}
+            />
+            <LevelAdvancementSettings level={l} competitionId={competitionId} />
+          </div>
+          <SubEventsPanel levelId={l.id} />
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 }
