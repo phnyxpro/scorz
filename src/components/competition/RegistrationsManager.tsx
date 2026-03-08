@@ -45,7 +45,12 @@ const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
   pending: "bg-primary/20 text-primary border-primary/30",
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
+  no_show: "bg-muted text-muted-foreground border-muted-foreground/30",
+  disqualified: "bg-destructive/20 text-destructive border-destructive/30",
+  drop_out: "bg-muted text-muted-foreground border-muted-foreground/30",
 };
+
+const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"];
 
 type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
 type SortDir = "asc" | "desc";
@@ -178,13 +183,14 @@ interface SortableRowProps {
   onSelect: (reg: ContestantRegistration) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onStatusChange: (id: string, status: string) => void;
   onMoveUp: (regId: string) => void;
   onMoveDown: (regId: string) => void;
   onInlineNameSave: (regId: string, newName: string) => void;
   onInlineNumberSave: (regId: string, newPosition: number) => void;
 }
 
-function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState(reg.full_name);
@@ -304,9 +310,28 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
         />
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
-          {reg.status}
-        </Badge>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="cursor-pointer">
+              <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""} hover:opacity-80 transition-opacity`}>
+                {reg.status}
+              </Badge>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-1" align="start">
+            <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Change status</p>
+            {ALL_STATUSES.map(s => (
+              <button
+                key={s}
+                disabled={s === reg.status}
+                onClick={() => onStatusChange(reg.id, s)}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent disabled:opacity-40 flex items-center gap-1.5 ${s === reg.status ? "font-semibold" : ""}`}
+              >
+                <Badge variant="outline" className={`text-[9px] ${statusColor[s] || ""}`}>{s}</Badge>
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       </TableCell>
       <TableCell>
         <div className="flex gap-1">
@@ -384,7 +409,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInPosition, setWalkInPosition] = useState("");
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(50);
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
@@ -810,6 +835,11 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onSelect={setSelectedReg}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onStatusChange={(id, status) => {
+                      updateReg.mutate({ id, status } as any, {
+                        onSuccess: () => sendNotification(id, status),
+                      });
+                    }}
                     onMoveUp={handleMoveUp}
                     onMoveDown={handleMoveDown}
                     onInlineNameSave={handleInlineNameSave}
@@ -821,11 +851,22 @@ export function RegistrationsManager({ competitionId }: Props) {
           </Table>
         </DndContext>
       </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-xs text-muted-foreground">
-            Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLen)} of {filteredLen}
-          </p>
+      <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLen)} of {filteredLen}
+            </p>
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="h-7 w-[80px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[20, 50, 100].map(n => (
+                  <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -869,7 +910,6 @@ export function RegistrationsManager({ competitionId }: Props) {
             </Button>
           </div>
         </div>
-      )}
     </div>
   );
 
@@ -918,6 +958,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="no_show">No Show</SelectItem>
+                <SelectItem value="disqualified">Disqualified</SelectItem>
+                <SelectItem value="drop_out">Drop Out</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterAge} onValueChange={setFilterAge}>
