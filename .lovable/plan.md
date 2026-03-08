@@ -1,47 +1,30 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Add "Edit Order" Link + Modal to Performance Timer
 
-The app appears blank in headless browser testing due to two compounding issues:
+The Performance Timer in TabulatorDashboard currently has inline drag-and-drop on the paginated contestant grid. Per the user's request, add a simpler "Edit Order" link that opens a modal with full drag-and-drop reordering (matching the existing `PerformanceOrder` component pattern).
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. Update `src/components/scoring/TabulatorTimer.tsx`**
+- Add state: `showReorderModal`
+- Add an "Edit Order" link/button next to the "Contestant on Stage" label
+- Add a `Dialog` component containing:
+  - Full vertical list of all contestants with drag handles (same pattern as `PerformanceOrder`)
+  - "Randomize" button (optional quick action)
+  - Order persists to `sort_order` on save
 
----
+**2. UI Behavior**
+- Link styled as subtle text link: "Edit Order →" or icon button with `ListOrdered`
+- Modal shows all contestants in a scrollable list (not paginated) with GripVertical handles
+- Drag-and-drop reorders; changes saved immediately or on close
+- Timer is disabled while modal is open to prevent conflicts
 
-### Fix 1: Conditionally apply auditorium filter
+**3. Reuse Pattern**
+- Copy the drag logic from `PerformanceOrder.tsx` into the modal body
+- Invalidate `judging_overview` and `approved-contestants-order` queries on reorder
+- Optionally include "Randomize Draw" button in the modal footer
 
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files to Edit
+- `src/components/scoring/TabulatorTimer.tsx` — add modal trigger + dialog with reorder list
 
