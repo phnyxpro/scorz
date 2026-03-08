@@ -175,7 +175,7 @@ export default function ChiefJudgeDashboard() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">Chief Judge Dashboard</h1>
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">Chief Judge Dashboard <ConnectionIndicator /></h1>
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
