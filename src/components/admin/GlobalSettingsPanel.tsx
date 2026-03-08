@@ -93,11 +93,11 @@ export default function GlobalSettingsPanel() {
       </Card>
 
       <Tabs defaultValue="branding" className="space-y-4">
-      <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
-        <TabsTrigger value="branding" className="text-xs gap-1"><Palette className="h-3.5 w-3.5" />Branding</TabsTrigger>
-        <TabsTrigger value="registration" className="text-xs gap-1"><UserPlus className="h-3.5 w-3.5" />Registration</TabsTrigger>
-        <TabsTrigger value="email" className="text-xs gap-1"><Mail className="h-3.5 w-3.5" />Email</TabsTrigger>
-        <TabsTrigger value="features" className="text-xs gap-1"><Flag className="h-3.5 w-3.5" />Features</TabsTrigger>
+      <TabsList className="grid grid-cols-4 w-full">
+        <TabsTrigger value="branding" className="text-xs gap-1"><Palette className="h-3.5 w-3.5" /><span className="hidden sm:inline">Branding</span></TabsTrigger>
+        <TabsTrigger value="registration" className="text-xs gap-1"><UserPlus className="h-3.5 w-3.5" /><span className="hidden sm:inline">Registration</span></TabsTrigger>
+        <TabsTrigger value="email" className="text-xs gap-1"><Mail className="h-3.5 w-3.5" /><span className="hidden sm:inline">Email</span></TabsTrigger>
+        <TabsTrigger value="features" className="text-xs gap-1"><Flag className="h-3.5 w-3.5" /><span className="hidden sm:inline">Features</span></TabsTrigger>
       </TabsList>
 
       {/* Branding */}
