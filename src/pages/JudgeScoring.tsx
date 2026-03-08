@@ -113,11 +113,13 @@ export default function JudgeScoring() {
   const [comments, setComments] = useState("");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [showCertifyAllDialog, setShowCertifyAllDialog] = useState(false);
+  const [showCertifyBatchDialog, setShowCertifyBatchDialog] = useState(false);
   const [signature, setSignature] = useState("");
   const [certifyConfirmed, setCertifyConfirmed] = useState(false);
   const [onStageContestant, setOnStageContestant] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [selectedForBatch, setSelectedForBatch] = useState<Set<string>>(new Set());
   const autoSaveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [certifyAllPending, setCertifyAllPending] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -241,6 +243,27 @@ export default function JudgeScoring() {
     return filteredContestants.every(r => scoreStatusMap.has(r.id));
   }, [filteredContestants, myScores, scoreStatusMap]);
 
+  // Selectable contestants for batch certify (scored but not yet certified)
+  const batchEligible = useMemo(() => {
+    return new Set(filteredContestants.filter(r => scoreStatusMap.get(r.id) === "scored").map(r => r.id));
+  }, [filteredContestants, scoreStatusMap]);
+
+  const toggleBatchSelect = (id: string) => {
+    setSelectedForBatch(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForBatch.size === batchEligible.size) {
+      setSelectedForBatch(new Set());
+    } else {
+      setSelectedForBatch(new Set(batchEligible));
+    }
+  };
+
   const handleCertifyAll = async () => {
     if (!signature || !certifyConfirmed || !myScores) return;
     setCertifyAllPending(true);
@@ -256,6 +279,29 @@ export default function JudgeScoring() {
       }
       setShowCertifyAllDialog(false);
       toast({ title: "All scorecards certified" });
+    } catch (err: any) {
+      toast({ title: "Error certifying", description: err.message, variant: "destructive" });
+    } finally {
+      setCertifyAllPending(false);
+    }
+  };
+
+  const handleCertifyBatch = async () => {
+    if (!signature || !certifyConfirmed || !myScores) return;
+    setCertifyAllPending(true);
+    try {
+      const toCertify = myScores.filter(s => !s.is_certified && selectedForBatch.has(s.contestant_registration_id));
+      for (const score of toCertify) {
+        await certify.mutateAsync({
+          id: score.id,
+          judge_signature: signature,
+          sub_event_id: score.sub_event_id,
+          contestant_registration_id: score.contestant_registration_id,
+        });
+      }
+      setShowCertifyBatchDialog(false);
+      setSelectedForBatch(new Set());
+      toast({ title: `${toCertify.length} scorecard(s) certified` });
     } catch (err: any) {
       toast({ title: "Error certifying", description: err.message, variant: "destructive" });
     } finally {
@@ -329,9 +375,19 @@ export default function JudgeScoring() {
         {selectedSubEventId && (
           <>
             <div className="px-3 pt-1 pb-1.5 border-t border-border/30 space-y-1.5">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Contestants ({filteredContestants.length})
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  Contestants ({filteredContestants.length})
+                </span>
+                {batchEligible.size > 0 && (
+                  <button
+                    onClick={toggleSelectAll}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    {selectedForBatch.size === batchEligible.size ? "Deselect all" : "Select all"}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                 <input
@@ -347,6 +403,13 @@ export default function JudgeScoring() {
               <div className="px-2 pb-3 space-y-0.5">
                 {filteredContestants.map((r, idx) => (
                   <div key={r.id} className="flex items-center gap-1">
+                    {batchEligible.has(r.id) && (
+                      <Checkbox
+                        checked={selectedForBatch.has(r.id)}
+                        onCheckedChange={() => toggleBatchSelect(r.id)}
+                        className="h-3.5 w-3.5 shrink-0 ml-1"
+                      />
+                    )}
                     <button
                       onClick={() => {
                         setSelectedContestant(r.id);
@@ -381,6 +444,17 @@ export default function JudgeScoring() {
                 )}
               </div>
             </ScrollArea>
+            {selectedForBatch.size > 0 && (
+              <div className="px-3 py-2 border-t border-border/30">
+                <Button
+                  onClick={() => { setSignature(""); setCertifyConfirmed(false); setShowCertifyBatchDialog(true); }}
+                  size="sm"
+                  className="w-full h-8 text-xs"
+                >
+                  <Lock className="h-3 w-3 mr-1" /> Certify Selected ({selectedForBatch.size})
+                </Button>
+              </div>
+            )}
           </>
         )}
       </aside>
@@ -649,6 +723,51 @@ export default function JudgeScoring() {
             <Button onClick={handleCertifyAll} disabled={!signature || !certifyConfirmed || certifyAllPending} className="w-full">
               <Lock className="h-4 w-4 mr-1" />
               {certifyAllPending ? "Certifying…" : "Certify All Scorecards"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Certify Batch Dialog */}
+      <Dialog open={showCertifyBatchDialog} onOpenChange={(open) => { setShowCertifyBatchDialog(open); if (!open) { setCertifyConfirmed(false); setSignature(""); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Certify Selected Scorecards</DialogTitle>
+            <DialogDescription>
+              Sign once to certify {selectedForBatch.size} selected scorecard(s). This action is irreversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground">
+                By signing, you confirm that the scores for the selected contestants are accurate and final.
+              </p>
+            </div>
+            <div className="rounded-md border border-border/50 p-2 max-h-32 overflow-y-auto">
+              <ul className="space-y-0.5">
+                {filteredContestants.filter(r => selectedForBatch.has(r.id)).map(r => (
+                  <li key={r.id} className="text-xs text-foreground flex items-center gap-1.5">
+                    <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {r.full_name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="certify-batch-confirm"
+                checked={certifyConfirmed}
+                onCheckedChange={(v) => setCertifyConfirmed(v === true)}
+              />
+              <label htmlFor="certify-batch-confirm" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I have reviewed the scores for the selected contestants and confirm they are accurate. I understand this action is irreversible.
+              </label>
+            </div>
+            <SignaturePad label="Judge Signature" onSignature={setSignature} signerRole="Judge" />
+            <Button onClick={handleCertifyBatch} disabled={!signature || !certifyConfirmed || certifyAllPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" />
+              {certifyAllPending ? "Certifying…" : `Certify ${selectedForBatch.size} Scorecard(s)`}
             </Button>
           </div>
         </DialogContent>
