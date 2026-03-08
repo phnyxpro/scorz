@@ -2,20 +2,23 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GripVertical, Shuffle } from "lucide-react";
+import { GripVertical, Shuffle, ChevronUp, ChevronDown, ArrowDownToLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ContestantReorderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contestants: Array<{ id: string; full_name: string }>;
   subEventId: string;
+  /** Set of contestant IDs that have recorded durations */
+  timedContestantIds?: Set<string>;
 }
 
-export function ContestantReorderModal({ open, onOpenChange, contestants, subEventId }: ContestantReorderModalProps) {
+export function ContestantReorderModal({ open, onOpenChange, contestants, subEventId, timedContestantIds }: ContestantReorderModalProps) {
   const qc = useQueryClient();
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -62,6 +65,28 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
     await persistOrder(reordered);
   };
 
+  const moveItem = async (fromIdx: number, toIdx: number) => {
+    if (toIdx < 0 || toIdx >= contestants.length || fromIdx === toIdx) return;
+    const reordered = [...contestants];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    await persistOrder(reordered);
+  };
+
+  const moveAfterLastTimed = async (idx: number) => {
+    if (!timedContestantIds || timedContestantIds.size === 0) return;
+    // Find the last index of a timed contestant
+    let lastTimedIdx = -1;
+    contestants.forEach((c, i) => {
+      if (timedContestantIds.has(c.id)) lastTimedIdx = i;
+    });
+    if (lastTimedIdx < 0) return;
+    const targetIdx = idx <= lastTimedIdx ? lastTimedIdx : lastTimedIdx + 1;
+    if (targetIdx === idx) return;
+    await moveItem(idx, targetIdx);
+    toast({ title: "Moved after last timed contestant" });
+  };
+
   const randomizeDraw = async () => {
     const shuffled = [...contestants].sort(() => Math.random() - 0.5);
     await persistOrder(shuffled);
@@ -75,7 +100,7 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
         <DialogHeader>
           <DialogTitle>Edit Performance Order</DialogTitle>
           <DialogDescription>
-            Drag to reorder {contestants.length} contestants. Changes save automatically.
+            Drag or use arrows to reorder {contestants.length} contestants. Changes save automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -90,7 +115,7 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
                 onDragEnd={handleDragEnd}
                 onDragOver={(e) => e.preventDefault()}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all cursor-grab active:cursor-grabbing select-none",
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md border border-transparent transition-all cursor-grab active:cursor-grabbing select-none",
                   dragIdx === idx && "opacity-40 border-dashed border-primary/50",
                   overIdx === idx && dragIdx !== idx && "border-primary/40 bg-primary/5",
                   dragIdx === null && "hover:bg-muted/30"
@@ -98,7 +123,25 @@ export function ContestantReorderModal({ open, onOpenChange, contestants, subEve
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="font-mono text-xs text-muted-foreground w-6 text-center">{idx + 1}</span>
-                <span className="text-sm font-medium text-foreground">{c.full_name}</span>
+                <span className="text-sm font-medium text-foreground flex-1">{c.full_name}</span>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {timedContestantIds && timedContestantIds.size > 0 && !timedContestantIds.has(c.id) && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveAfterLastTimed(idx)}>
+                          <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left"><p className="text-xs">Move after last timed</p></TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === 0} onClick={() => moveItem(idx, idx - 1)}>
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === contestants.length - 1} onClick={() => moveItem(idx, idx + 1)}>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
