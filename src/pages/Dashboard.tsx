@@ -18,6 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ActivityFeed } from "@/components/shared/ActivityFeed";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
 
 const container = {
   hidden: { opacity: 0 },
