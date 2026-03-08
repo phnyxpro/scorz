@@ -153,11 +153,15 @@ export default function Auth() {
   return (
     <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen flex items-center justify-center bg-background p-4 relative`}>
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/")}>
-          <ArrowLeft className="h-4 w-4" /> Back to Home
+        <Button variant="ghost" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3 text-muted-foreground hover:text-foreground" onClick={() => navigate("/")}>
+          <Home className="h-4 w-4" />
+          <span className="hidden sm:inline">Back to Home</span>
         </Button>
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-          <Link to="/about">About</Link>
+        <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3 text-muted-foreground hover:text-foreground">
+          <Link to="/about">
+            <Info className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">About</span>
+          </Link>
         </Button>
       </div>
 
