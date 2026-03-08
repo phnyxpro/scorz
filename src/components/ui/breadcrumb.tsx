@@ -67,8 +67,6 @@ const BreadcrumbSeparator = React.forwardRef<HTMLLIElement, React.ComponentProps
   ),
 );
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
-);
-BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
 
 const BreadcrumbEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => (
   <span
