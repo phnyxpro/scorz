@@ -594,6 +594,7 @@ export type Database = {
           rules_acknowledged_at: string | null
           social_handles: Json | null
           sort_order: number
+          special_entry_type: string | null
           status: string
           sub_event_id: string | null
           updated_at: string
@@ -622,6 +623,7 @@ export type Database = {
           rules_acknowledged_at?: string | null
           social_handles?: Json | null
           sort_order?: number
+          special_entry_type?: string | null
           status?: string
           sub_event_id?: string | null
           updated_at?: string
@@ -650,6 +652,7 @@ export type Database = {
           rules_acknowledged_at?: string | null
           social_handles?: Json | null
           sort_order?: number
+          special_entry_type?: string | null
           status?: string
           sub_event_id?: string | null
           updated_at?: string

@@ -39,6 +39,7 @@ const registrationSchema = z.object({
   selectedLevelId: z.string().optional(),
   selectedSubEventId: z.string().optional(),
   selectedSlotId: z.string().optional(),
+  specialEntryType: z.string().optional(),
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
@@ -125,6 +126,7 @@ export function OnBehalfRegistrationForm({
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      special_entry_type: data.specialEntryType || null,
       status: "approved",
     } as any, {
       onSuccess: async (createdReg: any) => {
@@ -296,6 +298,7 @@ export default function ContestantRegistration() {
       guardian_signature: data.guardianSig,
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
+      special_entry_type: data.specialEntryType || null,
       status: isOnBehalf ? "approved" : "pending",
     } as any, {
       onSuccess: async (createdReg: any) => {
@@ -584,14 +587,26 @@ function EventStep({ competitionId }: { competitionId: string }) {
   const { data: levels } = useLevels(competitionId);
   const selectedLevelId = watch("selectedLevelId");
   const selectedSubEventId = watch("selectedSubEventId");
+  const specialEntryType = watch("specialEntryType");
 
   const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
+
+  // Get special entries for the selected level
+  const selectedLevel = levels?.find(l => l.id === selectedLevelId);
+  const specialEntries: { type: string; label: string }[] = (selectedLevel as any)?.special_entries || [];
 
   useEffect(() => {
     if (levels?.length && !selectedLevelId) {
       setValue("selectedLevelId", levels[0].id);
     }
   }, [levels, selectedLevelId, setValue]);
+
+  // Clear special entry type when level changes and new level doesn't have that type
+  useEffect(() => {
+    if (specialEntryType && !specialEntries.some(e => e.type === specialEntryType)) {
+      setValue("specialEntryType", "");
+    }
+  }, [selectedLevelId, specialEntries, specialEntryType, setValue]);
 
   return (
     <Card className="border-border/50 bg-card/80">
@@ -612,6 +627,7 @@ function EventStep({ competitionId }: { competitionId: string }) {
                     setValue("selectedLevelId", l.id);
                     setValue("selectedSubEventId", "");
                     setValue("selectedSlotId", "");
+                    setValue("specialEntryType", "");
                   }}
                   className={`px-3 py-2 rounded-md border text-sm transition-all ${selectedLevelId === l.id
                     ? "bg-primary text-primary-foreground border-primary"
@@ -619,6 +635,29 @@ function EventStep({ competitionId }: { competitionId: string }) {
                     }`}
                 >
                   {l.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {specialEntries.length > 0 && (
+          <div className="space-y-2">
+            <Label>Special Entry Type <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <p className="text-xs text-muted-foreground">Tag this contestant if they qualify via a special entry path.</p>
+            <div className="flex flex-wrap gap-2">
+              {specialEntries.map((entry) => (
+                <button
+                  key={entry.type}
+                  type="button"
+                  onClick={() => setValue("specialEntryType", specialEntryType === entry.type ? "" : entry.type)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    specialEntryType === entry.type
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {entry.label}
                 </button>
               ))}
             </div>
