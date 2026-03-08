@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { FileText } from "lucide-react";
 import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
+import { resolveStaffNames } from "@/hooks/useStaffDisplayNames";
 import type { ContestantRegistration } from "@/hooks/useRegistrations";
 
 interface ScoreCardExportSectionProps {
