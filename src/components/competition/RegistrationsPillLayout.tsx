@@ -22,6 +22,15 @@ interface Props {
 export function RegistrationsPillLayout({ competitionId }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category>("contestants");
   const ActiveIcon = categories[activeCategory].icon;
+  const keys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = keys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < keys.length ? keys[next] : prev;
+    });
+  }, [keys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
     <div className="space-y-4">
