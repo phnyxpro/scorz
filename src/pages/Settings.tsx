@@ -109,16 +109,6 @@ export default function Settings() {
         <p className="text-muted-foreground text-sm mt-1">Manage your account preferences</p>
       </div>
 
-      {(() => {
-        const isMobile = useIsMobile();
-        const [settingsTab, setSettingsTab] = useState("profile");
-        const settingsTabOptions = [
-          { value: "profile", label: "Profile", icon: User },
-          { value: "notifications", label: "Alerts", icon: Bell },
-          { value: "security", label: "Security", icon: Shield },
-          { value: "appearance", label: "Theme", icon: Palette },
-        ];
-        return (
       <Tabs value={settingsTab} onValueChange={setSettingsTab} className="w-full">
         {isMobile ? (
           <SettingsSelect value={settingsTab} onValueChange={setSettingsTab}>
@@ -126,9 +116,10 @@ export default function Settings() {
               <SettingsSelectValue placeholder="Select section" />
             </SettingsSelectTrigger>
             <SettingsSelectContent>
-              {settingsTabOptions.map((t) => (
-                <SettingsSelectItem key={t.value} value={t.value}>{t.label}</SettingsSelectItem>
-              ))}
+              <SettingsSelectItem value="profile">Profile</SettingsSelectItem>
+              <SettingsSelectItem value="notifications">Alerts</SettingsSelectItem>
+              <SettingsSelectItem value="security">Security</SettingsSelectItem>
+              <SettingsSelectItem value="appearance">Theme</SettingsSelectItem>
             </SettingsSelectContent>
           </SettingsSelect>
         ) : (
