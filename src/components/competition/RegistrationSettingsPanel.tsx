@@ -151,18 +151,6 @@ export function RegistrationSettingsPanel({ competitionId }: Props) {
             <p className="text-xs text-muted-foreground">Leave blank for no time restrictions</p>
           </div>
 
-          <div className="p-3 border border-border/50 rounded-lg">
-            <p className="font-medium text-sm flex items-center gap-2 mb-2">
-              <ClipboardList className="h-4 w-4" />
-              Registration Forms
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Create and manage custom registration forms for this competition
-            </p>
-            <Button asChild size="sm" variant="outline" className="w-full">
-              <a href={`/competitions/${competitionId}/forms`}>Manage Registration Forms</a>
-            </Button>
-          </div>
 
           <Button
             onClick={() => updateSettings.mutate()}
