@@ -1,47 +1,91 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Recommendations and Optimisations
 
-The app appears blank in headless browser testing due to two compounding issues:
-
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
-
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+After a thorough review of the codebase, here are actionable improvements grouped by priority.
 
 ---
 
-### Fix 1: Conditionally apply auditorium filter
+### 1. Performance: Remove 1-second polling on timer events
 
-**File: `src/contexts/ThemeContext.tsx`**
+**File:** `src/hooks/usePerformanceTimer.ts` (line 28)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+`useLatestTimerEvent` polls every 1 second (`refetchInterval: 1000`), making a database query every second per active judge/view. A realtime subscription (`useTimerEventsRealtime`) already exists in the same file. The polling should be removed and replaced with the existing realtime hook, or increased to 5-10 seconds as a fallback. This is the single biggest performance win.
 
-### Fix 2: Remove filter class when at defaults
+---
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+### 2. Performance: Remove polling on audience votes (now that realtime is enabled)
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**File:** `src/hooks/useAudienceVoting.ts` (line 20)
 
-### Fix 3: Update CSS to use filter only when properties exist
+`useVoteCounts` still polls every 15 seconds (`refetchInterval: 15_000`). Since we just added `audience_votes` to `supabase_realtime` and `VoteAudit` already has a realtime subscription, the polling can be removed. Instead, add a realtime subscription in the `useVoteCounts` hook to invalidate the query key on changes.
 
-**File: `src/index.css`**
+---
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+### 3. Score formatting: Remaining `.toFixed(1)` inconsistencies
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+Several places still use `.toFixed(1)` for scores instead of `.toFixed(2)`:
+
+| File | Line | Field | Current |
+|------|------|-------|---------|
+| `ScoreSummaryTable.tsx` | 151 | `avgPenalty` | `.toFixed(1)` |
+| `SideBySideScores.tsx` | 72 | `raw_total` | `.toFixed(1)` |
+| `SideBySideScores.tsx` | 111 | avg `time_penalty` | `.toFixed(1)` |
+| `PrintableScorecard.tsx` | 149 | `raw_total` | `.toFixed(1)` |
+| `ContestantProfile.tsx` | 176 | `avgScore` | `.toFixed(1)` |
+| `TieBreaker.tsx` | 62 | tie score | `.toFixed(1)` |
+| `JudgeScoring.tsx` | 512, 588 | `rawTotal` | `.toFixed(1)` |
+
+These should all be updated to `.toFixed(2)` for consistency with the final score columns.
+
+---
+
+### 4. Optimisation: TabulatorDashboard overview query fetches all scores
+
+**File:** `src/pages/TabulatorDashboard.tsx` (lines 54-105)
+
+`useJudgingOverview` fetches ALL scores for ALL sub-events in a competition in a single query (line 90). For large competitions this could hit the 1000-row Supabase limit and cause missing data. 
+
+**Fix:** Either add `.limit(5000)` or paginate, or better yet, only fetch scores for the currently active sub-event (since `SubEventWorkspace` already fetches its own scores via `useAllScoresForSubEvent`). The overview scores are only used for the contestant accordion inline display — consider lazy-loading them per sub-event.
+
+---
+
+### 5. Optimisation: Memoize `contestantName` lookup functions
+
+**File:** `src/pages/TabulatorDashboard.tsx` (lines 170-173)
+
+`contestantName` and `contestantUserId` are plain functions using `Array.find()`, called on every render for every contestant. They should be wrapped in `useMemo` returning a `Map` for O(1) lookups:
+
+```tsx
+const contestantMap = useMemo(() => {
+  const m = new Map();
+  registrations.forEach(r => m.set(r.id, r));
+  return m;
+}, [registrations]);
+const contestantName = (regId: string) => contestantMap.get(regId)?.full_name ?? "Unknown";
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+---
+
+### 6. Minor: Missing React key warning
+
+**File:** `src/pages/TabulatorDashboard.tsx` (line 695)
+
+The `<>` fragment wrapping contestant rows and their expanded score rows uses `key` on the `TableRow` but not on the fragment. This causes React key warnings. Use `<Fragment key={c.id}>` instead.
 
 ---
 
-### Summary
+### Summary of changes
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+| File | Change |
+|------|--------|
+| `src/hooks/usePerformanceTimer.ts` | Remove 1s polling, rely on realtime |
+| `src/hooks/useAudienceVoting.ts` | Remove 15s polling, add realtime subscription |
+| `src/components/tabulator/ScoreSummaryTable.tsx` | `avgPenalty.toFixed(2)` |
+| `src/components/tabulator/SideBySideScores.tsx` | `raw_total.toFixed(2)`, penalty `.toFixed(2)` |
+| `src/components/results/PrintableScorecard.tsx` | `raw_total.toFixed(2)` |
+| `src/pages/ContestantProfile.tsx` | `avgScore.toFixed(2)` |
+| `src/components/chief-judge/TieBreaker.tsx` | tie score `.toFixed(2)` |
+| `src/pages/JudgeScoring.tsx` | `rawTotal.toFixed(2)` |
+| `src/pages/TabulatorDashboard.tsx` | Memoize contestant lookups, fix Fragment key, limit overview scores query |
 
