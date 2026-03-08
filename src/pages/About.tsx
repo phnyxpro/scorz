@@ -2,7 +2,7 @@ import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tier
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail, BookOpen } from "lucide-react";
+import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail, BookOpen, Home, LogIn } from "lucide-react";
 import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -143,16 +143,25 @@ export default function About() {
             <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <InstallPWA />
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/">Home</Link>
+            <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/">
+                <Home className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/help">Knowledge Base</Link>
+            <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/help">
+                <BookOpen className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Knowledge Base</span>
+              </Link>
             </Button>
-            <Button size="sm" asChild>
-              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">Get Started</Link>
+            <Button size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">
+                <LogIn className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Get Started</span>
+              </Link>
             </Button>
           </div>
         </div>
