@@ -1,47 +1,55 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Mobile Optimisation for Pill-Based Components
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+The pill-based navigation pattern used across PenaltyConfig, ScoringSettingsManager, RegistrationsPillLayout, PenaltiesPage, PenaltiesCard, and RegistrationFormsInline needs mobile optimisation. Key issues:
+- Pill bars can overflow on narrow screens (390px)
+- Card padding is too generous for mobile
+- Form grids (e.g. 3-col penalty tier inputs) don't collapse on small screens
+- Tab bar in CompetitionDetail has many tabs that need horizontal scroll to work well
+- Touch targets on switches and small buttons may be too small
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Changes
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**1. Pill bar — horizontal scroll on mobile (all 5 components)**
 
----
+Wrap pill bars in a horizontally scrollable container with `overflow-x-auto no-scrollbar` so they don't wrap awkwardly on small screens. Increase touch targets on mobile with `min-h-[44px]` on pill buttons.
 
-### Fix 1: Conditionally apply auditorium filter
+Files: `PenaltyConfig.tsx`, `ScoringSettingsManager.tsx`, `RegistrationsPillLayout.tsx`, `PenaltiesPage.tsx`, `PenaltiesCard.tsx`
 
-**File: `src/contexts/ThemeContext.tsx`**
+**2. Card padding — responsive (all 5 components)**
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+Change `p-5` to `p-3 sm:p-5` on `CardContent` so cards breathe better on mobile without excessive whitespace.
 
-### Fix 2: Remove filter class when at defaults
+**3. PenaltyConfig.tsx — collapse form grids**
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+- "Add Penalty Tier" grid: change `grid-cols-3` to `grid-cols-1 sm:grid-cols-3`
+- Time Limit / Grace Period grid: change `grid-cols-2` to `grid-cols-1 sm:grid-cols-2`
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**4. ScoringSettingsManager.tsx — responsive sub-event settings**
 
-### Fix 3: Update CSS to use filter only when properties exist
+The `grid-cols-1 sm:grid-cols-2` is already correct. Verify `max-w-sm` on the scoring method select doesn't cause issues — it's fine.
 
-**File: `src/index.css`**
+**5. RegistrationFormsInline.tsx — responsive field rows**
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+- The enable/required toggle rows already use `flex-wrap` but the "Required" toggle + label can be cramped. Add `mt-2 sm:mt-0` to the required toggle container on mobile so it wraps cleanly below.
+- Change card content padding from `p-4` to `p-3 sm:p-4`.
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
+**6. CompetitionDetail.tsx — tab bar touch targets**
 
-This ensures no filter is applied when properties are unset, which is the default state.
+The tab list already has `overflow-x-auto no-scrollbar`. Ensure each `TabsTrigger` has adequate height. Add `min-h-[44px]` to the TabsList for touch targets.
 
----
+**7. PenaltiesPage.tsx — responsive table**
 
-### Summary
+Wrap tables in `overflow-x-auto` div for horizontal scroll on narrow screens.
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files Modified
+- `src/components/competition/PenaltyConfig.tsx`
+- `src/components/competition/ScoringSettingsManager.tsx`
+- `src/components/competition/RegistrationsPillLayout.tsx`
+- `src/components/competition/RegistrationFormsInline.tsx`
+- `src/pages/PenaltiesPage.tsx`
+- `src/components/judge/PenaltiesCard.tsx`
+- `src/pages/CompetitionDetail.tsx`
 
