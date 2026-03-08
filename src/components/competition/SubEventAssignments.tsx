@@ -86,6 +86,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const [staffPhone, setStaffPhone] = useState("");
   const [staffRole, setStaffRole] = useState<string>("judge");
   const [staffIsChief, setStaffIsChief] = useState(false);
+  const [staffIsPA, setStaffIsPA] = useState(false);
 
   const handleAddStaff = () => {
     if (!staffEmail || !staffRole) return;
@@ -97,11 +98,13 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       competitionId,
       competitionName,
       isChief: staffRole === "judge" ? staffIsChief : false,
+      isProductionAssistant: staffRole === "organizer" ? staffIsPA : false,
     });
     setStaffName("");
     setStaffEmail("");
     setStaffPhone("");
     setStaffIsChief(false);
+    setStaffIsPA(false);
   };
 
   const handleSendInvite = (inv: { id: string; email: string; role: any }) => {
