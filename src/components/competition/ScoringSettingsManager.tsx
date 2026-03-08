@@ -127,6 +127,16 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   const ActiveIcon = categories[activeCategory].icon;
 
+  const catKeys = Object.keys(categories) as Category[];
+  const swipeNav = useCallback((dir: 1 | -1) => {
+    setActiveCategory(prev => {
+      const i = catKeys.indexOf(prev);
+      const next = i + dir;
+      return next >= 0 && next < catKeys.length ? catKeys[next] : prev;
+    });
+  }, [catKeys]);
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
   return (
     <div className="space-y-4">
       {/* Category pill bar */}
