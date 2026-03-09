@@ -1,47 +1,56 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Plan: Undo Promotion + Redesign Advancement to Copy Instead of Move
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Problem
+The current promotion logic **moves** contestants by updating their `sub_event_id`, which removes them from the previous level entirely. The correct behavior is to **copy** — create a new registration in the next level while preserving the original. Additionally, the 15 promoted contestants in National Poetry Slam need to be restored to their original Auditions sub-events.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Data Fix (Step 1)
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+Restore the 15 contestants back to their original Auditions sub-events using the `sub_event_id` from their existing `judge_scores`:
 
----
+- 13 contestants go back to **Trinidad** (`14ae92f2-a730-4c72-9aa1-19b0e3561722`)
+- 2 contestants (Camryn Bruno, Crystal St Hillaire) go back to **Tobago** (`ed535ad8-6122-42f4-8d27-9d6d62649c99`)
 
-### Fix 1: Conditionally apply auditorium filter
+This is a data UPDATE operation (not schema), executed via the insert tool.
 
-**File: `src/contexts/ThemeContext.tsx`**
+### Schema Change (Step 2)
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+The current unique constraint is `(email, competition_id)` — this prevents a contestant from having registrations in multiple levels. We need to change it to `(email, competition_id, sub_event_id)` so a contestant can exist in both Auditions and Semi-final.
 
-### Fix 2: Remove filter class when at defaults
+```sql
+ALTER TABLE public.contestant_registrations
+  DROP CONSTRAINT contestant_registrations_email_competition_id_key;
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+ALTER TABLE public.contestant_registrations
+  ADD CONSTRAINT contestant_registrations_email_competition_sub_event_key
+  UNIQUE (email, competition_id, sub_event_id);
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+### Code Change (Step 3)
 
----
+**File:** `src/hooks/useLevelAdvancement.ts` — `usePromoteContestants` mutation
 
-### Summary
+Replace the UPDATE logic with INSERT logic:
+- After ranking contestants and identifying the advancing ones, **insert new registration rows** with the same contestant data (full_name, email, user_id, age_category, etc.) but with `sub_event_id` set to the next level's sub-event
+- Skip contestants who already have a registration in the target sub-event (idempotent)
+- The original registrations remain untouched in the previous level
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+The RLS policy change from the last migration (tabulators can UPDATE) should be complemented with an INSERT policy for tabulators, or we revert to having admin/organizer trigger promotions.
+
+### Schema Migration (Step 4)
+
+Add INSERT policy for tabulators:
+```sql
+CREATE POLICY "Tabulators can insert registrations for advancement"
+ON public.contestant_registrations
+FOR INSERT
+TO authenticated
+WITH CHECK (has_role(auth.uid(), 'tabulator'::app_role));
+```
+
+### Files Modified
+1. **Database** — data fix (restore 15 contestants to Auditions), constraint change, new INSERT RLS policy
+2. `src/hooks/useLevelAdvancement.ts` — change promotion from UPDATE to INSERT (copy)
+3. `src/hooks/useRegistrations.ts` — update duplicate error handling for new constraint
 
