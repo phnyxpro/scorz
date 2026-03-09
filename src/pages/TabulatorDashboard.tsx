@@ -177,7 +177,7 @@ function SubEventWorkspace({
         </Badge>
         <Badge variant={witnessCertified ? "secondary" : "outline"} className="gap-1">
           {witnessCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-          Witness {witnessCertified ? "Certified" : "Pending"}
+          2nd Tabulator (Witness) {witnessCertified ? "Certified" : "Pending"}
         </Badge>
       </div>
 

@@ -16,6 +16,7 @@ import {
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
+import { calculateMethodScore } from "@/lib/scoring-methods";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";

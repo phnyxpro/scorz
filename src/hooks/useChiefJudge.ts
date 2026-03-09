@@ -29,6 +29,7 @@ export interface ChiefJudgeCertification {
   chief_judge_id: string;
   tie_break_criterion_id: string | null;
   tie_break_notes: string | null;
+  tie_break_order: { regId: string; rank: number }[];
   penalty_adjustments: Record<string, number>;
   chief_judge_signature: string | null;
   signed_at: string | null;

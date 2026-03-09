@@ -1,34 +1,173 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Scale } from "lucide-react";
-import type { RubricCriterion } from "@/hooks/useCompetitions";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AlertTriangle, CheckCircle, Scale, GripVertical, Lock } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import type { ChiefJudgeCertification } from "@/hooks/useChiefJudge";
 
 interface TieBreakerProps {
   ties: { regId: string; avg: number; scores: JudgeScore[] }[][];
   contestantName: (regId: string) => string;
-  rubric: RubricCriterion[];
   isCertified: boolean;
   certification: ChiefJudgeCertification | null | undefined;
-  onSaveTieBreak: (criterionId: string, notes: string) => Promise<void>;
+  onSaveTieBreakOrder: (tieBreakOrder: { regId: string; rank: number }[], notes: string) => Promise<void>;
+  judgeNames?: Record<string, string>;
 }
 
-export function TieBreaker({ ties, contestantName, rubric, isCertified, certification, onSaveTieBreak }: TieBreakerProps) {
-  const [selectedCriterion, setSelectedCriterion] = useState(certification?.tie_break_criterion_id || "");
+function SortableContestantItem({
+  entry,
+  contestantName,
+  rank,
+  isCertified,
+  judgeNames,
+}: {
+  entry: { regId: string; avg: number; scores: JudgeScore[] };
+  contestantName: (regId: string) => string;
+  rank: number;
+  isCertified: boolean;
+  judgeNames?: Record<string, string>;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: entry.regId,
+    disabled: isCertified,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  const certifiedScores = entry.scores.filter((s) => s.is_certified);
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <AccordionItem value={entry.regId} className="border border-border/50 rounded-md mb-2 overflow-hidden">
+        <div className="flex items-center">
+          {!isCertified && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="px-2 py-3 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+            >
+              <GripVertical className="h-4 w-4" />
+            </div>
+          )}
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+            {rank}
+          </div>
+          <AccordionTrigger className="flex-1 px-3 py-2 hover:no-underline">
+            <div className="flex items-center gap-2 text-left">
+              <span className="text-sm font-medium text-foreground">{contestantName(entry.regId)}</span>
+              <Badge variant="outline" className="text-[10px] font-mono">{entry.avg.toFixed(2)} pts</Badge>
+            </div>
+          </AccordionTrigger>
+        </div>
+        <AccordionContent className="px-4 pb-3">
+          <div className="space-y-1">
+            <div className="grid grid-cols-4 gap-2 text-[10px] font-mono uppercase tracking-wider text-muted-foreground border-b border-border/30 pb-1">
+              <span>Judge</span>
+              <span className="text-right">Raw</span>
+              <span className="text-right">Penalty</span>
+              <span className="text-right">Final</span>
+            </div>
+            {certifiedScores.map((s) => (
+              <div key={s.id} className="grid grid-cols-4 gap-2 text-xs">
+                <span className="text-foreground truncate">{judgeNames?.[s.judge_id] || s.judge_id.slice(0, 8)}</span>
+                <span className="text-right font-mono text-muted-foreground">{Number(s.raw_total).toFixed(2)}</span>
+                <span className="text-right font-mono text-destructive">{Number(s.time_penalty) > 0 ? `-${Number(s.time_penalty).toFixed(1)}` : "—"}</span>
+                <span className="text-right font-mono font-bold text-foreground">{Number(s.final_score).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </div>
+  );
+}
+
+export function TieBreaker({ ties, contestantName, isCertified, certification, onSaveTieBreakOrder, judgeNames }: TieBreakerProps) {
+  // Parse saved tie break order
+  const savedOrder = useMemo(() => {
+    const raw = (certification?.tie_break_order ?? []) as { regId: string; rank: number }[];
+    return Array.isArray(raw) ? raw : [];
+  }, [certification?.tie_break_order]);
+
   const [notes, setNotes] = useState(certification?.tie_break_notes || "");
   const [saving, setSaving] = useState(false);
 
+  // Maintain ordered lists per tie group
+  const [groupOrders, setGroupOrders] = useState<Record<number, string[]>>(() => {
+    const orders: Record<number, string[]> = {};
+    ties.forEach((group, gi) => {
+      // Check if saved order has entries for this group
+      const groupRegIds = group.map((e) => e.regId);
+      const savedForGroup = savedOrder
+        .filter((s) => groupRegIds.includes(s.regId))
+        .sort((a, b) => a.rank - b.rank)
+        .map((s) => s.regId);
+
+      if (savedForGroup.length === groupRegIds.length) {
+        orders[gi] = savedForGroup;
+      } else {
+        orders[gi] = groupRegIds;
+      }
+    });
+    return orders;
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (groupIndex: number) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setGroupOrders((prev) => {
+      const order = prev[groupIndex] || [];
+      const oldIdx = order.indexOf(active.id as string);
+      const newIdx = order.indexOf(over.id as string);
+      return { ...prev, [groupIndex]: arrayMove(order, oldIdx, newIdx) };
+    });
+  };
+
   const handleSave = async () => {
-    if (!selectedCriterion) return;
     setSaving(true);
-    await onSaveTieBreak(selectedCriterion, notes);
+    // Build flat tie_break_order array from all groups
+    const allOrders: { regId: string; rank: number }[] = [];
+    ties.forEach((_, gi) => {
+      const order = groupOrders[gi] || [];
+      order.forEach((regId, idx) => {
+        allOrders.push({ regId, rank: idx + 1 });
+      });
+    });
+    await onSaveTieBreakOrder(allOrders, notes);
     setSaving(false);
   };
+
+  const isLocked = savedOrder.length > 0 && isCertified;
 
   if (ties.length === 0) {
     return (
@@ -49,94 +188,74 @@ export function TieBreaker({ ties, contestantName, rubric, isCertified, certific
           <CardTitle className="text-base">Tie Breaking</CardTitle>
         </div>
         <CardDescription>
-          {ties.length} tie{ties.length > 1 ? "s" : ""} detected. Select a priority criterion to resolve.
+          {ties.length} tie{ties.length > 1 ? "s" : ""} detected. Drag contestants to set final rank order.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Show tied groups */}
-        {ties.map((group, gi) => (
-          <div key={gi} className="border border-border/50 rounded-md p-3 bg-muted/20">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">
-                Tie at {group[0].avg.toFixed(2)} points
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {group.map(entry => (
-                <Badge key={entry.regId} variant="outline" className="text-sm">
-                  {contestantName(entry.regId)}
-                </Badge>
-              ))}
-            </div>
+        {ties.map((group, gi) => {
+          const order = groupOrders[gi] || group.map((e) => e.regId);
+          const entryMap = new Map(group.map((e) => [e.regId, e]));
 
-            {/* Per-criterion breakdown for tied contestants */}
-            {selectedCriterion && (
-              <div className="mt-3 pt-2 border-t border-border/30">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Priority criterion scores ({rubric.find(r => r.id === selectedCriterion)?.name}):
-                </p>
-                <div className="space-y-1">
-                  {group.map(entry => {
-                    // Average the selected criterion across all judges
-                    const criterionScores = entry.scores
-                      .filter(s => s.is_certified && s.criterion_scores[selectedCriterion])
-                      .map(s => s.criterion_scores[selectedCriterion]);
-                    const criterionAvg = criterionScores.length
-                      ? (criterionScores.reduce((a, b) => a + b, 0) / criterionScores.length)
-                      : 0;
-                    return (
-                      <div key={entry.regId} className="flex justify-between text-xs">
-                        <span className="text-foreground">{contestantName(entry.regId)}</span>
-                        <span className="font-mono font-bold text-primary">{criterionAvg.toFixed(2)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+          return (
+            <div key={gi} className="border border-border/50 rounded-md p-3 bg-muted/20">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Tie at {group[0].avg.toFixed(2)} points
+                </span>
+                <Badge variant="outline" className="text-[10px]">{group.length} contestants</Badge>
               </div>
-            )}
-          </div>
-        ))}
 
-        {/* Tie-break controls */}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(gi)}>
+                <SortableContext items={order} strategy={verticalListSortingStrategy}>
+                  <Accordion type="multiple" className="space-y-0">
+                    {order.map((regId, idx) => {
+                      const entry = entryMap.get(regId);
+                      if (!entry) return null;
+                      return (
+                        <SortableContestantItem
+                          key={regId}
+                          entry={entry}
+                          contestantName={contestantName}
+                          rank={idx + 1}
+                          isCertified={isCertified}
+                          judgeNames={judgeNames}
+                        />
+                      );
+                    })}
+                  </Accordion>
+                </SortableContext>
+              </DndContext>
+            </div>
+          );
+        })}
+
+        {/* Save controls */}
         {!isCertified && (
           <div className="space-y-3 pt-2">
             <div>
-              <label className="text-xs text-muted-foreground">Priority Criterion for Tie Resolution</label>
-              <Select value={selectedCriterion} onValueChange={setSelectedCriterion}>
-                <SelectTrigger><SelectValue placeholder="Select criterion…" /></SelectTrigger>
-                <SelectContent>
-                  {rubric.map(r => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-xs text-muted-foreground">Tie-Break Notes</label>
+              <label className="text-xs text-muted-foreground">Tie-Break Notes (optional)</label>
               <Textarea
                 value={notes}
-                onChange={e => setNotes(e.target.value)}
+                onChange={(e) => setNotes(e.target.value)}
                 placeholder="Justification for tie resolution…"
                 rows={2}
               />
             </div>
-
-            <Button onClick={handleSave} disabled={saving || !selectedCriterion} size="sm">
-              {saving ? "Saving…" : "Save Tie-Break Decision"}
+            <Button onClick={handleSave} disabled={saving} size="sm" className="w-full gap-2">
+              <Lock className="h-3.5 w-3.5" />
+              {saving ? "Saving…" : "Lock Tie-Break Decision"}
             </Button>
           </div>
         )}
 
-        {isCertified && certification?.tie_break_criterion_id && (
+        {isLocked && (
           <div className="pt-2 border-t border-border/50">
-            <p className="text-xs text-muted-foreground">
-              Resolved using: <span className="font-medium text-foreground">
-                {rubric.find(r => r.id === certification.tie_break_criterion_id)?.name}
-              </span>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <CheckCircle className="h-3 w-3 text-secondary" />
+              Tie-break order locked and certified.
             </p>
-            {certification.tie_break_notes && (
+            {certification?.tie_break_notes && (
               <p className="text-xs text-muted-foreground mt-1 italic">{certification.tie_break_notes}</p>
             )}
           </div>
