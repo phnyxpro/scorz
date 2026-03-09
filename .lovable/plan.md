@@ -1,56 +1,23 @@
 
 
-## Investigation: Identify Missing Judge Scores for 3 Contestants
+## Insert Missing Performance Durations for 6 Contestants
 
-### What We Need to Find
-For the Trinidad sub-event (`14ae92f2-a730-4c72-9aa1-19b0e3561722`), identify which of the 5 assigned judges have not yet submitted scores for:
-- Ishmael Campbell (4/5 scores)
-- Khyndeh Pantor (3/5 scores)
-- Jael Reyes (4/5 scores)
+### Data to Insert
 
-### Query Strategy
+All records go into the `performance_durations` table for sub-event `14ae92f2-a730-4c72-9aa1-19b0e3561722`, using tabulator `e9a05993-c615-425a-afb6-dd0a270cf0d2`.
 
-**Step 1: Get Contestant Registration IDs**
-```sql
-SELECT id, full_name 
-FROM contestant_registrations 
-WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
-  AND full_name IN ('Ishmael Campbell', 'Khyndeh Pantor', 'Jael Reyes')
-  AND status = 'approved';
-```
+| Contestant | Registration ID | Duration | Seconds |
+|---|---|---|---|
+| Jael Reyes | `cfd821d2-9f1b-4926-a282-9c447fab3f6f` | 03:01 | 181 |
+| Semira Bradshaw | `4c35777b-ce9d-4581-b6c8-887589b8d834` | 03:31 | 211 |
+| Miguel Jagarnath | `8b1a76af-4893-46c7-bad3-687315e129cf` | 03:26 | 206 |
+| Kayla Martin | `27611e81-ba7a-480d-abb7-d1ecdb660367` | 03:28 | 208 |
+| Shaunelle Noble | `fae92c97-ebfd-4a6f-a1b9-52fc99bf29f7` | 03:51 | 231 |
+| Shakir Gray | `8d110a4a-eab4-4dc9-be44-b15bc0ea4541` | 02:38 | 158 |
 
-**Step 2: Get All Assigned Judges**
-```sql
-SELECT user_id, is_chief
-FROM sub_event_assignments
-WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
-  AND role = 'judge';
-```
+### Implementation
 
-**Step 3: Get Existing Scores**
-For each contestant, retrieve which judges have already submitted scores:
-```sql
-SELECT contestant_registration_id, judge_id
-FROM judge_scores
-WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
-  AND contestant_registration_id IN (<contestant_ids>);
-```
+Single SQL INSERT into `performance_durations` with all 6 rows. Each row includes `sub_event_id`, `contestant_registration_id`, `tabulator_id`, and `duration_seconds`.
 
-**Step 4: Cross-Reference**
-Compare the list of assigned judges against submitted scores to identify gaps for each contestant.
-
-**Step 5: Map Judge IDs to Names**
-```sql
-SELECT user_id, full_name
-FROM profiles
-WHERE user_id IN (<judge_user_ids>);
-```
-
-### Expected Output
-A detailed breakdown showing:
-- **Ishmael Campbell**: Missing 1 score from [Judge Name]
-- **Khyndeh Pantor**: Missing 2 scores from [Judge Name 1], [Judge Name 2]
-- **Jael Reyes**: Missing 1 score from [Judge Name]
-
-This will pinpoint exactly which judges need to complete their evaluations for these 3 contestants.
+After insertion, verify all 61 contestants now have duration records, and the Score Tables page reflects the updated data.
 
