@@ -715,6 +715,18 @@ export default function TabulatorDashboard() {
                                       <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                     </Link>
                                   </Button>
+
+                                  {/* Per-judge score sheets */}
+                                  <JudgeScoreSheets
+                                    subEventId={se.id}
+                                    subEventName={se.name}
+                                    competitionName={activeComp?.name || "Competition"}
+                                    scores={overview.scores}
+                                    registrations={overview.registrations}
+                                    rubric={overview.rubric}
+                                    judgeProfiles={Object.fromEntries(profileMap)}
+                                    indexToName={indexToName}
+                                  />
                                 </CardContent>
                               </Card>
                             </motion.div>
