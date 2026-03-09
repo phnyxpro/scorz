@@ -176,7 +176,7 @@ export default function MasterScoreSheet() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <div className="mb-4 flex items-center justify-between print:mb-2">
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost" size="icon" className="shrink-0 print:hidden">
