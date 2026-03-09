@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLevels, useCreateLevel, useDeleteLevel, useSubEvents, useCreateSubEvent, useDeleteSubEvent } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown } from "lucide-react";
+import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays, parseISO } from "date-fns";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
