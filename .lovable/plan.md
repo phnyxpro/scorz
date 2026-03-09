@@ -1,47 +1,34 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Add Level Master Sheet Link & Results Card to Chief Judge Dashboard
 
-The app appears blank in headless browser testing due to two compounding issues:
+### Changes
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+#### 1. Chief Judge Dashboard — Add Level Master Sheet link above selectors
+In `src/pages/ChiefJudgeDashboard.tsx`, add a link button to the Level Master Sheet above the Level/Sub-Event selector card (around line 250). This uses the same URL pattern as the Tabulator dashboard: `/competitions/:id/level-sheet?level=${selectedLevelId}`. Only show when a level is selected.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+#### 2. Judge Dashboard Cards — Add "Results" card
+In `src/pages/Dashboard.tsx`, update `buildJudgeCards()` to insert a "Results" card between "Certify Results" and "Contestant Profiles". This card links to `/competitions/:id/results-hub` or similar. However, since the user wants both Level Master Sheet and individual Master Score Sheet access, the card should link to the Level Master Sheet by default: `/competitions/:id/level-sheet`.
 
----
+Looking at the request more carefully — the user wants a "Results" card on the **judge dashboard** (the card grid on `/dashboard`) that lets them view either the Level Master Sheet or the individual (sub-event) Master Score Sheet. Since dashboard cards are simple link cards, the most practical approach is to link to the existing results page or create a lightweight results hub.
 
-### Fix 1: Conditionally apply auditorium filter
+Let me check what `/competitions/:id/results-hub` or similar exists:
 
-**File: `src/contexts/ThemeContext.tsx`**
+Actually, looking at the file list there's `src/pages/ResultsHub.tsx`. Let me verify.
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+#### Revised approach:
 
-### Fix 2: Remove filter class when at defaults
+**File 1: `src/pages/ChiefJudgeDashboard.tsx`**
+- Above the Level/Sub-Event selector card (~line 250), add a "View Level Master Sheet" link button that navigates to `/competitions/:id/level-sheet?level=${selectedLevelId}`. Show only when `selectedLevelId` is set.
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**File 2: `src/pages/Dashboard.tsx`**
+- In `buildJudgeCards()`, insert a new "Results" card after "Certify Results" and before "Contestant Profiles":
+  ```
+  { title: "Results", desc: "Level & sub-event score sheets", icon: BarChart3, color: "text-secondary", to: `/competitions/${competitionId}/level-sheet` }
+  ```
+  This takes judges to the Level Master Sheet where they can see combined results. The Level Master Sheet page already has level selection via query params.
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+### Files to modify:
+- `src/pages/ChiefJudgeDashboard.tsx` — add Level Master Sheet link above selectors
+- `src/pages/Dashboard.tsx` — add Results card to `buildJudgeCards()`
 
