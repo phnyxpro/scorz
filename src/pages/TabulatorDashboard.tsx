@@ -13,6 +13,7 @@ import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWi
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
+import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
@@ -43,7 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye, ArrowUpCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
