@@ -1,60 +1,103 @@
 
 
-## Investigation: Missing Scores and Performance Times for Trinidad Sub-Event
+## Plan: Add Rich Text Editor & Email Preview to Broadcast Component
 
-### Current Context
-- **Sub-event ID**: `14ae92f2-a730-4c72-9aa1-19b0e3561722` (Trinidad)
-- **Total Approved Contestants**: 61
-- **Assigned Judges**: 5 (Jean-Claude Cournand, Kwame Weekes, Mtmima Solwazi, Patti-Anne Ali, Shivanee Ramlochan)
+### What We're Building
+Transform the Email Broadcast component from a simple textarea to a professional email composer with:
+- **Rich text editor** (same TipTap editor used in Rules/Rubric pages) for message composition
+- **2-column layout**: Editor on left, live preview on right
+- **Branded preview**: Shows how the email will look with SCORZ template styling
 
-### Investigation Plan
+### Current State Analysis
+**EmailBroadcast component** (`src/components/chat/EmailBroadcast.tsx`):
+- Uses basic `<Textarea>` for message input (line 236-243)
+- Single-column layout
+- No preview capability
+- Content stored as plain text
 
-**Step 1: Query Current Data State**
-- Fetch all 61 approved contestants for Trinidad sub-event
-- Retrieve all existing `judge_scores` records
-- Retrieve all existing `performance_durations` records
+**RichTextEditor** (`src/components/shared/RichTextEditor.tsx`):
+- Full TipTap editor with formatting toolbar
+- Props: `content` (HTML string), `onChange` (callback), `placeholder`, `editable`
+- Outputs HTML via `editor.getHTML()`
 
-**Step 2: Identify Gaps**
-- **Scores Analysis**: For each contestant, count how many judge scores exist (should be 5 per contestant)
-- **Duration Analysis**: Check which contestants are missing performance duration records
-- **Cross-reference**: Identify contestants with partial data (e.g., has duration but missing some judge scores)
+**Email Template** (`supabase/functions/send-broadcast-email/index.ts`):
+- Injects content directly as HTML (line 160)
+- Uses `buildEmail()` helper with SCORZ branding (#1a1b25 charcoal, #f59e0b orange)
 
-**Step 3: Generate Missing Data Report**
-Create a comprehensive table showing:
-- Contestant name & registration ID
-- Judge scores status (0-5 scores submitted)
-- Performance duration status (recorded/missing)
-- Action required (add scores, add duration, or both)
+### Implementation Plan
 
-**Step 4: Prioritize Data Entry**
-Categorize contestants by urgency:
-1. **Critical**: Have scores but no duration (penalty calculation incomplete)
-2. **High**: Missing all scores and duration
-3. **Medium**: Missing only some judge scores (1-4 out of 5)
+**1. Update EmailBroadcast Component**
 
-### Query Strategy
-```sql
--- Get all contestants with score/duration counts
-SELECT 
-  cr.id,
-  cr.full_name,
-  cr.sort_order,
-  COUNT(DISTINCT js.id) as score_count,
-  COUNT(DISTINCT pd.id) as duration_count
-FROM contestant_registrations cr
-LEFT JOIN judge_scores js ON js.contestant_registration_id = cr.id
-LEFT JOIN performance_durations pd ON pd.contestant_registration_id = cr.id
-WHERE cr.sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
-  AND cr.status = 'approved'
-GROUP BY cr.id, cr.full_name, cr.sort_order
-ORDER BY cr.sort_order;
+Replace `<Textarea>` with `<RichTextEditor>`:
+- Import RichTextEditor from `@/components/shared/RichTextEditor`
+- Change `content` state to store HTML instead of plain text
+- Wire up RichTextEditor with `content` and `onChange` props
+
+**2. Create 2-Column Layout**
+
+Split the message section into two columns:
+- **Left column**: Subject + Rich Text Editor
+- **Right column**: Live email preview
+- Use CSS Grid: `grid-cols-1 lg:grid-cols-2` (stacked on mobile, side-by-side on desktop)
+- Add gap between columns
+
+**3. Build Preview Component**
+
+Create inline preview showing:
+- SCORZ header with logo styling
+- Subject line as `<h2>`
+- Competition name as metadata
+- Rich text content wrapped in styled container
+- Email footer with branding
+
+Preview styling must match `email-html.ts`:
+- White background (#ffffff)
+- Charcoal text (#1a1b25)
+- Orange accents (#f59e0b)
+- Max width 560px
+- Proper padding and spacing
+
+**4. Styling Considerations**
+
+- RichTextEditor height: ~300px min-height for comfortable editing
+- Preview container: scrollable if content overflows
+- Mobile: preview appears below editor
+- Maintain existing spacing for recipient groups and action buttons
+
+### Technical Details
+
+**State Change**:
+```typescript
+// Before: const [content, setContent] = useState("");
+// After: const [content, setContent] = useState(""); // Now stores HTML
 ```
 
-### Expected Deliverable
-A detailed breakdown showing:
-- Which contestants need performance durations added
-- Which contestants need judge scores entered
-- Summary statistics (e.g., "55 of 61 contestants have complete scoring")
+**Grid Layout Structure**:
+```
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div> {/* Editor column */}
+    <Label>Subject</Label>
+    <Input />
+    <Label>Message</Label>
+    <RichTextEditor content={content} onChange={setContent} />
+  </div>
+  <div> {/* Preview column */}
+    <Label>Preview</Label>
+    <div className="border rounded-md bg-[#f4f4f5] p-4 overflow-auto">
+      {/* Branded email preview */}
+    </div>
+  </div>
+</div>
+```
 
-This investigation will determine the scope of remaining data entry work needed before final certification.
+**Preview Template Inline Styling**:
+- Replicate key styles from `email-html.ts`
+- SCORZ header: charcoal bg, white+orange text
+- Body: white bg, proper padding
+- Content wrapper: light gray bg (#f9fafb), rounded corners
+
+### No Breaking Changes
+- All existing functionality preserved (recipient selection, extra emails, send logic)
+- Backend expects HTML content (already does)
+- No database schema changes needed
 
