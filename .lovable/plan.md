@@ -1,23 +1,60 @@
 
 
-## Plan: Reorder 61 Trinidad Contestants
+## Investigation: Missing Scores and Performance Times for Trinidad Sub-Event
 
-### What
-Update the `sort_order` column for all 61 approved contestants in the Trinidad sub-event (`14ae92f2-a730-4c72-9aa1-19b0e3561722`) to match the provided list. This order will also determine the sequence judges see when certifying scores.
+### Current Context
+- **Sub-event ID**: `14ae92f2-a730-4c72-9aa1-19b0e3561722` (Trinidad)
+- **Total Approved Contestants**: 61
+- **Assigned Judges**: 5 (Jean-Claude Cournand, Kwame Weekes, Mtmima Solwazi, Patti-Anne Ali, Shivanee Ramlochan)
 
-### How
-Execute a single batch of UPDATE statements against `contestant_registrations` using the data insert tool, setting `sort_order` from 1 to 61 for each contestant by their registration ID.
+### Investigation Plan
 
-### Notable Adjustments
-Some names in the current database differ slightly from the provided list and need case-insensitive matching:
-- "akeem jack" → Akeem Jack (position 9)
-- "Toshani Nath" → Toshani Nathi (position 40)
-- "Winston Trotman" currently at position 26, needs to move to 26 (same)
-- "Mckayla Alfred" at 25 → needs to move to 27
+**Step 1: Query Current Data State**
+- Fetch all 61 approved contestants for Trinidad sub-event
+- Retrieve all existing `judge_scores` records
+- Retrieve all existing `performance_durations` records
 
-### ID-to-Position Mapping (all 61 records)
-Each contestant's `sort_order` will be set to their 1-based position in the provided list. The full mapping is derived from the query results above. Key reorderings include moving contestants like Jayda Jackman (currently 37 → 57), Colleen Cleghorn (57 → 39), Marcus Hazel (39 → 36), Kevin Telemaque (30 → 37), and others.
+**Step 2: Identify Gaps**
+- **Scores Analysis**: For each contestant, count how many judge scores exist (should be 5 per contestant)
+- **Duration Analysis**: Check which contestants are missing performance duration records
+- **Cross-reference**: Identify contestants with partial data (e.g., has duration but missing some judge scores)
 
-### Implementation
-One SQL UPDATE per contestant via the data insert tool — 61 updates total setting `sort_order` values 1 through 61.
+**Step 3: Generate Missing Data Report**
+Create a comprehensive table showing:
+- Contestant name & registration ID
+- Judge scores status (0-5 scores submitted)
+- Performance duration status (recorded/missing)
+- Action required (add scores, add duration, or both)
+
+**Step 4: Prioritize Data Entry**
+Categorize contestants by urgency:
+1. **Critical**: Have scores but no duration (penalty calculation incomplete)
+2. **High**: Missing all scores and duration
+3. **Medium**: Missing only some judge scores (1-4 out of 5)
+
+### Query Strategy
+```sql
+-- Get all contestants with score/duration counts
+SELECT 
+  cr.id,
+  cr.full_name,
+  cr.sort_order,
+  COUNT(DISTINCT js.id) as score_count,
+  COUNT(DISTINCT pd.id) as duration_count
+FROM contestant_registrations cr
+LEFT JOIN judge_scores js ON js.contestant_registration_id = cr.id
+LEFT JOIN performance_durations pd ON pd.contestant_registration_id = cr.id
+WHERE cr.sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
+  AND cr.status = 'approved'
+GROUP BY cr.id, cr.full_name, cr.sort_order
+ORDER BY cr.sort_order;
+```
+
+### Expected Deliverable
+A detailed breakdown showing:
+- Which contestants need performance durations added
+- Which contestants need judge scores entered
+- Summary statistics (e.g., "55 of 61 contestants have complete scoring")
+
+This investigation will determine the scope of remaining data entry work needed before final certification.
 
