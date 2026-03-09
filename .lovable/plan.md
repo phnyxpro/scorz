@@ -1,23 +1,36 @@
 
 
-## Insert Missing Performance Durations for 6 Contestants
+## Two Issues to Address
 
-### Data to Insert
+### Issue 1: Set Judge Passwords
 
-All records go into the `performance_durations` table for sub-event `14ae92f2-a730-4c72-9aa1-19b0e3561722`, using tabulator `e9a05993-c615-425a-afb6-dd0a270cf0d2`.
+Setting passwords for auth users cannot be done via SQL — it requires the Supabase Admin API (`admin.updateUserById`). 
 
-| Contestant | Registration ID | Duration | Seconds |
-|---|---|---|---|
-| Jael Reyes | `cfd821d2-9f1b-4926-a282-9c447fab3f6f` | 03:01 | 181 |
-| Semira Bradshaw | `4c35777b-ce9d-4581-b6c8-887589b8d834` | 03:31 | 211 |
-| Miguel Jagarnath | `8b1a76af-4893-46c7-bad3-687315e129cf` | 03:26 | 206 |
-| Kayla Martin | `27611e81-ba7a-480d-abb7-d1ecdb660367` | 03:28 | 208 |
-| Shaunelle Noble | `fae92c97-ebfd-4a6f-a1b9-52fc99bf29f7` | 03:51 | 231 |
-| Shakir Gray | `8d110a4a-eab4-4dc9-be44-b15bc0ea4541` | 02:38 | 158 |
+**Judges (5 accounts):**
+- Jean-Claude Cournand (jeanclaude.cournand@gmail.com)
+- Kwame Weekes (kwameweekesbookings@gmail.com)
+- Mtmima Solwazi (msolwazi.rootsfoundation@gmail.com)
+- Patti-Anne Ali (pattianneali@yahoo.com)
+- Shivanee Ramlochan (shivanee@bocaslitfest.com)
 
-### Implementation
+**Plan:** Create a temporary edge function `set-user-password` that accepts an email and password, looks up the user via the Admin API, and sets their password. Call it 5 times via curl, then delete the function.
 
-Single SQL INSERT into `performance_durations` with all 6 rows. Each row includes `sub_event_id`, `contestant_registration_id`, `tabulator_id`, and `duration_seconds`.
+---
 
-After insertion, verify all 61 contestants now have duration records, and the Score Tables page reflects the updated data.
+### Issue 2: Score Cards Not Showing Criterion Values
+
+**Root cause identified:** The `ScoreCard` component (`src/components/shared/ScoreCard.tsx`) has **hardcoded** scoring criteria ("Creativity", "Technique", "Presentation", "Overall") and tries to access `criterion_scores.creativity`, etc.
+
+However, actual `judge_scores.criterion_scores` uses **UUID keys** (rubric_criteria IDs like `2794170b-f3ed-4067-a12f-21caba981e18`), and the actual criteria are "Voice and Articulation", "Stage Presence", "Dramatic Appropriateness", etc.
+
+The hardcoded names will never match the UUID keys, so all criterion cells show blank.
+
+**Fix:** Update `ScoreCard` to accept a `rubricCriteria` prop (array of `{id, name}`) and dynamically render columns using those names, mapping UUID keys from `criterion_scores` to display names. Update `ScoreCardExporter` and `ScoreCardExportSection` to fetch and pass rubric criteria.
+
+### Changes
+
+1. **Create + deploy + call + delete** `set-user-password` edge function for the 5 judges
+2. **Update `ScoreCard.tsx`** — accept `rubricCriteria` prop, dynamically render criterion columns using UUID-to-name mapping
+3. **Update `ScoreCardExporter.tsx`** — pass through rubric criteria
+4. **Update `ScoreCardExportSection.tsx`** — fetch rubric criteria for the selected competition and pass them down
 
