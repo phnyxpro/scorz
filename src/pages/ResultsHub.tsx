@@ -53,7 +53,7 @@ export default function ResultsHub() {
   const rubricNames = useMemo(() => sortedRubric.map((r) => r.name), [sortedRubric]);
   const indexToName = useMemo(() => {
     const map: Record<string, string> = {};
-    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    sortedRubric.forEach((r) => { map[r.id] = r.name; });
     return map;
   }, [sortedRubric]);
 

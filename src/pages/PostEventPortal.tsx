@@ -41,7 +41,7 @@ export default function PostEventPortal() {
   const sortedRubric = useMemo(() => [...(rubric ?? [])].sort((a, b) => a.sort_order - b.sort_order), [rubric]);
   const indexToName = useMemo(() => {
     const map: Record<string, string> = {};
-    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    sortedRubric.forEach((r) => { map[r.id] = r.name; });
     return map;
   }, [sortedRubric]);
 
