@@ -501,7 +501,7 @@ export default function TabulatorDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
-        .select("active_scoring_level_id, active_scoring_sub_event_id")
+        .select("active_scoring_level_id, active_scoring_sub_event_id, scoring_method")
         .eq("id", selectedCompId!)
         .single();
       if (error) throw error;
