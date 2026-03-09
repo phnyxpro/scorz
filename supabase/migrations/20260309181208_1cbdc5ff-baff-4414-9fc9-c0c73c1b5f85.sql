@@ -1,0 +1,1 @@
+ALTER TABLE public.chief_judge_certifications ADD COLUMN IF NOT EXISTS tie_break_order jsonb DEFAULT '[]'::jsonb;
