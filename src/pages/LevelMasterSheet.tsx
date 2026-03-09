@@ -177,17 +177,45 @@ export default function LevelMasterSheet() {
 
   const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
-  if (isLoading) return <DashboardSkeleton />;
+  if (isLoading || levelsLoading) return <DashboardSkeleton />;
+
+  const levelSelector = (levels && levels.length > 0) ? (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground whitespace-nowrap">Level:</span>
+      <Select
+        value={levelId || ""}
+        onValueChange={(val) => navigate(`/competitions/${competitionId}/level-sheet?level=${val}`, { replace: true })}
+      >
+        <SelectTrigger className="w-[200px] h-8 text-sm">
+          <SelectValue placeholder="Select a level" />
+        </SelectTrigger>
+        <SelectContent>
+          {levels.map((l) => (
+            <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  ) : null;
 
   if (!data?.level) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <p className="text-muted-foreground">Level not found.</p>
-        <Button asChild variant="ghost" size="sm" className="mt-2">
-          <Link to="/judging">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Judging Hub
-          </Link>
-        </Button>
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <Link to="/judging">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            Level Master Sheet
+          </h1>
+        </div>
+        {levelSelector || <p className="text-muted-foreground">No levels found for this competition.</p>}
+        {levels && levels.length > 0 && !levelId && (
+          <p className="text-sm text-muted-foreground">Select a level above to view results.</p>
+        )}
       </div>
     );
   }
@@ -211,7 +239,10 @@ export default function LevelMasterSheet() {
             </p>
           </div>
         </div>
-        {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+        <div className="flex items-center gap-2 print:hidden">
+          {levelSelector}
+          {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+        </div>
       </div>
 
       <Card className="border-border/50 bg-card/80">
