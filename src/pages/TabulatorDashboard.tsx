@@ -381,6 +381,24 @@ export default function TabulatorDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [selectedCompId, overviewSubEventIds, qc]);
 
+  // Realtime: invalidate level_completion when any certification changes
+  useEffect(() => {
+    if (!selectedCompId) return;
+    const channel = supabase
+      .channel(`tab_level_completion_${selectedCompId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chief_judge_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tabulator_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "witness_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCompId, overview?.levels, qc]);
+
   const filteredComps = useMemo(() => {
     if (!searchQuery.trim()) return activeComps;
     const q = searchQuery.toLowerCase();
