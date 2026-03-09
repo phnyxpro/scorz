@@ -1,37 +1,47 @@
 
 
-## Plan: Update Advancement to Reassign Sub-Event Instead of Creating New Registrations
+## Fix Blank Rendering in Browser Automation
 
-### Problem
-The current `usePromoteContestants` mutation creates **new** `contestant_registrations` rows for advancing contestants. The user wants it to **update** the existing registration's `sub_event_id` to point to the next level's sub-event instead — same row, same `user_id`, just reassigned.
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Change
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**File:** `src/hooks/useLevelAdvancement.ts` — `usePromoteContestants` mutation
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-Replace the insert logic (lines 150–175) with an update loop:
+---
 
-1. After ranking and selecting the advancing contestants, fetch the first sub-event in the next level (existing logic, keep as-is)
-2. Instead of checking for duplicates and inserting new rows, **update each advancing contestant's existing registration** by setting `sub_event_id` to the next level's sub-event ID and updating `sort_order` to their new rank position
-3. Use a single batch update: for each advancing registration, call `supabase.from("contestant_registrations").update({ sub_event_id: nextSubEventId, sort_order: index }).eq("id", reg.id)`
-4. Return the count of updated registrations
+### Fix 1: Conditionally apply auditorium filter
 
-This also removes the RLS issue since it's an UPDATE (not INSERT), and the existing "Admins and organizers can manage registrations" ALL policy already covers updates. The tabulator role has SELECT but not UPDATE — so we also need to check if the tabulator RLS needs an UPDATE policy. Looking at the policies: tabulators only have SELECT. We'll need a new UPDATE policy for tabulators to set `sub_event_id` on registrations.
+**File: `src/contexts/ThemeContext.tsx`**
 
-### Database Migration
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-Add an UPDATE policy for tabulators on `contestant_registrations`:
+### Fix 2: Remove filter class when at defaults
 
-```sql
-CREATE POLICY "Tabulators can update sub_event for advancement"
-ON public.contestant_registrations
-FOR UPDATE
-TO authenticated
-USING (has_role(auth.uid(), 'tabulator'::app_role))
-WITH CHECK (has_role(auth.uid(), 'tabulator'::app_role));
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-### Files Modified
-1. `src/hooks/useLevelAdvancement.ts` — replace insert logic with update logic in `usePromoteContestants`
-2. Database migration — add UPDATE policy for tabulators on `contestant_registrations`
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
