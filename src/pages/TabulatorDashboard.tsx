@@ -16,6 +16,7 @@ import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
+import { JudgeScoreSheets } from "@/components/tabulator/JudgeScoreSheets";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
@@ -501,7 +502,7 @@ export default function TabulatorDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
-        .select("active_scoring_level_id, active_scoring_sub_event_id, scoring_method")
+        .select("name, active_scoring_level_id, active_scoring_sub_event_id, scoring_method")
         .eq("id", selectedCompId!)
         .single();
       if (error) throw error;
@@ -714,6 +715,18 @@ export default function TabulatorDashboard() {
                                       <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                     </Link>
                                   </Button>
+
+                                  {/* Per-judge score sheets */}
+                                  <JudgeScoreSheets
+                                    subEventId={se.id}
+                                    subEventName={se.name}
+                                    competitionName={activeComp?.name || "Competition"}
+                                    scores={overview.scores}
+                                    registrations={overview.registrations}
+                                    rubric={overview.rubric}
+                                    judgeProfiles={Object.fromEntries(profileMap)}
+                                    indexToName={indexToName}
+                                  />
                                 </CardContent>
                               </Card>
                             </motion.div>
