@@ -240,19 +240,69 @@ export function EmailBroadcast({ competitionId }: { competitionId: string }) {
               />
             </div>
 
-            {/* Body */}
-            <div>
-              <Label htmlFor="broadcast-body" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Message
-              </Label>
-              <Textarea
-                id="broadcast-body"
-                placeholder="Write your message here..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={5}
-                className="mt-1"
-              />
+            {/* Message Editor & Preview - 2 Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Editor Column */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Message
+                </Label>
+                <div className="min-h-[300px]">
+                  <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    placeholder="Write your message here..."
+                  />
+                </div>
+              </div>
+
+              {/* Preview Column */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Email Preview
+                </Label>
+                <ScrollArea className="h-[300px] border rounded-md bg-[hsl(var(--muted)/0.3)]">
+                  <div className="p-4">
+                    <div className="max-w-[560px] mx-auto bg-background rounded-lg overflow-hidden shadow-sm border">
+                      {/* Header */}
+                      <div className="bg-[#1a1b25] p-6 text-center">
+                        <span className="text-2xl font-extrabold tracking-[2px] text-white">SCOR</span>
+                        <span className="text-2xl font-extrabold tracking-[2px] text-[#f59e0b]">Z</span>
+                      </div>
+
+                      {/* Body */}
+                      <div className="p-6 space-y-4">
+                        {subject && (
+                          <h2 className="text-lg font-bold text-foreground">{subject}</h2>
+                        )}
+                        {competition?.name && (
+                          <p className="text-xs text-muted-foreground">From: {competition.name}</p>
+                        )}
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                          <div 
+                            className="prose prose-sm max-w-none dark:prose-invert"
+                            dangerouslySetInnerHTML={{ 
+                              __html: content || '<p class="text-muted-foreground italic">Your message will appear here...</p>' 
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="border-t px-6 py-4 text-center space-y-2">
+                        <p className="text-[10px] text-muted-foreground font-mono tracking-wider">
+                          © 2026 SCORZ | Powered by phnyx.dev
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          <span className="underline">Manage Preferences</span>
+                          {" · "}
+                          <span className="underline">Unsubscribe</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </div>
             </div>
 
             {/* Footer */}
