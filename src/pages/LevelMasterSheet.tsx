@@ -349,9 +349,9 @@ export default function LevelMasterSheet() {
                       <TableRow
                         key={r.regId}
                         className={
-                          advances ? "bg-emerald-50 dark:bg-emerald-950/20"
-                          : standby ? "bg-amber-50 dark:bg-amber-950/10"
-                          : isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+                          showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+                          : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
+                          : showStatusStyling && isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
                           : ""
                         }
                       >
