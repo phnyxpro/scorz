@@ -158,6 +158,17 @@ export default function LevelMasterSheet() {
   }, [data?.scores]);
   const profileMap = useStaffDisplayNames(judgeUserIds);
 
+  // Collect certification user IDs for display names
+  const certUserIds = useMemo(() => {
+    if (!data?.certifications) return [];
+    const ids = new Set<string>();
+    for (const c of data.certifications.chief) ids.add(c.chief_judge_id);
+    for (const t of data.certifications.tab) ids.add(t.tabulator_id);
+    for (const w of data.certifications.witness) ids.add(w.witness_id);
+    return [...ids];
+  }, [data?.certifications]);
+  const certNameMap = useStaffDisplayNames(certUserIds);
+
   const subEventMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const se of data?.subEvents || []) {
