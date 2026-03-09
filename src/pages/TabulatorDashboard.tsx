@@ -262,12 +262,17 @@ function SubEventWorkspace({
         </Card>
       )}
 
-      {/* Score Card Exporter */}
+      {/* Master Sheet Export */}
       {tabCertified && (
-        <ScoreCardExporter
-          contestants={seContestants}
-          subEventName={subEventId}
-          competitionName={competitionId}
+        <MasterSheetExporter
+          competitionId={competitionId}
+          subEventId={subEventId}
+          allScores={allScores}
+          registrations={registrations}
+          judgeProfiles={judgeProfiles}
+          chiefCert={chiefCert}
+          tabCert={tabCert}
+          witnessCert={witnessCert}
         />
       )}
 

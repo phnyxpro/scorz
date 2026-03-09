@@ -152,6 +152,11 @@ export function exportMultiSheetXLSX(sheets: { name: string; rows: SheetRow[] }[
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
+/** Export HTML element as branded landscape letter PDF (borderless) */
+export async function exportBrandedPDF(element: HTMLElement, filename: string) {
+  return exportElementAsPDF(element, filename, { format: 'letter', orientation: 'landscape', margin: 0 });
+}
+
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
