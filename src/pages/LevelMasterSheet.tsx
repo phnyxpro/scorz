@@ -44,7 +44,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
 
       const subEventIds = (subEvents || []).map((se) => se.id);
       if (!subEventIds.length) {
-        return { level, scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [], rubric: [] };
+        return { level, competition, scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [], rubric: [], certifications: { chief: [], tab: [], witness: [] } };
       }
 
       const { data: registrations } = await supabase
