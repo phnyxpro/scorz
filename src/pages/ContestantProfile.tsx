@@ -65,7 +65,7 @@ export default function ContestantProfile() {
   }, [competitions]);
 
   const subEventMap = useMemo(() => {
-    const m: Record<string, { name: string; event_date: string | null }> = {};
+    const m: Record<string, { name: string; event_date: string | null; level_id: string; level_name: string; level_sort_order: number }> = {};
     (subEvents || []).forEach((s) => (m[s.id] = s));
     return m;
   }, [subEvents]);
