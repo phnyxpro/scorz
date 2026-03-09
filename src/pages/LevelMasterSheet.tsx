@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ExportDropdown } from "@/components/shared/ExportDropdown";
+import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
