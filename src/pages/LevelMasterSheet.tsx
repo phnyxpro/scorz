@@ -289,7 +289,12 @@ export default function LevelMasterSheet() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 print:hidden">
+        <div className="flex items-center gap-3 print:hidden">
+          <div className="flex items-center gap-1.5">
+            {showStatusStyling ? <Eye className="h-3.5 w-3.5 text-muted-foreground" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
+            <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="status-toggle" />
+            <Label htmlFor="status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
+          </div>
           {levelSelector}
           {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
         </div>
