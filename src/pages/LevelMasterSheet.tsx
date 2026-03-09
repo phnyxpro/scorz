@@ -339,7 +339,22 @@ export default function LevelMasterSheet() {
             <Label htmlFor="status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
           {levelSelector}
-          {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+          {canExport && (
+            <LevelSheetExportModal
+              competitionName={competitionName}
+              competitionLogo={competitionLogo}
+              primaryColor={primaryColor}
+              accentColor={accentColor}
+              levelName={data?.level?.name || ""}
+              isFinalRound={isFinalRound}
+              advancementCount={advancementCount}
+              subEventCount={data?.subEvents?.length || 0}
+              rows={exportModalRows}
+              judgeIds={judgeUserIds}
+              judgeNames={profileMap}
+              certifications={certInfoList}
+            />
+          )}
         </div>
       </div>
 
