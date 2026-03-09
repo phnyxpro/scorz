@@ -1,7 +1,11 @@
 import React from "react";
-import { Card } from "@/components/ui/card";
 import type { ContestantRegistration } from "@/hooks/useRegistrations";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+
+export interface RubricCriterion {
+  id: string;
+  name: string;
+}
 
 interface ScoreCardProps {
   contestant: ContestantRegistration;
@@ -10,6 +14,7 @@ interface ScoreCardProps {
   judgeScore?: JudgeScore;
   isBlank?: boolean;
   judgeName?: string;
+  rubricCriteria?: RubricCriterion[];
 }
 
 export function ScoreCard({
@@ -18,9 +23,9 @@ export function ScoreCard({
   competitionName,
   judgeScore,
   isBlank = false,
-  judgeName
+  judgeName,
+  rubricCriteria = []
 }: ScoreCardProps) {
-  // 8" x 5" dimensions in pixels (assuming 96 DPI)
   const cardStyle = {
     width: '8in',
     height: '5in',
@@ -30,7 +35,8 @@ export function ScoreCard({
     fontSize: '12px',
     fontFamily: 'Arial, sans-serif',
     border: '1px solid #ccc',
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    position: 'relative' as const,
   };
 
   const headerStyle = {
@@ -42,19 +48,17 @@ export function ScoreCard({
     fontWeight: 'bold'
   };
 
-  const sectionStyle = {
-    marginBottom: '8px'
-  };
+  const sectionStyle = { marginBottom: '8px' };
+  const labelStyle = { fontWeight: 'bold', display: 'inline-block', minWidth: '80px' };
 
-  const labelStyle = {
-    fontWeight: 'bold',
-    display: 'inline-block',
-    minWidth: '80px'
-  };
+  const criteria = rubricCriteria.length > 0
+    ? rubricCriteria
+    : [{ id: 'creativity', name: 'Creativity' }, { id: 'technique', name: 'Technique' }, { id: 'presentation', name: 'Presentation' }, { id: 'overall', name: 'Overall' }];
 
+  const colCount = criteria.length;
   const scoreGridStyle = {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr 1fr',
+    gridTemplateColumns: `repeat(${colCount}, 1fr)`,
     gap: '4px',
     marginTop: '8px'
   };
@@ -67,30 +71,18 @@ export function ScoreCard({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '11px'
+    fontSize: colCount > 5 ? '9px' : '11px',
   };
 
-  const signatureBoxStyle = {
-    border: '1px solid #666',
-    padding: '8px',
-    marginTop: '8px',
-    minHeight: '40px',
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between'
-  };
+  const criterionScores = (judgeScore?.criterion_scores as Record<string, number>) || {};
 
   return (
     <div style={cardStyle} className="score-card">
-      {/* Header */}
       <div style={headerStyle}>
         <div>{competitionName}</div>
-        <div style={{ fontSize: '12px', fontWeight: 'normal', marginTop: '4px' }}>
-          {subEventName}
-        </div>
+        <div style={{ fontSize: '12px', fontWeight: 'normal', marginTop: '4px' }}>{subEventName}</div>
       </div>
 
-      {/* Contestant Information */}
       <div style={sectionStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
           <span><span style={labelStyle}>Contestant:</span> {isBlank ? '____________________' : contestant.full_name}</span>
@@ -102,41 +94,31 @@ export function ScoreCard({
         </div>
       </div>
 
-      {/* Scoring Section */}
       <div style={sectionStyle}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Scoring Criteria:</div>
         <div style={scoreGridStyle}>
-          <div style={scoreBoxStyle}>Creativity</div>
-          <div style={scoreBoxStyle}>Technique</div>
-          <div style={scoreBoxStyle}>Presentation</div>
-          <div style={scoreBoxStyle}>Overall</div>
+          {criteria.map(c => (
+            <div key={c.id} style={scoreBoxStyle}>{c.name}</div>
+          ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginTop: '4px' }}>
-          <div style={scoreBoxStyle}>{judgeScore?.criterion_scores?.creativity || (isBlank ? '' : '___')}</div>
-          <div style={scoreBoxStyle}>{judgeScore?.criterion_scores?.technique || (isBlank ? '' : '___')}</div>
-          <div style={scoreBoxStyle}>{judgeScore?.criterion_scores?.presentation || (isBlank ? '' : '___')}</div>
-          <div style={scoreBoxStyle}>{judgeScore?.criterion_scores?.overall || (isBlank ? '' : '___')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colCount}, 1fr)`, gap: '4px', marginTop: '4px' }}>
+          {criteria.map(c => (
+            <div key={c.id} style={scoreBoxStyle}>
+              {criterionScores[c.id] != null ? criterionScores[c.id] : (isBlank ? '' : '___')}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Total Score */}
       <div style={sectionStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span><span style={labelStyle}>Total Score:</span></span>
-          <div style={{
-            border: '2px solid #333',
-            padding: '4px 12px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            minWidth: '60px',
-            textAlign: 'center'
-          }}>
+          <div style={{ border: '2px solid #333', padding: '4px 12px', fontSize: '16px', fontWeight: 'bold', minWidth: '60px', textAlign: 'center' }}>
             {judgeScore?.final_score != null ? Number(judgeScore.final_score).toFixed(2) : (isBlank ? '___' : '')}
           </div>
         </div>
       </div>
 
-      {/* Time and Penalties */}
       <div style={sectionStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span><span style={labelStyle}>Time:</span> {judgeScore?.performance_duration_seconds ? `${judgeScore.performance_duration_seconds}s` : (isBlank ? '__s' : '')}</span>
@@ -144,53 +126,30 @@ export function ScoreCard({
         </div>
       </div>
 
-      {/* Comments */}
       <div style={sectionStyle}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Comments:</div>
-        <div style={{
-          border: '1px solid #666',
-          padding: '4px',
-          minHeight: '40px',
-          fontSize: '10px'
-        }}>
-          {judgeScore?.comments || (isBlank ? '' : '')}
+        <div style={{ border: '1px solid #666', padding: '4px', minHeight: '40px', fontSize: '10px' }}>
+          {judgeScore?.comments || ''}
         </div>
       </div>
 
-      {/* Judge Signature */}
       <div style={sectionStyle}>
-        <div style={signatureBoxStyle}>
+        <div style={{ border: '1px solid #666', padding: '8px', marginTop: '8px', minHeight: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '10px', marginBottom: '2px' }}>Judge Signature:</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>
-              {judgeName || (isBlank ? '____________________' : '')}
-            </div>
+            <div style={{ fontSize: '10px', color: '#666' }}>{judgeName || (isBlank ? '____________________' : '')}</div>
           </div>
-          <div style={{ fontSize: '10px', textAlign: 'right' }}>
-            Date: {isBlank ? '__/__/____' : new Date().toLocaleDateString()}
-          </div>
+          <div style={{ fontSize: '10px', textAlign: 'right' }}>Date: {isBlank ? '__/__/____' : new Date().toLocaleDateString()}</div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{
-        position: 'absolute',
-        bottom: '0.25in',
-        left: '0.25in',
-        right: '0.25in',
-        fontSize: '8px',
-        textAlign: 'center',
-        color: '#666',
-        borderTop: '1px solid #ccc',
-        paddingTop: '4px'
-      }}>
+      <div style={{ position: 'absolute', bottom: '0.25in', left: '0.25in', right: '0.25in', fontSize: '8px', textAlign: 'center', color: '#666', borderTop: '1px solid #ccc', paddingTop: '4px' }}>
         Official Score Card - {competitionName}
       </div>
     </div>
   );
 }
 
-// Component for batch score card export
 interface ScoreCardBatchProps {
   contestants: ContestantRegistration[];
   subEventName: string;
@@ -198,6 +157,7 @@ interface ScoreCardBatchProps {
   judgeScores?: JudgeScore[];
   judgeName?: string;
   isBlank?: boolean;
+  rubricCriteria?: RubricCriterion[];
 }
 
 export function ScoreCardBatch({
@@ -206,7 +166,8 @@ export function ScoreCardBatch({
   competitionName,
   judgeScores = [],
   judgeName,
-  isBlank = false
+  isBlank = false,
+  rubricCriteria = []
 }: ScoreCardBatchProps) {
   const scoreMap = judgeScores.reduce((acc, score) => {
     acc[score.contestant_registration_id] = score;
@@ -214,12 +175,7 @@ export function ScoreCardBatch({
   }, {} as Record<string, JudgeScore>);
 
   return (
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '0',
-      justifyContent: 'flex-start'
-    }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0', justifyContent: 'flex-start' }}>
       {contestants.map((contestant) => (
         <ScoreCard
           key={contestant.id}
@@ -229,6 +185,7 @@ export function ScoreCardBatch({
           judgeScore={scoreMap[contestant.id]}
           judgeName={judgeName}
           isBlank={isBlank}
+          rubricCriteria={rubricCriteria}
         />
       ))}
     </div>
