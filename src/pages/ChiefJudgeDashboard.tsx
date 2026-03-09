@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import {
   useAllScoresForSubEvent,
