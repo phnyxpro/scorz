@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLevels, useCreateLevel, useDeleteLevel, useSubEvents, useCreateSubEvent, useDeleteSubEvent } from "@/hooks/useCompetitions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown } from "lucide-react";
+import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays, parseISO } from "date-fns";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,11 +42,18 @@ type SpecialEntry = { type: string; label: string };
 function LevelAdvancementSettings({ level, competitionId }: { level: any; competitionId: string }) {
   const qc = useQueryClient();
   const [advCount, setAdvCount] = useState<string>((level as any).advancement_count?.toString() || "");
+  const [isFinalRound, setIsFinalRound] = useState<boolean>((level as any).is_final_round || false);
   const specialEntries: SpecialEntry[] = (level as any).special_entries || [];
 
   const saveAdvancement = async (val: string) => {
     const num = val ? parseInt(val, 10) : null;
     await supabase.from("competition_levels").update({ advancement_count: num } as any).eq("id", level.id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
+  const toggleFinalRound = async (checked: boolean) => {
+    setIsFinalRound(checked);
+    await supabase.from("competition_levels").update({ is_final_round: checked } as any).eq("id", level.id);
     qc.invalidateQueries({ queryKey: ["levels", competitionId] });
   };
 
@@ -60,18 +68,33 @@ function LevelAdvancementSettings({ level, competitionId }: { level: any; compet
 
   return (
     <div className="space-y-3 py-2">
-      <div>
-        <Label className="text-xs text-muted-foreground">Contestants advancing to next level</Label>
-        <Input
-          type="number"
-          min={0}
-          placeholder="e.g. 10"
-          className="h-8 mt-1 w-40"
-          value={advCount}
-          onChange={(e) => setAdvCount(e.target.value)}
-          onBlur={() => saveAdvancement(advCount)}
-        />
+      {/* Final Round Toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+        <div className="space-y-0.5">
+          <Label htmlFor={`final-round-${level.id}`} className="text-sm font-medium flex items-center gap-1.5">
+            <Crown className="h-3.5 w-3.5 text-amber-500" /> Final Round
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Champion placements (1st, 2nd, 3rd) will be shown on the master sheet
+          </p>
+        </div>
+        <Switch id={`final-round-${level.id}`} checked={isFinalRound} onCheckedChange={toggleFinalRound} />
       </div>
+
+      {!isFinalRound && (
+        <div>
+          <Label className="text-xs text-muted-foreground">Contestants advancing to next level</Label>
+          <Input
+            type="number"
+            min={0}
+            placeholder="e.g. 10"
+            className="h-8 mt-1 w-40"
+            value={advCount}
+            onChange={(e) => setAdvCount(e.target.value)}
+            onBlur={() => saveAdvancement(advCount)}
+          />
+        </div>
+      )}
       <div>
         <Label className="text-xs text-muted-foreground">Special Entries in this Level</Label>
         <div className="flex flex-wrap gap-2 mt-1">
@@ -100,12 +123,57 @@ function LevelAdvancementSettings({ level, competitionId }: { level: any; compet
   );
 }
 
+function getSubEventStatus(e: any): { type: "in-progress" | "countdown" | "completed" | "none"; label?: string } {
+  if (!e.event_date) return { type: "none" };
+  const now = new Date();
+  const dateStr = e.event_date; // "YYYY-MM-DD"
+
+  if (e.end_time) {
+    const endDt = new Date(`${dateStr}T${e.end_time}`);
+    if (now > endDt) return { type: "completed" };
+  }
+
+  if (e.start_time) {
+    const startDt = new Date(`${dateStr}T${e.start_time}`);
+    const endDt = e.end_time ? new Date(`${dateStr}T${e.end_time}`) : null;
+    if (now >= startDt && (!endDt || now <= endDt)) return { type: "in-progress" };
+    if (now < startDt) {
+      const days = differenceInDays(startDt, now);
+      const hours = differenceInHours(startDt, now) % 24;
+      const mins = differenceInMinutes(startDt, now) % 60;
+      let label = "Starts in ";
+      if (days > 0) label += `${days}d `;
+      if (hours > 0) label += `${hours}h `;
+      if (days === 0 && mins > 0) label += `${mins}m`;
+      return { type: "countdown", label: label.trim() };
+    }
+  } else {
+    // Date only, no time
+    const eventDay = parseISO(dateStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    eventDay.setHours(0,0,0,0);
+    if (eventDay.getTime() === today.getTime()) return { type: "in-progress" };
+    if (eventDay > today) {
+      const days = differenceInDays(eventDay, today);
+      return { type: "countdown", label: `Starts in ${days}d` };
+    }
+    return { type: "completed" };
+  }
+  return { type: "none" };
+}
+
 function SubEventsPanel({ levelId }: { levelId: string }) {
   const { data: events } = useSubEvents(levelId);
   const create = useCreateSubEvent();
   const remove = useDeleteSubEvent();
   const qc = useQueryClient();
+  const [, setTick] = useState(0);
 
+  // Refresh countdown every 60s
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -187,33 +255,47 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
         <Plus className="h-3 w-3 mr-1" /> Add Sub-Event
       </Button>
 
-      {events?.map((e) => (
-        <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              className="flex items-center gap-2 flex-wrap text-left hover:opacity-70 transition-opacity cursor-pointer"
-              onClick={() => openEdit(e)}
-            >
-              <span className="font-medium text-foreground">{e.name}</span>
-              {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
-              {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
-              {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
-              <Pencil className="h-3 w-3 text-muted-foreground" />
-            </button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
+      {events?.map((e) => {
+        const status = getSubEventStatus(e);
+        return (
+          <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                className="flex items-center gap-2 flex-wrap text-left hover:opacity-70 transition-opacity cursor-pointer"
+                onClick={() => openEdit(e)}
+              >
+                <span className="font-medium text-foreground">{e.name}</span>
+                {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
+                {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
+                {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {status.type === "in-progress" && (
+                  <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 animate-pulse">● In Progress</Badge>
+                )}
+                {status.type === "countdown" && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{status.label}</Badge>
+                )}
+                {status.type === "completed" && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 text-muted-foreground">Completed</Badge>
+                )}
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+            <BannerUpload
+              currentUrl={(e as any).banner_url}
+              folder={`sub-events/${e.id}`}
+              aspectLabel="Sub-Event Banner"
+              onUploaded={(url) => updateBanner(e.id, url)}
+              onRemoved={() => updateBanner(e.id, null)}
+            />
           </div>
-          <BannerUpload
-            currentUrl={(e as any).banner_url}
-            folder={`sub-events/${e.id}`}
-            aspectLabel="Sub-Event Banner"
-            onUploaded={(url) => updateBanner(e.id, url)}
-            onRemoved={() => updateBanner(e.id, null)}
-          />
-        </div>
-      ))}
+        );
+      })}
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
@@ -427,6 +509,7 @@ function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateB
 
   const advCount = l.advancement_count;
   const specials: SpecialEntry[] = l.special_entries || [];
+  const isFinal = l.is_final_round || false;
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -440,7 +523,12 @@ function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateB
             <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
               {l.name}
-              {advCount != null && advCount > 0 && (
+              {isFinal && (
+                <Badge className="bg-amber-500 text-white text-[10px] gap-1 px-1.5 py-0">
+                  <Crown className="h-2.5 w-2.5" /> Final Round
+                </Badge>
+              )}
+              {!isFinal && advCount != null && advCount > 0 && (
                 <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
                   <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
                 </Badge>

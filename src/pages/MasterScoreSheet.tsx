@@ -28,7 +28,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
 
       const { data: subEvent } = await supabase
         .from("sub_events")
-        .select("*, competition_levels(id, name, advancement_count)")
+        .select("*, competition_levels(id, name, advancement_count, is_final_round)")
         .eq("id", subEventId!)
         .single();
 
@@ -68,6 +68,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
         scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvent,
         advancementCount: (subEvent as any)?.competition_levels?.advancement_count ?? null,
+        isFinalRound: (subEvent as any)?.competition_levels?.is_final_round ?? false,
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         rubric: rubric || [],
@@ -133,7 +134,8 @@ export default function MasterScoreSheet() {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data]);
 
-  const advancementCount = data?.advancementCount ?? null;
+  const isFinalRound = data?.isFinalRound ?? false;
+  const advancementCount = isFinalRound ? null : (data?.advancementCount ?? null);
 
   // Build exportable rows
   const exportRows = useMemo((): SheetRow[] => {
@@ -146,12 +148,14 @@ export default function MasterScoreSheet() {
       row["All Judges Total"] = Number(r.allJudgesRawTotal.toFixed(2));
       row["Penalty"] = Number(r.timePenalty.toFixed(2));
       row["Final Score"] = Number(r.avgFinal.toFixed(2));
-      if (advancementCount != null) {
-        row["Advances"] = i < advancementCount ? "Yes" : "";
+      if (isFinalRound) {
+        row["Placement"] = i === 0 ? "Champion" : i === 1 ? "2nd Place" : i === 2 ? "3rd Place" : "";
+      } else if (advancementCount != null) {
+        row["Advances"] = i < advancementCount ? "Yes" : (i === advancementCount || i === advancementCount + 1) ? "Standby" : "";
       }
       return row;
     });
-  }, [rows, judgeUserIds, profileMap, advancementCount]);
+  }, [rows, judgeUserIds, profileMap, advancementCount, isFinalRound]);
 
   const exportFilename = `master-sheet-${data?.subEvent?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
@@ -195,9 +199,14 @@ export default function MasterScoreSheet() {
           </CardTitle>
           <CardDescription>
             Each column shows the judge's raw total. Final score uses the {data.scoringMethod === "olympic" ? "Olympic (high-low trim)" : data.scoringMethod} method.
-            {advancementCount != null && (
+            {isFinalRound && (
+              <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+                Final round — Champion placements shown.
+              </span>
+            )}
+            {!isFinalRound && advancementCount != null && (
               <span className="ml-1 font-medium text-emerald-600 dark:text-emerald-400">
-                Top {advancementCount} advance.
+                Top {advancementCount} advance. +2 standbys.
               </span>
             )}
           </CardDescription>
@@ -225,11 +234,17 @@ export default function MasterScoreSheet() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => {
-                    const advances = advancementCount != null && i < advancementCount;
+                    const advances = !isFinalRound && advancementCount != null && i < advancementCount;
+                    const standby = !isFinalRound && advancementCount != null && (i === advancementCount || i === advancementCount + 1);
                     return (
                       <TableRow
                         key={r.regId}
-                        className={advances ? "bg-emerald-50 dark:bg-emerald-950/20" : ""}
+                        className={
+                          advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+                          : standby ? "bg-amber-50 dark:bg-amber-950/10"
+                          : isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+                          : ""
+                        }
                       >
                         <TableCell className="font-mono text-muted-foreground text-xs">{i + 1}</TableCell>
                         <TableCell className="font-medium text-sm">
@@ -271,11 +286,11 @@ export default function MasterScoreSheet() {
                             <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
                               {i + 1}
                             </Badge>
-                            {advances && (
-                              <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">
-                                Advances
-                              </Badge>
-                            )}
+                            {isFinalRound && i === 0 && <Badge className="bg-amber-500 text-white text-[10px] px-1.5">🥇 Champion</Badge>}
+                            {isFinalRound && i === 1 && <Badge className="bg-gray-400 text-white text-[10px] px-1.5">🥈 2nd Place</Badge>}
+                            {isFinalRound && i === 2 && <Badge className="bg-amber-700 text-white text-[10px] px-1.5">🥉 3rd Place</Badge>}
+                            {advances && <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">Advances</Badge>}
+                            {standby && <Badge className="bg-amber-500/80 text-white text-[10px] px-1.5">Standby</Badge>}
                           </div>
                         </TableCell>
                       </TableRow>

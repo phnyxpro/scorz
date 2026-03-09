@@ -334,6 +334,7 @@ export type Database = {
           competition_id: string
           created_at: string
           id: string
+          is_final_round: boolean
           name: string
           sort_order: number
           special_entries: Json
@@ -345,6 +346,7 @@ export type Database = {
           competition_id: string
           created_at?: string
           id?: string
+          is_final_round?: boolean
           name: string
           sort_order?: number
           special_entries?: Json
@@ -356,6 +358,7 @@ export type Database = {
           competition_id?: string
           created_at?: string
           id?: string
+          is_final_round?: boolean
           name?: string
           sort_order?: number
           special_entries?: Json

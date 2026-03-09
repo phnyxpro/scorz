@@ -167,7 +167,9 @@ export function MasterSheetExporter({
       row["All Judges Total"] = Number(r.allJudgesTotal.toFixed(2));
       row["Penalty"] = Number(r.timePenalty.toFixed(2));
       row["Final Score"] = Number(r.finalScore.toFixed(2));
-      if (activeAdvCount != null) row["Advances"] = i < activeAdvCount ? "Yes" : "";
+      if (activeAdvCount != null) {
+        row["Advances"] = i < activeAdvCount ? "Yes" : (i === activeAdvCount || i === activeAdvCount + 1) ? "Standby" : "";
+      }
       return row;
     });
   };
@@ -303,8 +305,9 @@ export function MasterSheetExporter({
                 <tbody>
                   {activeRows.map((r, i) => {
                     const advances = activeAdvCount != null && i < activeAdvCount;
+                    const standby = activeAdvCount != null && (i === activeAdvCount || i === activeAdvCount + 1);
                     return (
-                      <tr key={i} style={{ backgroundColor: advances ? "#dcfce7" : i % 2 === 0 ? "#fff" : "#f8f8f8", borderBottom: "1px solid #e5e5e5" }}>
+                      <tr key={i} style={{ backgroundColor: advances ? "#dcfce7" : standby ? "#fef3c7" : i % 2 === 0 ? "#fff" : "#f8f8f8", borderBottom: "1px solid #e5e5e5" }}>
                         <td style={{ padding: "2px 4px", fontWeight: 600 }}>{i + 1}</td>
                         <td style={{ padding: "2px 4px" }}>{r.name}</td>
                         {sheetType === "level" && <td style={{ padding: "2px 4px", fontSize: "7px" }}>{(r as any).subEvent || "—"}</td>}
@@ -317,8 +320,8 @@ export function MasterSheetExporter({
                         <td style={{ padding: "2px 4px", textAlign: "center", fontFamily: "monospace", color: r.timePenalty > 0 ? "#dc2626" : "#999" }}>{r.timePenalty.toFixed(2)}</td>
                         <td style={{ padding: "2px 4px", textAlign: "center", fontFamily: "monospace", fontWeight: 700, color: primaryColor }}>{r.finalScore.toFixed(2)}</td>
                         {activeAdvCount != null && (
-                          <td style={{ padding: "2px 4px", textAlign: "center", fontSize: "7px", fontWeight: advances ? 700 : 400, color: advances ? "#16a34a" : "#999" }}>
-                            {advances ? "✓ YES" : ""}
+                          <td style={{ padding: "2px 4px", textAlign: "center", fontSize: "7px", fontWeight: advances || standby ? 700 : 400, color: advances ? "#16a34a" : standby ? "#d97706" : "#999" }}>
+                            {advances ? "✓ YES" : standby ? "STANDBY" : ""}
                           </td>
                         )}
                       </tr>
