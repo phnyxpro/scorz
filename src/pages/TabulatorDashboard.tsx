@@ -177,7 +177,7 @@ function SubEventWorkspace({
         </Badge>
         <Badge variant={witnessCertified ? "secondary" : "outline"} className="gap-1">
           {witnessCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-          Witness {witnessCertified ? "Certified" : "Pending"}
+          2nd Tabulator (Witness) {witnessCertified ? "Certified" : "Pending"}
         </Badge>
       </div>
 
@@ -246,7 +246,7 @@ function SubEventWorkspace({
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Eye className="h-4 w-4 text-primary" /> Witness Verification
+              <Eye className="h-4 w-4 text-primary" /> 2nd Tabulator / Witness Verification
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

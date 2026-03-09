@@ -16,6 +16,7 @@ import {
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
+import { calculateMethodScore } from "@/lib/scoring-methods";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
@@ -107,17 +108,20 @@ export default function ChiefJudgeDashboard() {
   const contestantUserId = (regId: string) =>
     registrations?.find(r => r.id === regId)?.user_id;
 
-  // Calculate averages for tie detection
+  // Calculate averages for tie detection using the competition's scoring method
+  const scoringMethod = comp?.scoring_method ?? "olympic";
   const contestantAverages = useMemo(() => {
     const avgs: { regId: string; avg: number; scores: typeof allScores }[] = [];
     for (const [regId, scores] of Object.entries(scoresByContestant)) {
       const certified = scores!.filter(s => s.is_certified);
       if (certified.length === 0) continue;
-      const avg = certified.reduce((a, s) => a + s.final_score, 0) / certified.length;
-      avgs.push({ regId, avg, scores: scores! });
+      const rawTotals = certified.map(s => Number(s.raw_total));
+      const maxPenalty = Math.max(...certified.map(s => Number(s.time_penalty)), 0);
+      const avgFinal = calculateMethodScore(scoringMethod, rawTotals, maxPenalty);
+      avgs.push({ regId, avg: avgFinal, scores: scores! });
     }
     return avgs.sort((a, b) => b.avg - a.avg);
-  }, [scoresByContestant]);
+  }, [scoresByContestant, scoringMethod]);
 
   // Detect ties
   const ties = useMemo(() => {
@@ -287,6 +291,24 @@ export default function ChiefJudgeDashboard() {
 
       {selectedSubEventId && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Certification banner */}
+          {isCertified && certification?.signed_at && (
+            <Card className="border-secondary/30 bg-secondary/5 mb-4">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <p className="text-sm text-foreground leading-relaxed italic">
+                      "I, <span className="font-semibold not-italic">{user?.user_metadata?.full_name || "Chief Judge"}</span>, certify the results for this level of the competition <span className="font-semibold not-italic">{comp?.name || "—"}</span> on <span className="font-semibold not-italic">{new Date(certification.signed_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at {new Date(certification.signed_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}</span> according to the rubric, rules and regulations stipulated."
+                    </p>
+                    {certification.chief_judge_signature && (
+                      <img src={certification.chief_judge_signature} alt="Chief Judge Signature" className="h-12 mt-1" />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {/* Summary card */}
           <Card className="border-border/50 bg-card/80 mb-4">
             <CardContent className="pt-4">
@@ -417,17 +439,16 @@ export default function ChiefJudgeDashboard() {
               <TieBreaker
                 ties={ties}
                 contestantName={contestantName}
-                rubric={rubric || []}
                 isCertified={isCertified}
                 certification={certification}
-                onSaveTieBreak={async (criterionId, notes) => {
+                onSaveTieBreakOrder={async (tieBreakOrder, tieNotes) => {
                   if (!user || !selectedSubEventId) return;
                   await upsertCert.mutateAsync({
                     id: certification?.id,
                     sub_event_id: selectedSubEventId,
                     chief_judge_id: user.id,
-                    tie_break_criterion_id: criterionId,
-                    tie_break_notes: notes,
+                    tie_break_order: tieBreakOrder,
+                    tie_break_notes: tieNotes,
                   } as any);
                 }}
               />
@@ -466,15 +487,14 @@ export default function ChiefJudgeDashboard() {
           <DialogHeader>
             <DialogTitle>Certify Sub-Event Results</DialogTitle>
             <DialogDescription>
-              Sign below to certify all results for this sub-event. This action is final.
+              Review and sign to certify all results. This action is final.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
-              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-xs text-foreground">
-                By signing, you certify that all scores have been reviewed, penalties are accurate,
-                and any ties have been properly resolved. Results will be published.
+            {/* Formal certification statement */}
+            <div className="p-4 rounded-md bg-muted/50 border border-border/50">
+              <p className="text-sm text-foreground leading-relaxed italic">
+                "I, <span className="font-semibold not-italic">{user?.user_metadata?.full_name || "Chief Judge"}</span>, certify the results for this level of the competition <span className="font-semibold not-italic">{comp?.name || "—"}</span> on <span className="font-semibold not-italic">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}</span> according to the rubric, rules and regulations stipulated."
               </p>
             </div>
 

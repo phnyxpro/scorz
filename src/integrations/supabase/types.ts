@@ -194,6 +194,7 @@ export type Database = {
           sub_event_id: string
           tie_break_criterion_id: string | null
           tie_break_notes: string | null
+          tie_break_order: Json | null
           updated_at: string
         }
         Insert: {
@@ -207,6 +208,7 @@ export type Database = {
           sub_event_id: string
           tie_break_criterion_id?: string | null
           tie_break_notes?: string | null
+          tie_break_order?: Json | null
           updated_at?: string
         }
         Update: {
@@ -220,6 +222,7 @@ export type Database = {
           sub_event_id?: string
           tie_break_criterion_id?: string | null
           tie_break_notes?: string | null
+          tie_break_order?: Json | null
           updated_at?: string
         }
         Relationships: [
