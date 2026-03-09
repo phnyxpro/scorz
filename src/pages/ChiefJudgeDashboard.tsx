@@ -108,17 +108,20 @@ export default function ChiefJudgeDashboard() {
   const contestantUserId = (regId: string) =>
     registrations?.find(r => r.id === regId)?.user_id;
 
-  // Calculate averages for tie detection
+  // Calculate averages for tie detection using the competition's scoring method
+  const scoringMethod = comp?.scoring_method ?? "olympic";
   const contestantAverages = useMemo(() => {
     const avgs: { regId: string; avg: number; scores: typeof allScores }[] = [];
     for (const [regId, scores] of Object.entries(scoresByContestant)) {
       const certified = scores!.filter(s => s.is_certified);
       if (certified.length === 0) continue;
-      const avg = certified.reduce((a, s) => a + s.final_score, 0) / certified.length;
-      avgs.push({ regId, avg, scores: scores! });
+      const rawTotals = certified.map(s => Number(s.raw_total));
+      const maxPenalty = Math.max(...certified.map(s => Number(s.time_penalty)), 0);
+      const avgFinal = calculateMethodScore(scoringMethod, rawTotals, maxPenalty);
+      avgs.push({ regId, avg: avgFinal, scores: scores! });
     }
     return avgs.sort((a, b) => b.avg - a.avg);
-  }, [scoresByContestant]);
+  }, [scoresByContestant, scoringMethod]);
 
   // Detect ties
   const ties = useMemo(() => {
