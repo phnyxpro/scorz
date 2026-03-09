@@ -1,47 +1,95 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Add Web Push Notifications to Scorz PWA
 
-The app appears blank in headless browser testing due to two compounding issues:
+Push notifications require VAPID keys, a `push_subscriptions` database table, a custom service worker for push event handling, client-side subscription logic, and a backend function to send pushes.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### 1. Generate VAPID Keys & Store as Secrets
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+Web Push requires a VAPID key pair. We'll generate them and store:
+- `VAPID_PUBLIC_KEY` — exposed to frontend via an edge function or hardcoded (it's public)
+- `VAPID_PRIVATE_KEY` — stored as a secret for edge functions
 
----
+You'll need to generate these (e.g. via `npx web-push generate-vapid-keys`) and add them via the secrets tool.
 
-### Fix 1: Conditionally apply auditorium filter
+### 2. Database: `push_subscriptions` Table
 
-**File: `src/contexts/ThemeContext.tsx`**
+Create a table to store user push subscription endpoints:
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+```sql
+CREATE TABLE public.push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  endpoint text NOT NULL,
+  keys jsonb NOT NULL, -- {p256dh, auth}
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(user_id, endpoint)
+);
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+-- Users manage their own subscriptions
+CREATE POLICY "Users manage own subscriptions" ON public.push_subscriptions
+  FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+### 3. Custom Service Worker Push Handler
 
----
+VitePWA's generated service worker doesn't handle `push` events. We need a custom service worker file (`public/custom-sw.js`) that listens for push events and shows notifications:
 
-### Summary
+```javascript
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? { title: 'Scorz', body: 'New notification' };
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body, icon: '/pwa-icon-192.svg', badge: '/pwa-icon-192.svg',
+      data: { url: data.link || '/' }
+    })
+  );
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow(event.notification.data.url));
+});
+```
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+Import this in VitePWA config via `importScripts` in workbox config.
+
+### 4. Client-Side: Subscribe & Permission Hook
+
+Create `src/hooks/usePushNotifications.ts`:
+- Request `Notification.permission`
+- Subscribe via `registration.pushManager.subscribe()` with the VAPID public key
+- Save the subscription to `push_subscriptions` table
+- Provide an `unsubscribe` function
+- Expose a UI toggle component in Settings or NotificationCenter
+
+### 5. Edge Function: `send-push-notification`
+
+Create `supabase/functions/send-push-notification/index.ts`:
+- Accepts `{ user_ids: string[], title, body, link? }`
+- Fetches subscriptions from `push_subscriptions`
+- Uses the Web Push protocol (via `web-push` library for Deno) with VAPID keys to send to each endpoint
+- Cleans up expired/invalid subscriptions (410 responses)
+
+### 6. Integration with Existing Notification System
+
+Update the existing notification edge functions (`notify-scoring-events`, `notify-admin-activity`, etc.) to also call `send-push-notification` after inserting into the `notifications` table — so users get both in-app and push notifications.
+
+Alternatively, add a database trigger on `notifications` INSERT that invokes `send-push-notification` automatically.
+
+### 7. UI: Permission Prompt & Toggle
+
+Add a push notification toggle in the NotificationCenter popover header or Settings page. Show a one-time prompt banner for logged-in users who haven't subscribed yet.
+
+### Files to create/modify:
+- **Create** `public/custom-sw.js` — push event handler
+- **Create** `src/hooks/usePushNotifications.ts` — subscription management hook
+- **Create** `supabase/functions/send-push-notification/index.ts` — send push via Web Push API
+- **Modify** `vite.config.ts` — add `importScripts` for custom SW
+- **Modify** `src/components/notifications/NotificationCenter.tsx` — add push toggle
+- **Modify** existing notification edge functions — trigger push alongside email
+- **Database migration** — create `push_subscriptions` table with RLS
+
+### Secrets needed:
+- `VAPID_PUBLIC_KEY` (can be in frontend code — it's public)
+- `VAPID_PRIVATE_KEY` (edge function secret)
 
