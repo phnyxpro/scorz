@@ -617,7 +617,7 @@ export default function TabulatorDashboard() {
                         competitionId={selectedCompId!}
                         advancementCount={level.advancement_count}
                         isFinalRound={level.is_final_round}
-                        scoringMethod={overview.competition?.scoring_method || "olympic"}
+                        scoringMethod={activeComp?.scoring_method || "olympic"}
                         levelSortOrder={level.sort_order}
                       />
 
