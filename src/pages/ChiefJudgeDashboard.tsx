@@ -421,17 +421,16 @@ export default function ChiefJudgeDashboard() {
               <TieBreaker
                 ties={ties}
                 contestantName={contestantName}
-                rubric={rubric || []}
                 isCertified={isCertified}
                 certification={certification}
-                onSaveTieBreak={async (criterionId, notes) => {
+                onSaveTieBreakOrder={async (tieBreakOrder, tieNotes) => {
                   if (!user || !selectedSubEventId) return;
                   await upsertCert.mutateAsync({
                     id: certification?.id,
                     sub_event_id: selectedSubEventId,
                     chief_judge_id: user.id,
-                    tie_break_criterion_id: criterionId,
-                    tie_break_notes: notes,
+                    tie_break_order: tieBreakOrder,
+                    tie_break_notes: tieNotes,
                   } as any);
                 }}
               />
