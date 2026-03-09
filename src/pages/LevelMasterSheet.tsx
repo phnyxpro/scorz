@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,9 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy, CheckCircle, ArrowUp } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
@@ -117,6 +119,7 @@ export default function LevelMasterSheet() {
   const canPromote = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showStatusStyling, setShowStatusStyling] = useState(true);
   const levelId = searchParams.get("level");
 
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
@@ -286,7 +289,12 @@ export default function LevelMasterSheet() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 print:hidden">
+        <div className="flex items-center gap-3 print:hidden">
+          <div className="flex items-center gap-1.5">
+            {showStatusStyling ? <Eye className="h-3.5 w-3.5 text-muted-foreground" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
+            <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="status-toggle" />
+            <Label htmlFor="status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
+          </div>
           {levelSelector}
           {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
         </div>
@@ -341,9 +349,9 @@ export default function LevelMasterSheet() {
                       <TableRow
                         key={r.regId}
                         className={
-                          advances ? "bg-emerald-50 dark:bg-emerald-950/20"
-                          : standby ? "bg-amber-50 dark:bg-amber-950/10"
-                          : isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+                          showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+                          : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
+                          : showStatusStyling && isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
                           : ""
                         }
                       >
@@ -390,7 +398,7 @@ export default function LevelMasterSheet() {
                             <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
                               {i + 1}
                             </Badge>
-                            {getRankBadge(i, isFinalRound, advancementCount)}
+                            {showStatusStyling && getRankBadge(i, isFinalRound, advancementCount)}
                           </div>
                         </TableCell>
                       </TableRow>

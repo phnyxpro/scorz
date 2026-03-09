@@ -1,37 +1,47 @@
 
 
-## Plan: Re-link Audition Scores to Restored Registration IDs
+## Fix Blank Rendering in Browser Automation
 
-### Root Cause
+The app appears blank in headless browser testing due to two compounding issues:
 
-When the original promotion **moved** contestants (updated their `sub_event_id` from Auditions to Semi-finals), the `judge_scores.contestant_registration_id` continued pointing to those same registration rows. When we later restored the contestants by creating **new** Auditions registration rows, the scores remained orphaned — linked to the Semi-final registration IDs while having `sub_event_id` pointing to Auditions sub-events.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-Current state for each of the 15 contestants:
-- **Semi-final reg ID** (e.g. `b32f8b57`): has 5 scores, scores' `sub_event_id` = Auditions sub-event
-- **Auditions reg ID** (e.g. `078e698b`): has 0 scores
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-### Data Fix
+---
 
-Update `judge_scores.contestant_registration_id` for each of the 15 contestants, changing it from the Semi-final registration ID to the Auditions registration ID. The `sub_event_id` on the scores already correctly points to Auditions, so only the foreign key needs remapping.
+### Fix 1: Conditionally apply auditorium filter
 
-This is a single SQL UPDATE joining on `email` + matching sub-event:
+**File: `src/contexts/ThemeContext.tsx`**
 
-```sql
-UPDATE judge_scores js
-SET contestant_registration_id = aud.id
-FROM contestant_registrations semi, contestant_registrations aud
-JOIN sub_events se ON se.id = aud.sub_event_id
-JOIN competition_levels cl ON cl.id = se.level_id AND cl.name ILIKE '%audition%'
-WHERE js.contestant_registration_id = semi.id
-  AND semi.sub_event_id = 'fdd01847-405e-4827-a7f1-c5860ea41041'  -- Semi-finals sub-event
-  AND aud.email = semi.email
-  AND aud.competition_id = semi.competition_id
-  AND js.sub_event_id = aud.sub_event_id  -- scores' sub_event matches auditions
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-This reassigns all 75 score rows (15 contestants × 5 judges) to the correct Auditions registration IDs. No code or schema changes needed — purely a data correction.
+This ensures no filter is applied when properties are unset, which is the default state.
 
-### Verification
+---
 
-After the fix, each Auditions registration should show 5 scores, and the Level Master Sheet for Auditions will display the correct scores again.
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
