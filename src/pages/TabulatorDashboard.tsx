@@ -26,7 +26,7 @@ import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
-import { ScoreCardExporter } from "@/components/shared/ScoreCardExporter";
+import { MasterSheetExporter } from "@/components/tabulator/MasterSheetExporter";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
