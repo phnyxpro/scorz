@@ -28,7 +28,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
 
       const { data: subEvent } = await supabase
         .from("sub_events")
-        .select("*, competition_levels(id, name, advancement_count)")
+        .select("*, competition_levels(id, name, advancement_count, is_final_round)")
         .eq("id", subEventId!)
         .single();
 
@@ -68,6 +68,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
         scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvent,
         advancementCount: (subEvent as any)?.competition_levels?.advancement_count ?? null,
+        isFinalRound: (subEvent as any)?.competition_levels?.is_final_round ?? false,
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         rubric: rubric || [],
