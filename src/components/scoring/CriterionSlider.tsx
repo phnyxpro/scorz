@@ -75,6 +75,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false }
           )}
           <Input
             type="number"
+            inputMode="decimal"
             min={0.1}
             max={5}
             step={0.1}
