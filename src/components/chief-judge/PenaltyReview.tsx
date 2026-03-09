@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, Pencil } from "lucide-react";
 import { calculateOlympic } from "@/lib/scoring-methods";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
@@ -175,14 +175,15 @@ export function PenaltyReview({ allScores, contestantName, contestantUserId, isC
                         </div>
                       ) : (
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
                           onClick={() => {
                             setEditingId(row.regId);
                             setEditValue(String(row.timePenalty));
                           }}
                         >
-                          Adjust
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </TableCell>
