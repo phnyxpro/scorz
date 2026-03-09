@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        importScripts: ['custom-sw.js'],
         runtimeCaching: [
           {
             // Cache Supabase REST API calls (scores, contestants, sub_events, etc.)
