@@ -114,6 +114,7 @@ export default function JudgeScoring() {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState("");
+  const [viewMode, setViewMode] = useState<"slider" | "table">("slider");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [showCertifyAllDialog, setShowCertifyAllDialog] = useState(false);
   const [showCertifyBatchDialog, setShowCertifyBatchDialog] = useState(false);
