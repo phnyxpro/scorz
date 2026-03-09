@@ -160,10 +160,8 @@ export default function MasterScoreSheet() {
     return (
       <div className="max-w-4xl mx-auto p-4">
         <p className="text-muted-foreground">Sub-event not found.</p>
-        <Button asChild variant="ghost" size="sm" className="mt-2">
-          <Link to="/judging">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Judging Hub
-          </Link>
+        <Button variant="ghost" size="sm" className="mt-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
         </Button>
       </div>
     );
