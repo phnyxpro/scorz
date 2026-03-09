@@ -73,7 +73,7 @@ export function useContestantVotes(registrationIds: string[]) {
   });
 }
 
-/** Fetch sub-event details for context */
+/** Fetch sub-event details with level info for context */
 export function useSubEventNames(ids: string[]) {
   return useQuery({
     queryKey: ["sub_event_names", ids],
@@ -81,10 +81,18 @@ export function useSubEventNames(ids: string[]) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sub_events")
-        .select("id, name, event_date, status")
+        .select("id, name, event_date, status, level_id, competition_levels!inner(id, name, sort_order)")
         .in("id", ids);
       if (error) throw error;
-      return data as { id: string; name: string; event_date: string | null; status: string }[];
+      return (data || []).map((s: any) => ({
+        id: s.id as string,
+        name: s.name as string,
+        event_date: s.event_date as string | null,
+        status: s.status as string,
+        level_id: s.level_id as string,
+        level_name: s.competition_levels?.name as string,
+        level_sort_order: s.competition_levels?.sort_order as number,
+      }));
     },
   });
 }
