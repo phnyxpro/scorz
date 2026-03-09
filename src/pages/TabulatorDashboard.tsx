@@ -13,6 +13,7 @@ import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWi
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
+import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
@@ -43,7 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import {
   Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
-  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye,
+  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye, ArrowUpCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
@@ -337,7 +338,81 @@ function SubEventWorkspace({
   );
 }
 
-/* ─── Main Unified Dashboard ─── */
+/* ─── Level Tab Label with completion badge ─── */
+function LevelTabLabel({ levelId, name }: { levelId: string; name: string }) {
+  const { data: completion } = useLevelCompletion(levelId);
+  if (!completion) return <span>{name}</span>;
+  if (completion.isComplete) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+      </span>
+    );
+  }
+  if (completion.certifiedSubEvents > 0) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <span className="text-[10px] text-muted-foreground font-mono">
+          {completion.certifiedSubEvents}/{completion.totalSubEvents}
+        </span>
+      </span>
+    );
+  }
+  return <span>{name}</span>;
+}
+
+/* ─── Level Promotion Banner ─── */
+function LevelPromotionBanner({
+  levelId, competitionId, advancementCount, isFinalRound, scoringMethod, levelSortOrder,
+}: {
+  levelId: string; competitionId: string; advancementCount: number | null;
+  isFinalRound: boolean; scoringMethod: string; levelSortOrder: number;
+}) {
+  const { data: completion } = useLevelCompletion(levelId);
+  const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
+  const promote = usePromoteContestants();
+
+  if (!completion?.isComplete) return null;
+
+  const canPromote = !isFinalRound && !!advancementCount && advancementCount > 0 && !!nextLevel;
+
+  return (
+    <Card className="border-green-500/30 bg-green-500/5">
+      <CardContent className="py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-green-500" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Level Complete — All sub-events certified</p>
+            {isFinalRound && (
+              <p className="text-xs text-muted-foreground">This is the final round. Champion placements are on the Level Master Sheet.</p>
+            )}
+          </div>
+        </div>
+        {canPromote && (
+          <Button
+            size="sm"
+            onClick={() => promote.mutate({
+              competitionId,
+              currentLevelId: levelId,
+              nextLevelId: nextLevel.id,
+              advancementCount: advancementCount!,
+              scoringMethod,
+            })}
+            disabled={promote.isPending}
+            className="gap-1.5"
+          >
+            <ArrowUpCircle className="h-4 w-4" />
+            {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
 export default function TabulatorDashboard() {
   const { id: routeCompId } = useParams<{ id: string }>();
   const { assignedCompetitions, isLoading: compsLoading } = useStaffView("tabulator");
@@ -380,6 +455,24 @@ export default function TabulatorDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [selectedCompId, overviewSubEventIds, qc]);
 
+  // Realtime: invalidate level_completion when any certification changes
+  useEffect(() => {
+    if (!selectedCompId) return;
+    const channel = supabase
+      .channel(`tab_level_completion_${selectedCompId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chief_judge_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tabulator_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "witness_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCompId, overview?.levels, qc]);
+
   const filteredComps = useMemo(() => {
     if (!searchQuery.trim()) return activeComps;
     const q = searchQuery.toLowerCase();
@@ -408,7 +501,7 @@ export default function TabulatorDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
-        .select("active_scoring_level_id, active_scoring_sub_event_id")
+        .select("active_scoring_level_id, active_scoring_sub_event_id, scoring_method")
         .eq("id", selectedCompId!)
         .single();
       if (error) throw error;
@@ -508,7 +601,7 @@ export default function TabulatorDashboard() {
               <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
                 {overview.levels.map((level) => (
                   <TabsTrigger key={level.id} value={level.id} className="text-xs sm:text-sm flex-1 min-w-[80px]">
-                    {level.name}
+                    <LevelTabLabel levelId={level.id} name={level.name} />
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -518,6 +611,16 @@ export default function TabulatorDashboard() {
                 return (
                   <TabsContent key={level.id} value={level.id}>
                     <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 mt-4">
+                      {/* Level completion promotion banner */}
+                      <LevelPromotionBanner
+                        levelId={level.id}
+                        competitionId={selectedCompId!}
+                        advancementCount={level.advancement_count}
+                        isFinalRound={level.is_final_round}
+                        scoringMethod={activeComp?.scoring_method || "olympic"}
+                        levelSortOrder={level.sort_order}
+                      />
+
                       <div className="flex justify-end">
                         <Button asChild variant="default" size="sm">
                           <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>

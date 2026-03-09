@@ -1,55 +1,47 @@
 
 
-## Plan: Level Completion Badge on Tabulator Dashboard + Fix Auto-Advancement
+## Fix Blank Rendering in Browser Automation
 
-### Problem Analysis
+The app appears blank in headless browser testing due to two compounding issues:
 
-1. **`useLevelCompletion` only checks chief judge certifications** — it does NOT verify tabulator or witness certifications. The certification chain requires all three (Chief Judge → Tabulator → Witness) to consider a level truly complete.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-2. **No level completion badge on Tabulator Dashboard** — the level tabs show level names but no visual indication of completion status.
-
-3. **No auto-advancement trigger** — promotion is only available as a manual button on the Level Master Sheet page. The user expects that once all certifications are done, contestants automatically appear in the next level.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### Changes
+### Fix 1: Conditionally apply auditorium filter
 
-#### 1. Fix `useLevelCompletion` to check all three certification types
+**File: `src/contexts/ThemeContext.tsx`**
 
-**File:** `src/hooks/useLevelAdvancement.ts`
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-Update the `useLevelCompletion` hook to verify that every sub-event in the level has:
-- A chief judge certification with `is_certified = true`
-- A tabulator certification with `is_certified = true`  
-- A witness certification with `is_certified = true`
+### Fix 2: Remove filter class when at defaults
 
-Only when all three exist for every sub-event is the level considered "complete".
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-#### 2. Add completion badge to Tabulator Dashboard level tabs
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-**File:** `src/pages/TabulatorDashboard.tsx`
+### Fix 3: Update CSS to use filter only when properties exist
 
-- Import `useLevelCompletion` from the advancement hook
-- Create a small `LevelTabLabel` component rendered inside each `TabsTrigger` that calls `useLevelCompletion(level.id)` and shows a green `CheckCircle` icon + "Complete" badge next to the level name when all certifications are done
-- Show a progress indicator (e.g., "2/3 certified") when partially complete
+**File: `src/index.css`**
 
-#### 3. Auto-promote contestants when level completes
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
 
-**File:** `src/pages/TabulatorDashboard.tsx`
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
 
-- After the level completion badge detects a complete level, show a banner inside the `TabsContent` with the "Promote" button (same pattern as `LevelMasterSheet.tsx`)
-- Fetch the competition's `scoring_method`, `advancement_count` from the level, and `nextLevel` using existing hooks
-- Wire up `usePromoteContestants` mutation to the button
+This ensures no filter is applied when properties are unset, which is the default state.
 
-This keeps promotion as a deliberate manual action (button click) rather than fully automatic, which is safer since accidentally auto-promoting could create unwanted registrations. The banner will be prominent enough that the tabulator sees it immediately.
+---
 
-#### 4. Add realtime refresh for completion status
+### Summary
 
-**File:** `src/pages/TabulatorDashboard.tsx`
-
-The existing realtime subscriptions for `chief_judge_certifications`, `tabulator_certifications`, and `witness_certifications` should invalidate `level_completion` queries so the badge updates live when any certification changes.
-
-### Files Modified
-1. `src/hooks/useLevelAdvancement.ts` — update completion check to include all 3 certification types
-2. `src/pages/TabulatorDashboard.tsx` — add completion badge to level tabs, promotion banner, and realtime invalidation
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

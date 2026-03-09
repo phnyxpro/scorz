@@ -19,17 +19,39 @@ export function useLevelCompletion(levelId: string | null | undefined) {
       if (!subEvents?.length) return { isComplete: false, totalSubEvents: 0, certifiedSubEvents: 0 };
 
       const subEventIds = subEvents.map((se) => se.id);
-      const { data: certs } = await supabase
-        .from("chief_judge_certifications")
-        .select("sub_event_id, is_certified")
-        .in("sub_event_id", subEventIds)
-        .eq("is_certified", true);
 
-      const certifiedIds = new Set((certs || []).map((c) => c.sub_event_id));
+      // Check all three certification types in parallel
+      const [chiefRes, tabRes, witnessRes] = await Promise.all([
+        supabase
+          .from("chief_judge_certifications")
+          .select("sub_event_id")
+          .in("sub_event_id", subEventIds)
+          .eq("is_certified", true),
+        supabase
+          .from("tabulator_certifications")
+          .select("sub_event_id")
+          .in("sub_event_id", subEventIds)
+          .eq("is_certified", true),
+        supabase
+          .from("witness_certifications")
+          .select("sub_event_id")
+          .in("sub_event_id", subEventIds)
+          .eq("is_certified", true),
+      ]);
+
+      const chiefIds = new Set((chiefRes.data || []).map((c) => c.sub_event_id));
+      const tabIds = new Set((tabRes.data || []).map((c) => c.sub_event_id));
+      const witnessIds = new Set((witnessRes.data || []).map((c) => c.sub_event_id));
+
+      // A sub-event is fully certified only when all three roles have certified
+      const fullyCertifiedCount = subEventIds.filter(
+        (id) => chiefIds.has(id) && tabIds.has(id) && witnessIds.has(id)
+      ).length;
+
       return {
-        isComplete: subEventIds.every((id) => certifiedIds.has(id)),
+        isComplete: fullyCertifiedCount === subEventIds.length,
         totalSubEvents: subEventIds.length,
-        certifiedSubEvents: certifiedIds.size,
+        certifiedSubEvents: fullyCertifiedCount,
       };
     },
   });
