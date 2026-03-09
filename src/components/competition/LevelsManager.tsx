@@ -210,9 +210,47 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
         <Plus className="h-3 w-3 mr-1" /> Add Sub-Event
       </Button>
 
-      {events?.map((e) => (
-        <SubEventCard key={e.id} event={e} levelId={levelId} openEdit={openEdit} remove={remove} updateBanner={updateBanner} />
-      ))}
+      {events?.map((e) => {
+        const status = getSubEventStatus(e);
+        return (
+          <div key={e.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                className="flex items-center gap-2 flex-wrap text-left hover:opacity-70 transition-opacity cursor-pointer"
+                onClick={() => openEdit(e)}
+              >
+                <span className="font-medium text-foreground">{e.name}</span>
+                {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
+                {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
+                {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {status.type === "in-progress" && (
+                  <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 animate-pulse">● In Progress</Badge>
+                )}
+                {status.type === "countdown" && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{status.label}</Badge>
+                )}
+                {status.type === "completed" && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 text-muted-foreground">Completed</Badge>
+                )}
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove.mutate({ id: e.id, level_id: levelId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+            <BannerUpload
+              currentUrl={(e as any).banner_url}
+              folder={`sub-events/${e.id}`}
+              aspectLabel="Sub-Event Banner"
+              onUploaded={(url) => updateBanner(e.id, url)}
+              onRemoved={() => updateBanner(e.id, null)}
+            />
+          </div>
+        );
+      })}
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
