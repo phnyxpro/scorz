@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
