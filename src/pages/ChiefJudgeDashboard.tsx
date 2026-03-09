@@ -22,6 +22,7 @@ import { PanelMonitor } from "@/components/chief-judge/PanelMonitor";
 import { TieBreaker } from "@/components/chief-judge/TieBreaker";
 import { PenaltyReview } from "@/components/chief-judge/PenaltyReview";
 import { InfractionApplicator } from "@/components/chief-judge/InfractionApplicator";
+import { ContestantScoresTab } from "@/components/chief-judge/ContestantScoresTab";
 import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
 import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText, MessageSquare, Zap } from "lucide-react";
+import { ArrowLeft, Shield, Lock, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, FileText, MessageSquare, Zap, Gavel } from "lucide-react";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -298,10 +299,15 @@ export default function ChiefJudgeDashboard() {
                   <p className="text-xl font-bold text-foreground">{ties.length}</p>
                 </div>
               </div>
-              <div className="flex justify-end mt-3 gap-2">
+              <div className="flex justify-end mt-3 gap-2 flex-wrap">
                 <Button asChild variant="outline" size="sm" className="text-xs">
                   <Link to={`/competitions/${competitionId}/rules`}>
                     <FileText className="h-3.5 w-3.5 mr-1.5" /> Rules
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to={`/competitions/${competitionId}/penalties`}>
+                    <Gavel className="h-3.5 w-3.5 mr-1.5" /> Penalties
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="text-xs">
@@ -340,6 +346,7 @@ export default function ChiefJudgeDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="panel">Panel Monitor</SelectItem>
+                  <SelectItem value="scores">Scores</SelectItem>
                   <SelectItem value="penalties">Penalty Review</SelectItem>
                   <SelectItem value="infractions">Infractions</SelectItem>
                   <SelectItem value="ties">Tie Breaking</SelectItem>
@@ -348,6 +355,7 @@ export default function ChiefJudgeDashboard() {
             ) : (
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
+              <TabsTrigger value="scores">Scores</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
@@ -362,6 +370,14 @@ export default function ChiefJudgeDashboard() {
                 contestantUserId={contestantUserId}
                 isCertified={isCertified}
                 contestantAverages={contestantAverages}
+              />
+            </TabsContent>
+
+            <TabsContent value="scores">
+              <ContestantScoresTab
+                competitionId={competitionId!}
+                subEventId={selectedSubEventId}
+                allScores={allScores}
               />
             </TabsContent>
 

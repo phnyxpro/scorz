@@ -29,8 +29,8 @@ export const SCORING_METHODS: ScoringMethodMeta[] = [
     value: "olympic",
     label: "Olympic (High-Low Trim)",
     description:
-      "Drop the highest and lowest judge scores, average the remaining scores, then subtract any time penalty. Minimises the impact of outlier judges.",
-    formula: "Final = ( (Total − MAX − MIN) / (n − 2) ) − Penalty",
+      "Sum all judges' raw totals, subtract the highest and lowest, subtract penalties, then average the result. Minimises the impact of outlier judges.",
+    formula: "Final = ( Σ raw_totals − MAX − MIN − Penalty ) / (n − 2)",
   },
   {
     value: "cumulative",
@@ -78,14 +78,17 @@ export const SCORING_METHODS: ScoringMethodMeta[] = [
 export function calculateOlympic(scores: number[], penalty: number): number {
   if (scores.length === 0) return 0;
   if (scores.length < 3) {
-    // Not enough to trim — fall back to simple average
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    return Number((avg - penalty).toFixed(2));
+    // Not enough to trim — fall back to simple average minus penalty
+    const total = scores.reduce((a, b) => a + b, 0);
+    const avg = (total - penalty) / scores.length;
+    return Number(avg.toFixed(2));
   }
-  const sorted = [...scores].sort((a, b) => a - b);
-  const trimmed = sorted.slice(1, -1); // drop min & max
-  const avg = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
-  return Number((avg - penalty).toFixed(2));
+  const total = scores.reduce((a, b) => a + b, 0);
+  const max = Math.max(...scores);
+  const min = Math.min(...scores);
+  const trimmedSum = total - max - min;
+  const final = (trimmedSum - penalty) / (scores.length - 2);
+  return Number(final.toFixed(2));
 }
 
 /**
