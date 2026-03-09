@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, Pencil } from "lucide-react";
 import { calculateOlympic } from "@/lib/scoring-methods";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
