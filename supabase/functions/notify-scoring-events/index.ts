@@ -78,17 +78,30 @@ async function sendEmail(apiKey: string, to: string, subject: string, html: stri
 }
 
 async function insertNotifications(supabase: any, recipients: any[], title: string, message: string, link: string, type = "info") {
-  const rows = recipients
-    .filter((p: any) => p.user_id)
-    .map((p: any) => ({
-      user_id: p.user_id,
-      title,
-      message,
-      type,
-      link,
-    }));
+  const userIds = recipients.filter((p: any) => p.user_id).map((p: any) => p.user_id);
+  const rows = userIds.map((uid: string) => ({
+    user_id: uid,
+    title,
+    message,
+    type,
+    link,
+  }));
   if (rows.length) {
     await supabase.from("notifications").insert(rows);
+    // Fire push notifications
+    try {
+      const pushUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
+      await fetch(pushUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ user_ids: userIds, title, body: message, link }),
+      });
+    } catch (e) {
+      console.warn("Push notification dispatch failed:", e);
+    }
   }
 }
 
