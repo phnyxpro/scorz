@@ -134,7 +134,7 @@ function getRankBadge(rank: number, isFinalRound: boolean, advancementCount: num
 export default function LevelMasterSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
-  const canExport = hasRole("admin") || hasRole("organizer");
+  const canExport = hasRole("admin") || hasRole("organizer") || hasRole("tabulator");
   const canPromote = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
