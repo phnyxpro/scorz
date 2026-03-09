@@ -2,13 +2,14 @@ import { useMemo } from "react";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import { calculateMethodScore } from "@/lib/scoring-methods";
@@ -79,13 +80,31 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
   });
 }
 
+function useLevelsForCompetition(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["competition_levels_list", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_levels")
+        .select("id, name, sort_order")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 export default function LevelMasterSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const levelId = searchParams.get("level");
 
+  const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
   const { data, isLoading } = useLevelMasterSheet(competitionId, levelId);
 
   const judgeUserIds = useMemo(() => {
@@ -158,17 +177,45 @@ export default function LevelMasterSheet() {
 
   const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
-  if (isLoading) return <DashboardSkeleton />;
+  if (isLoading || levelsLoading) return <DashboardSkeleton />;
+
+  const levelSelector = (levels && levels.length > 0) ? (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground whitespace-nowrap">Level:</span>
+      <Select
+        value={levelId || ""}
+        onValueChange={(val) => navigate(`/competitions/${competitionId}/level-sheet?level=${val}`, { replace: true })}
+      >
+        <SelectTrigger className="w-[200px] h-8 text-sm">
+          <SelectValue placeholder="Select a level" />
+        </SelectTrigger>
+        <SelectContent>
+          {levels.map((l) => (
+            <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  ) : null;
 
   if (!data?.level) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <p className="text-muted-foreground">Level not found.</p>
-        <Button asChild variant="ghost" size="sm" className="mt-2">
-          <Link to="/judging">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Judging Hub
-          </Link>
-        </Button>
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <Link to="/judging">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            Level Master Sheet
+          </h1>
+        </div>
+        {levelSelector || <p className="text-muted-foreground">No levels found for this competition.</p>}
+        {levels && levels.length > 0 && !levelId && (
+          <p className="text-sm text-muted-foreground">Select a level above to view results.</p>
+        )}
       </div>
     );
   }
@@ -192,7 +239,10 @@ export default function LevelMasterSheet() {
             </p>
           </div>
         </div>
-        {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+        <div className="flex items-center gap-2 print:hidden">
+          {levelSelector}
+          {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+        </div>
       </div>
 
       <Card className="border-border/50 bg-card/80">
