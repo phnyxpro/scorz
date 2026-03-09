@@ -123,11 +123,51 @@ function LevelAdvancementSettings({ level, competitionId }: { level: any; compet
   );
 }
 
+function getSubEventStatus(e: any): { type: "in-progress" | "countdown" | "completed" | "none"; label?: string } {
+  if (!e.event_date) return { type: "none" };
+  const now = new Date();
+  const dateStr = e.event_date; // "YYYY-MM-DD"
+
+  if (e.end_time) {
+    const endDt = new Date(`${dateStr}T${e.end_time}`);
+    if (now > endDt) return { type: "completed" };
+  }
+
+  if (e.start_time) {
+    const startDt = new Date(`${dateStr}T${e.start_time}`);
+    const endDt = e.end_time ? new Date(`${dateStr}T${e.end_time}`) : null;
+    if (now >= startDt && (!endDt || now <= endDt)) return { type: "in-progress" };
+    if (now < startDt) {
+      const days = differenceInDays(startDt, now);
+      const hours = differenceInHours(startDt, now) % 24;
+      const mins = differenceInMinutes(startDt, now) % 60;
+      let label = "Starts in ";
+      if (days > 0) label += `${days}d `;
+      if (hours > 0) label += `${hours}h `;
+      if (days === 0 && mins > 0) label += `${mins}m`;
+      return { type: "countdown", label: label.trim() };
+    }
+  } else {
+    // Date only, no time
+    const eventDay = parseISO(dateStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    eventDay.setHours(0,0,0,0);
+    if (eventDay.getTime() === today.getTime()) return { type: "in-progress" };
+    if (eventDay > today) {
+      const days = differenceInDays(eventDay, today);
+      return { type: "countdown", label: `Starts in ${days}d` };
+    }
+    return { type: "completed" };
+  }
+  return { type: "none" };
+}
+
 function SubEventsPanel({ levelId }: { levelId: string }) {
   const { data: events } = useSubEvents(levelId);
   const create = useCreateSubEvent();
   const remove = useDeleteSubEvent();
   const qc = useQueryClient();
+  const [, setTick] = useState(0);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

@@ -10,9 +10,10 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp } from "lucide-react";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import { calculateMethodScore } from "@/lib/scoring-methods";
+import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 import type { SheetRow } from "@/lib/export-utils";
 
@@ -96,16 +97,38 @@ function useLevelsForCompetition(competitionId: string | undefined) {
   });
 }
 
+function getRankBadge(rank: number, isFinalRound: boolean, advancementCount: number | null) {
+  if (isFinalRound) {
+    if (rank === 0) return <Badge className="bg-amber-500 text-white text-[10px] px-1.5">🥇 Champion</Badge>;
+    if (rank === 1) return <Badge className="bg-gray-400 text-white text-[10px] px-1.5">🥈 2nd Place</Badge>;
+    if (rank === 2) return <Badge className="bg-amber-700 text-white text-[10px] px-1.5">🥉 3rd Place</Badge>;
+    return null;
+  }
+  if (advancementCount == null) return null;
+  if (rank < advancementCount) return <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">Advances</Badge>;
+  if (rank === advancementCount || rank === advancementCount + 1) return <Badge className="bg-amber-500/80 text-white text-[10px] px-1.5">Standby</Badge>;
+  return null;
+}
+
 export default function LevelMasterSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
+  const canPromote = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const levelId = searchParams.get("level");
 
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
   const { data, isLoading } = useLevelMasterSheet(competitionId, levelId);
+
+  const isFinalRound = (data?.level as any)?.is_final_round || false;
+  const advancementCount = isFinalRound ? null : (data?.level?.advancement_count ?? null);
+  const levelSortOrder = data?.level?.sort_order;
+
+  const { data: completion } = useLevelCompletion(levelId);
+  const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
+  const promote = usePromoteContestants();
 
   const judgeUserIds = useMemo(() => {
     return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
@@ -120,10 +143,8 @@ export default function LevelMasterSheet() {
     return m;
   }, [data?.subEvents]);
 
-  const advancementCount = data?.level?.advancement_count ?? null;
   const scoringMethod = data?.scoringMethod || "olympic";
 
-  // Build rows with corrected Olympic calculation
   const rows = useMemo(() => {
     if (!data) return [];
     return (data.registrations || [])
@@ -168,12 +189,14 @@ export default function LevelMasterSheet() {
       row["All Judges Total"] = Number(r.allJudgesRawTotal.toFixed(2));
       row["Penalty"] = Number(r.timePenalty.toFixed(2));
       row["Final Score"] = Number(r.avgFinal.toFixed(2));
-      if (advancementCount != null) {
-        row["Advances"] = i < advancementCount ? "Yes" : "";
+      if (isFinalRound) {
+        row["Placement"] = i === 0 ? "Champion" : i === 1 ? "2nd Place" : i === 2 ? "3rd Place" : "";
+      } else if (advancementCount != null) {
+        row["Advances"] = i < advancementCount ? "Yes" : (i === advancementCount || i === advancementCount + 1) ? "Standby" : "";
       }
       return row;
     });
-  }, [rows, judgeUserIds, profileMap, subEventMap, advancementCount]);
+  }, [rows, judgeUserIds, profileMap, subEventMap, advancementCount, isFinalRound]);
 
   const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
@@ -218,8 +241,35 @@ export default function LevelMasterSheet() {
     );
   }
 
+  const handlePromote = () => {
+    if (!competitionId || !levelId || !nextLevel || advancementCount == null) return;
+    promote.mutate({
+      competitionId,
+      currentLevelId: levelId,
+      nextLevelId: nextLevel.id,
+      advancementCount,
+      scoringMethod,
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Level complete banner */}
+      {completion?.isComplete && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/20 p-3 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            <CheckCircle className="h-4 w-4" />
+            Level Complete — All {completion.totalSubEvents} sub-event{completion.totalSubEvents !== 1 ? "s" : ""} certified
+          </div>
+          {canPromote && nextLevel && advancementCount != null && advancementCount > 0 && (
+            <Button size="sm" onClick={handlePromote} disabled={promote.isPending} className="gap-1.5">
+              <ArrowUp className="h-3.5 w-3.5" />
+              {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between print:mb-2">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="shrink-0 print:hidden" onClick={() => navigate(-1)}>
@@ -229,6 +279,7 @@ export default function LevelMasterSheet() {
             <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
               Level Master Sheet
+              {isFinalRound && <Badge className="bg-amber-500 text-white text-xs ml-1">Final Round</Badge>}
             </h1>
             <p className="text-sm text-muted-foreground">
               {data.level.name} • {data.subEvents.length} sub-event{data.subEvents.length !== 1 ? "s" : ""} combined
@@ -248,9 +299,14 @@ export default function LevelMasterSheet() {
           </CardTitle>
           <CardDescription>
             Overall ranking across all sub-events in this level.
-            {advancementCount != null && (
+            {isFinalRound && (
+              <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+                Final round — Champion placements shown.
+              </span>
+            )}
+            {!isFinalRound && advancementCount != null && (
               <span className="ml-1 font-medium text-emerald-600 dark:text-emerald-400">
-                Top {advancementCount} advance to the next level.
+                Top {advancementCount} advance to the next level. +2 standbys.
               </span>
             )}
           </CardDescription>
@@ -279,11 +335,17 @@ export default function LevelMasterSheet() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => {
-                    const advances = advancementCount != null && i < advancementCount;
+                    const advances = !isFinalRound && advancementCount != null && i < advancementCount;
+                    const standby = !isFinalRound && advancementCount != null && (i === advancementCount || i === advancementCount + 1);
                     return (
                       <TableRow
                         key={r.regId}
-                        className={advances ? "bg-emerald-50 dark:bg-emerald-950/20" : ""}
+                        className={
+                          advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+                          : standby ? "bg-amber-50 dark:bg-amber-950/10"
+                          : isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+                          : ""
+                        }
                       >
                         <TableCell className="font-mono text-muted-foreground text-xs">{i + 1}</TableCell>
                         <TableCell className="font-medium text-sm">
@@ -328,11 +390,7 @@ export default function LevelMasterSheet() {
                             <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
                               {i + 1}
                             </Badge>
-                            {advances && (
-                              <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">
-                                Advances
-                              </Badge>
-                            )}
+                            {getRankBadge(i, isFinalRound, advancementCount)}
                           </div>
                         </TableCell>
                       </TableRow>
