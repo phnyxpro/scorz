@@ -16,6 +16,7 @@ import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
+import { JudgeScoreSheets } from "@/components/tabulator/JudgeScoreSheets";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
 import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
