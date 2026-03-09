@@ -52,7 +52,7 @@ export default function ScoreTablesPage() {
   const rubricNames = useMemo(() => (rubric || []).map((r: any) => r.name), [rubric]);
   const indexToName = useMemo(() => {
     const m: Record<string, string> = {};
-    (rubric || []).forEach((r: any, i: number) => { m[String(i)] = r.name; });
+    (rubric || []).forEach((r: any) => { m[r.id] = r.name; });
     return m;
   }, [rubric]);
 

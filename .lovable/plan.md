@@ -1,45 +1,47 @@
 
 
-## Bug: `indexToName` Maps Wrong Keys in Score Display Components
+## Fix Blank Rendering in Browser Automation
 
-### Root Cause
+The app appears blank in headless browser testing due to two compounding issues:
 
-The `criterion_scores` field in `judge_scores` uses **UUID keys** (e.g., `"2794170b-f3ed-4067-a12f-21caba981e18": 3.5`), matching the `rubric_criteria.id` values.
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-However, both **ScoreTablesPage.tsx** (line 53-57) and **PostEventPortal.tsx** (line 42-46) build `indexToName` using **numeric string indices**:
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-```js
-sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
-// Produces: { "0": "Voice and Articulation", "1": "Stage Presence", ... }
+---
+
+### Fix 1: Conditionally apply auditorium filter
+
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-When `SideBySideScores` and `PrintableScorecard` try to resolve a UUID key like `"2794170b-..."` through this map, it falls back to the raw UUID. Then `rubricNames` (display names) don't match, so all criterion cells show "—".
+This ensures no filter is applied when properties are unset, which is the default state.
 
-### Affected Components
+---
 
-1. **ScoreTablesPage.tsx** — `indexToName` used by `SideBySideScores`
-2. **PostEventPortal.tsx** — `indexToName` used by `PrintableScorecard` and `criterionAverages` calculation
-3. **TabulatorDashboard.tsx** — likely has the same pattern (needs verification)
-4. **ContestantScoresOverview.tsx** — likely has the same pattern
+### Summary
 
-### Fix
-
-In each affected file, change the `indexToName` builder from numeric index to UUID:
-
-```js
-// Before (broken):
-sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
-
-// After (correct):
-sortedRubric.forEach((r) => { map[r.id] = r.name; });
-```
-
-This single-line change in each file ensures UUID keys from `criterion_scores` correctly resolve to display names.
-
-### Files to Update
-
-1. `src/pages/ScoreTablesPage.tsx` — line 55
-2. `src/pages/PostEventPortal.tsx` — line 44
-3. `src/pages/TabulatorDashboard.tsx` — verify and fix same pattern
-4. `src/pages/ContestantScoresOverview.tsx` — verify and fix same pattern
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

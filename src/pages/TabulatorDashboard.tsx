@@ -390,7 +390,7 @@ export default function TabulatorDashboard() {
 
   const indexToName = useMemo(() => {
     const m: Record<string, string> = {};
-    (overview?.rubric || []).forEach((r: any, i: number) => { m[String(i)] = r.name; });
+    (overview?.rubric || []).forEach((r: any) => { m[r.id] = r.name; });
     return m;
   }, [overview?.rubric]);
 

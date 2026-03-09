@@ -57,7 +57,7 @@ export default function Results() {
   // Map from numeric index ("0","1",...) to rubric name
   const indexToName = useMemo(() => {
     const map: Record<string, string> = {};
-    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    sortedRubric.forEach((r) => { map[r.id] = r.name; });
     return map;
   }, [sortedRubric]);
 
