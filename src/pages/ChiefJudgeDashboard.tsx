@@ -102,7 +102,14 @@ export default function ChiefJudgeDashboard() {
     return [...new Set(allScores.map(s => s.judge_id))];
   }, [allScores]);
 
-  // Contestant name lookup
+  const judgeNameMap = useStaffDisplayNames(judgeIds);
+  const judgeNames = useMemo(() => {
+    const rec: Record<string, string> = {};
+    judgeNameMap.forEach((name, id) => { rec[id] = name; });
+    return rec;
+  }, [judgeNameMap]);
+
+
   const contestantName = (regId: string) =>
     registrations?.find(r => r.id === regId)?.full_name ?? "Unknown";
 
