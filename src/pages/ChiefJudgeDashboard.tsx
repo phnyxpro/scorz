@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import {
   useAllScoresForSubEvent,
@@ -101,7 +102,14 @@ export default function ChiefJudgeDashboard() {
     return [...new Set(allScores.map(s => s.judge_id))];
   }, [allScores]);
 
-  // Contestant name lookup
+  const judgeNameMap = useStaffDisplayNames(judgeIds);
+  const judgeNames = useMemo(() => {
+    const rec: Record<string, string> = {};
+    judgeNameMap.forEach((name, id) => { rec[id] = name; });
+    return rec;
+  }, [judgeNameMap]);
+
+
   const contestantName = (regId: string) =>
     registrations?.find(r => r.id === regId)?.full_name ?? "Unknown";
 
@@ -439,6 +447,7 @@ export default function ChiefJudgeDashboard() {
               <TieBreaker
                 ties={ties}
                 contestantName={contestantName}
+                judgeNames={judgeNames}
                 isCertified={isCertified}
                 certification={certification}
                 onSaveTieBreakOrder={async (tieBreakOrder, tieNotes) => {
