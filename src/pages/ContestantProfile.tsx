@@ -185,6 +185,83 @@ export default function ContestantProfile() {
         </Card>
       </motion.div>
 
+      {/* Level Journey Indicator */}
+      {(() => {
+        // Group registrations by competition, then show levels
+        const compGroups = new Map<string, typeof registrations>();
+        (registrations || []).forEach((reg) => {
+          if (!compGroups.has(reg.competition_id)) compGroups.set(reg.competition_id, []);
+          compGroups.get(reg.competition_id)!.push(reg);
+        });
+
+        // Only show if at least one registration has level info
+        const hasLevelInfo = (registrations || []).some((r) => r.sub_event_id && subEventMap[r.sub_event_id]?.level_name);
+        if (!hasLevelInfo) return null;
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" /> Level Journey
+                </CardTitle>
+                <CardDescription>Levels and sub-events this contestant is registered in</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Array.from(compGroups.entries()).map(([compId, regs]) => {
+                  const comp = compMap[compId];
+                  // Build unique levels from registrations, sorted by level_sort_order
+                  const levelEntries = regs
+                    .filter((r) => r.sub_event_id && subEventMap[r.sub_event_id]?.level_name)
+                    .map((r) => ({
+                      reg: r,
+                      sub: subEventMap[r.sub_event_id!],
+                    }))
+                    .sort((a, b) => (a.sub.level_sort_order ?? 0) - (b.sub.level_sort_order ?? 0));
+
+                  if (levelEntries.length === 0) return null;
+
+                  // Group by level
+                  const byLevel = new Map<string, { levelName: string; sortOrder: number; subEvents: { name: string; date: string | null; status: string }[] }>();
+                  levelEntries.forEach(({ sub }) => {
+                    if (!byLevel.has(sub.level_id)) {
+                      byLevel.set(sub.level_id, { levelName: sub.level_name, sortOrder: sub.level_sort_order, subEvents: [] });
+                    }
+                    byLevel.get(sub.level_id)!.subEvents.push({ name: sub.name, date: sub.event_date, status: regs.find((r) => r.sub_event_id && subEventMap[r.sub_event_id!]?.level_id === sub.level_id)?.status || "approved" });
+                  });
+
+                  const levels = Array.from(byLevel.values()).sort((a, b) => a.sortOrder - b.sortOrder);
+
+                  return (
+                    <div key={compId} className="space-y-2">
+                      {compGroups.size > 1 && (
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{comp?.name || "Unknown"}</p>
+                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {levels.map((level, idx) => (
+                          <div key={level.levelName} className="flex items-center gap-1">
+                            {idx > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground leading-tight">{level.levelName}</p>
+                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                  {level.subEvents.map((se) => se.name).join(", ")}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {isMobile ? (
