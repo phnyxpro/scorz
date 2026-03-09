@@ -1,103 +1,47 @@
 
 
-## Plan: Add Rich Text Editor & Email Preview to Broadcast Component
+## Fix Blank Rendering in Browser Automation
 
-### What We're Building
-Transform the Email Broadcast component from a simple textarea to a professional email composer with:
-- **Rich text editor** (same TipTap editor used in Rules/Rubric pages) for message composition
-- **2-column layout**: Editor on left, live preview on right
-- **Branded preview**: Shows how the email will look with SCORZ template styling
+The app appears blank in headless browser testing due to two compounding issues:
 
-### Current State Analysis
-**EmailBroadcast component** (`src/components/chat/EmailBroadcast.tsx`):
-- Uses basic `<Textarea>` for message input (line 236-243)
-- Single-column layout
-- No preview capability
-- Content stored as plain text
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**RichTextEditor** (`src/components/shared/RichTextEditor.tsx`):
-- Full TipTap editor with formatting toolbar
-- Props: `content` (HTML string), `onChange` (callback), `placeholder`, `editable`
-- Outputs HTML via `editor.getHTML()`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**Email Template** (`supabase/functions/send-broadcast-email/index.ts`):
-- Injects content directly as HTML (line 160)
-- Uses `buildEmail()` helper with SCORZ branding (#1a1b25 charcoal, #f59e0b orange)
+---
 
-### Implementation Plan
+### Fix 1: Conditionally apply auditorium filter
 
-**1. Update EmailBroadcast Component**
+**File: `src/contexts/ThemeContext.tsx`**
 
-Replace `<Textarea>` with `<RichTextEditor>`:
-- Import RichTextEditor from `@/components/shared/RichTextEditor`
-- Change `content` state to store HTML instead of plain text
-- Wire up RichTextEditor with `content` and `onChange` props
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**2. Create 2-Column Layout**
+### Fix 2: Remove filter class when at defaults
 
-Split the message section into two columns:
-- **Left column**: Subject + Rich Text Editor
-- **Right column**: Live email preview
-- Use CSS Grid: `grid-cols-1 lg:grid-cols-2` (stacked on mobile, side-by-side on desktop)
-- Add gap between columns
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-**3. Build Preview Component**
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-Create inline preview showing:
-- SCORZ header with logo styling
-- Subject line as `<h2>`
-- Competition name as metadata
-- Rich text content wrapped in styled container
-- Email footer with branding
+### Fix 3: Update CSS to use filter only when properties exist
 
-Preview styling must match `email-html.ts`:
-- White background (#ffffff)
-- Charcoal text (#1a1b25)
-- Orange accents (#f59e0b)
-- Max width 560px
-- Proper padding and spacing
+**File: `src/index.css`**
 
-**4. Styling Considerations**
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
 
-- RichTextEditor height: ~300px min-height for comfortable editing
-- Preview container: scrollable if content overflows
-- Mobile: preview appears below editor
-- Maintain existing spacing for recipient groups and action buttons
-
-### Technical Details
-
-**State Change**:
-```typescript
-// Before: const [content, setContent] = useState("");
-// After: const [content, setContent] = useState(""); // Now stores HTML
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-**Grid Layout Structure**:
-```
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  <div> {/* Editor column */}
-    <Label>Subject</Label>
-    <Input />
-    <Label>Message</Label>
-    <RichTextEditor content={content} onChange={setContent} />
-  </div>
-  <div> {/* Preview column */}
-    <Label>Preview</Label>
-    <div className="border rounded-md bg-[#f4f4f5] p-4 overflow-auto">
-      {/* Branded email preview */}
-    </div>
-  </div>
-</div>
-```
+This ensures no filter is applied when properties are unset, which is the default state.
 
-**Preview Template Inline Styling**:
-- Replicate key styles from `email-html.ts`
-- SCORZ header: charcoal bg, white+orange text
-- Body: white bg, proper padding
-- Content wrapper: light gray bg (#f9fafb), rounded corners
+---
 
-### No Breaking Changes
-- All existing functionality preserved (recipient selection, extra emails, send logic)
-- Backend expects HTML content (already does)
-- No database schema changes needed
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
