@@ -181,12 +181,13 @@ export default function JudgeScoring() {
 
   const calculatePenalty = useCallback((durationSecs: number): number => {
     if (!penalties?.length) return 0;
-    let totalPenalty = 0;
-    const overTime = durationSecs - timeLimitSecs - gracePeriodSecs;
+    const rounded = Math.floor(durationSecs);
+    const overTime = rounded - timeLimitSecs - gracePeriodSecs;
     if (overTime <= 0) return 0;
+    let totalPenalty = 0;
     for (const rule of penalties) {
-      if (durationSecs >= rule.from_seconds) {
-        if (!rule.to_seconds || durationSecs <= rule.to_seconds) {
+      if (rounded >= rule.from_seconds) {
+        if (!rule.to_seconds || rounded <= rule.to_seconds) {
           totalPenalty = Math.max(totalPenalty, rule.penalty_points);
         }
       }
