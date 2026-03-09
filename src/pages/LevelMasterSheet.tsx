@@ -10,7 +10,9 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy, CheckCircle, ArrowUp } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
