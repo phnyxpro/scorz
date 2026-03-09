@@ -1,47 +1,30 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Two Changes
 
-The app appears blank in headless browser testing due to two compounding issues:
+### 1. Fix CriterionSlider Decimal Input
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+The `<Input type="number">` on mobile devices often shows a numeric keypad without a decimal point. The fix is to add `inputMode="decimal"` to the input element so mobile keyboards show the decimal point. The underlying parsing logic (`handleNumberInput` with `parseFloat`) already handles decimals correctly — this is purely a mobile keyboard issue.
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+**File:** `src/components/scoring/CriterionSlider.tsx`
+- Add `inputMode="decimal"` to the `<Input>` element (line 76-87)
 
----
+### 2. Reset Score for Miguel Jagarnath (Patti-Anne Ali)
 
-### Fix 1: Conditionally apply auditorium filter
+The existing score record `f230dff9-b329-430b-b45b-4a7c02eca77f` has **numeric index keys** (`"0"`, `"1"`, ...) in `criterion_scores` instead of UUID keys. This causes the score display to show blanks on all pages that were recently fixed to use UUID-based mapping.
 
-**File: `src/contexts/ThemeContext.tsx`**
+The values themselves are correct (4.5, 4.5, 4.5, 4.5, 4.5, 5.0 = 27.5), so the fix is to UPDATE the `criterion_scores` JSONB to use UUID keys:
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+| Criterion | UUID | Value |
+|---|---|---|
+| Voice and Articulation | `b0dbb2db-...` | 4.5 |
+| Stage Presence | `70c63092-...` | 4.5 |
+| Dramatic Appropriateness | `9ca31e7d-...` | 4.5 |
+| Literary Devices | `4fbe8675-...` | 4.5 |
+| Use of Language | `2794170b-...` | 4.5 |
+| Continuity (Storyline) | `e3a9397f-...` | 5.0 |
 
-### Fix 2: Remove filter class when at defaults
+Raw total stays 27.5, final_score stays 27.5 (no time penalty).
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
-```
-
-This ensures no filter is applied when properties are unset, which is the default state.
-
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+**Action:** SQL UPDATE on judge_scores to replace the criterion_scores JSONB.
 
