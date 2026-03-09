@@ -103,6 +103,17 @@ export function EmailBroadcast({ competitionId }: { competitionId: string }) {
   const [sending, setSending] = useState(false);
 
   const { data: counts = {} } = useRecipientCounts(competitionId);
+  const { data: competition } = useQuery({
+    queryKey: ["competition-name", competitionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("competitions")
+        .select("name")
+        .eq("id", competitionId)
+        .single();
+      return data;
+    },
+  });
 
   const groups: RecipientGroup[] = [
     { key: "organisers", label: "Organisers", count: counts.organisers || 0 },
