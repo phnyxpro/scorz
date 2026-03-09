@@ -7,7 +7,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck } from "lucide-react";
+import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck, BellRing, BellOff } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export function NotificationCenter() {
     const navigate = useNavigate();
     const qc = useQueryClient();
     const [open, setOpen] = useState(false);
+    const { isSupported: pushSupported, isSubscribed: pushSubscribed, isLoading: pushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications();
 
     const { data: notifications, isLoading } = useQuery({
         queryKey: ["notifications", user?.id],
@@ -130,16 +132,30 @@ export function NotificationCenter() {
             <PopoverContent className="w-80 p-0 border-border/50 bg-card/95 backdrop-blur-xl" align="end">
                 <div className="flex items-center justify-between p-4 border-b border-border/10">
                     <h3 className="text-xs font-bold uppercase tracking-widest">Notifications</h3>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-[10px] uppercase font-mono tracking-tighter"
-                            onClick={() => markAllRead.mutate()}
-                        >
-                            <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {unreadCount > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] uppercase font-mono tracking-tighter"
+                                onClick={() => markAllRead.mutate()}
+                            >
+                                <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
+                            </Button>
+                        )}
+                        {pushSupported && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                disabled={pushLoading}
+                                onClick={() => pushSubscribed ? pushUnsubscribe() : pushSubscribe()}
+                                title={pushSubscribed ? "Disable push notifications" : "Enable push notifications"}
+                            >
+                                {pushSubscribed ? <BellRing className="h-3 w-3 text-primary" /> : <BellOff className="h-3 w-3 text-muted-foreground" />}
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <ScrollArea className="h-80">
                     {notifications && notifications.length > 0 ? (
