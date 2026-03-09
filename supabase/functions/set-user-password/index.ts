@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, password } = await req.json();
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: "email and password required" }), {
+    const { emails, password } = await req.json();
+    if (!emails || !password) {
+      return new Response(JSON.stringify({ error: "emails array and password required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -24,22 +24,44 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find user by email
-    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) throw listError;
+    const results = [];
+    for (const email of emails) {
+      try {
+        // Use listUsers with filter to find by email
+        const { data, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 1,
+        });
+        
+        // Alternative: fetch user directly via REST API
+        const url = `${Deno.env.get("SUPABASE_URL")}/auth/v1/admin/users?page=1&per_page=50`;
+        const resp = await fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "apikey": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          },
+        });
+        const usersData = await resp.json();
+        const users = usersData.users || usersData;
+        const user = Array.isArray(users) ? users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase()) : null;
 
-    const user = users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!user) {
-      return new Response(JSON.stringify({ error: `User not found: ${email}` }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        if (!user) {
+          results.push({ email, success: false, error: "User not found" });
+          continue;
+        }
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password });
+        if (updateError) {
+          results.push({ email, success: false, error: updateError.message });
+        } else {
+          results.push({ email, success: true });
+        }
+      } catch (err) {
+        results.push({ email, success: false, error: err.message });
+      }
     }
 
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password });
-    if (updateError) throw updateError;
-
-    return new Response(JSON.stringify({ success: true, email }), {
+    return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
