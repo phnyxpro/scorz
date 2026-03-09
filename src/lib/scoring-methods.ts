@@ -29,8 +29,8 @@ export const SCORING_METHODS: ScoringMethodMeta[] = [
     value: "olympic",
     label: "Olympic (High-Low Trim)",
     description:
-      "Drop the highest and lowest judge scores, average the remaining scores, then subtract any time penalty. Minimises the impact of outlier judges.",
-    formula: "Final = ( (Total − MAX − MIN) / (n − 2) ) − Penalty",
+      "Sum all judges' raw totals, subtract the highest and lowest, subtract penalties, then average the result. Minimises the impact of outlier judges.",
+    formula: "Final = ( Σ raw_totals − MAX − MIN − Penalty ) / (n − 2)",
   },
   {
     value: "cumulative",
