@@ -1,36 +1,47 @@
 
 
-## Two Issues to Address
+## Fix Blank Rendering in Browser Automation
 
-### Issue 1: Set Judge Passwords
+The app appears blank in headless browser testing due to two compounding issues:
 
-Setting passwords for auth users cannot be done via SQL — it requires the Supabase Admin API (`admin.updateUserById`). 
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**Judges (5 accounts):**
-- Jean-Claude Cournand (jeanclaude.cournand@gmail.com)
-- Kwame Weekes (kwameweekesbookings@gmail.com)
-- Mtmima Solwazi (msolwazi.rootsfoundation@gmail.com)
-- Patti-Anne Ali (pattianneali@yahoo.com)
-- Shivanee Ramlochan (shivanee@bocaslitfest.com)
-
-**Plan:** Create a temporary edge function `set-user-password` that accepts an email and password, looks up the user via the Admin API, and sets their password. Call it 5 times via curl, then delete the function.
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
 ---
 
-### Issue 2: Score Cards Not Showing Criterion Values
+### Fix 1: Conditionally apply auditorium filter
 
-**Root cause identified:** The `ScoreCard` component (`src/components/shared/ScoreCard.tsx`) has **hardcoded** scoring criteria ("Creativity", "Technique", "Presentation", "Overall") and tries to access `criterion_scores.creativity`, etc.
+**File: `src/contexts/ThemeContext.tsx`**
 
-However, actual `judge_scores.criterion_scores` uses **UUID keys** (rubric_criteria IDs like `2794170b-f3ed-4067-a12f-21caba981e18`), and the actual criteria are "Voice and Articulation", "Stage Presence", "Dramatic Appropriateness", etc.
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-The hardcoded names will never match the UUID keys, so all criterion cells show blank.
+### Fix 2: Remove filter class when at defaults
 
-**Fix:** Update `ScoreCard` to accept a `rubricCriteria` prop (array of `{id, name}`) and dynamically render columns using those names, mapping UUID keys from `criterion_scores` to display names. Update `ScoreCardExporter` and `ScoreCardExportSection` to fetch and pass rubric criteria.
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-### Changes
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-1. **Create + deploy + call + delete** `set-user-password` edge function for the 5 judges
-2. **Update `ScoreCard.tsx`** — accept `rubricCriteria` prop, dynamically render criterion columns using UUID-to-name mapping
-3. **Update `ScoreCardExporter.tsx`** — pass through rubric criteria
-4. **Update `ScoreCardExportSection.tsx`** — fetch rubric criteria for the selected competition and pass them down
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

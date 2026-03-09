@@ -70,7 +70,19 @@ export function ScoreCardExportSection({ competitionId, competitionName, levels,
     enabled: !!selectedSubEventId,
   });
 
-  // Group sub-events by level for the dropdown
+  const { data: rubricCriteria } = useQuery({
+    queryKey: ["rubric_criteria_for_export", competitionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rubric_criteria")
+        .select("id, name")
+        .eq("competition_id", competitionId)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const groupedOptions = levels
     .map(level => ({
       level,
@@ -118,6 +130,7 @@ export function ScoreCardExportSection({ competitionId, competitionName, levels,
             competitionName={competitionName}
             judgeScores={judgeScores || []}
             availableJudges={judges || []}
+            rubricCriteria={rubricCriteria || []}
           />
         )}
       </CardContent>
