@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,14 +8,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 
 export default function RegistrationsHub() {
+  const navigate = useNavigate();
   const { data: competitions, isLoading } = useCompetitions();
   const [selectedId, setSelectedId] = useState("");
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">

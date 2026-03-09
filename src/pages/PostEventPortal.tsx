@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useMyRegistration } from "@/hooks/useRegistrations";
@@ -16,6 +16,7 @@ import { PrintableScorecard } from "@/components/results/PrintableScorecard";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 export default function PostEventPortal() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { user, hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
@@ -78,8 +79,8 @@ export default function PostEventPortal() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon">
-          <Link to={`/competitions/${competitionId}/results`}><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">

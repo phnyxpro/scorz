@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetitions, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 
 export default function ResultsHub() {
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
   const { data: competitions, isLoading: loadingComps } = useCompetitions();
@@ -96,8 +97,8 @@ export default function ResultsHub() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">

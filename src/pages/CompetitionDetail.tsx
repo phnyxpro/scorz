@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { DetailPageSkeleton } from "@/components/shared/PageSkeletons";
 import { useCompetition, useUpdateCompetition, useCreateRubricCriterion, useRubricCriteria } from "@/hooks/useCompetitions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +57,7 @@ interface ScannedCriterion {
 }
 
 export default function CompetitionDetail() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
@@ -285,8 +286,8 @@ export default function CompetitionDetail() {
       />
       <div>
         <div className="flex items-center gap-3 mb-6">
-          <Button asChild variant="ghost" size="icon" className="shrink-0">
-            <Link to="/competitions"><ArrowLeft className="h-4 w-4" /></Link>
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{comp.name}</h1>

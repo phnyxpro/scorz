@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -79,6 +79,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
 }
 
 export default function MasterScoreSheet() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
@@ -160,10 +161,8 @@ export default function MasterScoreSheet() {
     return (
       <div className="max-w-4xl mx-auto p-4">
         <p className="text-muted-foreground">Sub-event not found.</p>
-        <Button asChild variant="ghost" size="sm" className="mt-2">
-          <Link to="/judging">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Judging Hub
-          </Link>
+        <Button variant="ghost" size="sm" className="mt-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
         </Button>
       </div>
     );
@@ -173,10 +172,8 @@ export default function MasterScoreSheet() {
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between print:mb-2">
         <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="icon" className="shrink-0 print:hidden">
-            <Link to="/judging">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" size="icon" className="shrink-0 print:hidden" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">

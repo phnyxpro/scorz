@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { ArrowLeft, MessageSquare, Star, Heart, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ContestantFeedback() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedCompId, setSelectedCompId] = useState<string>("");
 
@@ -74,8 +75,8 @@ export default function ContestantFeedback() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon" className="shrink-0">
-          <Link to="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">My Feedback</h1>

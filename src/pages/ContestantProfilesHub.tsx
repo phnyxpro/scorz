@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +21,7 @@ const item = {
 };
 
 export default function ContestantProfilesHub() {
+  const navigate = useNavigate();
   const { data: competitions, isLoading: loadingComps } = useCompetitions();
   const [selectedId, setSelectedId] = useState("");
   const { data: registrations, isLoading: loadingRegs } = useRegistrations(selectedId || undefined);
@@ -30,8 +31,8 @@ export default function ContestantProfilesHub() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
