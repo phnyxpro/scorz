@@ -240,10 +240,11 @@ export default function LevelMasterSheet() {
     }
     return list;
   }, [data?.certifications, certNameMap]);
-    });
-  }, [rows, judgeUserIds, profileMap, subEventMap, advancementCount, isFinalRound]);
 
-  const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
+  const competitionName = (data?.competition as any)?.name || "Competition";
+  const competitionLogo = (data?.competition as any)?.branding_logo_url;
+  const primaryColor = (data?.competition as any)?.branding_primary_color || "#1a1a2e";
+  const accentColor = (data?.competition as any)?.branding_accent_color || "#e94560";
 
   if (isLoading || levelsLoading) return <DashboardSkeleton />;
 
