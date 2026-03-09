@@ -32,7 +32,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
 
       const { data: competition } = await supabase
         .from("competitions")
-        .select("scoring_method")
+        .select("name, scoring_method, branding_logo_url, branding_primary_color, branding_accent_color")
         .eq("id", competitionId!)
         .single();
 
