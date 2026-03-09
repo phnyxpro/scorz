@@ -373,6 +373,14 @@ export default function ChiefJudgeDashboard() {
               />
             </TabsContent>
 
+            <TabsContent value="scores">
+              <ContestantScoresTab
+                competitionId={competitionId!}
+                subEventId={selectedSubEventId}
+                allScores={allScores}
+              />
+            </TabsContent>
+
             <TabsContent value="penalties">
               <PenaltyReview
                 allScores={allScores || []}
