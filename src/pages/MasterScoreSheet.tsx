@@ -171,10 +171,8 @@ export default function MasterScoreSheet() {
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between print:mb-2">
         <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="icon" className="shrink-0 print:hidden">
-            <Link to="/judging">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" size="icon" className="shrink-0 print:hidden" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">

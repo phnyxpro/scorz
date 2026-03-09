@@ -78,8 +78,8 @@ export default function PostEventPortal() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon">
-          <Link to={`/competitions/${competitionId}/results`}><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">

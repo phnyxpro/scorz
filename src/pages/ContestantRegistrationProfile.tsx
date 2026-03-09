@@ -150,8 +150,8 @@ export default function ContestantRegistrationProfile() {
   return (
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
       {/* Back */}
-      <Button variant="ghost" size="sm" onClick={() => navigate(`/competitions/${competitionId}`)}>
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Competition
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>
 
       {/* Hero */}
