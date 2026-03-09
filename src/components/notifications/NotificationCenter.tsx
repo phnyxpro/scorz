@@ -31,6 +31,7 @@ export function NotificationCenter() {
     const navigate = useNavigate();
     const qc = useQueryClient();
     const [open, setOpen] = useState(false);
+    const { isSupported: pushSupported, isSubscribed: pushSubscribed, isLoading: pushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications();
 
     const { data: notifications, isLoading } = useQuery({
         queryKey: ["notifications", user?.id],
