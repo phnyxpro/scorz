@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,19 +34,13 @@ interface TieBreakerProps {
   judgeNames?: Record<string, string>;
 }
 
-function SortableContestantItem({
-  entry,
-  contestantName,
-  rank,
-  isCertified,
-  judgeNames,
-}: {
+const SortableContestantItem = forwardRef<HTMLDivElement, {
   entry: { regId: string; avg: number; scores: JudgeScore[] };
   contestantName: (regId: string) => string;
   rank: number;
   isCertified: boolean;
   judgeNames?: Record<string, string>;
-}) {
+}>(function SortableContestantItem({ entry, contestantName, rank, isCertified, judgeNames }, _ref) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.regId,
     disabled: isCertified,
@@ -105,7 +99,7 @@ function SortableContestantItem({
       </AccordionItem>
     </div>
   );
-}
+});
 
 export function TieBreaker({ ties, contestantName, isCertified, certification, onSaveTieBreakOrder, judgeNames }: TieBreakerProps) {
   // Parse saved tie break order
