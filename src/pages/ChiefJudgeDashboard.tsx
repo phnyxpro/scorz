@@ -469,15 +469,14 @@ export default function ChiefJudgeDashboard() {
           <DialogHeader>
             <DialogTitle>Certify Sub-Event Results</DialogTitle>
             <DialogDescription>
-              Sign below to certify all results for this sub-event. This action is final.
+              Review and sign to certify all results. This action is final.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
-              <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-xs text-foreground">
-                By signing, you certify that all scores have been reviewed, penalties are accurate,
-                and any ties have been properly resolved. Results will be published.
+            {/* Formal certification statement */}
+            <div className="p-4 rounded-md bg-muted/50 border border-border/50">
+              <p className="text-sm text-foreground leading-relaxed italic">
+                "I, <span className="font-semibold not-italic">{user?.user_metadata?.full_name || "Chief Judge"}</span>, certify the results for this level of the competition <span className="font-semibold not-italic">{comp?.name || "—"}</span> on <span className="font-semibold not-italic">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}</span> according to the rubric, rules and regulations stipulated."
               </p>
             </div>
 
