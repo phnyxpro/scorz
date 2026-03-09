@@ -338,7 +338,81 @@ function SubEventWorkspace({
   );
 }
 
-/* ─── Main Unified Dashboard ─── */
+/* ─── Level Tab Label with completion badge ─── */
+function LevelTabLabel({ levelId, name }: { levelId: string; name: string }) {
+  const { data: completion } = useLevelCompletion(levelId);
+  if (!completion) return <span>{name}</span>;
+  if (completion.isComplete) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+      </span>
+    );
+  }
+  if (completion.certifiedSubEvents > 0) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <span className="text-[10px] text-muted-foreground font-mono">
+          {completion.certifiedSubEvents}/{completion.totalSubEvents}
+        </span>
+      </span>
+    );
+  }
+  return <span>{name}</span>;
+}
+
+/* ─── Level Promotion Banner ─── */
+function LevelPromotionBanner({
+  levelId, competitionId, advancementCount, isFinalRound, scoringMethod, levelSortOrder,
+}: {
+  levelId: string; competitionId: string; advancementCount: number | null;
+  isFinalRound: boolean; scoringMethod: string; levelSortOrder: number;
+}) {
+  const { data: completion } = useLevelCompletion(levelId);
+  const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
+  const promote = usePromoteContestants();
+
+  if (!completion?.isComplete) return null;
+
+  const canPromote = !isFinalRound && !!advancementCount && advancementCount > 0 && !!nextLevel;
+
+  return (
+    <Card className="border-green-500/30 bg-green-500/5">
+      <CardContent className="py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-green-500" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Level Complete — All sub-events certified</p>
+            {isFinalRound && (
+              <p className="text-xs text-muted-foreground">This is the final round. Champion placements are on the Level Master Sheet.</p>
+            )}
+          </div>
+        </div>
+        {canPromote && (
+          <Button
+            size="sm"
+            onClick={() => promote.mutate({
+              competitionId,
+              currentLevelId: levelId,
+              nextLevelId: nextLevel.id,
+              advancementCount: advancementCount!,
+              scoringMethod,
+            })}
+            disabled={promote.isPending}
+            className="gap-1.5"
+          >
+            <ArrowUpCircle className="h-4 w-4" />
+            {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
 export default function TabulatorDashboard() {
   const { id: routeCompId } = useParams<{ id: string }>();
   const { assignedCompetitions, isLoading: compsLoading } = useStaffView("tabulator");
