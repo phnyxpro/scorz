@@ -167,7 +167,9 @@ export function MasterSheetExporter({
       row["All Judges Total"] = Number(r.allJudgesTotal.toFixed(2));
       row["Penalty"] = Number(r.timePenalty.toFixed(2));
       row["Final Score"] = Number(r.finalScore.toFixed(2));
-      if (activeAdvCount != null) row["Advances"] = i < activeAdvCount ? "Yes" : "";
+      if (activeAdvCount != null) {
+        row["Advances"] = i < activeAdvCount ? "Yes" : (i === activeAdvCount || i === activeAdvCount + 1) ? "Standby" : "";
+      }
       return row;
     });
   };

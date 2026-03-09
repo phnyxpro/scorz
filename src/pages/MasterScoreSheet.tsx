@@ -199,9 +199,14 @@ export default function MasterScoreSheet() {
           </CardTitle>
           <CardDescription>
             Each column shows the judge's raw total. Final score uses the {data.scoringMethod === "olympic" ? "Olympic (high-low trim)" : data.scoringMethod} method.
-            {advancementCount != null && (
+            {isFinalRound && (
+              <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+                Final round — Champion placements shown.
+              </span>
+            )}
+            {!isFinalRound && advancementCount != null && (
               <span className="ml-1 font-medium text-emerald-600 dark:text-emerald-400">
-                Top {advancementCount} advance.
+                Top {advancementCount} advance. +2 standbys.
               </span>
             )}
           </CardDescription>
@@ -229,11 +234,17 @@ export default function MasterScoreSheet() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => {
-                    const advances = advancementCount != null && i < advancementCount;
+                    const advances = !isFinalRound && advancementCount != null && i < advancementCount;
+                    const standby = !isFinalRound && advancementCount != null && (i === advancementCount || i === advancementCount + 1);
                     return (
                       <TableRow
                         key={r.regId}
-                        className={advances ? "bg-emerald-50 dark:bg-emerald-950/20" : ""}
+                        className={
+                          advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+                          : standby ? "bg-amber-50 dark:bg-amber-950/10"
+                          : isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+                          : ""
+                        }
                       >
                         <TableCell className="font-mono text-muted-foreground text-xs">{i + 1}</TableCell>
                         <TableCell className="font-medium text-sm">
@@ -275,11 +286,11 @@ export default function MasterScoreSheet() {
                             <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
                               {i + 1}
                             </Badge>
-                            {advances && (
-                              <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">
-                                Advances
-                              </Badge>
-                            )}
+                            {isFinalRound && i === 0 && <Badge className="bg-amber-500 text-white text-[10px] px-1.5">🥇 Champion</Badge>}
+                            {isFinalRound && i === 1 && <Badge className="bg-gray-400 text-white text-[10px] px-1.5">🥈 2nd Place</Badge>}
+                            {isFinalRound && i === 2 && <Badge className="bg-amber-700 text-white text-[10px] px-1.5">🥉 3rd Place</Badge>}
+                            {advances && <Badge className="bg-emerald-600 text-white text-[10px] px-1.5">Advances</Badge>}
+                            {standby && <Badge className="bg-amber-500/80 text-white text-[10px] px-1.5">Standby</Badge>}
                           </div>
                         </TableCell>
                       </TableRow>
