@@ -291,6 +291,24 @@ export default function ChiefJudgeDashboard() {
 
       {selectedSubEventId && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Certification banner */}
+          {isCertified && certification?.signed_at && (
+            <Card className="border-secondary/30 bg-secondary/5 mb-4">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <p className="text-sm text-foreground leading-relaxed italic">
+                      "I, <span className="font-semibold not-italic">{user?.user_metadata?.full_name || "Chief Judge"}</span>, certify the results for this level of the competition <span className="font-semibold not-italic">{comp?.name || "—"}</span> on <span className="font-semibold not-italic">{new Date(certification.signed_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at {new Date(certification.signed_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}</span> according to the rubric, rules and regulations stipulated."
+                    </p>
+                    {certification.chief_judge_signature && (
+                      <img src={certification.chief_judge_signature} alt="Chief Judge Signature" className="h-12 mt-1" />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {/* Summary card */}
           <Card className="border-border/50 bg-card/80 mb-4">
             <CardContent className="pt-4">

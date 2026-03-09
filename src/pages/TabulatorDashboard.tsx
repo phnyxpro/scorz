@@ -246,7 +246,7 @@ function SubEventWorkspace({
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Eye className="h-4 w-4 text-primary" /> Witness Verification
+              <Eye className="h-4 w-4 text-primary" /> 2nd Tabulator / Witness Verification
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
