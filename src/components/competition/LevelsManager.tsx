@@ -42,11 +42,18 @@ type SpecialEntry = { type: string; label: string };
 function LevelAdvancementSettings({ level, competitionId }: { level: any; competitionId: string }) {
   const qc = useQueryClient();
   const [advCount, setAdvCount] = useState<string>((level as any).advancement_count?.toString() || "");
+  const [isFinalRound, setIsFinalRound] = useState<boolean>((level as any).is_final_round || false);
   const specialEntries: SpecialEntry[] = (level as any).special_entries || [];
 
   const saveAdvancement = async (val: string) => {
     const num = val ? parseInt(val, 10) : null;
     await supabase.from("competition_levels").update({ advancement_count: num } as any).eq("id", level.id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
+  const toggleFinalRound = async (checked: boolean) => {
+    setIsFinalRound(checked);
+    await supabase.from("competition_levels").update({ is_final_round: checked } as any).eq("id", level.id);
     qc.invalidateQueries({ queryKey: ["levels", competitionId] });
   };
 
@@ -61,18 +68,33 @@ function LevelAdvancementSettings({ level, competitionId }: { level: any; compet
 
   return (
     <div className="space-y-3 py-2">
-      <div>
-        <Label className="text-xs text-muted-foreground">Contestants advancing to next level</Label>
-        <Input
-          type="number"
-          min={0}
-          placeholder="e.g. 10"
-          className="h-8 mt-1 w-40"
-          value={advCount}
-          onChange={(e) => setAdvCount(e.target.value)}
-          onBlur={() => saveAdvancement(advCount)}
-        />
+      {/* Final Round Toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+        <div className="space-y-0.5">
+          <Label htmlFor={`final-round-${level.id}`} className="text-sm font-medium flex items-center gap-1.5">
+            <Crown className="h-3.5 w-3.5 text-amber-500" /> Final Round
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Champion placements (1st, 2nd, 3rd) will be shown on the master sheet
+          </p>
+        </div>
+        <Switch id={`final-round-${level.id}`} checked={isFinalRound} onCheckedChange={toggleFinalRound} />
       </div>
+
+      {!isFinalRound && (
+        <div>
+          <Label className="text-xs text-muted-foreground">Contestants advancing to next level</Label>
+          <Input
+            type="number"
+            min={0}
+            placeholder="e.g. 10"
+            className="h-8 mt-1 w-40"
+            value={advCount}
+            onChange={(e) => setAdvCount(e.target.value)}
+            onBlur={() => saveAdvancement(advCount)}
+          />
+        </div>
+      )}
       <div>
         <Label className="text-xs text-muted-foreground">Special Entries in this Level</Label>
         <div className="flex flex-wrap gap-2 mt-1">
