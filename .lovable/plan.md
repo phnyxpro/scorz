@@ -1,27 +1,47 @@
 
 
-## Add Table View Toggle and Reset Button to Scoring Card
+## Fix Blank Rendering in Browser Automation
 
-### Changes to `src/pages/JudgeScoring.tsx`
+The app appears blank in headless browser testing due to two compounding issues:
 
-**1. Add state for view mode**
-- Add `const [viewMode, setViewMode] = useState<"slider" | "table">("slider");` to the component state (around line 111).
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-**2. Add toggle + reset button in the Scoring Card header** (lines 609-613)
-Replace the CardHeader with a row containing:
-- The existing title/description on the left
-- A toggle switch (slider/table) and a "Reset" button on the right
-- The toggle uses the `Switch` component with a label showing "Table View"
-- The Reset button is a destructive outline button that clears all `scores` to `{}`, `duration` to `0`, and `comments` to `""`, with a confirmation via `window.confirm()`
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-**3. Conditional rendering of criteria** (lines 614-623)
-- When `viewMode === "slider"`: render the existing `CriterionSlider` components
-- When `viewMode === "table"`: render a compact table with columns: Criterion | Score (input). Each row has the criterion name and a number `<Input>` (type="number", inputMode="decimal", step=0.1, min=0.1, max=5) bound to `scores[criterion.id]`
+---
 
-### New imports needed
-- `Switch` from `@/components/ui/switch`
-- `Table, TableHeader, TableBody, TableRow, TableHead, TableCell` from `@/components/ui/table`
-- `RotateCcw` from `lucide-react` (for Reset icon)
+### Fix 1: Conditionally apply auditorium filter
 
-### No database changes needed.
+**File: `src/contexts/ThemeContext.tsx`**
+
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+
+### Fix 2: Remove filter class when at defaults
+
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
+```
+
+This ensures no filter is applied when properties are unset, which is the default state.
+
+---
+
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 

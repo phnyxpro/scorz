@@ -18,7 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft, MessageSquare, Search } from "lucide-react";
+import { ArrowLeft, Save, Lock, CheckCircle, AlertTriangle, Info, User, PanelLeftClose, PanelLeft, MessageSquare, Search, RotateCcw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { cn } from "@/lib/utils";
@@ -111,6 +114,7 @@ export default function JudgeScoring() {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState("");
+  const [viewMode, setViewMode] = useState<"slider" | "table">("slider");
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
   const [showCertifyAllDialog, setShowCertifyAllDialog] = useState(false);
   const [showCertifyBatchDialog, setShowCertifyBatchDialog] = useState(false);
@@ -608,19 +612,83 @@ export default function JudgeScoring() {
 
               <Card className="border-border/50 bg-card/80">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Scoring Card</CardTitle>
-                  <CardDescription>Rate each criterion from 1 to 5 (intervals of 0.1)</CardDescription>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <CardTitle className="text-base">Scoring Card</CardTitle>
+                      <CardDescription>Rate each criterion from 1 to 5 (intervals of 0.1)</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Switch checked={viewMode === "table"} onCheckedChange={(v) => setViewMode(v ? "table" : "slider")} disabled={isCertified} />
+                        Table
+                      </label>
+                      {!isCertified && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                          onClick={() => {
+                            if (window.confirm("Clear all scores for this contestant? This cannot be undone.")) {
+                              setScores({});
+                              setDuration(0);
+                              setComments("");
+                            }
+                          }}
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {rubric?.map(criterion => (
-                    <CriterionSlider
-                      key={criterion.id}
-                      criterion={criterion}
-                      value={scores[criterion.id] || 0}
-                      onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
-                      disabled={isCertified}
-                    />
-                  ))}
+                  {viewMode === "slider" ? (
+                    rubric?.map(criterion => (
+                      <CriterionSlider
+                        key={criterion.id}
+                        criterion={criterion}
+                        value={scores[criterion.id] || 0}
+                        onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
+                        disabled={isCertified}
+                      />
+                    ))
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Criterion</TableHead>
+                          <TableHead className="text-xs w-24 text-center">Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rubric?.map(criterion => (
+                          <TableRow key={criterion.id}>
+                            <TableCell className="text-sm font-medium py-2">{criterion.name}</TableCell>
+                            <TableCell className="py-2">
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min={0.1}
+                                max={5}
+                                step={0.1}
+                                value={scores[criterion.id] || ""}
+                                onChange={(e) => {
+                                  const num = parseFloat(e.target.value);
+                                  if (isNaN(num)) return;
+                                  const clamped = Math.min(5, Math.max(0.1, Math.round(num * 10) / 10));
+                                  setScores(prev => ({ ...prev, [criterion.id]: clamped }));
+                                }}
+                                disabled={isCertified}
+                                className="w-20 h-8 text-center font-mono text-sm"
+                                placeholder="–"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
               </Card>
 
