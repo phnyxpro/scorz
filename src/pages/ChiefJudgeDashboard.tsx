@@ -447,6 +447,7 @@ export default function ChiefJudgeDashboard() {
               <TieBreaker
                 ties={ties}
                 contestantName={contestantName}
+                judgeNames={judgeNames}
                 isCertified={isCertified}
                 certification={certification}
                 onSaveTieBreakOrder={async (tieBreakOrder, tieNotes) => {
