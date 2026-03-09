@@ -398,7 +398,7 @@ export default function LevelMasterSheet() {
                             <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">
                               {i + 1}
                             </Badge>
-                            {getRankBadge(i, isFinalRound, advancementCount)}
+                            {showStatusStyling && getRankBadge(i, isFinalRound, advancementCount)}
                           </div>
                         </TableCell>
                       </TableRow>
