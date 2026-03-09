@@ -346,6 +346,7 @@ export default function ChiefJudgeDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="panel">Panel Monitor</SelectItem>
+                  <SelectItem value="scores">Scores</SelectItem>
                   <SelectItem value="penalties">Penalty Review</SelectItem>
                   <SelectItem value="infractions">Infractions</SelectItem>
                   <SelectItem value="ties">Tie Breaking</SelectItem>
@@ -354,6 +355,7 @@ export default function ChiefJudgeDashboard() {
             ) : (
             <TabsList>
               <TabsTrigger value="panel">Panel Monitor</TabsTrigger>
+              <TabsTrigger value="scores">Scores</TabsTrigger>
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
