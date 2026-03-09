@@ -21,6 +21,7 @@ const item = {
 };
 
 export default function ContestantProfilesHub() {
+  const navigate = useNavigate();
   const { data: competitions, isLoading: loadingComps } = useCompetitions();
   const [selectedId, setSelectedId] = useState("");
   const { data: registrations, isLoading: loadingRegs } = useRegistrations(selectedId || undefined);

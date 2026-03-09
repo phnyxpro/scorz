@@ -48,6 +48,7 @@ function useMyVotesForCompetition(competitionId: string | undefined, email: stri
 }
 
 export default function AudienceVoting() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { user } = useAuth();
 

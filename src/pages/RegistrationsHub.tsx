@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 
 export default function RegistrationsHub() {
+  const navigate = useNavigate();
   const { data: competitions, isLoading } = useCompetitions();
   const [selectedId, setSelectedId] = useState("");
 

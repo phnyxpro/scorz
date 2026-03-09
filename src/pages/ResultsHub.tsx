@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 
 export default function ResultsHub() {
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
   const { data: competitions, isLoading: loadingComps } = useCompetitions();

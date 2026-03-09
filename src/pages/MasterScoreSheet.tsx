@@ -79,6 +79,7 @@ function useMasterSheet(competitionId: string | undefined, subEventId: string | 
 }
 
 export default function MasterScoreSheet() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");

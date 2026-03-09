@@ -57,6 +57,7 @@ interface ScannedCriterion {
 }
 
 export default function CompetitionDetail() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();

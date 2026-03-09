@@ -16,6 +16,7 @@ import { PrintableScorecard } from "@/components/results/PrintableScorecard";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 export default function PostEventPortal() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { user, hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
