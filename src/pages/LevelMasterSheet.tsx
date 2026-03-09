@@ -70,14 +70,34 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
         .eq("competition_id", competitionId!)
         .order("sort_order");
 
+      // Fetch certifications for all sub-events in this level
+      const { data: chiefCerts } = await supabase
+        .from("chief_judge_certifications")
+        .select("chief_judge_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+      const { data: tabCerts } = await supabase
+        .from("tabulator_certifications")
+        .select("tabulator_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+      const { data: witnessCerts } = await supabase
+        .from("witness_certifications")
+        .select("witness_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+
       return {
         level,
+        competition,
         scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvents: subEvents || [],
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         profiles: profiles || [],
         rubric: rubric || [],
+        certifications: {
+          chief: chiefCerts || [],
+          tab: tabCerts || [],
+          witness: witnessCerts || [],
+        },
       };
     },
   });
