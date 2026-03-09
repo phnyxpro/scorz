@@ -1,47 +1,56 @@
 
 
-## Fix Blank Rendering in Browser Automation
+## Investigation: Identify Missing Judge Scores for 3 Contestants
 
-The app appears blank in headless browser testing due to two compounding issues:
+### What We Need to Find
+For the Trinidad sub-event (`14ae92f2-a730-4c72-9aa1-19b0e3561722`), identify which of the 5 assigned judges have not yet submitted scores for:
+- Ishmael Campbell (4/5 scores)
+- Khyndeh Pantor (3/5 scores)
+- Jael Reyes (4/5 scores)
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+### Query Strategy
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
-
----
-
-### Fix 1: Conditionally apply auditorium filter
-
-**File: `src/contexts/ThemeContext.tsx`**
-
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
-
-### Fix 2: Remove filter class when at defaults
-
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
-
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
-
-### Fix 3: Update CSS to use filter only when properties exist
-
-**File: `src/index.css`**
-
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
-
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
-}
+**Step 1: Get Contestant Registration IDs**
+```sql
+SELECT id, full_name 
+FROM contestant_registrations 
+WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
+  AND full_name IN ('Ishmael Campbell', 'Khyndeh Pantor', 'Jael Reyes')
+  AND status = 'approved';
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+**Step 2: Get All Assigned Judges**
+```sql
+SELECT user_id, is_chief
+FROM sub_event_assignments
+WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
+  AND role = 'judge';
+```
 
----
+**Step 3: Get Existing Scores**
+For each contestant, retrieve which judges have already submitted scores:
+```sql
+SELECT contestant_registration_id, judge_id
+FROM judge_scores
+WHERE sub_event_id = '14ae92f2-a730-4c72-9aa1-19b0e3561722'
+  AND contestant_registration_id IN (<contestant_ids>);
+```
 
-### Summary
+**Step 4: Cross-Reference**
+Compare the list of assigned judges against submitted scores to identify gaps for each contestant.
 
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+**Step 5: Map Judge IDs to Names**
+```sql
+SELECT user_id, full_name
+FROM profiles
+WHERE user_id IN (<judge_user_ids>);
+```
+
+### Expected Output
+A detailed breakdown showing:
+- **Ishmael Campbell**: Missing 1 score from [Judge Name]
+- **Khyndeh Pantor**: Missing 2 scores from [Judge Name 1], [Judge Name 2]
+- **Jael Reyes**: Missing 1 score from [Judge Name]
+
+This will pinpoint exactly which judges need to complete their evaluations for these 3 contestants.
 
