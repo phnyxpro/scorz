@@ -80,13 +80,31 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
   });
 }
 
+function useLevelsForCompetition(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["competition_levels_list", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_levels")
+        .select("id, name, sort_order")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 export default function LevelMasterSheet() {
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const levelId = searchParams.get("level");
 
+  const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
   const { data, isLoading } = useLevelMasterSheet(competitionId, levelId);
 
   const judgeUserIds = useMemo(() => {
