@@ -147,19 +147,47 @@ export function usePromoteContestants() {
       if (!nextSubEvents?.length) throw new Error("No sub-events in next level. Create one first.");
       const nextSubEventId = nextSubEvents[0].id;
 
-      // Update each advancing contestant's sub_event_id to the next level's sub-event
-      let updated = 0;
+      // Check which contestants already have a registration in the target sub-event
+      const { data: existingRegs } = await supabase
+        .from("contestant_registrations")
+        .select("email")
+        .eq("competition_id", competitionId)
+        .eq("sub_event_id", nextSubEventId);
+      const existingEmails = new Set((existingRegs || []).map((r) => r.email));
+
+      // Insert new registrations for advancing contestants (copy, don't move)
+      let promoted = 0;
+      let skipped = 0;
       for (let i = 0; i < advancing.length; i++) {
         const reg = advancing[i];
+        if (existingEmails.has(reg.email)) {
+          skipped++;
+          continue;
+        }
         const { error } = await supabase
           .from("contestant_registrations")
-          .update({ sub_event_id: nextSubEventId, sort_order: i })
-          .eq("id", reg.id);
+          .insert({
+            user_id: reg.user_id,
+            competition_id: competitionId,
+            sub_event_id: nextSubEventId,
+            full_name: reg.full_name,
+            email: reg.email,
+            age_category: reg.age_category,
+            special_entry_type: reg.special_entry_type,
+            location: reg.location,
+            phone: reg.phone,
+            bio: reg.bio,
+            social_handles: reg.social_handles as any,
+            profile_photo_url: reg.profile_photo_url,
+            performance_video_url: reg.performance_video_url,
+            status: "approved",
+            sort_order: i,
+          });
         if (error) throw error;
-        updated++;
+        promoted++;
       }
 
-      return { promoted: updated, skipped: 0 };
+      return { promoted, skipped };
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["registrations"] });
