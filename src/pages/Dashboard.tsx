@@ -51,6 +51,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
     cards.push({ title: "Certify Results", desc: "Review scores & certify", icon: ShieldCheck, color: "text-secondary", to: `/competitions/${competitionId}/chief-judge` });
   }
   cards.push(
+    { title: "Results", desc: "Level & sub-event score sheets", icon: BarChart3, color: "text-secondary", to: `/competitions/${competitionId}/level-sheet` },
     { title: "Contestant Profiles", desc: "View contestant info & bios", icon: Users, color: "text-secondary", to: `/competitions/${competitionId}/contestants` },
     { title: "Rules", desc: "Official competition rules", icon: FileText, color: "text-secondary", to: `/competitions/${competitionId}/rules` },
     { title: "Penalties", desc: "Deductions & disqualifications", icon: AlertTriangle, color: "text-secondary", to: `/competitions/${competitionId}/penalties` },

@@ -247,6 +247,15 @@ export default function ChiefJudgeDashboard() {
         </Collapsible>
       </div>
 
+      {/* Level Master Sheet link */}
+      {selectedLevelId && (
+        <Button asChild variant="outline" size="sm" className="mb-3 gap-2 text-xs w-full">
+          <Link to={`/competitions/${competitionId}/level-sheet?level=${selectedLevelId}`}>
+            <ClipboardList className="h-3.5 w-3.5" /> View Level Master Sheet
+          </Link>
+        </Button>
+      )}
+
       {/* Sub-event selector */}
       <Card className="border-border/50 bg-card/80 mb-4">
         <CardContent className="pt-4 space-y-3">
