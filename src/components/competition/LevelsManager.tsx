@@ -509,6 +509,7 @@ function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateB
 
   const advCount = l.advancement_count;
   const specials: SpecialEntry[] = l.special_entries || [];
+  const isFinal = l.is_final_round || false;
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -522,7 +523,12 @@ function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateB
             <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
               {l.name}
-              {advCount != null && advCount > 0 && (
+              {isFinal && (
+                <Badge className="bg-amber-500 text-white text-[10px] gap-1 px-1.5 py-0">
+                  <Crown className="h-2.5 w-2.5" /> Final Round
+                </Badge>
+              )}
+              {!isFinal && advCount != null && advCount > 0 && (
                 <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
                   <ArrowUp className="h-2.5 w-2.5" /> Top {advCount} advance
                 </Badge>
