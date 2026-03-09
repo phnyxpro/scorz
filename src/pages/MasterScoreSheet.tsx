@@ -148,12 +148,14 @@ export default function MasterScoreSheet() {
       row["All Judges Total"] = Number(r.allJudgesRawTotal.toFixed(2));
       row["Penalty"] = Number(r.timePenalty.toFixed(2));
       row["Final Score"] = Number(r.avgFinal.toFixed(2));
-      if (advancementCount != null) {
-        row["Advances"] = i < advancementCount ? "Yes" : "";
+      if (isFinalRound) {
+        row["Placement"] = i === 0 ? "Champion" : i === 1 ? "2nd Place" : i === 2 ? "3rd Place" : "";
+      } else if (advancementCount != null) {
+        row["Advances"] = i < advancementCount ? "Yes" : (i === advancementCount || i === advancementCount + 1) ? "Standby" : "";
       }
       return row;
     });
-  }, [rows, judgeUserIds, profileMap, advancementCount]);
+  }, [rows, judgeUserIds, profileMap, advancementCount, isFinalRound]);
 
   const exportFilename = `master-sheet-${data?.subEvent?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
 
