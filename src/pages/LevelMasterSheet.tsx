@@ -17,7 +17,6 @@ import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExport
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
-import type { SheetRow } from "@/lib/export-utils";
 
 function useLevelMasterSheet(competitionId: string | undefined, levelId: string | null) {
   return useQuery({
