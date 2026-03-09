@@ -138,9 +138,26 @@ export default function JudgeScoring() {
     return sorted.filter(r => r.full_name.toLowerCase().includes(q));
   }, [registrations, subEventId, contestantSearch]);
 
+  // Convert legacy numeric-index criterion_scores to UUID keys
+  const normalizeCriterionScores = useCallback((raw: Record<string, number>): Record<string, number> => {
+    if (!raw || !rubric?.length) return raw || {};
+    const keys = Object.keys(raw);
+    if (!keys.length) return raw;
+    // If first key looks like a UUID, no conversion needed
+    if (keys[0].includes("-")) return raw;
+    // Legacy format: keys are "0","1",... mapping to rubric sort_order indices
+    const sorted = [...rubric].sort((a, b) => a.sort_order - b.sort_order);
+    const converted: Record<string, number> = {};
+    for (const [idx, val] of Object.entries(raw)) {
+      const criterion = sorted[parseInt(idx, 10)];
+      if (criterion) converted[criterion.id] = val;
+    }
+    return converted;
+  }, [rubric]);
+
   useEffect(() => {
     if (existingScore) {
-      setScores(existingScore.criterion_scores || {});
+      setScores(normalizeCriterionScores(existingScore.criterion_scores || {}));
       setDuration(existingScore.performance_duration_seconds || 0);
       setComments(existingScore.comments || "");
     } else {
@@ -148,7 +165,7 @@ export default function JudgeScoring() {
       setDuration(0);
       setComments("");
     }
-  }, [existingScore]);
+  }, [existingScore, normalizeCriterionScores]);
 
   // Auto-populate duration from tabulator recordings (avg across tabulators)
   useEffect(() => {
