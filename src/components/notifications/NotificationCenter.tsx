@@ -7,7 +7,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck } from "lucide-react";
+import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck, BellRing, BellOff } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
