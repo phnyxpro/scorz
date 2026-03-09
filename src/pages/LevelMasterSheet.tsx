@@ -213,22 +213,33 @@ export default function LevelMasterSheet() {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data, scoringMethod]);
 
-  const exportRows = useMemo((): SheetRow[] => {
-    return rows.map((r, i) => {
-      const row: SheetRow = { Rank: i + 1, Contestant: r.name, "Sub-Event": subEventMap.get(r.subEventId || "") || "—" };
-      for (const jId of judgeUserIds) {
-        const js = r.judgeScores[jId];
-        row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : 0;
-      }
-      row["All Judges Total"] = Number(r.allJudgesRawTotal.toFixed(2));
-      row["Penalty"] = Number(r.timePenalty.toFixed(2));
-      row["Final Score"] = Number(r.avgFinal.toFixed(2));
-      if (isFinalRound) {
-        row["Placement"] = i === 0 ? "Champion" : i === 1 ? "2nd Place" : i === 2 ? "3rd Place" : "";
-      } else if (advancementCount != null) {
-        row["Advances"] = i < advancementCount ? "Yes" : (i === advancementCount || i === advancementCount + 1) ? "Standby" : "";
-      }
-      return row;
+  // Build rows for export modal
+  const exportModalRows = useMemo(() => {
+    return rows.map((r) => ({
+      name: r.name,
+      subEvent: subEventMap.get(r.subEventId || "") || "—",
+      judgeScores: r.judgeScores,
+      allJudgesRawTotal: r.allJudgesRawTotal,
+      timePenalty: r.timePenalty,
+      avgFinal: r.avgFinal,
+    }));
+  }, [rows, subEventMap]);
+
+  // Build certifications info for export modal
+  const certInfoList = useMemo(() => {
+    if (!data?.certifications) return [];
+    const list: { name: string; role: string; certified: boolean; signedAt?: string | null }[] = [];
+    for (const c of data.certifications.chief) {
+      list.push({ name: certNameMap.get(c.chief_judge_id) || "Unknown", role: "Chief Judge", certified: c.is_certified, signedAt: c.signed_at });
+    }
+    for (const t of data.certifications.tab) {
+      list.push({ name: certNameMap.get(t.tabulator_id) || "Unknown", role: "Tabulator", certified: t.is_certified, signedAt: t.signed_at });
+    }
+    for (const w of data.certifications.witness) {
+      list.push({ name: certNameMap.get(w.witness_id) || "Unknown", role: "Witness", certified: w.is_certified, signedAt: w.signed_at });
+    }
+    return list;
+  }, [data?.certifications, certNameMap]);
     });
   }, [rows, judgeUserIds, profileMap, subEventMap, advancementCount, isFinalRound]);
 
