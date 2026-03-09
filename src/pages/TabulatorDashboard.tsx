@@ -527,7 +527,7 @@ export default function TabulatorDashboard() {
               <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
                 {overview.levels.map((level) => (
                   <TabsTrigger key={level.id} value={level.id} className="text-xs sm:text-sm flex-1 min-w-[80px]">
-                    {level.name}
+                    <LevelTabLabel levelId={level.id} name={level.name} />
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -537,6 +537,16 @@ export default function TabulatorDashboard() {
                 return (
                   <TabsContent key={level.id} value={level.id}>
                     <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 mt-4">
+                      {/* Level completion promotion banner */}
+                      <LevelPromotionBanner
+                        levelId={level.id}
+                        competitionId={selectedCompId!}
+                        advancementCount={level.advancement_count}
+                        isFinalRound={level.is_final_round}
+                        scoringMethod={overview.competition?.scoring_method || "olympic"}
+                        levelSortOrder={level.sort_order}
+                      />
+
                       <div className="flex justify-end">
                         <Button asChild variant="default" size="sm">
                           <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
