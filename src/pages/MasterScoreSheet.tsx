@@ -134,7 +134,8 @@ export default function MasterScoreSheet() {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data]);
 
-  const advancementCount = data?.advancementCount ?? null;
+  const isFinalRound = data?.isFinalRound ?? false;
+  const advancementCount = isFinalRound ? null : (data?.advancementCount ?? null);
 
   // Build exportable rows
   const exportRows = useMemo((): SheetRow[] => {

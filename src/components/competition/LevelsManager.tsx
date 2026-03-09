@@ -169,6 +169,11 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const qc = useQueryClient();
   const [, setTick] = useState(0);
 
+  // Refresh countdown every 60s
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
