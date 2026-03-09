@@ -1,62 +1,47 @@
 
 
-## Fix: Alicia Reyes Time Penalty Not Applied
+## Fix Blank Rendering in Browser Automation
 
-### Root Cause Analysis
+The app appears blank in headless browser testing due to two compounding issues:
 
-**Two distinct bugs** are preventing the penalty from applying:
+1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
 
-### Bug 1: Penalty rule boundary gap in the database
+2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
 
-The current penalty rules for competition `04b250a2` have incorrect boundaries:
+---
 
-| Tier | from_seconds | to_seconds | penalty |
-|------|-------------|------------|---------|
-| Tier 1 | 256 | 265 | 4 pts |
-| Tier 2 | 266 | **278** | 8 pts |
-| Tier 3 | **279** | null | 16 pts |
+### Fix 1: Conditionally apply auditorium filter
 
-Alicia's duration is **278.381 seconds** (4:38.381). This falls **between** tiers because:
-- `278.381 > 278` so Tier 2 doesn't match (`durationSecs <= rule.to_seconds` fails)
-- `278.381 < 279` so Tier 3 doesn't match either (`durationSecs >= rule.from_seconds` fails)
+**File: `src/contexts/ThemeContext.tsx`**
 
-The correct boundaries per the user's rules (4:26-4:37 = 8pts, 4:38+ = 16pts):
-- 4:37 = 277 seconds, so Tier 2 `to_seconds` should be **277**
-- 4:38 = 278 seconds, so Tier 3 `from_seconds` should be **278**
+- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
 
-**Fix:** Update two penalty_rules rows via SQL:
-- Set Tier 2 `to_seconds` from 278 to **277**
-- Set Tier 3 `from_seconds` from 279 to **278**
+### Fix 2: Remove filter class when at defaults
 
-### Bug 2: Fractional seconds comparison in `calculatePenalty`
+**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
 
-Even after fixing boundaries, comparing `278.381` against integer `to_seconds` values will create edge-case mismatches. The `calculatePenalty` function should **floor** the duration before comparison.
+- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
+- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
 
-**Fix in `src/pages/JudgeScoring.tsx`** (~line 182):
-```typescript
-const calculatePenalty = useCallback((durationSecs: number): number => {
-    if (!penalties?.length) return 0;
-    const rounded = Math.floor(durationSecs); // floor to whole seconds
-    const overTime = rounded - timeLimitSecs - gracePeriodSecs;
-    if (overTime <= 0) return 0;
-    let totalPenalty = 0;
-    for (const rule of penalties) {
-      if (rounded >= rule.from_seconds) {
-        if (!rule.to_seconds || rounded <= rule.to_seconds) {
-          totalPenalty = Math.max(totalPenalty, rule.penalty_points);
-        }
-      }
-    }
-    return totalPenalty;
-  }, [penalties, timeLimitSecs, gracePeriodSecs]);
+### Fix 3: Update CSS to use filter only when properties exist
+
+**File: `src/index.css`**
+
+- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+
+```css
+.auditorium-filter {
+  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+}
 ```
 
-### Bug 3: Existing scores need re-saving
+This ensures no filter is applied when properties are unset, which is the default state.
 
-The 5 judge_scores rows for Alicia all have `time_penalty: 0` and `final_score = raw_total`. After the fix, judges would need to re-save or an admin batch update is needed. The `recalculate_final_score` trigger already handles `final_score = raw_total - time_penalty`, so updating `time_penalty` on these rows will auto-fix `final_score`.
+---
 
-### Summary of changes:
-1. **Database migration**: Fix penalty rule boundaries (Tier 2 to_seconds: 277, Tier 3 from_seconds: 278)
-2. **`src/pages/JudgeScoring.tsx`**: Floor duration before penalty comparison
-3. **Database migration**: Batch-update existing Alicia Reyes scores to apply the correct penalty (update `time_penalty` column; the trigger recalculates `final_score`)
+### Summary
+
+- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
+- No database or backend changes needed
+- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
 
