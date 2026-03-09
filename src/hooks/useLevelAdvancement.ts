@@ -147,40 +147,19 @@ export function usePromoteContestants() {
       if (!nextSubEvents?.length) throw new Error("No sub-events in next level. Create one first.");
       const nextSubEventId = nextSubEvents[0].id;
 
-      // Check for existing registrations to avoid duplicates
-      const { data: existingRegs } = await supabase
-        .from("contestant_registrations")
-        .select("user_id")
-        .eq("competition_id", competitionId)
-        .eq("sub_event_id", nextSubEventId);
-      const existingUserIds = new Set((existingRegs || []).map((r) => r.user_id));
-
-      // Insert new registrations for advancing contestants
-      const newRegs = advancing
-        .filter((r) => !existingUserIds.has(r.user_id))
-        .map((r, i) => ({
-          user_id: r.user_id,
-          competition_id: competitionId,
-          sub_event_id: nextSubEventId,
-          full_name: r.full_name,
-          email: r.email,
-          age_category: r.age_category,
-          status: "approved" as const,
-          sort_order: i,
-          location: r.location,
-          phone: r.phone,
-          bio: r.bio,
-          social_handles: r.social_handles,
-          profile_photo_url: r.profile_photo_url,
-          performance_video_url: r.performance_video_url,
-        }));
-
-      if (newRegs.length > 0) {
-        const { error } = await supabase.from("contestant_registrations").insert(newRegs);
+      // Update each advancing contestant's sub_event_id to the next level's sub-event
+      let updated = 0;
+      for (let i = 0; i < advancing.length; i++) {
+        const reg = advancing[i];
+        const { error } = await supabase
+          .from("contestant_registrations")
+          .update({ sub_event_id: nextSubEventId, sort_order: i })
+          .eq("id", reg.id);
         if (error) throw error;
+        updated++;
       }
 
-      return { promoted: newRegs.length, skipped: advancing.length - newRegs.length };
+      return { promoted: updated, skipped: 0 };
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["registrations"] });
