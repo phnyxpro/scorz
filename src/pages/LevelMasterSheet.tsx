@@ -13,11 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ExportDropdown } from "@/components/shared/ExportDropdown";
+import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
-import type { SheetRow } from "@/lib/export-utils";
 
 function useLevelMasterSheet(competitionId: string | undefined, levelId: string | null) {
   return useQuery({
@@ -32,7 +31,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
 
       const { data: competition } = await supabase
         .from("competitions")
-        .select("scoring_method")
+        .select("name, scoring_method, branding_logo_url, branding_primary_color, branding_accent_color")
         .eq("id", competitionId!)
         .single();
 
@@ -44,7 +43,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
 
       const subEventIds = (subEvents || []).map((se) => se.id);
       if (!subEventIds.length) {
-        return { level, scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [], rubric: [] };
+        return { level, competition, scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [], rubric: [], certifications: { chief: [], tab: [], witness: [] } };
       }
 
       const { data: registrations } = await supabase
@@ -70,14 +69,34 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
         .eq("competition_id", competitionId!)
         .order("sort_order");
 
+      // Fetch certifications for all sub-events in this level
+      const { data: chiefCerts } = await supabase
+        .from("chief_judge_certifications")
+        .select("chief_judge_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+      const { data: tabCerts } = await supabase
+        .from("tabulator_certifications")
+        .select("tabulator_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+      const { data: witnessCerts } = await supabase
+        .from("witness_certifications")
+        .select("witness_id, is_certified, signed_at")
+        .in("sub_event_id", subEventIds);
+
       return {
         level,
+        competition,
         scoringMethod: (competition as any)?.scoring_method || "olympic",
         subEvents: subEvents || [],
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         profiles: profiles || [],
         rubric: rubric || [],
+        certifications: {
+          chief: chiefCerts || [],
+          tab: tabCerts || [],
+          witness: witnessCerts || [],
+        },
       };
     },
   });
@@ -138,6 +157,17 @@ export default function LevelMasterSheet() {
   }, [data?.scores]);
   const profileMap = useStaffDisplayNames(judgeUserIds);
 
+  // Collect certification user IDs for display names
+  const certUserIds = useMemo(() => {
+    if (!data?.certifications) return [];
+    const ids = new Set<string>();
+    for (const c of data.certifications.chief) ids.add(c.chief_judge_id);
+    for (const t of data.certifications.tab) ids.add(t.tabulator_id);
+    for (const w of data.certifications.witness) ids.add(w.witness_id);
+    return [...ids];
+  }, [data?.certifications]);
+  const certNameMap = useStaffDisplayNames(certUserIds);
+
   const subEventMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const se of data?.subEvents || []) {
@@ -182,26 +212,38 @@ export default function LevelMasterSheet() {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data, scoringMethod]);
 
-  const exportRows = useMemo((): SheetRow[] => {
-    return rows.map((r, i) => {
-      const row: SheetRow = { Rank: i + 1, Contestant: r.name, "Sub-Event": subEventMap.get(r.subEventId || "") || "—" };
-      for (const jId of judgeUserIds) {
-        const js = r.judgeScores[jId];
-        row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : 0;
-      }
-      row["All Judges Total"] = Number(r.allJudgesRawTotal.toFixed(2));
-      row["Penalty"] = Number(r.timePenalty.toFixed(2));
-      row["Final Score"] = Number(r.avgFinal.toFixed(2));
-      if (isFinalRound) {
-        row["Placement"] = i === 0 ? "Champion" : i === 1 ? "2nd Place" : i === 2 ? "3rd Place" : "";
-      } else if (advancementCount != null) {
-        row["Advances"] = i < advancementCount ? "Yes" : (i === advancementCount || i === advancementCount + 1) ? "Standby" : "";
-      }
-      return row;
-    });
-  }, [rows, judgeUserIds, profileMap, subEventMap, advancementCount, isFinalRound]);
+  // Build rows for export modal
+  const exportModalRows = useMemo(() => {
+    return rows.map((r) => ({
+      name: r.name,
+      subEvent: subEventMap.get(r.subEventId || "") || "—",
+      judgeScores: r.judgeScores,
+      allJudgesRawTotal: r.allJudgesRawTotal,
+      timePenalty: r.timePenalty,
+      avgFinal: r.avgFinal,
+    }));
+  }, [rows, subEventMap]);
 
-  const exportFilename = `level-sheet-${data?.level?.name || "export"}`.replace(/\s+/g, "-").toLowerCase();
+  // Build certifications info for export modal
+  const certInfoList = useMemo(() => {
+    if (!data?.certifications) return [];
+    const list: { name: string; role: string; certified: boolean; signedAt?: string | null }[] = [];
+    for (const c of data.certifications.chief) {
+      list.push({ name: certNameMap.get(c.chief_judge_id) || "Unknown", role: "Chief Judge", certified: c.is_certified, signedAt: c.signed_at });
+    }
+    for (const t of data.certifications.tab) {
+      list.push({ name: certNameMap.get(t.tabulator_id) || "Unknown", role: "Tabulator", certified: t.is_certified, signedAt: t.signed_at });
+    }
+    for (const w of data.certifications.witness) {
+      list.push({ name: certNameMap.get(w.witness_id) || "Unknown", role: "Witness", certified: w.is_certified, signedAt: w.signed_at });
+    }
+    return list;
+  }, [data?.certifications, certNameMap]);
+
+  const competitionName = (data?.competition as any)?.name || "Competition";
+  const competitionLogo = (data?.competition as any)?.branding_logo_url;
+  const primaryColor = (data?.competition as any)?.branding_primary_color || "#1a1a2e";
+  const accentColor = (data?.competition as any)?.branding_accent_color || "#e94560";
 
   if (isLoading || levelsLoading) return <DashboardSkeleton />;
 
@@ -296,7 +338,22 @@ export default function LevelMasterSheet() {
             <Label htmlFor="status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
           {levelSelector}
-          {canExport && <ExportDropdown rows={exportRows} filename={exportFilename} sheetName="Level Sheet" />}
+          {canExport && (
+            <LevelSheetExportModal
+              competitionName={competitionName}
+              competitionLogo={competitionLogo}
+              primaryColor={primaryColor}
+              accentColor={accentColor}
+              levelName={data?.level?.name || ""}
+              isFinalRound={isFinalRound}
+              advancementCount={advancementCount}
+              subEventCount={data?.subEvents?.length || 0}
+              rows={exportModalRows}
+              judgeIds={judgeUserIds}
+              judgeNames={profileMap}
+              certifications={certInfoList}
+            />
+          )}
         </div>
       </div>
 
