@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
-import { Download, FileText, FileSpreadsheet, Sheet, Printer, ChevronDown, ChevronRight, User } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Sheet, Printer, ChevronDown, ChevronRight, User, ArrowUpDown } from "lucide-react";
 import { exportCSV, exportXLSX, exportGoogleSheets, exportElementAsPDF, type SheetRow } from "@/lib/export-utils";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
@@ -17,6 +17,9 @@ interface Props {
   indexToName: Record<string, string>;
 }
 
+type SortKey = "contestant" | "rawTotal" | string;
+type SortDir = "asc" | "desc";
+
 export function JudgeScoreSheets({
   subEventId,
   subEventName,
@@ -30,6 +33,8 @@ export function JudgeScoreSheets({
   const [openJudgeId, setOpenJudgeId] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("contestant");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const seScores = useMemo(() => scores.filter((s) => s.sub_event_id === subEventId), [scores, subEventId]);
   const seContestants = useMemo(
@@ -43,9 +48,18 @@ export function JudgeScoreSheets({
 
   if (judgeIds.length === 0) return null;
 
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "contestant" ? "asc" : "desc");
+    }
+  };
+
   const getJudgeRows = (judgeId: string) => {
     const judgeScores = seScores.filter((s) => s.judge_id === judgeId);
-    return seContestants.map((reg) => {
+    const rows = seContestants.map((reg) => {
       const score = judgeScores.find((s) => s.contestant_registration_id === reg.id);
       const criterionValues: Record<string, number | null> = {};
       if (score) {
@@ -59,10 +73,22 @@ export function JudgeScoreSheets({
         contestant: reg.full_name,
         criterionValues,
         rawTotal: score?.raw_total ?? 0,
-        timePenalty: score?.time_penalty ?? 0,
-        finalScore: score?.final_score ?? 0,
         hasScore: !!score,
       };
+    });
+
+    return [...rows].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "contestant") {
+        cmp = a.contestant.localeCompare(b.contestant);
+      } else if (sortKey === "rawTotal") {
+        cmp = a.rawTotal - b.rawTotal;
+      } else {
+        const av = a.criterionValues[sortKey] ?? 0;
+        const bv = b.criterionValues[sortKey] ?? 0;
+        cmp = av - bv;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
     });
   };
 
@@ -74,8 +100,6 @@ export function JudgeScoreSheets({
         row[name] = r.criterionValues[name] != null ? Number(Number(r.criterionValues[name]).toFixed(2)) : 0;
       }
       row["Raw Total"] = Number(r.rawTotal.toFixed(2));
-      row["Penalty"] = Number(r.timePenalty.toFixed(2));
-      row["Final Score"] = Number(r.finalScore.toFixed(2));
       return row;
     });
   };
@@ -84,7 +108,6 @@ export function JudgeScoreSheets({
     if (!pdfRef.current) return;
     setOpenJudgeId(judgeId);
     setIsExporting(true);
-    // Allow DOM to render the PDF element
     await new Promise((r) => setTimeout(r, 100));
     try {
       const judgeName = judgeProfiles[judgeId] || "Judge";
@@ -98,6 +121,18 @@ export function JudgeScoreSheets({
   const activeJudgeId = openJudgeId || judgeIds[0];
   const activeRows = getJudgeRows(activeJudgeId);
   const activeJudgeName = judgeProfiles[activeJudgeId] || "Judge";
+
+  const SortHeader = ({ label, sortId }: { label: string; sortId: SortKey }) => (
+    <TableHead
+      className="text-center text-xs cursor-pointer select-none hover:text-foreground transition-colors"
+      onClick={() => toggleSort(sortId)}
+    >
+      <span className="inline-flex items-center gap-0.5">
+        {label}
+        {sortKey === sortId && <ArrowUpDown className="h-3 w-3 text-primary" />}
+      </span>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-1.5">
@@ -124,18 +159,15 @@ export function JudgeScoreSheets({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2 pl-2 pr-1 pb-2">
-              {/* Score Table */}
               <div className="overflow-x-auto border border-border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">Contestant</TableHead>
+                      <SortHeader label="Contestant" sortId="contestant" />
                       {rubricNames.map((n) => (
-                        <TableHead key={n} className="text-center text-xs">{n}</TableHead>
+                        <SortHeader key={n} label={n} sortId={n} />
                       ))}
-                      <TableHead className="text-center text-xs">Raw</TableHead>
-                      <TableHead className="text-center text-xs">Penalty</TableHead>
-                      <TableHead className="text-center text-xs font-bold">Final</TableHead>
+                      <SortHeader label="Raw Total" sortId="rawTotal" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -147,12 +179,8 @@ export function JudgeScoreSheets({
                             {r.criterionValues[n] != null ? Number(r.criterionValues[n]).toFixed(2) : "—"}
                           </TableCell>
                         ))}
-                        <TableCell className="text-center font-mono text-xs">{r.hasScore ? r.rawTotal.toFixed(2) : "—"}</TableCell>
-                        <TableCell className="text-center font-mono text-xs text-destructive">
-                          {r.timePenalty > 0 ? `-${r.timePenalty}` : "0"}
-                        </TableCell>
                         <TableCell className="text-center font-mono font-bold text-xs">
-                          {r.hasScore ? r.finalScore.toFixed(2) : "—"}
+                          {r.hasScore ? r.rawTotal.toFixed(2) : "—"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -160,43 +188,18 @@ export function JudgeScoreSheets({
                 </Table>
               </div>
 
-              {/* Export buttons */}
               <div className="flex flex-wrap gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1"
-                  onClick={() => handlePdfExport(judgeId)}
-                  disabled={isExporting || exportRows.length === 0}
-                >
+                <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={() => handlePdfExport(judgeId)} disabled={isExporting || exportRows.length === 0}>
                   <Printer className="h-3 w-3" />
                   {isExporting && openJudgeId === judgeId ? "Exporting…" : "PDF"}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1"
-                  onClick={() => exportGoogleSheets(exportRows, filename)}
-                  disabled={exportRows.length === 0}
-                >
+                <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={() => exportGoogleSheets(exportRows, filename)} disabled={exportRows.length === 0}>
                   <Sheet className="h-3 w-3" /> Sheets
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1"
-                  onClick={() => exportXLSX(exportRows, filename, judgeName)}
-                  disabled={exportRows.length === 0}
-                >
+                <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={() => exportXLSX(exportRows, filename, judgeName)} disabled={exportRows.length === 0}>
                   <FileSpreadsheet className="h-3 w-3" /> Excel
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1"
-                  onClick={() => exportCSV(exportRows, filename)}
-                  disabled={exportRows.length === 0}
-                >
+                <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={() => exportCSV(exportRows, filename)} disabled={exportRows.length === 0}>
                   <FileText className="h-3 w-3" /> CSV
                 </Button>
               </div>
@@ -222,7 +225,6 @@ export function JudgeScoreSheets({
             boxSizing: "border-box",
           }}
         >
-          {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", padding: "10px 14px", borderRadius: "6px", background: "linear-gradient(135deg, #1a1a2e, #1a1a2edd)", color: "#fff" }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: "16px", fontWeight: 700 }}>{competitionName}</div>
@@ -235,7 +237,6 @@ export function JudgeScoreSheets({
             </div>
           </div>
 
-          {/* Score table */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "8px" }}>
               <thead>
@@ -245,8 +246,6 @@ export function JudgeScoreSheets({
                     <th key={n} style={{ padding: "3px 4px", textAlign: "center", fontWeight: 600 }}>{n}</th>
                   ))}
                   <th style={{ padding: "3px 4px", textAlign: "center", fontWeight: 600 }}>Raw Total</th>
-                  <th style={{ padding: "3px 4px", textAlign: "center", fontWeight: 600 }}>Penalty</th>
-                  <th style={{ padding: "3px 4px", textAlign: "center", fontWeight: 600 }}>Final</th>
                 </tr>
               </thead>
               <tbody>
@@ -258,14 +257,8 @@ export function JudgeScoreSheets({
                         {r.criterionValues[n] != null ? Number(r.criterionValues[n]).toFixed(2) : "—"}
                       </td>
                     ))}
-                    <td style={{ padding: "2px 4px", textAlign: "center", fontFamily: "monospace", fontWeight: 600 }}>
-                      {r.hasScore ? r.rawTotal.toFixed(2) : "—"}
-                    </td>
-                    <td style={{ padding: "2px 4px", textAlign: "center", fontFamily: "monospace", color: r.timePenalty > 0 ? "#dc2626" : "#999" }}>
-                      {r.timePenalty > 0 ? `-${r.timePenalty.toFixed(2)}` : "0.00"}
-                    </td>
                     <td style={{ padding: "2px 4px", textAlign: "center", fontFamily: "monospace", fontWeight: 700, color: "#1a1a2e" }}>
-                      {r.hasScore ? r.finalScore.toFixed(2) : "—"}
+                      {r.hasScore ? r.rawTotal.toFixed(2) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -273,7 +266,6 @@ export function JudgeScoreSheets({
             </table>
           </div>
 
-          {/* Footer */}
           <div style={{ marginTop: "auto", paddingTop: "6px", borderTop: "1px solid #e5e5e5", display: "flex", justifyContent: "space-between", fontSize: "7px", color: "#999", fontFamily: "monospace" }}>
             <span>@ 2026 SCORZ | Powered by phnyx.dev</span>
             <span>Generated {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
