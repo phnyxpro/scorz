@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload, ArrowUpDown, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, UserPlus, Search, ShieldAlert, Clock, GripVertical, Upload, ArrowUpDown, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -397,9 +397,10 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [sortField, setSortField] = useState<SortField>("sort_order");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
-  const [showBulkUpload, setShowBulkUpload] = useState(false);
+   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showAddContestant, setShowAddContestant] = useState(false);
+  const [showSpecialEntry, setShowSpecialEntry] = useState(false);
   const [walkInName, setWalkInName] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
@@ -410,6 +411,14 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+
+  // Special entry state
+  const [specialName, setSpecialName] = useState("");
+  const [specialEmail, setSpecialEmail] = useState("");
+  const [specialType, setSpecialType] = useState("previous_winner");
+  const [specialLevelId, setSpecialLevelId] = useState("");
+  const [specialSubEventId, setSpecialSubEventId] = useState("");
+  const [specialSubmitting, setSpecialSubmitting] = useState(false);
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
@@ -426,6 +435,12 @@ export function RegistrationsManager({ competitionId }: Props) {
       return data;
     },
   });
+
+  // Sub-events filtered by selected level for special entry form
+  const specialSubEvents = useMemo(() => {
+    if (!specialLevelId || !allSubEvents) return [];
+    return allSubEvents.filter(se => se.level_id === specialLevelId);
+  }, [specialLevelId, allSubEvents]);
 
   // Fetch performance slots for all registrations
   const regIds = registrations?.map((r) => r.id) || [];
@@ -780,8 +795,44 @@ export function RegistrationsManager({ competitionId }: Props) {
       setWalkInPosition("");
       qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
       qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+     } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleSpecialEntryAdd = async () => {
+    if (!specialName || !specialEmail || !user) return;
+    setSpecialSubmitting(true);
+    try {
+      const { data: existingProfile } = await supabase.from("profiles").select("user_id").eq("email", specialEmail).maybeSingle();
+      const userId = existingProfile?.user_id || user.id;
+
+      const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
+
+      await createReg.mutateAsync({
+        user_id: userId,
+        competition_id: competitionId,
+        full_name: specialName,
+        email: specialEmail,
+        age_category: "adult",
+        status: "approved",
+        rules_acknowledged: true,
+        special_entry_type: specialType,
+        ...(specialSubEventId ? { sub_event_id: specialSubEventId } : {}),
+        sort_order: maxOrder + 1,
+      } as any);
+      setShowSpecialEntry(false);
+      setSpecialName("");
+      setSpecialEmail("");
+      setSpecialType("previous_winner");
+      setSpecialLevelId("");
+      setSpecialSubEventId("");
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSpecialSubmitting(false);
     }
   };
 
@@ -950,6 +1001,9 @@ export function RegistrationsManager({ competitionId }: Props) {
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowSpecialEntry(true)}>
+                <Star className="h-3.5 w-3.5 mr-1" /> Special Entry
               </Button>
             </div>
           </div>
@@ -1131,6 +1185,75 @@ export function RegistrationsManager({ competitionId }: Props) {
         open={showBulkUpload}
         onOpenChange={setShowBulkUpload}
       />
+
+      {/* Special Entry Dialog */}
+      <Dialog open={showSpecialEntry} onOpenChange={setShowSpecialEntry}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <Star className="h-4 w-4 text-primary" /> Add Special Entry
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Register a special entry contestant (e.g. previous winner, wild card). Their full profile can be completed later.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Full Name *</Label>
+              <Input placeholder="Full Name" value={specialName} onChange={(e) => setSpecialName(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Email *</Label>
+              <Input placeholder="Email" type="email" value={specialEmail} onChange={(e) => setSpecialEmail(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Entry Type *</Label>
+              <Select value={specialType} onValueChange={setSpecialType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="previous_winner">Previous Winner</SelectItem>
+                  <SelectItem value="sub_competition_winner">Other Competition Winner</SelectItem>
+                  <SelectItem value="wild_card">Wild Card</SelectItem>
+                  <SelectItem value="invited">Invited</SelectItem>
+                  <SelectItem value="returning">Returning Contestant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Level *</Label>
+              <Select value={specialLevelId} onValueChange={(v) => { setSpecialLevelId(v); setSpecialSubEventId(""); }}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select level" /></SelectTrigger>
+                <SelectContent>
+                  {levels?.map(l => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {specialLevelId && specialSubEvents.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Sub-Event</Label>
+                <Select value={specialSubEventId || "none"} onValueChange={(v) => setSpecialSubEventId(v === "none" ? "" : v)}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select sub-event (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No sub-event</SelectItem>
+                    {specialSubEvents.map(se => (
+                      <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button
+              onClick={handleSpecialEntryAdd}
+              disabled={!specialName || !specialEmail || !specialLevelId || specialSubmitting}
+              className="w-full"
+            >
+              {specialSubmitting ? "Adding…" : "Add Special Entry"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
