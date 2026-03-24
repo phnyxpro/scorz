@@ -397,9 +397,10 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [sortField, setSortField] = useState<SortField>("sort_order");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
-  const [showBulkUpload, setShowBulkUpload] = useState(false);
+   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showAddContestant, setShowAddContestant] = useState(false);
+  const [showSpecialEntry, setShowSpecialEntry] = useState(false);
   const [walkInName, setWalkInName] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
   const [walkInAge, setWalkInAge] = useState("adult");
@@ -410,6 +411,14 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [selectedReg, setSelectedReg] = useState<ContestantRegistration | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+
+  // Special entry state
+  const [specialName, setSpecialName] = useState("");
+  const [specialEmail, setSpecialEmail] = useState("");
+  const [specialType, setSpecialType] = useState("previous_winner");
+  const [specialLevelId, setSpecialLevelId] = useState("");
+  const [specialSubEventId, setSpecialSubEventId] = useState("");
+  const [specialSubmitting, setSpecialSubmitting] = useState(false);
 
   // Fetch all sub-events across all levels
   const allLevelIds = levels?.map((l) => l.id) || [];
