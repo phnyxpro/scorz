@@ -834,7 +834,6 @@ export function RegistrationsManager({ competitionId }: Props) {
     } finally {
       setSpecialSubmitting(false);
     }
-    }
   };
 
   // Count per sub-event (must be before early return)
