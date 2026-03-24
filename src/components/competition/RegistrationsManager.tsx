@@ -1002,6 +1002,9 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Quick Walk-in
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowSpecialEntry(true)}>
+                <Star className="h-3.5 w-3.5 mr-1" /> Special Entry
+              </Button>
             </div>
           </div>
         </CardHeader>
