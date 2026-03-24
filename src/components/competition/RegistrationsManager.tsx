@@ -1185,6 +1185,75 @@ export function RegistrationsManager({ competitionId }: Props) {
         open={showBulkUpload}
         onOpenChange={setShowBulkUpload}
       />
+
+      {/* Special Entry Dialog */}
+      <Dialog open={showSpecialEntry} onOpenChange={setShowSpecialEntry}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <Star className="h-4 w-4 text-primary" /> Add Special Entry
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Register a special entry contestant (e.g. previous winner, wild card). Their full profile can be completed later.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Full Name *</Label>
+              <Input placeholder="Full Name" value={specialName} onChange={(e) => setSpecialName(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Email *</Label>
+              <Input placeholder="Email" type="email" value={specialEmail} onChange={(e) => setSpecialEmail(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Entry Type *</Label>
+              <Select value={specialType} onValueChange={setSpecialType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="previous_winner">Previous Winner</SelectItem>
+                  <SelectItem value="sub_competition_winner">Other Competition Winner</SelectItem>
+                  <SelectItem value="wild_card">Wild Card</SelectItem>
+                  <SelectItem value="invited">Invited</SelectItem>
+                  <SelectItem value="returning">Returning Contestant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Level *</Label>
+              <Select value={specialLevelId} onValueChange={(v) => { setSpecialLevelId(v); setSpecialSubEventId(""); }}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select level" /></SelectTrigger>
+                <SelectContent>
+                  {levels?.map(l => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {specialLevelId && specialSubEvents.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Sub-Event</Label>
+                <Select value={specialSubEventId || "none"} onValueChange={(v) => setSpecialSubEventId(v === "none" ? "" : v)}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select sub-event (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No sub-event</SelectItem>
+                    {specialSubEvents.map(se => (
+                      <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button
+              onClick={handleSpecialEntryAdd}
+              disabled={!specialName || !specialEmail || !specialLevelId || specialSubmitting}
+              className="w-full"
+            >
+              {specialSubmitting ? "Adding…" : "Add Special Entry"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
