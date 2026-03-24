@@ -436,6 +436,12 @@ export function RegistrationsManager({ competitionId }: Props) {
     },
   });
 
+  // Sub-events filtered by selected level for special entry form
+  const specialSubEvents = useMemo(() => {
+    if (!specialLevelId || !allSubEvents) return [];
+    return allSubEvents.filter(se => se.level_id === specialLevelId);
+  }, [specialLevelId, allSubEvents]);
+
   // Fetch performance slots for all registrations
   const regIds = registrations?.map((r) => r.id) || [];
   const { data: slotsData } = useQuery({
