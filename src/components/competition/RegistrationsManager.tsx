@@ -795,8 +795,45 @@ export function RegistrationsManager({ competitionId }: Props) {
       setWalkInPosition("");
       qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
       qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+     } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleSpecialEntryAdd = async () => {
+    if (!specialName || !specialEmail || !user) return;
+    setSpecialSubmitting(true);
+    try {
+      const { data: existingProfile } = await supabase.from("profiles").select("user_id").eq("email", specialEmail).maybeSingle();
+      const userId = existingProfile?.user_id || user.id;
+
+      const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
+
+      await createReg.mutateAsync({
+        user_id: userId,
+        competition_id: competitionId,
+        full_name: specialName,
+        email: specialEmail,
+        age_category: "adult",
+        status: "approved",
+        rules_acknowledged: true,
+        special_entry_type: specialType,
+        ...(specialSubEventId ? { sub_event_id: specialSubEventId } : {}),
+        sort_order: maxOrder + 1,
+      } as any);
+      setShowSpecialEntry(false);
+      setSpecialName("");
+      setSpecialEmail("");
+      setSpecialType("previous_winner");
+      setSpecialLevelId("");
+      setSpecialSubEventId("");
+      qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+      qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSpecialSubmitting(false);
+    }
     }
   };
 
