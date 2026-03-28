@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 
 export interface LevelSettings {
   location: string;
+  is_virtual: boolean;
   event_date: string | null;
   start_time: string;
   end_time: string;
@@ -29,6 +30,7 @@ export interface LevelSettings {
 
 const DEFAULT_SETTINGS: LevelSettings = {
   location: "",
+  is_virtual: false,
   event_date: null,
   start_time: "",
   end_time: "",
@@ -47,7 +49,7 @@ function useLevelSettings(levelId: string) {
       // Derive settings from the first linked sub_event (they should all share the same settings)
       const { data, error } = await supabase
         .from("sub_events")
-        .select("location, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
+        .select("location, is_virtual, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
         .eq("level_id", levelId)
         .limit(1)
         .maybeSingle();
@@ -55,6 +57,7 @@ function useLevelSettings(levelId: string) {
       if (!data) return DEFAULT_SETTINGS;
       return {
         location: data.location || "",
+        is_virtual: (data as any).is_virtual ?? false,
         event_date: data.event_date || null,
         start_time: data.start_time || "",
         end_time: data.end_time || "",
