@@ -36,6 +36,8 @@ const DEFAULT_CONFIG: FormConfig = {
   bio: { enabled: true, required: false },
   videoUrl: { enabled: true, required: false },
   level: { enabled: true, required: false },
+  category: { enabled: true, required: false },
+  subCategory: { enabled: true, required: false },
   subEvent: { enabled: true, required: false },
   rulesAcknowledged: { enabled: true, required: true },
   contestantSignature: { enabled: true, required: true },
@@ -155,6 +157,8 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       title: "Event Details",
       fields: [
         { key: "level", label: "Level", type: "select", options: levels?.map((l) => l.name) || [] },
+        { key: "category", label: "Category", type: "select", note: "For category-structured levels" },
+        { key: "subCategory", label: "Sub-Category", type: "select", note: "Nested category drill-down" },
         { key: "subEvent", label: "Sub-Event", type: "select", options: subEvents?.map((se) => se.name) || [] },
       ],
     },
