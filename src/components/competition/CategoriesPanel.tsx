@@ -564,7 +564,7 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
         </div>
       )}
 
-      {rootCategories.map((cat) => (
+      {rootCategories.map((cat, idx) => (
         <CategoryNode
           key={cat.id}
           cat={cat}
@@ -575,6 +575,11 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
           onCreate={handleCreate}
           onDelete={handleDelete}
           onLink={handleLink}
+          onRename={handleRename}
+          onMoveUp={(c) => handleMove(c, "up")}
+          onMoveDown={(c) => handleMove(c, "down")}
+          isFirst={idx === 0}
+          isLast={idx === rootCategories.length - 1}
         />
       ))}
 
