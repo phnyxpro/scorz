@@ -275,7 +275,7 @@ export default function JudgeScoring() {
     }
   };
 
-  const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
+  const allScored = filteredRubric.length > 0 ? filteredRubric.every(c => scores[c.id] > 0) : false;
 
   // Offline cache: save to localStorage on network failure, flush on reconnect
   const CACHE_KEY = `scorz_pending_scores_${user?.id}_${subEventId}_${selectedContestant}`;
