@@ -1,0 +1,1 @@
+ALTER TABLE public.competition_levels ADD COLUMN schedule_dates jsonb NOT NULL DEFAULT '[]'::jsonb;
