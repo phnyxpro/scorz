@@ -1,0 +1,1 @@
+ALTER TABLE public.sub_events ADD COLUMN is_virtual boolean NOT NULL DEFAULT false;
