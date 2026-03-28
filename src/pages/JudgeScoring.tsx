@@ -642,7 +642,7 @@ export default function JudgeScoring() {
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
                       <CardTitle className="text-base">Scoring Card</CardTitle>
-                      <CardDescription>Rate each criterion from 1 to 5 (intervals of 0.1)</CardDescription>
+                      <CardDescription>Rate each criterion from {scaleMin} to {scaleMax} (intervals of 0.1)</CardDescription>
                     </div>
                     <div className="flex items-center gap-3">
                       <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
@@ -671,13 +671,14 @@ export default function JudgeScoring() {
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {viewMode === "slider" ? (
-                    rubric?.map(criterion => (
+                    filteredRubric?.map(criterion => (
                       <CriterionSlider
                         key={criterion.id}
                         criterion={criterion}
                         value={scores[criterion.id] || 0}
                         onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
                         disabled={isCertified}
+                        scaleLabels={compScaleLabels}
                       />
                     ))
                   ) : (
@@ -689,7 +690,7 @@ export default function JudgeScoring() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {rubric?.map(criterion => (
+                        {filteredRubric?.map(criterion => (
                           <TableRow key={criterion.id}>
                             <TableCell className="text-sm font-medium py-2">{criterion.name}</TableCell>
                             <TableCell className="py-2">
@@ -697,13 +698,13 @@ export default function JudgeScoring() {
                                 type="number"
                                 inputMode="decimal"
                                 min={0.1}
-                                max={5}
+                                max={scaleMax}
                                 step={0.1}
                                 value={scores[criterion.id] || ""}
                                 onChange={(e) => {
                                   const num = parseFloat(e.target.value);
                                   if (isNaN(num)) return;
-                                  const clamped = Math.min(5, Math.max(0.1, Math.round(num * 10) / 10));
+                                  const clamped = Math.min(scaleMax, Math.max(0.1, Math.round(num * 10) / 10));
                                   setScores(prev => ({ ...prev, [criterion.id]: clamped }));
                                 }}
                                 disabled={isCertified}
