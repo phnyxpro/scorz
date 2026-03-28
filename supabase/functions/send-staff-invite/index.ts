@@ -37,9 +37,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Verify caller is admin or organizer
+    const callerUserId = claimsData.user.id;
+    const { data: callerRoles } = await callerClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId);
+    const callerRoleSet = new Set((callerRoles || []).map((r: any) => r.role));
+    if (!callerRoleSet.has("admin") && !callerRoleSet.has("organizer")) {
+      return new Response(JSON.stringify({ error: "Forbidden: only admins and organizers can invite staff" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { email, role, competition_name, competition_id, level_name, sub_event_names } = await req.json();
     if (!email || !role || !competition_id) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Only allow assigning staff roles — never admin
+    const ALLOWED_STAFF_ROLES = ["organizer", "judge", "chief_judge", "tabulator", "witness", "contestant", "audience"];
+    if (!ALLOWED_STAFF_ROLES.includes(role)) {
+      return new Response(JSON.stringify({ error: `Invalid role: ${role}` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
