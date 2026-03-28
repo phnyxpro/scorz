@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import * as XLSX from "xlsx";
+import { readXLSXToJson } from "@/lib/export-utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -109,11 +109,9 @@ export function ScoreImportDialog({
     setFileName(file.name);
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
-      const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+    reader.onload = async (evt) => {
+      const data = evt.target?.result as ArrayBuffer;
+      const json = await readXLSXToJson<Record<string, any>>(data);
       if (json.length === 0) {
         toast({ title: "Empty file", variant: "destructive" });
         return;
