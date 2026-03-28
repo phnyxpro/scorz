@@ -559,6 +559,7 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   };
 
   return (
+    <>
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <div className="flex items-center gap-2">
