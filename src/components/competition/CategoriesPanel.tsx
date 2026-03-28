@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ChevronRight, ChevronDown, FolderTree, Link2, Download } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronDown, FolderTree, Link2, Download, Pencil, ArrowUp, ArrowDown, Check, X } from "lucide-react";
 import { CategoryLevelSettings, DEFAULT_SETTINGS } from "@/components/competition/CategoryLevelSettings";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
