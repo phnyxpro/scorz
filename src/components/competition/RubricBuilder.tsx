@@ -54,7 +54,7 @@ const criterionSchema = z.object({
   description_4: z.string().default(""),
   description_5: z.string().default(""),
   scale_descriptions: z.record(z.string()).default({}),
-  point_values: z.record(z.coerce.number()).default({}),
+  point_values: z.record(z.union([z.coerce.number(), z.object({ min: z.coerce.number(), max: z.coerce.number() })])).default({}),
   is_bonus: z.boolean().default(false),
   applies_to_categories: z.array(z.string()).default([]),
   notes: z.string().optional(),
@@ -175,9 +175,7 @@ function SortableTableRow({
             )} />
           )}
           {useCustomPoints && (
-            <Controller control={control} name={`criteria.${index}.point_values.${n}` as any} render={({ field: f }) => (
-              <Input {...f} value={f.value || ""} type="number" min={0} className="h-6 text-[10px] w-full font-mono mt-1" placeholder="pts" />
-            )} />
+            <PointValueInput control={control} index={index} scaleKey={n} compact />
           )}
         </TableCell>
       ))}
@@ -310,9 +308,7 @@ function SortableAccordionCard({
                 )} />
               )}
               {useCustomPoints && (
-                <Controller control={control} name={`criteria.${index}.point_values.${n}` as any} render={({ field: f }) => (
-                  <Input {...f} value={f.value || ""} type="number" min={0} className="h-7 text-xs w-20 font-mono" placeholder="pts" />
-                )} />
+                <PointValueInput control={control} index={index} scaleKey={n} />
               )}
             </div>
           ))}
