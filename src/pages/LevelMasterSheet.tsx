@@ -10,12 +10,14 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff, Award } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
+import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
+import { useAllSpecialAwardVotes } from "@/components/competition/SpecialAwardsVoting";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 function useLevelMasterSheet(competitionId: string | undefined, levelId: string | null) {
@@ -468,6 +470,9 @@ export default function LevelMasterSheet() {
           )}
         </CardContent>
       </Card>
+
+      {/* Special Awards Results */}
+      {isFinalRound && <AwardsResults competitionId={competitionId!} registrations={data?.registrations || []} />}
     </div>
   );
 }
