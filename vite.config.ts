@@ -26,8 +26,8 @@ export default defineConfig(({ mode }) => ({
         runtimeCaching: [
           {
             // Cache Supabase REST API calls (scores, contestants, sub_events, etc.)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/(public_contestants|sub_events|competition_levels|competitions|rubric_criteria|performance_slots|judge_scores|contestant_registrations)/,
-            handler: 'StaleWhileRevalidate',
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/(public_contestants|sub_events|competition_levels|competitions|rubric_criteria|performance_slots|judge_scores|contestant_registrations|chief_judge_certifications|tabulator_certifications|performance_durations|penalty_rules|competition_infractions|sub_event_assignments|witness_certifications)/,
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
               expiration: {
