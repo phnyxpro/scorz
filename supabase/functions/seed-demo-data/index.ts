@@ -111,6 +111,22 @@ serve(async (req) => {
   }
 
   try {
+    // Require a secret guard to prevent public abuse
+    const authHeader = req.headers.get("Authorization");
+    const seedSecret = Deno.env.get("SEED_SECRET");
+    if (!seedSecret) {
+      return new Response(JSON.stringify({ error: "SEED_SECRET not configured — seed endpoint disabled" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!authHeader || authHeader !== `Bearer ${seedSecret}`) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
