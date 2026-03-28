@@ -689,7 +689,7 @@ function StructureToggle({ level, competitionId }: { level: any; competitionId: 
       {structureType === "sub_events" ? (
         <SubEventsPanel levelId={level.id} />
       ) : (
-        <CategoriesPanel levelId={level.id} />
+        <CategoriesPanel levelId={level.id} competitionId={competitionId} />
       )}
     </div>
   );
