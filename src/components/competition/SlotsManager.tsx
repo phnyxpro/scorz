@@ -151,90 +151,102 @@ export function SlotsManager({ competitionId }: Props) {
 
           {selectedSubEventId && (
             <>
-              <div className="border border-border/30 rounded-md p-3 bg-muted/20 space-y-3">
-                <p className="text-xs font-medium text-foreground">Generate Slots</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Start Time</label>
-                    <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Slot Count</label>
-                    <Input type="number" min={1} max={50} value={slotCount} onChange={e => setSlotCount(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Duration (min)</label>
-                    <Input type="number" min={1} max={30} value={slotDuration} onChange={e => setSlotDuration(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={generateSlots}>
-                    <Zap className="h-3.5 w-3.5 mr-1" /> Generate
-                  </Button>
-                  {slots && slots.length > 0 && (
-                    <Button size="sm" variant="outline" className="text-destructive" onClick={clearAllSlots}>
-                      Clear All
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {isLoading ? (
-                <p className="text-sm text-muted-foreground animate-pulse">Loading slots…</p>
-              ) : slots && slots.length > 0 ? (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-muted-foreground">
-                      {slots.length} slots · {bookedCount} booked · {slots.length - bookedCount} available
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs w-[40px]">#</TableHead>
-                          <TableHead className="text-xs">Time</TableHead>
-                          <TableHead className="text-xs">Performer</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs w-[40px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {slots.map(slot => (
-                          <TableRow key={slot.id}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{slot.slot_index + 1}</TableCell>
-                            <TableCell className="text-sm font-mono">
-                              {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {slot.performer_name ? (
-                                <span className="font-medium">{slot.performer_name}</span>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {slot.is_booked ? (
-                                <Badge variant="outline" className="bg-primary/20 text-primary border-primary/30 text-[10px]">Booked</Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-secondary/20 text-secondary border-secondary/30 text-[10px]">Available</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {!slot.is_booked && (
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSlot(slot.id)}>
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+              {!useTimeSlots ? (
+                <div className="rounded-lg border border-border/50 p-4 text-center space-y-2 bg-muted/20">
+                  <p className="text-sm font-medium text-foreground">Order of Performance Mode</p>
+                  <p className="text-xs text-muted-foreground">
+                    Time slots are disabled for this sub-event. Contestants will follow a manual order of performance.
+                    Enable "Use Time Slots" in the sub-event settings to generate slots.
+                  </p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No slots created yet. Use the form above to generate them.</p>
+                <>
+                  <div className="border border-border/30 rounded-md p-3 bg-muted/20 space-y-3">
+                    <p className="text-xs font-medium text-foreground">Generate Slots</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Start Time</label>
+                        <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Slot Count</label>
+                        <Input type="number" min={1} max={50} value={slotCount} onChange={e => setSlotCount(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Duration (min)</label>
+                        <Input type="number" min={1} max={30} value={slotDuration} onChange={e => setSlotDuration(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={generateSlots}>
+                        <Zap className="h-3.5 w-3.5 mr-1" /> Generate
+                      </Button>
+                      {slots && slots.length > 0 && (
+                        <Button size="sm" variant="outline" className="text-destructive" onClick={clearAllSlots}>
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {isLoading ? (
+                    <p className="text-sm text-muted-foreground animate-pulse">Loading slots…</p>
+                  ) : slots && slots.length > 0 ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">
+                          {slots.length} slots · {bookedCount} booked · {slots.length - bookedCount} available
+                        </p>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs w-[40px]">#</TableHead>
+                              <TableHead className="text-xs">Time</TableHead>
+                              <TableHead className="text-xs">Performer</TableHead>
+                              <TableHead className="text-xs">Status</TableHead>
+                              <TableHead className="text-xs w-[40px]"></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {slots.map(slot => (
+                              <TableRow key={slot.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{slot.slot_index + 1}</TableCell>
+                                <TableCell className="text-sm font-mono">
+                                  {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                  {slot.performer_name ? (
+                                    <span className="font-medium">{slot.performer_name}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {slot.is_booked ? (
+                                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/30 text-[10px]">Booked</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-secondary/20 text-secondary border-secondary/30 text-[10px]">Available</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {!slot.is_booked && (
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSlot(slot.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No slots created yet. Use the form above to generate them.</p>
+                  )}
+                </>
               )}
             </>
           )}
