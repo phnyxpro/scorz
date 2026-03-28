@@ -50,6 +50,10 @@ export default function JudgeScoring() {
   useRegistrationsRealtime(competitionId);
   const { data: myAssignments } = useMyAssignedSubEvents("judge");
 
+  // Offline support
+  const offlineCache = useOfflineCache(competitionId);
+  const offlineQueue = useOfflineQueue();
+
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
