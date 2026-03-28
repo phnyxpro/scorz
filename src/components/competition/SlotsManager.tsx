@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +73,8 @@ export function SlotsManager({ competitionId }: Props) {
 
   const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
   const { data: slots, isLoading } = usePerformanceSlots(selectedSubEventId || undefined);
+  const selectedSubEvent = subEvents?.find(se => se.id === selectedSubEventId);
+  const useTimeSlots = selectedSubEvent ? (selectedSubEvent as any).use_time_slots !== false : true;
 
   const generateSlots = async () => {
     if (!selectedSubEventId) return;
