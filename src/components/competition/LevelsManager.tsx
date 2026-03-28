@@ -190,6 +190,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [isVirtual, setIsVirtual] = useState(false);
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
