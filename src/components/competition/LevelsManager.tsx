@@ -616,6 +616,34 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
         </DndContext>
       </CardContent>
     </Card>
+
+    <AlertDialog open={copyDialogOpen} onOpenChange={(open) => {
+      if (!open) {
+        setCopyDialogOpen(false);
+        setNewLevelId(null);
+        setSourceLevelForCopy(null);
+      }
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Copy className="h-4 w-4" /> Copy Categories from Previous Level?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            The previous level <strong>"{sourceLevelForCopy?.name}"</strong> uses a category structure.
+            Would you like to copy its categories into the new level? This will replicate the full category tree
+            so you don't have to set it up again.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={copying}>No, start fresh</AlertDialogCancel>
+          <AlertDialogAction onClick={handleCopyCategories} disabled={copying}>
+            {copying ? "Copying…" : "Yes, copy categories"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
