@@ -203,7 +203,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
-    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
+    setName(""); setLocation(""); setIsVirtual(false); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
     setUseTimeSlots(true); setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
   };
 
@@ -216,6 +216,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setEditingId(e.id);
     setName(e.name);
     setLocation(e.location || "");
+    setIsVirtual((e as any).is_virtual || false);
     setEventDate(e.event_date || "");
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
@@ -233,7 +234,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     if (editingId) {
       setSaving(true);
       await supabase.from("sub_events").update({
-        name, location: location || null, event_date: eventDate || null,
+        name, location: isVirtual ? null : (location || null), is_virtual: isVirtual, event_date: eventDate || null,
         start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
         use_time_slots: useTimeSlots,
         ticketing_type: ticketingType,
@@ -248,7 +249,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     } else {
       create.mutate(
         {
-          level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined,
+          level_id: levelId, name, location: isVirtual ? undefined : (location || undefined), is_virtual: isVirtual, event_date: eventDate || undefined,
           start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled,
           use_time_slots: useTimeSlots,
           ticketing_type: ticketingType,
