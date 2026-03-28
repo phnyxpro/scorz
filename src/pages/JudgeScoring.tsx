@@ -30,6 +30,10 @@ import { PublicRubric } from "@/components/public/PublicRubric";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
