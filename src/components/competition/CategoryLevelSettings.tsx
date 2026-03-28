@@ -9,10 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, ChevronDown, MapPin, Settings2 } from "lucide-react";
+import { CalendarDays, ChevronDown, MapPin, Plus, Settings2, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+
+export interface ScheduleDate {
+  date: string;
+  start_time: string;
+  end_time: string;
+}
 
 export interface LevelSettings {
   location: string;
@@ -46,7 +52,6 @@ function useLevelSettings(levelId: string) {
   return useQuery({
     queryKey: ["category_level_settings", levelId],
     queryFn: async () => {
-      // Derive settings from the first linked sub_event (they should all share the same settings)
       const { data, error } = await supabase
         .from("sub_events")
         .select("location, is_virtual, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
@@ -72,17 +77,48 @@ function useLevelSettings(levelId: string) {
   });
 }
 
+function useScheduleDates(levelId: string) {
+  return useQuery({
+    queryKey: ["schedule_dates", levelId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_levels")
+        .select("schedule_dates")
+        .eq("id", levelId)
+        .single();
+      if (error) throw error;
+      return ((data as any)?.schedule_dates || []) as ScheduleDate[];
+    },
+  });
+}
+
+function useSaveScheduleDates(levelId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (dates: ScheduleDate[]) => {
+      const { error } = await supabase
+        .from("competition_levels")
+        .update({ schedule_dates: dates as any })
+        .eq("id", levelId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["schedule_dates", levelId] });
+    },
+    onError: (e: any) => toast({ title: "Error saving dates", description: e.message, variant: "destructive" }),
+  });
+}
+
 function useBulkUpdateSubEvents(levelId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (settings: Partial<LevelSettings>) => {
-      // Get all sub_event IDs linked to categories in this level
       const { data: cats } = await supabase
         .from("competition_categories")
         .select("sub_event_id")
         .eq("level_id", levelId)
         .not("sub_event_id", "is", null);
-      
+
       const subEventIds = (cats || []).map(c => c.sub_event_id).filter(Boolean) as string[];
       if (subEventIds.length === 0) return;
 
@@ -113,21 +149,138 @@ function useBulkUpdateSubEvents(levelId: string) {
   });
 }
 
+function ScheduleDateRow({
+  entry,
+  index,
+  onChange,
+  onRemove,
+}: {
+  entry: ScheduleDate;
+  index: number;
+  onChange: (index: number, field: keyof ScheduleDate, value: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1 space-y-1">
+        <Label className="text-xs">Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("h-8 text-xs w-full justify-start font-normal", !entry.date && "text-muted-foreground")}>
+              <CalendarDays className="h-3 w-3 mr-1" />
+              {entry.date ? format(parseISO(entry.date), "dd MMM yyyy") : "Pick date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={entry.date ? parseISO(entry.date) : undefined}
+              onSelect={(d) => onChange(index, "date", d ? format(d, "yyyy-MM-dd") : "")}
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="w-24 space-y-1">
+        <Label className="text-xs">Start</Label>
+        <Input
+          type="time"
+          value={entry.start_time}
+          onChange={(e) => onChange(index, "start_time", e.target.value)}
+          className="h-8 text-xs"
+        />
+      </div>
+      <div className="w-24 space-y-1">
+        <Label className="text-xs">End</Label>
+        <Input
+          type="time"
+          value={entry.end_time}
+          onChange={(e) => onChange(index, "end_time", e.target.value)}
+          className="h-8 text-xs"
+        />
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive shrink-0"
+        onClick={() => onRemove(index)}
+      >
+        <Trash2 className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
+
 export function CategoryLevelSettings({ levelId }: { levelId: string }) {
   const { data: savedSettings, isLoading } = useLevelSettings(levelId);
+  const { data: savedScheduleDates } = useScheduleDates(levelId);
+  const saveScheduleDates = useSaveScheduleDates(levelId);
   const bulkUpdate = useBulkUpdateSubEvents(levelId);
   const [settings, setSettings] = useState<LevelSettings>(DEFAULT_SETTINGS);
+  const [multiDate, setMultiDate] = useState(false);
+  const [scheduleDates, setScheduleDates] = useState<ScheduleDate[]>([]);
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
     if (savedSettings) setSettings(savedSettings);
   }, [savedSettings]);
 
+  useEffect(() => {
+    if (savedScheduleDates) {
+      setScheduleDates(savedScheduleDates);
+      setMultiDate(savedScheduleDates.length > 0);
+    }
+  }, [savedScheduleDates]);
+
   const applySettings = useCallback((partial: Partial<LevelSettings>) => {
     const updated = { ...settings, ...partial };
     setSettings(updated);
     bulkUpdate.mutate(partial);
   }, [settings, bulkUpdate]);
+
+  const handleMultiDateToggle = (on: boolean) => {
+    setMultiDate(on);
+    if (on) {
+      // Seed with current single date if it exists
+      if (settings.event_date) {
+        const initial: ScheduleDate[] = [{ date: settings.event_date, start_time: settings.start_time, end_time: settings.end_time }];
+        setScheduleDates(initial);
+        saveScheduleDates.mutate(initial);
+      } else {
+        setScheduleDates([]);
+        saveScheduleDates.mutate([]);
+      }
+    } else {
+      // Switching back to single: use first entry if available, clear schedule_dates
+      if (scheduleDates.length > 0) {
+        const first = scheduleDates[0];
+        applySettings({ event_date: first.date || null, start_time: first.start_time, end_time: first.end_time });
+      }
+      setScheduleDates([]);
+      saveScheduleDates.mutate([]);
+    }
+  };
+
+  const handleScheduleChange = (index: number, field: keyof ScheduleDate, value: string) => {
+    const updated = scheduleDates.map((d, i) => i === index ? { ...d, [field]: value } : d);
+    setScheduleDates(updated);
+  };
+
+  const handleScheduleBlur = () => {
+    saveScheduleDates.mutate(scheduleDates);
+  };
+
+  const addScheduleDate = () => {
+    const updated = [...scheduleDates, { date: "", start_time: "", end_time: "" }];
+    setScheduleDates(updated);
+    saveScheduleDates.mutate(updated);
+  };
+
+  const removeScheduleDate = (index: number) => {
+    const updated = scheduleDates.filter((_, i) => i !== index);
+    setScheduleDates(updated);
+    saveScheduleDates.mutate(updated);
+  };
 
   if (isLoading) return null;
 
@@ -165,48 +318,77 @@ export function CategoryLevelSettings({ levelId }: { levelId: string }) {
         </div>
 
         {/* Date & Time */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("h-8 text-xs w-full justify-start font-normal", !settings.event_date && "text-muted-foreground")}>
-                  {settings.event_date ? format(parseISO(settings.event_date), "dd MMM yyyy") : "Pick date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={settings.event_date ? parseISO(settings.event_date) : undefined}
-                  onSelect={(d) => {
-                    const val = d ? format(d, "yyyy-MM-dd") : null;
-                    applySettings({ event_date: val });
-                  }}
-                  className="p-3 pointer-events-auto"
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch checked={multiDate} onCheckedChange={handleMultiDateToggle} />
+            <Label className="text-xs">Multiple Dates</Label>
+          </div>
+
+          {!multiDate ? (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-8 text-xs w-full justify-start font-normal", !settings.event_date && "text-muted-foreground")}>
+                      {settings.event_date ? format(parseISO(settings.event_date), "dd MMM yyyy") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={settings.event_date ? parseISO(settings.event_date) : undefined}
+                      onSelect={(d) => {
+                        const val = d ? format(d, "yyyy-MM-dd") : null;
+                        applySettings({ event_date: val });
+                      }}
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Start Time</Label>
+                <Input
+                  type="time"
+                  value={settings.start_time}
+                  onChange={(e) => setSettings(s => ({ ...s, start_time: e.target.value }))}
+                  onBlur={() => applySettings({ start_time: settings.start_time })}
+                  className="h-8 text-xs"
                 />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Start Time</Label>
-            <Input
-              type="time"
-              value={settings.start_time}
-              onChange={(e) => setSettings(s => ({ ...s, start_time: e.target.value }))}
-              onBlur={() => applySettings({ start_time: settings.start_time })}
-              className="h-8 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">End Time</Label>
-            <Input
-              type="time"
-              value={settings.end_time}
-              onChange={(e) => setSettings(s => ({ ...s, end_time: e.target.value }))}
-              onBlur={() => applySettings({ end_time: settings.end_time })}
-              className="h-8 text-xs"
-            />
-          </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">End Time</Label>
+                <Input
+                  type="time"
+                  value={settings.end_time}
+                  onChange={(e) => setSettings(s => ({ ...s, end_time: e.target.value }))}
+                  onBlur={() => applySettings({ end_time: settings.end_time })}
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2" onBlur={handleScheduleBlur}>
+              {scheduleDates.map((entry, i) => (
+                <ScheduleDateRow
+                  key={i}
+                  entry={entry}
+                  index={i}
+                  onChange={handleScheduleChange}
+                  onRemove={removeScheduleDate}
+                />
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={addScheduleDate}
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add Date
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Toggles */}
