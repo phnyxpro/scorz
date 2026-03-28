@@ -75,6 +75,11 @@ export function useUpsertCertification() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (values: Partial<ChiefJudgeCertification> & { sub_event_id: string; chief_judge_id: string }) => {
+      if (!navigator.onLine) {
+        const { queueMutation } = await import("@/lib/offline-db");
+        await queueMutation("upsert_chief_cert", { ...values, _mutationType: "upsert_chief_cert" } as any);
+        return values;
+      }
       if (values.id) {
         const { error } = await supabase
           .from("chief_judge_certifications")
@@ -94,7 +99,7 @@ export function useUpsertCertification() {
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ["certification", v.sub_event_id] });
-      toast({ title: "Certification saved" });
+      toast({ title: navigator.onLine ? "Certification saved" : "Certification saved offline" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

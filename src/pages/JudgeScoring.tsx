@@ -30,6 +30,10 @@ import { PublicRubric } from "@/components/public/PublicRubric";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -45,6 +49,10 @@ export default function JudgeScoring() {
   const { data: registrations } = useRegistrations(competitionId);
   useRegistrationsRealtime(competitionId);
   const { data: myAssignments } = useMyAssignedSubEvents("judge");
+
+  // Offline support
+  const offlineCache = useOfflineCache(competitionId);
+  const offlineQueue = useOfflineQueue();
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
@@ -523,6 +531,17 @@ export default function JudgeScoring() {
         }}
       >
         <div className="px-3 sm:px-6 py-4 sm:py-6">
+          {/* Offline Banner */}
+          <OfflineBanner
+            isSyncing={offlineCache.isSyncing}
+            syncProgress={offlineCache.syncProgress}
+            lastSyncedAt={offlineCache.lastSyncedAt}
+            isReady={offlineCache.isReady}
+            pendingCount={offlineQueue.pendingCount}
+            isFlushing={offlineQueue.isFlushing}
+            flushErrors={offlineQueue.flushErrors}
+            onRetry={offlineQueue.retry}
+          />
           {/* Header */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             {!sidebarOpen && (
@@ -534,7 +553,10 @@ export default function JudgeScoring() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Judge Scoring</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate flex items-center gap-2">
+                Judge Scoring
+                <ConnectionIndicator pendingCount={offlineQueue.pendingCount} isOfflineReady={offlineCache.isReady} />
+              </h1>
               <p className="text-muted-foreground text-xs truncate">{comp?.name}</p>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
