@@ -35,6 +35,7 @@ export interface SubEvent {
   status: string;
   timer_visible?: boolean;
   comments_visible?: boolean;
+  use_time_slots?: boolean;
 }
 
 export interface RubricCriterion {

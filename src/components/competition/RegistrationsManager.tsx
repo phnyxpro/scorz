@@ -428,7 +428,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sub_events")
-        .select("id, name, level_id")
+        .select("id, name, level_id, use_time_slots")
         .in("level_id", allLevelIds)
         .order("name");
       if (error) throw error;
