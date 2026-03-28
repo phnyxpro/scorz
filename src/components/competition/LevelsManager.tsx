@@ -182,6 +182,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [useTimeSlots, setUseTimeSlots] = useState(true);
   const [ticketingType, setTicketingType] = useState("free");
   const [ticketPrice, setTicketPrice] = useState("");
   const [maxTickets, setMaxTickets] = useState("");
@@ -190,7 +191,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
 
   const resetForm = () => {
     setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
-    setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
+    setUseTimeSlots(true); setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
   };
 
   const openCreate = () => {
@@ -206,6 +207,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
     setVotingEnabled(e.voting_enabled || false);
+    setUseTimeSlots(e.use_time_slots !== false);
     setTicketingType(e.ticketing_type || "free");
     setTicketPrice(e.ticket_price?.toString() || "");
     setMaxTickets(e.max_tickets?.toString() || "");
