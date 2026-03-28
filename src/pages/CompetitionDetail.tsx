@@ -225,6 +225,11 @@ export default function CompetitionDetail() {
         description_3: c.description_3,
         description_4: c.description_4,
         description_5: c.description_5,
+        scale_descriptions: {},
+        point_values: {},
+        is_bonus: false,
+        applies_to_categories: [],
+        notes: null,
       });
     });
     setPendingRubricCriteria(null);
