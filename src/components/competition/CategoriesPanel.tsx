@@ -424,6 +424,25 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
     linkSE.mutate({ categoryId: cat.id, levelId, fullPath });
   };
 
+  const handleRename = (cat: Category, newName: string) => {
+    renameCat.mutate({ id: cat.id, level_id: levelId, name: newName });
+  };
+
+  const handleMove = (cat: Category, direction: "up" | "down") => {
+    const siblings = cat.parent_id ? (tree.get(cat.parent_id) || []) : rootCategories;
+    const idx = siblings.findIndex((c) => c.id === cat.id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= siblings.length) return;
+    reorderCat.mutate({
+      level_id: levelId,
+      updates: [
+        { id: siblings[idx].id, sort_order: siblings[swapIdx].sort_order },
+        { id: siblings[swapIdx].id, sort_order: siblings[idx].sort_order },
+      ],
+    });
+  };
+
   const handleAddRoot = () => {
     if (!newRootName.trim()) return;
     handleCreate(null, newRootName.trim());
