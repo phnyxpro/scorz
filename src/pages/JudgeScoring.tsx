@@ -34,6 +34,8 @@ import { useOfflineCache } from "@/hooks/useOfflineCache";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
+import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
+import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -735,6 +737,17 @@ export default function JudgeScoring() {
                     <SpeechComments value={comments} onChange={setComments} disabled={isCertified} />
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Special Awards Voting — final rounds only */}
+              {selectedLevel?.is_final_round && specialAwards && specialAwards.length > 0 && (
+                <SpecialAwardsVoting
+                  awards={specialAwards}
+                  competitionId={competitionId!}
+                  subEventId={subEventId}
+                  contestants={filteredContestants.map(r => ({ id: r.id, full_name: r.full_name }))}
+                  disabled={isCertified}
+                />
               )}
 
               {!isCertified && (
