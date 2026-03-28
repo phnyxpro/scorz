@@ -545,6 +545,7 @@ export type Database = {
           rubric_content: string | null
           rubric_document_url: string | null
           rubric_scale_labels: Json
+          rubric_weight_mode: string
           rules_content: string | null
           rules_document_url: string | null
           rules_url: string | null
@@ -579,6 +580,7 @@ export type Database = {
           rubric_content?: string | null
           rubric_document_url?: string | null
           rubric_scale_labels?: Json
+          rubric_weight_mode?: string
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
@@ -613,6 +615,7 @@ export type Database = {
           rubric_content?: string | null
           rubric_document_url?: string | null
           rubric_scale_labels?: Json
+          rubric_weight_mode?: string
           rules_content?: string | null
           rules_document_url?: string | null
           rules_url?: string | null
@@ -1265,6 +1268,7 @@ export type Database = {
       }
       rubric_criteria: {
         Row: {
+          applies_to_categories: string[]
           competition_id: string
           created_at: string
           description_1: string
@@ -1274,12 +1278,17 @@ export type Database = {
           description_5: string
           guidelines: string | null
           id: string
+          is_bonus: boolean
           name: string
+          notes: string | null
+          point_values: Json
+          scale_descriptions: Json
           sort_order: number
           updated_at: string
           weight_percent: number
         }
         Insert: {
+          applies_to_categories?: string[]
           competition_id: string
           created_at?: string
           description_1?: string
@@ -1289,12 +1298,17 @@ export type Database = {
           description_5?: string
           guidelines?: string | null
           id?: string
+          is_bonus?: boolean
           name: string
+          notes?: string | null
+          point_values?: Json
+          scale_descriptions?: Json
           sort_order?: number
           updated_at?: string
           weight_percent?: number
         }
         Update: {
+          applies_to_categories?: string[]
           competition_id?: string
           created_at?: string
           description_1?: string
@@ -1304,7 +1318,11 @@ export type Database = {
           description_5?: string
           guidelines?: string | null
           id?: string
+          is_bonus?: boolean
           name?: string
+          notes?: string | null
+          point_values?: Json
+          scale_descriptions?: Json
           sort_order?: number
           updated_at?: string
           weight_percent?: number

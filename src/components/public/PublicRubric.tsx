@@ -2,7 +2,7 @@ import { RubricCriterion, PenaltyRule, Infraction, RubricScaleLabels } from "@/h
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Info, Clock, AlertTriangle, Ban } from "lucide-react";
+import { Info, Clock, AlertTriangle, Ban, Star } from "lucide-react";
 
 const DEFAULT_SCALE_LABELS: RubricScaleLabels = {
   min: 1,
@@ -16,10 +16,14 @@ interface PublicRubricProps {
   infractions?: Infraction[];
   scaleLabels?: RubricScaleLabels;
   scoringMethod?: string;
+  weightMode?: "percent" | "points";
 }
 
-export function PublicRubric({ criteria, penalties, infractions, scaleLabels, scoringMethod }: PublicRubricProps) {
+export function PublicRubric({ criteria, penalties, infractions, scaleLabels, scoringMethod, weightMode = "percent" }: PublicRubricProps) {
   const labels = scaleLabels || DEFAULT_SCALE_LABELS;
+  const scaleMin = labels.min || 1;
+  const scaleMax = labels.max || 5;
+  const scalePoints = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => scaleMin + i);
   const generalPenalties = infractions?.filter(i => i.category === "penalty") || [];
   const disqualifications = infractions?.filter(i => i.category === "disqualification") || [];
   const isWeighted = scoringMethod === "weighted_category";
@@ -36,19 +40,26 @@ export function PublicRubric({ criteria, penalties, infractions, scaleLabels, sc
 
         {isWeighted && totalWeight > 0 && (
           <p className="text-xs text-muted-foreground">
-            Scores are weighted by category. Total weight: {totalWeight}%
+            Scores are weighted by category. Total {weightMode === "percent" ? "weight" : "points"}: {totalWeight}{weightMode === "percent" ? "%" : " pts"}
           </p>
         )}
 
         <div className="grid gap-4">
           {criteria.map((criterion) => (
-            <Card key={criterion.id} className="border-border/50 bg-card/80">
+            <Card key={criterion.id} className={`border-border/50 bg-card/80 ${criterion.is_bonus ? "ring-1 ring-amber-500/30" : ""}`}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <CardTitle className="text-base">{criterion.name}</CardTitle>
-                  {isWeighted && criterion.weight_percent > 0 && (
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base">{criterion.name}</CardTitle>
+                    {criterion.is_bonus && (
+                      <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/40 text-amber-600">
+                        <Star className="h-2.5 w-2.5" /> Bonus
+                      </Badge>
+                    )}
+                  </div>
+                  {(isWeighted || weightMode === "points") && criterion.weight_percent > 0 && (
                     <Badge variant="secondary" className="text-[10px] font-mono">
-                      {criterion.weight_percent}%
+                      {criterion.weight_percent}{weightMode === "percent" ? "%" : " pts"}
                     </Badge>
                   )}
                 </div>
@@ -56,23 +67,35 @@ export function PublicRubric({ criteria, penalties, infractions, scaleLabels, sc
                   <p className="text-sm text-muted-foreground mt-1">{criterion.guidelines}</p>
                 )}
                 <CardDescription className="text-xs">
-                  Judged on a scale of {labels.min}–{labels.max}
+                  Judged on a scale of {scaleMin}–{scaleMax}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map((level) => (
-                    <div key={level} className="flex flex-col gap-1 p-2 rounded bg-muted/30 border border-border/30">
-                      <span className="text-xs font-bold font-mono text-primary">{level}</span>
-                      <span className="text-[10px] font-medium text-foreground/70">
-                        {labels.labels?.[String(level)] || `Level ${level}`}
-                      </span>
-                      <p className="text-[10px] text-muted-foreground leading-tight">
-                        {(criterion as any)[`description_${level}`]}
-                      </p>
-                    </div>
-                  ))}
+                <div className={`grid grid-cols-1 sm:grid-cols-${Math.min(scalePoints.length, 5)} gap-2`} style={{ gridTemplateColumns: `repeat(${scalePoints.length}, minmax(0, 1fr))` }}>
+                  {scalePoints.map((level) => {
+                    const desc = level <= 5
+                      ? (criterion as any)[`description_${level}`]
+                      : criterion.scale_descriptions?.[String(level)];
+                    const pts = criterion.point_values?.[String(level)];
+                    return (
+                      <div key={level} className="flex flex-col gap-1 p-2 rounded bg-muted/30 border border-border/30">
+                        <span className="text-xs font-bold font-mono text-primary">{level}</span>
+                        <span className="text-[10px] font-medium text-foreground/70">
+                          {labels.labels?.[String(level)] || `Level ${level}`}
+                        </span>
+                        {pts != null && pts > 0 && (
+                          <span className="text-[9px] font-mono text-secondary">{pts} pts</span>
+                        )}
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          {desc || ""}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
+                {criterion.notes && (
+                  <p className="text-[10px] text-muted-foreground/70 mt-2 italic">{criterion.notes}</p>
+                )}
               </CardContent>
             </Card>
           ))}

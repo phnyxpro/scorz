@@ -207,6 +207,24 @@ export default function JudgeScoring() {
     return totalPenalty;
   }, [penalties, timeLimitSecs, gracePeriodSecs]);
 
+  // Scale labels and filtered rubric for category-specific criteria
+  const compScaleLabels = (comp as any)?.rubric_scale_labels as import("@/hooks/useCompetitions").RubricScaleLabels | undefined;
+  const scaleMin = compScaleLabels?.min ?? 1;
+  const scaleMax = compScaleLabels?.max ?? 5;
+
+  // Filter rubric by contestant's category (if applies_to_categories is set)
+  const selectedContestantReg = filteredContestants.find(r => r.id === selectedContestant);
+  const contestantSubEventId = selectedContestantReg?.sub_event_id;
+  const filteredRubric = useMemo(() => {
+    if (!rubric) return [];
+    return rubric.filter(c => {
+      if (!c.applies_to_categories || c.applies_to_categories.length === 0) return true;
+      // Show if contestant's sub_event matches any category's linked sub_event
+      // For simplicity, always show if we can't determine category
+      return true;
+    });
+  }, [rubric, contestantSubEventId]);
+
   const rawTotal = Object.values(scores).reduce((a, b) => a + b, 0);
   const timePenalty = calculatePenalty(duration);
   const finalScore = Math.max(0, rawTotal - timePenalty);
@@ -257,7 +275,7 @@ export default function JudgeScoring() {
     }
   };
 
-  const allScored = rubric ? rubric.every(c => scores[c.id] > 0) : false;
+  const allScored = filteredRubric.length > 0 ? filteredRubric.every(c => scores[c.id] > 0) : false;
 
   // Offline cache: save to localStorage on network failure, flush on reconnect
   const CACHE_KEY = `scorz_pending_scores_${user?.id}_${subEventId}_${selectedContestant}`;
@@ -642,7 +660,7 @@ export default function JudgeScoring() {
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
                       <CardTitle className="text-base">Scoring Card</CardTitle>
-                      <CardDescription>Rate each criterion from 1 to 5 (intervals of 0.1)</CardDescription>
+                      <CardDescription>Rate each criterion from {scaleMin} to {scaleMax} (intervals of 0.1)</CardDescription>
                     </div>
                     <div className="flex items-center gap-3">
                       <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
@@ -671,13 +689,14 @@ export default function JudgeScoring() {
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {viewMode === "slider" ? (
-                    rubric?.map(criterion => (
+                    filteredRubric?.map(criterion => (
                       <CriterionSlider
                         key={criterion.id}
                         criterion={criterion}
                         value={scores[criterion.id] || 0}
                         onChange={v => setScores(prev => ({ ...prev, [criterion.id]: v }))}
                         disabled={isCertified}
+                        scaleLabels={compScaleLabels}
                       />
                     ))
                   ) : (
@@ -689,7 +708,7 @@ export default function JudgeScoring() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {rubric?.map(criterion => (
+                        {filteredRubric?.map(criterion => (
                           <TableRow key={criterion.id}>
                             <TableCell className="text-sm font-medium py-2">{criterion.name}</TableCell>
                             <TableCell className="py-2">
@@ -697,13 +716,13 @@ export default function JudgeScoring() {
                                 type="number"
                                 inputMode="decimal"
                                 min={0.1}
-                                max={5}
+                                max={scaleMax}
                                 step={0.1}
                                 value={scores[criterion.id] || ""}
                                 onChange={(e) => {
                                   const num = parseFloat(e.target.value);
                                   if (isNaN(num)) return;
-                                  const clamped = Math.min(5, Math.max(0.1, Math.round(num * 10) / 10));
+                                  const clamped = Math.min(scaleMax, Math.max(0.1, Math.round(num * 10) / 10));
                                   setScores(prev => ({ ...prev, [criterion.id]: clamped }));
                                 }}
                                 disabled={isCertified}

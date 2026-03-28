@@ -5,6 +5,7 @@ import type { JudgeScore } from "@/hooks/useJudgeScores";
 export interface RubricCriterion {
   id: string;
   name: string;
+  notes?: string | null;
 }
 
 interface ScoreCardProps {
@@ -76,6 +77,9 @@ export function ScoreCard({
 
   const criterionScores = (judgeScore?.criterion_scores as Record<string, number>) || {};
 
+  // Collect criteria that have notes
+  const criteriaWithNotes = criteria.filter(c => c.notes);
+
   return (
     <div style={cardStyle} className="score-card">
       <div style={headerStyle}>
@@ -132,6 +136,19 @@ export function ScoreCard({
           {judgeScore?.comments || ''}
         </div>
       </div>
+
+      {/* Rubric Notes */}
+      {criteriaWithNotes.length > 0 && (
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '9px', color: '#555', borderTop: '1px dashed #999', paddingTop: '4px' }}>
+            {criteriaWithNotes.map(c => (
+              <div key={c.id} style={{ marginBottom: '2px' }}>
+                <span style={{ fontWeight: 'bold' }}>{c.name}:</span> {c.notes}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={sectionStyle}>
         <div style={{ border: '1px solid #666', padding: '8px', marginTop: '8px', minHeight: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>

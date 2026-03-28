@@ -50,6 +50,11 @@ export interface RubricCriterion {
   description_3: string;
   description_4: string;
   description_5: string;
+  scale_descriptions: Record<string, string>;
+  point_values: Record<string, number>;
+  is_bonus: boolean;
+  applies_to_categories: string[];
+  notes: string | null;
 }
 
 export interface RubricScaleLabels {
