@@ -242,6 +242,64 @@ export type Database = {
           },
         ]
       }
+      competition_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          level_id: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          sub_event_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          level_id: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          sub_event_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          level_id?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          sub_event_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_categories_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "competition_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "competition_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_categories_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_credits: {
         Row: {
           competition_id: string | null
@@ -338,6 +396,7 @@ export type Database = {
           name: string
           sort_order: number
           special_entries: Json
+          structure_type: string
           updated_at: string
         }
         Insert: {
@@ -350,6 +409,7 @@ export type Database = {
           name: string
           sort_order?: number
           special_entries?: Json
+          structure_type?: string
           updated_at?: string
         }
         Update: {
@@ -362,6 +422,7 @@ export type Database = {
           name?: string
           sort_order?: number
           special_entries?: Json
+          structure_type?: string
           updated_at?: string
         }
         Relationships: [
@@ -1296,6 +1357,97 @@ export type Database = {
           preferred_date?: string | null
         }
         Relationships: []
+      }
+      special_award_votes: {
+        Row: {
+          contestant_registration_id: string
+          created_at: string
+          id: string
+          judge_id: string
+          special_award_id: string
+          sub_event_id: string
+        }
+        Insert: {
+          contestant_registration_id: string
+          created_at?: string
+          id?: string
+          judge_id: string
+          special_award_id: string
+          sub_event_id: string
+        }
+        Update: {
+          contestant_registration_id?: string
+          created_at?: string
+          id?: string
+          judge_id?: string
+          special_award_id?: string
+          sub_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_award_votes_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "contestant_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_award_votes_contestant_registration_id_fkey"
+            columns: ["contestant_registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_contestants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_award_votes_special_award_id_fkey"
+            columns: ["special_award_id"]
+            isOneToOne: false
+            referencedRelation: "special_awards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_award_votes_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_awards: {
+        Row: {
+          competition_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_awards_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_invitation_sub_events: {
         Row: {

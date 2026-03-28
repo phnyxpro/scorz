@@ -10,12 +10,14 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff, Award } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
+import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
+import { useAllSpecialAwardVotes } from "@/components/competition/SpecialAwardsVoting";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 function useLevelMasterSheet(competitionId: string | undefined, levelId: string | null) {
@@ -468,6 +470,71 @@ export default function LevelMasterSheet() {
           )}
         </CardContent>
       </Card>
+
+      {/* Special Awards Results */}
+      {isFinalRound && <AwardsResultsSection competitionId={competitionId!} registrations={data?.registrations || []} />}
     </div>
+  );
+}
+
+function AwardsResultsSection({ competitionId, registrations }: { competitionId: string; registrations: { id: string; full_name: string }[] }) {
+  const { data: awards } = useSpecialAwards(competitionId);
+  const { data: votes } = useAllSpecialAwardVotes(competitionId);
+
+  if (!awards?.length) return null;
+
+  const regMap = new Map(registrations.map(r => [r.id, r.full_name]));
+
+  // Tally votes per award
+  const tallies = awards.map(award => {
+    const awardVotes = (votes || []).filter(v => v.special_award_id === award.id);
+    const counts = new Map<string, number>();
+    for (const v of awardVotes) {
+      counts.set(v.contestant_registration_id, (counts.get(v.contestant_registration_id) || 0) + 1);
+    }
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const winner = sorted[0];
+    return { award, totalVotes: awardVotes.length, winner: winner ? { name: regMap.get(winner[0]) || "Unknown", votes: winner[1] } : null };
+  });
+
+  return (
+    <Card className="border-amber-500/30 bg-card/80 mt-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Award className="h-5 w-5 text-amber-500" />
+          Special Awards
+        </CardTitle>
+        <CardDescription>Judge voting results for challenge trophies and special prizes.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Award</TableHead>
+              <TableHead>Winner</TableHead>
+              <TableHead className="text-center">Votes</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tallies.map(({ award, winner }) => (
+              <TableRow key={award.id}>
+                <TableCell className="font-medium text-sm">{award.name}</TableCell>
+                <TableCell className="text-sm">
+                  {winner ? (
+                    <span className="flex items-center gap-1.5">
+                      <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                      {winner.name}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">No votes yet</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center font-mono text-sm">{winner?.votes || 0}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
