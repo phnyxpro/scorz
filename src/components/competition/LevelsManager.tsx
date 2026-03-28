@@ -336,6 +336,17 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
               </div>
               <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
             </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="timeslots-toggle" className="text-sm font-medium">Use Time Slots</Label>
+                <p className="text-xs text-muted-foreground">
+                  {useTimeSlots
+                    ? "Contestants are scheduled by time slots"
+                    : "Contestants follow a manual order of performance"}
+                </p>
+              </div>
+              <Switch id="timeslots-toggle" checked={useTimeSlots} onCheckedChange={setUseTimeSlots} />
+            </div>
 
             {/* Ticketing */}
             <div className="space-y-2 rounded-lg border border-border/50 p-3">
