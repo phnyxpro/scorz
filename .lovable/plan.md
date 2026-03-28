@@ -1,117 +1,139 @@
 
 
-# Offline-First Support for Judges, Chief Judges, and Tabulators
+# Competition Categories, Hierarchy & Special Awards
 
 ## Overview
 
-Enable Google Docs-style offline resilience so that judges, chief judges, and tabulators can continue working when connectivity drops. All adjudication data is pre-cached locally; writes queue up offline and sync automatically when connectivity returns.
+Three interconnected features: (1) a category-based tree structure as an alternative to flat sub-events, (2) category-level advancement for finals, and (3) a special awards voting system for judges in final rounds.
 
-## Architecture
+## Current Architecture
 
 ```text
-┌──────────────────────────────────────┐
-│         React App (UI layer)         │
-│                                      │
-│  useOfflineCache() — prefetch data   │
-│  useOfflineQueue() — queue writes    │
-│  OfflineBanner    — sync status UI   │
-├──────────────────────────────────────┤
-│         IndexedDB (idb library)      │
-│                                      │
-│  Store: cached_queries               │
-│    - competition, levels, sub_events │
-│    - rubric_criteria, penalty_rules  │
-│    - registrations, judge_scores     │
-│    - certifications, assignments     │
-│                                      │
-│  Store: offline_mutations            │
-│    - queued upserts/certifications   │
-│    - timestamp, status, payload      │
-└──────────────────────────────────────┘
+Competition → Levels → Sub-Events → Registrations/Scores/Certifications
 ```
 
-## Implementation Steps
+All scoring, certifications, assignments, tickets, and timers are keyed to `sub_event_id`. This FK is deeply embedded across 15+ tables.
 
-### 1. Add `idb` dependency
-Install the lightweight `idb` wrapper (~1KB) for typed IndexedDB access.
+## Design Approach
 
-### 2. Create `src/lib/offline-db.ts` — IndexedDB schema
-- Database: `scorz-offline`, version 1
-- Object store `cached_queries`: keyed by query key string, stores JSON data + timestamp
-- Object store `offline_mutations`: auto-increment key, stores mutation type, payload, created_at, status (pending/synced/failed)
+Rather than replacing sub-events, **categories are a tree that generates sub-events at the leaf level**. This preserves the entire scoring/certification pipeline unchanged.
 
-### 3. Create `src/hooks/useOfflineCache.ts` — Data prefetch hook
-- Called on JudgeScoring, ChiefJudgeDashboard, TabulatorDashboard mount
-- Fetches and caches to IndexedDB: competition, levels, sub_events, rubric_criteria, penalty_rules, contestant_registrations, judge_scores, sub_event_assignments, chief_judge_certifications, tabulator_certifications, performance_durations
-- Shows progress indicator (e.g. "Syncing 6/10...")
-- Patches React Query's `queryClient` cache from IndexedDB when offline so existing hooks work without modification
-- Exposes `{ isSyncing, syncProgress, lastSyncedAt }` state
+```text
+Level (structure_type = "categories")
+ └─ Category: "Solos" (parent_id = null)
+     ├─ "Male" (parent_id = Solos)
+     │   ├─ "11-15" (leaf → auto-creates sub_event)
+     │   └─ "16-19" (leaf → auto-creates sub_event)
+     └─ "Female"
+         ├─ "11-15" (leaf → auto-creates sub_event)
+         └─ "16-19" (leaf → auto-creates sub_event)
+```
 
-### 4. Create `src/hooks/useOfflineQueue.ts` — Mutation queue
-- Wraps write operations (upsert score, certify score, chief judge certification, tabulator certification)
-- When online: execute normally via Supabase, also save to IndexedDB as "synced"
-- When offline: save to IndexedDB as "pending", show toast "Saved offline — will sync when connected"
-- On reconnect (`online` event): flush pending mutations in order, update status to synced/failed
-- Conflict resolution: last-write-wins with timestamp comparison
-- Exposes `{ pendingCount, isFlushing, flushErrors }`
+Leaf categories have a 1:1 link to a sub_event record, so judges, tabulators, registrations, and scoring work exactly as today.
 
-### 5. Create `src/components/shared/OfflineBanner.tsx` — Sync status UI
-- Persistent banner at top of adjudication pages showing:
-  - **Syncing**: animated progress bar + "Downloading data for offline use…"
-  - **Synced**: brief green checkmark + "Ready for offline use" (auto-hides after 3s)
-  - **Offline**: amber/red banner "You're offline — changes saved locally"
-  - **Reconnecting**: "Back online — syncing X changes…"
-  - **Sync error**: red banner with retry button
-- Compact indicator in header showing offline queue count badge
+---
 
-### 6. Update `ConnectionIndicator.tsx`
-- Integrate with offline queue state to show pending sync count
-- Add "offline ready" green dot when data is cached
-- Show sync errors with retry action
+## Part 1: Category Tree Structure
 
-### 7. Update `useUpsertScore` and `useCertifyScore` in `useJudgeScores.ts`
-- Wrap mutation functions with offline queue: if offline, store to IndexedDB and optimistically update React Query cache
-- Keep existing optimistic update logic (already in place)
-- Add error recovery: if sync fails on reconnect, mark for manual retry
+### Database Changes
 
-### 8. Update `useChiefJudge.ts` mutations
-- Same offline queue wrapper for `useUpsertChiefCertification`
+**New table: `competition_categories`**
+- `id`, `level_id` (FK → competition_levels), `parent_id` (FK → self, nullable)
+- `name`, `sort_order`, `sub_event_id` (FK → sub_events, nullable — only set on leaf nodes)
+- `color` (optional, for visual distinction in the tree)
+- RLS: same as competition_levels (staff access)
 
-### 9. Update `useTabulator.ts` mutations
-- Same offline queue wrapper for tabulator certification upserts
+**Alter `competition_levels`**: add `structure_type text NOT NULL DEFAULT 'sub_events'` — values: `'sub_events'` or `'categories'`
 
-### 10. Integrate OfflineBanner into adjudication pages
-- `JudgeScoring.tsx`: Add `useOfflineCache()` call + `<OfflineBanner />` at top
-- `ChiefJudgeDashboard.tsx`: Same
-- `TabulatorDashboard.tsx`: Same
+### UI Changes
 
-### 11. Update PWA service worker config in `vite.config.ts`
-- Extend `runtimeCaching` patterns to ensure all adjudication API endpoints are cached with `NetworkFirst` strategy (upgrade from `StaleWhileRevalidate` for scoring data)
-- Add `chief_judge_certifications`, `tabulator_certifications`, `performance_durations`, `penalty_rules` to the cached table patterns
+**LevelsManager.tsx** — Inside each level's collapsible content:
+- Add a toggle/selector at the top: "Sub-Events" vs "Categories" (sets `structure_type`)
+- When "Categories" is selected, hide the current `SubEventsPanel` and show a new `CategoriesPanel`
 
-## Technical Details
+**New component: `CategoriesPanel`**
+- Tree view with add/edit/delete at each node
+- Each node shows: name, color badge, and child count
+- Leaf nodes show a "linked sub-event" indicator (auto-created)
+- Add category button at each level of the tree
+- When a leaf category is created, auto-create a matching sub_event with `name = full path` (e.g. "Solos > Male > 11-15")
+- When a leaf category is deleted, cascade-delete its sub_event
 
-- **IndexedDB via `idb`**: Chosen over localStorage for structured data, no size limits, and async API
-- **No changes to Supabase hooks' query functions**: The offline cache seeds React Query's cache; existing hooks read from React Query as normal
-- **Mutation queue uses sequential flush**: Prevents race conditions by replaying mutations in chronological order
-- **Conflict detection**: Compare `updated_at` timestamps; if server version is newer, skip the queued mutation and notify user
-- **Data freshness**: Re-sync on every page visit when online; cache expiry set to 24 hours for stale detection
+### Hooks
+
+**`useCompetitionCategories(levelId)`** — fetch categories for a level, structured as flat list (tree built in UI)
+**`useCreateCategory`, `useDeleteCategory`, `useUpdateCategory`** — CRUD mutations that also manage the linked sub_event for leaf nodes
+
+---
+
+## Part 2: Category-Level Advancement
+
+Advancement already works at the level/sub-event level. With categories:
+- Each leaf category (= sub_event) advances its own top contestants to the matching category in the next level
+- The `LevelAdvancementSettings` component gets a note: "With categories, advancement happens per category"
+- The advancement logic in `useLevelAdvancement` will iterate leaf sub_events independently
+
+No schema changes needed — advancement already copies registrations per sub_event.
+
+---
+
+## Part 3: Special Awards & Judge Voting
+
+### Database Changes
+
+**New table: `special_awards`**
+- `id`, `competition_id` (FK), `name` (e.g. "Best Student Choreographer"), `description`, `sort_order`, `created_at`
+- RLS: organizer/admin can CRUD; judges can SELECT
+
+**New table: `special_award_votes`**
+- `id`, `special_award_id` (FK), `judge_id` (FK to auth.users via user_id pattern), `contestant_registration_id` (FK), `sub_event_id` (FK), `created_at`
+- UNIQUE(`special_award_id`, `judge_id`) — one vote per judge per award
+- RLS: judges can INSERT/UPDATE their own; organizer/admin/tabulator can SELECT all
+
+### UI Changes
+
+**Competition Settings — new "Special Awards" section** (in CompetitionDetail tab or alongside Rubric)
+- CRUD list for defining awards: name, description
+- Preset suggestions: "Best Performing School", "Best Student Choreographer", "Most Disciplined School", "Best Costumed Group", "Best Overall Folk Dance", "Most Outstanding Dancer (Male)", "Most Outstanding Dancer (Female)", "Best Classical Dance", "Best Limbo Dance"
+
+**Judge Scoring page — Final Round Awards card**
+- When the level is marked as `is_final_round` and special awards exist, show an "Awards Voting" card
+- For each award: dropdown/search to select a contestant from the level's registrations
+- Saves to `special_award_votes`
+- Judge can change their vote until scoring is certified
+
+**Results / Master Sheet — Awards tab**
+- Show vote tallies per award
+- Display winner (most votes) for each award
+
+### Hooks
+
+**`useSpecialAwards(competitionId)`** — fetch awards
+**`useSpecialAwardVotes(competitionId, subEventId)`** — fetch/upsert votes
+**`useCreateSpecialAward`, `useDeleteSpecialAward`** — CRUD
+
+---
 
 ## Files Changed
 
-| File | Action |
-|------|--------|
-| `package.json` | Add `idb` dependency |
-| `src/lib/offline-db.ts` | New — IndexedDB schema and helpers |
-| `src/hooks/useOfflineCache.ts` | New — prefetch and cache seeding |
-| `src/hooks/useOfflineQueue.ts` | New — offline mutation queue |
-| `src/components/shared/OfflineBanner.tsx` | New — sync status UI |
-| `src/components/shared/ConnectionIndicator.tsx` | Update — integrate offline state |
-| `src/hooks/useJudgeScores.ts` | Update — wrap mutations with offline queue |
-| `src/hooks/useChiefJudge.ts` | Update — wrap mutations with offline queue |
-| `src/hooks/useTabulator.ts` | Update — wrap mutations with offline queue |
-| `src/pages/JudgeScoring.tsx` | Update — add offline cache + banner |
-| `src/pages/ChiefJudgeDashboard.tsx` | Update — add offline cache + banner |
-| `src/pages/TabulatorDashboard.tsx` | Update — add offline cache + banner |
-| `vite.config.ts` | Update — extend SW runtime caching |
+| File | Action | Description |
+|------|--------|-------------|
+| Migration SQL | New | `competition_categories`, `special_awards`, `special_award_votes` tables + `structure_type` column on levels |
+| `src/hooks/useCompetitions.ts` | Update | Add category + special award hooks |
+| `src/components/competition/LevelsManager.tsx` | Update | Add structure toggle, render CategoriesPanel when "categories" mode |
+| `src/components/competition/CategoriesPanel.tsx` | New | Tree UI for managing category hierarchy |
+| `src/components/competition/SpecialAwardsManager.tsx` | New | CRUD UI for defining special awards |
+| `src/components/competition/SpecialAwardsVoting.tsx` | New | Judge voting card for final round awards |
+| `src/pages/JudgeScoring.tsx` | Update | Show awards voting card when final round |
+| `src/pages/LevelMasterSheet.tsx` | Update | Add awards results section |
+| `src/pages/CompetitionDetail.tsx` | Update | Add Special Awards tab/section |
+
+## Implementation Order
+
+1. Database migration (categories table, special awards tables, structure_type column)
+2. Category tree hooks + CategoriesPanel component
+3. LevelsManager integration (structure toggle)
+4. Special awards CRUD hooks + manager component
+5. Judge voting card on scoring page
+6. Awards results display on master sheet
 
