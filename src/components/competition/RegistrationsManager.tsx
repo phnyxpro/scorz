@@ -299,17 +299,19 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <SlotPickerCell
-          regId={reg.id}
-          subEventId={reg.sub_event_id}
-          slot={slot}
-          allSlots={allSlots}
-          onAssign={onSlotAssign}
-          onUpdate={onSlotUpdate}
-          formatTime={formatTime}
-        />
-      </TableCell>
+      {showSlotColumn && (
+        <TableCell>
+          <SlotPickerCell
+            regId={reg.id}
+            subEventId={reg.sub_event_id}
+            slot={slot}
+            allSlots={allSlots}
+            onAssign={onSlotAssign}
+            onUpdate={onSlotUpdate}
+            formatTime={formatTime}
+          />
+        </TableCell>
+      )}
       <TableCell>
         <Popover>
           <PopoverTrigger asChild>
