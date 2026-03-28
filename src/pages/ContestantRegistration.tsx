@@ -150,6 +150,7 @@ export function OnBehalfRegistrationForm({
       sub_event_id: data.selectedSubEventId,
       special_entry_type: data.specialEntryType || null,
       status: "approved",
+      custom_field_values: customFieldValues,
     } as any, {
       onSuccess: async (createdReg: any) => {
         if (data.selectedSlotId && createdReg?.id) {
@@ -181,7 +182,7 @@ export function OnBehalfRegistrationForm({
               transition={{ duration: 0.2 }}
             >
               {availableSteps[currentStep].id === "personal" && <PersonalStep />}
-              {availableSteps[currentStep].id === "bio" && <BioStep />}
+              {availableSteps[currentStep].id === "bio" && <BioStep customFields={customFields} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
               {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId} />}
               {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
               {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId} />}
