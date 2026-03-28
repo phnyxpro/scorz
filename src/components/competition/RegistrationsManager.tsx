@@ -927,6 +927,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onMoveDown={handleMoveDown}
                     onInlineNameSave={handleInlineNameSave}
                     onInlineNumberSave={handleInlineNumberSave}
+                    showSlotColumn={showSlotColumn}
                   />
                 ))}
               </TableBody>
