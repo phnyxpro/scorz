@@ -881,9 +881,11 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <TableHead className="text-xs">
                   <SortHeader label="Age" field="age" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </TableHead>
-                <TableHead className="text-xs">
-                  <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                </TableHead>
+                {showSlotColumn && (
+                  <TableHead className="text-xs">
+                    <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  </TableHead>
+                )}
                 <TableHead className="text-xs">
                   <SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </TableHead>
@@ -894,7 +896,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {paginatedFiltered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={showSlotColumn ? 8 : 7} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
