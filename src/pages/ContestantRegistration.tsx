@@ -594,12 +594,60 @@ function EventStep({ competitionId }: { competitionId: string }) {
   // Get special entries for the selected level
   const selectedLevel = levels?.find(l => l.id === selectedLevelId);
   const specialEntries: { type: string; label: string }[] = (selectedLevel as any)?.special_entries || [];
+  const isCategories = (selectedLevel as any)?.structure_type === "categories";
+
+  // Fetch categories for category-structured levels
+  const { data: allCategories } = useQuery({
+    queryKey: ["categories-for-registration", selectedLevelId],
+    enabled: !!selectedLevelId && isCategories,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", selectedLevelId!)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Category selection state
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
+
+  // Derive top-level and child categories
+  const topCategories = useMemo(
+    () => allCategories?.filter(c => !c.parent_id) || [],
+    [allCategories]
+  );
+  const childCategories = useMemo(
+    () => allCategories?.filter(c => c.parent_id === selectedCategoryId) || [],
+    [allCategories, selectedCategoryId]
+  );
+  const grandchildCategories = useMemo(
+    () => allCategories?.filter(c => c.parent_id === selectedSubCategoryId) || [],
+    [allCategories, selectedSubCategoryId]
+  );
+
+  // When a leaf category is selected, auto-set its sub_event_id
+  const selectLeafCategory = (cat: any) => {
+    if (cat.sub_event_id) {
+      setValue("selectedSubEventId", cat.sub_event_id);
+      setValue("selectedSlotId", "");
+    }
+  };
 
   useEffect(() => {
     if (levels?.length && !selectedLevelId) {
       setValue("selectedLevelId", levels[0].id);
     }
   }, [levels, selectedLevelId, setValue]);
+
+  // Clear category selections when level changes
+  useEffect(() => {
+    setSelectedCategoryId("");
+    setSelectedSubCategoryId("");
+  }, [selectedLevelId]);
 
   // Clear special entry type when level changes and new level doesn't have that type
   useEffect(() => {
@@ -612,7 +660,7 @@ function EventStep({ competitionId }: { competitionId: string }) {
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <CardTitle>Select Your Category</CardTitle>
-        <CardDescription>Choose the level and sub-event you wish to compete in.</CardDescription>
+        <CardDescription>Choose the level and category you wish to compete in.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {levels && levels.length > 0 && (
@@ -664,45 +712,162 @@ function EventStep({ competitionId }: { competitionId: string }) {
           </div>
         )}
 
-        <div className="space-y-3">
-          <Label>Available Sessions</Label>
-          {subEvents && subEvents.length > 0 ? (
-            <div className="grid gap-3">
-              {subEvents.map(se => (
-                <button
-                  key={se.id}
-                  type="button"
-                  onClick={() => {
-                    setValue("selectedSubEventId", se.id);
-                    setValue("selectedSlotId", "");
-                  }}
-                  className={`w-full text-left p-4 rounded-xl border transition-all ${selectedSubEventId === se.id
-                    ? "bg-primary/5 border-primary ring-1 ring-primary"
-                    : "bg-card border-border/50 hover:border-border"
+        {/* Category-based picker */}
+        {isCategories && topCategories.length > 0 ? (
+          <div className="space-y-4">
+            {/* Top-level categories */}
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {topCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategoryId(cat.id);
+                      setSelectedSubCategoryId("");
+                      setValue("selectedSubEventId", "");
+                      setValue("selectedSlotId", "");
+                      // If this is a leaf (no children), select it directly
+                      const hasChildren = allCategories?.some(c => c.parent_id === cat.id);
+                      if (!hasChildren) selectLeafCategory(cat);
+                    }}
+                    className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                      selectedCategoryId === cat.id
+                        ? "bg-primary/10 border-primary text-primary ring-1 ring-primary"
+                        : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
                     }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-sm uppercase tracking-tight">{se.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                        <Calendar className="h-3 w-3" /> {se.event_date || "TBA"} • {se.start_time || "TBA"}
-                      </p>
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub-categories */}
+            {selectedCategoryId && childCategories.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                className="space-y-2"
+              >
+                <Label>Sub-Category</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {childCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubCategoryId(cat.id);
+                        setValue("selectedSubEventId", "");
+                        setValue("selectedSlotId", "");
+                        const hasChildren = allCategories?.some(c => c.parent_id === cat.id);
+                        if (!hasChildren) selectLeafCategory(cat);
+                      }}
+                      className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                        selectedSubCategoryId === cat.id
+                          ? "bg-primary/10 border-primary text-primary ring-1 ring-primary"
+                          : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Grandchild categories (third level) */}
+            {selectedSubCategoryId && grandchildCategories.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                className="space-y-2"
+              >
+                <Label>Selection</Label>
+                <div className="grid gap-2">
+                  {grandchildCategories.map(cat => {
+                    const isSelected = cat.sub_event_id === selectedSubEventId;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => selectLeafCategory(cat)}
+                        className={`w-full text-left p-3 rounded-lg border text-sm transition-all flex justify-between items-center ${
+                          isSelected
+                            ? "bg-primary/5 border-primary ring-1 ring-primary"
+                            : "bg-card border-border/50 hover:border-border"
+                        }`}
+                      >
+                        <span className="font-medium">{cat.name}</span>
+                        {isSelected && (
+                          <Badge variant="default" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">
+                            <CheckCircle className="h-3 w-3" />
+                          </Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Show selected path */}
+            {selectedSubEventId && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
+                <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span>
+                  {[
+                    topCategories.find(c => c.id === selectedCategoryId)?.name,
+                    childCategories.find(c => c.id === selectedSubCategoryId)?.name,
+                    grandchildCategories.find(c => c.sub_event_id === selectedSubEventId)?.name,
+                  ].filter(Boolean).join(" › ")}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Flat sub-event picker (original) */
+          <div className="space-y-3">
+            <Label>Available Sessions</Label>
+            {subEvents && subEvents.length > 0 ? (
+              <div className="grid gap-3">
+                {subEvents.map(se => (
+                  <button
+                    key={se.id}
+                    type="button"
+                    onClick={() => {
+                      setValue("selectedSubEventId", se.id);
+                      setValue("selectedSlotId", "");
+                    }}
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${selectedSubEventId === se.id
+                      ? "bg-primary/5 border-primary ring-1 ring-primary"
+                      : "bg-card border-border/50 hover:border-border"
+                      }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-sm uppercase tracking-tight">{se.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                          <Calendar className="h-3 w-3" /> {se.event_date || "TBA"} • {se.start_time || "TBA"}
+                        </p>
+                      </div>
+                      {selectedSubEventId === se.id && (
+                        <Badge variant="default" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3" />
+                        </Badge>
+                      )}
                     </div>
-                    {selectedSubEventId === se.id && (
-                      <Badge variant="default" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">
-                        <CheckCircle className="h-3 w-3" />
-                      </Badge>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center bg-muted/20 rounded-xl border border-dashed border-border">
-              <p className="text-xs text-muted-foreground">No sessions available for this level yet.</p>
-            </div>
-          )}
-        </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center bg-muted/20 rounded-xl border border-dashed border-border">
+                <p className="text-xs text-muted-foreground">No sessions available for this level yet.</p>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
