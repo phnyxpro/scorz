@@ -273,6 +273,9 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
                 {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
                 {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
                 {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
+                {(e as any).use_time_slots === false && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Performance Order</Badge>
+                )}
                 <Pencil className="h-3 w-3 text-muted-foreground" />
               </button>
               <div className="flex items-center gap-2 shrink-0">
