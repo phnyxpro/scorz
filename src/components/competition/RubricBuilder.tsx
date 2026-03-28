@@ -54,7 +54,7 @@ const criterionSchema = z.object({
   description_4: z.string().default(""),
   description_5: z.string().default(""),
   scale_descriptions: z.record(z.string()).default({}),
-  point_values: z.record(z.coerce.number()).default({}),
+  point_values: z.record(z.union([z.coerce.number(), z.object({ min: z.coerce.number(), max: z.coerce.number() })])).default({}),
   is_bonus: z.boolean().default(false),
   applies_to_categories: z.array(z.string()).default([]),
   notes: z.string().optional(),
@@ -77,6 +77,57 @@ const DEFAULT_CRITERIA: Omit<RubricFormValues["criteria"][number], "id">[] = [
   { name: "Use of Language", guidelines: "-Word choice\n-Grammar\n-Vocabulary range", weight_percent: 16, description_1: "Poor word choice", description_2: "Basic vocabulary", description_3: "Competent language", description_4: "Rich language", description_5: "Extraordinary language", scale_descriptions: {}, point_values: {}, is_bonus: false, applies_to_categories: [], notes: "" },
   { name: "Continuity", guidelines: "-Flow\n-Transitions\n-Narrative arc", weight_percent: 16, description_1: "No coherent flow", description_2: "Occasional flow", description_3: "Generally cohesive", description_4: "Strong narrative arc", description_5: "Seamless and powerful", scale_descriptions: {}, point_values: {}, is_bonus: false, applies_to_categories: [], notes: "" },
 ];
+
+/* ─── Point Value Input (supports single value or min-max range) ─── */
+function PointValueInput({ control, index, scaleKey, compact }: { control: any; index: number; scaleKey: number; compact?: boolean }) {
+  const fieldName = `criteria.${index}.point_values.${scaleKey}` as const;
+  return (
+    <Controller control={control} name={fieldName as any} render={({ field: f }) => {
+      const val = f.value;
+      const isRange = val && typeof val === "object" && "min" in val;
+      const [rangeMode, setRangeMode] = useState(!!isRange);
+
+      if (rangeMode) {
+        const rangeVal = (typeof val === "object" && val !== null) ? val as { min: number; max: number } : { min: 0, max: 0 };
+        return (
+          <div className={compact ? "mt-1 space-y-0.5" : "space-y-0.5"}>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number" min={0}
+                value={rangeVal.min || ""}
+                onChange={(e) => f.onChange({ min: Number(e.target.value) || 0, max: rangeVal.max })}
+                className={compact ? "h-5 text-[9px] font-mono flex-1" : "h-7 text-xs font-mono w-16"}
+                placeholder="min"
+              />
+              <span className={compact ? "text-[9px] text-muted-foreground" : "text-xs text-muted-foreground"}>–</span>
+              <Input
+                type="number" min={0}
+                value={rangeVal.max || ""}
+                onChange={(e) => f.onChange({ min: rangeVal.min, max: Number(e.target.value) || 0 })}
+                className={compact ? "h-5 text-[9px] font-mono flex-1" : "h-7 text-xs font-mono w-16"}
+                placeholder="max"
+              />
+            </div>
+            <button type="button" onClick={() => { setRangeMode(false); f.onChange(rangeVal.max || 0); }} className={`${compact ? "text-[8px]" : "text-[10px]"} text-muted-foreground hover:text-foreground underline`}>Single</button>
+          </div>
+        );
+      }
+
+      return (
+        <div className={compact ? "mt-1 space-y-0.5" : "space-y-0.5"}>
+          <Input
+            type="number" min={0}
+            value={typeof val === "number" ? val : (val || "")}
+            onChange={(e) => f.onChange(Number(e.target.value) || 0)}
+            className={compact ? "h-5 text-[9px] w-full font-mono" : "h-7 text-xs w-20 font-mono"}
+            placeholder="pts"
+          />
+          <button type="button" onClick={() => { setRangeMode(true); f.onChange({ min: 0, max: typeof val === "number" ? val : 0 }); }} className={`${compact ? "text-[8px]" : "text-[10px]"} text-muted-foreground hover:text-foreground underline`}>Range</button>
+        </div>
+      );
+    }} />
+  );
+}
 
 /* ─── Sortable Table Row (Desktop) ─── */
 function SortableTableRow({
@@ -175,9 +226,7 @@ function SortableTableRow({
             )} />
           )}
           {useCustomPoints && (
-            <Controller control={control} name={`criteria.${index}.point_values.${n}` as any} render={({ field: f }) => (
-              <Input {...f} value={f.value || ""} type="number" min={0} className="h-6 text-[10px] w-full font-mono mt-1" placeholder="pts" />
-            )} />
+            <PointValueInput control={control} index={index} scaleKey={n} compact />
           )}
         </TableCell>
       ))}
@@ -310,9 +359,7 @@ function SortableAccordionCard({
                 )} />
               )}
               {useCustomPoints && (
-                <Controller control={control} name={`criteria.${index}.point_values.${n}` as any} render={({ field: f }) => (
-                  <Input {...f} value={f.value || ""} type="number" min={0} className="h-7 text-xs w-20 font-mono" placeholder="pts" />
-                )} />
+                <PointValueInput control={control} index={index} scaleKey={n} />
               )}
             </div>
           ))}

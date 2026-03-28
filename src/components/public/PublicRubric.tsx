@@ -83,9 +83,11 @@ export function PublicRubric({ criteria, penalties, infractions, scaleLabels, sc
                         <span className="text-[10px] font-medium text-foreground/70">
                           {labels.labels?.[String(level)] || `Level ${level}`}
                         </span>
-                        {pts != null && pts > 0 && (
+                        {pts != null && (typeof pts === "object" ? (
+                          <span className="text-[9px] font-mono text-secondary">{pts.min}–{pts.max} pts</span>
+                        ) : pts > 0 ? (
                           <span className="text-[9px] font-mono text-secondary">{pts} pts</span>
-                        )}
+                        ) : null)}
                         <p className="text-[10px] text-muted-foreground leading-tight">
                           {desc || ""}
                         </p>

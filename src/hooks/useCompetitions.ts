@@ -51,7 +51,7 @@ export interface RubricCriterion {
   description_4: string;
   description_5: string;
   scale_descriptions: Record<string, string>;
-  point_values: Record<string, number>;
+  point_values: Record<string, number | { min: number; max: number }>;
   is_bonus: boolean;
   applies_to_categories: string[];
   notes: string | null;
