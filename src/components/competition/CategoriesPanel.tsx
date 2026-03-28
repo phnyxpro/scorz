@@ -393,6 +393,7 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
 
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
+      <CategoryLevelSettings levelId={levelId} />
       <div className="flex gap-2">
         <Input
           placeholder="New category (e.g. Hip Hop, Classical)"
