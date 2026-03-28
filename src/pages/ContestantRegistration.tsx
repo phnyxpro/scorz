@@ -666,8 +666,6 @@ function BioStep({
           </CardContent>
         </Card>
       )}
-    </div>
-    </Card>
   );
 }
 
