@@ -325,6 +325,7 @@ export default function ContestantRegistration() {
       sub_event_id: data.selectedSubEventId,
       special_entry_type: data.specialEntryType || null,
       status: isOnBehalf ? "approved" : "pending",
+      custom_field_values: customFieldValues,
     } as any, {
       onSuccess: async (createdReg: any) => {
         if (data.selectedSlotId && createdReg?.id) {
@@ -400,7 +401,7 @@ export default function ContestantRegistration() {
                 <AccountStep data={authData} setData={setAuthData} loading={authLoading} />
               )}
               {availableSteps[currentStep].id === "personal" && <PersonalStep />}
-              {availableSteps[currentStep].id === "bio" && <BioStep />}
+              {availableSteps[currentStep].id === "bio" && <BioStep customFields={customFields} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
               {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId!} />}
               {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
               {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId!} />}
@@ -574,35 +575,98 @@ function PersonalStep() {
   );
 }
 
-function BioStep() {
+function BioStep({
+  customFields = [],
+  customFieldValues = {},
+  setCustomFieldValues,
+}: {
+  customFields?: CustomFieldDef[];
+  customFieldValues?: Record<string, string>;
+  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+}) {
   const { register, formState: { errors } } = useFormContext<RegistrationFormData>();
 
+  const updateCustomValue = (id: string, value: string) => {
+    setCustomFieldValues?.((prev) => ({ ...prev, [id]: value }));
+  };
+
   return (
-    <Card className="border-border/50 bg-card/80">
-      <CardHeader>
-        <CardTitle>Bio & Media</CardTitle>
-        <CardDescription>Tell the audience and judges about your performance.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Biography</Label>
-          <Textarea
-            {...register("bio")}
-            placeholder="Share your story or performance background..."
-            className="min-h-[120px] resize-none"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4" /> Performance Video URL
-          </Label>
-          <Input {...register("videoUrl")} placeholder="https://youtube.com/..." />
-          {errors.videoUrl && <p className="text-xs text-destructive">{errors.videoUrl.message}</p>}
-          <p className="text-[10px] text-muted-foreground italic">
-            Link to a previous performance or audition tape (YouTube, Vimeo, etc.).
-          </p>
-        </div>
-      </CardContent>
+    <div className="space-y-6">
+      <Card className="border-border/50 bg-card/80">
+        <CardHeader>
+          <CardTitle>Bio & Media</CardTitle>
+          <CardDescription>Tell the audience and judges about your performance.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Biography</Label>
+            <Textarea
+              {...register("bio")}
+              placeholder="Share your story or performance background..."
+              className="min-h-[120px] resize-none"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" /> Performance Video URL
+            </Label>
+            <Input {...register("videoUrl")} placeholder="https://youtube.com/..." />
+            {errors.videoUrl && <p className="text-xs text-destructive">{errors.videoUrl.message}</p>}
+            <p className="text-[10px] text-muted-foreground italic">
+              Link to a previous performance or audition tape (YouTube, Vimeo, etc.).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {customFields.length > 0 && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle>Additional Information</CardTitle>
+            <CardDescription>Please fill in the following details.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {customFields.map((cf) => (
+              <div key={cf.id} className="space-y-2">
+                <Label>
+                  {cf.label} {cf.required && <span className="text-destructive">*</span>}
+                </Label>
+                {cf.type === "text" && (
+                  <Input
+                    value={customFieldValues[cf.id] || ""}
+                    onChange={(e) => updateCustomValue(cf.id, e.target.value)}
+                    placeholder={cf.label}
+                  />
+                )}
+                {cf.type === "textarea" && (
+                  <Textarea
+                    value={customFieldValues[cf.id] || ""}
+                    onChange={(e) => updateCustomValue(cf.id, e.target.value)}
+                    placeholder={cf.label}
+                    className="min-h-[80px] resize-none"
+                  />
+                )}
+                {cf.type === "select" && cf.options && cf.options.length > 0 && (
+                  <Select
+                    value={customFieldValues[cf.id] || ""}
+                    onValueChange={(v) => updateCustomValue(cf.id, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Select ${cf.label}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cf.options.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
     </Card>
   );
 }
