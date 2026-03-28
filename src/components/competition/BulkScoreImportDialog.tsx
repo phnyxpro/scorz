@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import * as XLSX from "xlsx";
+import { readXLSXToJson } from "@/lib/export-utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -97,12 +97,10 @@ function parseFile(
 ): Promise<ParsedFile> {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
-        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-        const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+        const data = evt.target?.result as ArrayBuffer;
+        const json = await readXLSXToJson<Record<string, any>>(data);
 
         if (json.length === 0) {
           resolve({

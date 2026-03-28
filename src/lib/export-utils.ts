@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -29,12 +29,18 @@ export function exportCSV(rows: SheetRow[], filename: string) {
 }
 
 /** Export data as XLSX and trigger download */
-export function exportXLSX(rows: SheetRow[], filename: string, sheetName = "Sheet1") {
+export async function exportXLSX(rows: SheetRow[], filename: string, sheetName = "Sheet1") {
   if (!rows.length) return;
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, `${filename}.xlsx`);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(sheetName);
+  const headers = Object.keys(rows[0]);
+  ws.addRow(headers);
+  for (const row of rows) {
+    ws.addRow(headers.map((h) => row[h]));
+  }
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  triggerDownload(blob, `${filename}.xlsx`);
 }
 
 /** Export data as Google Sheets compatible CSV */
@@ -142,14 +148,46 @@ export async function exportMultipleElementsAsPDF(
 }
 
 /** Export multi-sheet XLSX workbook */
-export function exportMultiSheetXLSX(sheets: { name: string; rows: SheetRow[] }[], filename: string) {
+export async function exportMultiSheetXLSX(sheets: { name: string; rows: SheetRow[] }[], filename: string) {
   if (!sheets.length) return;
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
   for (const sheet of sheets) {
-    const ws = XLSX.utils.json_to_sheet(sheet.rows.length ? sheet.rows : [{}]);
-    XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31)); // Excel 31-char tab limit
+    const ws = wb.addWorksheet(sheet.name.slice(0, 31));
+    const sheetRows = sheet.rows.length ? sheet.rows : [{}];
+    const headers = Object.keys(sheetRows[0]);
+    ws.addRow(headers);
+    for (const row of sheetRows) {
+      ws.addRow(headers.map((h) => row[h]));
+    }
   }
-  XLSX.writeFile(wb, `${filename}.xlsx`);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  triggerDownload(blob, `${filename}.xlsx`);
+}
+
+/** Read XLSX/CSV file buffer into JSON rows */
+export async function readXLSXToJson<T extends Record<string, any> = Record<string, any>>(
+  data: ArrayBuffer
+): Promise<T[]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(data);
+  const ws = wb.worksheets[0];
+  if (!ws || ws.rowCount < 2) return [];
+  const headers: string[] = [];
+  ws.getRow(1).eachCell((cell, colNumber) => {
+    headers[colNumber - 1] = String(cell.value ?? "");
+  });
+  const rows: T[] = [];
+  for (let i = 2; i <= ws.rowCount; i++) {
+    const row = ws.getRow(i);
+    const obj: Record<string, any> = {};
+    headers.forEach((h, idx) => {
+      const cell = row.getCell(idx + 1);
+      obj[h] = cell.value ?? "";
+    });
+    rows.push(obj as T);
+  }
+  return rows;
 }
 
 /** Export HTML element as branded landscape letter PDF (borderless) */

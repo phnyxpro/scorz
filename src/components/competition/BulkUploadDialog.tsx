@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { mapAgeCategory, extractGuardianName, parseTimeSlot, getAgeCategoryLabel, isMinorCategory } from "@/lib/age-categories";
-import * as XLSX from "xlsx";
+import { readXLSXToJson } from "@/lib/export-utils";
 
 // Registration fields we map to
 const FIELD_OPTIONS = [
@@ -91,12 +91,10 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
-        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-        const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: "" });
+        const data = evt.target?.result as ArrayBuffer;
+        const json = await readXLSXToJson<Record<string, string>>(data);
         if (json.length === 0) {
           toast({ title: "Empty file", variant: "destructive" });
           return;
