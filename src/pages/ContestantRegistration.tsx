@@ -224,6 +224,8 @@ export default function ContestantRegistration() {
   const { data: existing, isLoading: regLoading } = useMyRegistration(isOnBehalf ? undefined : competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
+  const { data: customFields = [] } = useCustomFields(competitionId);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [currentStep, setCurrentStep] = useState(0);
   const [authLoading, setAuthLoading] = useState(false);
