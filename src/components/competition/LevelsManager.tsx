@@ -328,9 +328,17 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
               <Label className="text-xs">Event Name *</Label>
               <Input placeholder="e.g. Semi-Finals Night" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-            <div>
-              <Label className="text-xs">Location</Label>
-              <Input placeholder="Venue or room" value={location} onChange={(e) => setLocation(e.target.value)} />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Switch id="virtual-toggle-se" checked={isVirtual} onCheckedChange={setIsVirtual} />
+                <Label htmlFor="virtual-toggle-se" className="text-xs">Virtual Event</Label>
+              </div>
+              {!isVirtual && (
+                <div>
+                  <Label className="text-xs">Location</Label>
+                  <Input placeholder="Venue or room" value={location} onChange={(e) => setLocation(e.target.value)} />
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-xs">Date</Label>
