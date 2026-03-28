@@ -435,19 +435,23 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
       {
         onSuccess: async (newLevel: any) => {
           setNewName("");
-          // Check if the previous level uses categories
+          // Check if any previous level uses categories
           if (levels && levels.length > 0) {
-            const prevLevel = levels[levels.length - 1];
-            if ((prevLevel as any).structure_type === "categories") {
-              const { data: cats } = await supabase
-                .from("competition_categories")
-                .select("id")
-                .eq("level_id", prevLevel.id)
-                .limit(1);
-              if (cats && cats.length > 0) {
-                setSourceLevelForCopy(prevLevel);
-                setNewLevelId(newLevel.id);
-                setCopyDialogOpen(true);
+            // Scan backwards to find the most recent level with categories
+            for (let i = levels.length - 1; i >= 0; i--) {
+              const prevLevel = levels[i];
+              if ((prevLevel as any).structure_type === "categories") {
+                const { data: cats } = await supabase
+                  .from("competition_categories")
+                  .select("id")
+                  .eq("level_id", prevLevel.id)
+                  .limit(1);
+                if (cats && cats.length > 0) {
+                  setSourceLevelForCopy(prevLevel);
+                  setNewLevelId(newLevel.id);
+                  setCopyDialogOpen(true);
+                  break;
+                }
               }
             }
           }
