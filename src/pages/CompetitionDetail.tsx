@@ -18,6 +18,7 @@ import { ActiveScoringManager } from "@/components/competition/ActiveScoringMana
 import { BrandingManager } from "@/components/competition/BrandingManager";
 import { EventChat } from "@/components/chat/EventChat";
 import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
+import { SpecialAwardsManager } from "@/components/competition/SpecialAwardsManager";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -307,6 +308,7 @@ export default function CompetitionDetail() {
                 <SelectItem value="rules">Rules</SelectItem>
                 <SelectItem value="rubric">Rubric</SelectItem>
                 <SelectItem value="penalties">Penalties</SelectItem>
+                <SelectItem value="awards">Awards</SelectItem>
                 <SelectItem value="scoring">Scoring</SelectItem>
                 <SelectItem value="registrations">Registrations</SelectItem>
                 <SelectItem value="slots">Time Slots</SelectItem>
@@ -323,6 +325,7 @@ export default function CompetitionDetail() {
               <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
               <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
               <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+              <TabsTrigger value="awards" className="flex-shrink-0">Awards</TabsTrigger>
               <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
               <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
               <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
@@ -548,6 +551,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="penalties">
           <PenaltyConfig competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="awards">
+          <SpecialAwardsManager competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="registrations">
