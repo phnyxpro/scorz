@@ -142,15 +142,26 @@ export function CategoryLevelSettings({ levelId }: { levelId: string }) {
       </CollapsibleTrigger>
       <CollapsibleContent className="px-3 pb-3 space-y-4">
         {/* Location */}
-        <div className="space-y-1">
-          <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</Label>
-          <Input
-            placeholder="Venue / Room"
-            value={settings.location}
-            onChange={(e) => setSettings(s => ({ ...s, location: e.target.value }))}
-            onBlur={() => applySettings({ location: settings.location })}
-            className="h-8 text-xs"
-          />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={settings.is_virtual}
+              onCheckedChange={(v) => applySettings({ is_virtual: v })}
+            />
+            <Label className="text-xs">Virtual Event</Label>
+          </div>
+          {!settings.is_virtual && (
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</Label>
+              <Input
+                placeholder="Venue / Room"
+                value={settings.location}
+                onChange={(e) => setSettings(s => ({ ...s, location: e.target.value }))}
+                onBlur={() => applySettings({ location: settings.location })}
+                className="h-8 text-xs"
+              />
+            </div>
+          )}
         </div>
 
         {/* Date & Time */}
