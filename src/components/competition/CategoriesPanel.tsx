@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ChevronRight, ChevronDown, FolderTree, Link2, Download } from "lucide-react";
+import { CategoryLevelSettings, DEFAULT_SETTINGS } from "@/components/competition/CategoryLevelSettings";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -90,10 +91,35 @@ function useLinkSubEvent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ categoryId, levelId, fullPath }: { categoryId: string; levelId: string; fullPath: string }) => {
+      // Fetch current level settings from an existing linked sub_event
+      const { data: existing } = await supabase
+        .from("sub_events")
+        .select("location, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
+        .eq("level_id", levelId)
+        .limit(1)
+        .maybeSingle();
+
+      const insertPayload: Record<string, any> = {
+        level_id: levelId,
+        name: fullPath,
+      };
+      if (existing) {
+        insertPayload.location = existing.location;
+        insertPayload.event_date = existing.event_date;
+        insertPayload.start_time = existing.start_time;
+        insertPayload.end_time = existing.end_time;
+        insertPayload.voting_enabled = existing.voting_enabled;
+        insertPayload.use_time_slots = existing.use_time_slots;
+        insertPayload.ticketing_type = existing.ticketing_type;
+        insertPayload.ticket_price = existing.ticket_price;
+        insertPayload.max_tickets = existing.max_tickets;
+        insertPayload.external_ticket_url = existing.external_ticket_url;
+      }
+
       // Create a sub_event for this leaf category
       const { data: se, error: seErr } = await supabase
         .from("sub_events")
-        .insert({ level_id: levelId, name: fullPath })
+        .insert(insertPayload as any)
         .select()
         .single();
       if (seErr) throw seErr;
@@ -367,6 +393,7 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
 
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
+      <CategoryLevelSettings levelId={levelId} />
       <div className="flex gap-2">
         <Input
           placeholder="New category (e.g. Hip Hop, Classical)"
