@@ -1453,6 +1453,7 @@ export type Database = {
           ticketing_type: string
           timer_visible: boolean
           updated_at: string
+          use_time_slots: boolean
           voting_enabled: boolean
         }
         Insert: {
@@ -1473,6 +1474,7 @@ export type Database = {
           ticketing_type?: string
           timer_visible?: boolean
           updated_at?: string
+          use_time_slots?: boolean
           voting_enabled?: boolean
         }
         Update: {
@@ -1493,6 +1495,7 @@ export type Database = {
           ticketing_type?: string
           timer_visible?: boolean
           updated_at?: string
+          use_time_slots?: boolean
           voting_enabled?: boolean
         }
         Relationships: [

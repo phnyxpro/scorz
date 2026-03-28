@@ -182,6 +182,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(false);
+  const [useTimeSlots, setUseTimeSlots] = useState(true);
   const [ticketingType, setTicketingType] = useState("free");
   const [ticketPrice, setTicketPrice] = useState("");
   const [maxTickets, setMaxTickets] = useState("");
@@ -190,7 +191,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
 
   const resetForm = () => {
     setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
-    setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
+    setUseTimeSlots(true); setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
   };
 
   const openCreate = () => {
@@ -206,6 +207,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
     setVotingEnabled(e.voting_enabled || false);
+    setUseTimeSlots(e.use_time_slots !== false);
     setTicketingType(e.ticketing_type || "free");
     setTicketPrice(e.ticket_price?.toString() || "");
     setMaxTickets(e.max_tickets?.toString() || "");
@@ -220,6 +222,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
       await supabase.from("sub_events").update({
         name, location: location || null, event_date: eventDate || null,
         start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
+        use_time_slots: useTimeSlots,
         ticketing_type: ticketingType,
         ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
         max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : null,
@@ -234,6 +237,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
         {
           level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined,
           start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled,
+          use_time_slots: useTimeSlots,
           ticketing_type: ticketingType,
           ticket_price: ticketingType === "paid" ? parseFloat(ticketPrice) || 0 : 0,
           max_tickets: (ticketingType === "free" || ticketingType === "paid") && maxTickets ? parseInt(maxTickets, 10) : undefined,
@@ -269,6 +273,9 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
                 {e.location && <span className="text-muted-foreground text-xs"><MapPin className="h-3 w-3 inline" /> {e.location}</span>}
                 {e.event_date && <span className="text-muted-foreground text-xs"><Clock className="h-3 w-3 inline" /> {e.event_date}</span>}
                 {(e as any).voting_enabled && <span className="text-xs text-primary"><Vote className="h-3 w-3 inline" /> People's Choice</span>}
+                {(e as any).use_time_slots === false && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Performance Order</Badge>
+                )}
                 <Pencil className="h-3 w-3 text-muted-foreground" />
               </button>
               <div className="flex items-center gap-2 shrink-0">
@@ -331,6 +338,17 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
                 <p className="text-xs text-muted-foreground">Enable audience voting for this sub-event</p>
               </div>
               <Switch id="voting-toggle" checked={votingEnabled} onCheckedChange={setVotingEnabled} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="timeslots-toggle" className="text-sm font-medium">Use Time Slots</Label>
+                <p className="text-xs text-muted-foreground">
+                  {useTimeSlots
+                    ? "Contestants are scheduled by time slots"
+                    : "Contestants follow a manual order of performance"}
+                </p>
+              </div>
+              <Switch id="timeslots-toggle" checked={useTimeSlots} onCheckedChange={setUseTimeSlots} />
             </div>
 
             {/* Ticketing */}

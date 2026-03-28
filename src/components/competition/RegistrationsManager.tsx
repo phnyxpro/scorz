@@ -188,9 +188,10 @@ interface SortableRowProps {
   onMoveDown: (regId: string) => void;
   onInlineNameSave: (regId: string, newName: string) => void;
   onInlineNumberSave: (regId: string, newPosition: number) => void;
+  showSlotColumn: boolean;
 }
 
-function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave, showSlotColumn }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState(reg.full_name);
@@ -298,17 +299,19 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <SlotPickerCell
-          regId={reg.id}
-          subEventId={reg.sub_event_id}
-          slot={slot}
-          allSlots={allSlots}
-          onAssign={onSlotAssign}
-          onUpdate={onSlotUpdate}
-          formatTime={formatTime}
-        />
-      </TableCell>
+      {showSlotColumn && (
+        <TableCell>
+          <SlotPickerCell
+            regId={reg.id}
+            subEventId={reg.sub_event_id}
+            slot={slot}
+            allSlots={allSlots}
+            onAssign={onSlotAssign}
+            onUpdate={onSlotUpdate}
+            formatTime={formatTime}
+          />
+        </TableCell>
+      )}
       <TableCell>
         <Popover>
           <PopoverTrigger asChild>
@@ -428,7 +431,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sub_events")
-        .select("id, name, level_id")
+        .select("id, name, level_id, use_time_slots")
         .in("level_id", allLevelIds)
         .order("name");
       if (error) throw error;
@@ -504,6 +507,16 @@ export function RegistrationsManager({ competitionId }: Props) {
     allSubEvents?.forEach((se) => { map[se.id] = se.name; });
     return map;
   }, [allSubEvents]);
+
+  // Check if the currently viewed sub-event uses time slots
+  const showSlotColumn = useMemo(() => {
+    if (activeSubEventTab === "all" || activeSubEventTab === "unassigned") {
+      // Show slot column if ANY sub-event uses time slots
+      return allSubEvents?.some((se) => (se as any).use_time_slots !== false) ?? true;
+    }
+    const se = allSubEvents?.find((s) => s.id === activeSubEventTab);
+    return se ? (se as any).use_time_slots !== false : true;
+  }, [activeSubEventTab, allSubEvents]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -871,9 +884,11 @@ export function RegistrationsManager({ competitionId }: Props) {
                 <TableHead className="text-xs">
                   <SortHeader label="Age" field="age" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </TableHead>
-                <TableHead className="text-xs">
-                  <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                </TableHead>
+                {showSlotColumn && (
+                  <TableHead className="text-xs">
+                    <SortHeader label="Scheduled Slot" field="slot" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  </TableHead>
+                )}
                 <TableHead className="text-xs">
                   <SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </TableHead>
@@ -884,7 +899,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {paginatedFiltered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={showSlotColumn ? 8 : 7} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
@@ -912,6 +927,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                     onMoveDown={handleMoveDown}
                     onInlineNameSave={handleInlineNameSave}
                     onInlineNumberSave={handleInlineNumberSave}
+                    showSlotColumn={showSlotColumn}
                   />
                 ))}
               </TableBody>
