@@ -1595,6 +1595,7 @@ export type Database = {
           event_date: string | null
           external_ticket_url: string | null
           id: string
+          is_virtual: boolean
           level_id: string
           location: string | null
           max_tickets: number | null
@@ -1616,6 +1617,7 @@ export type Database = {
           event_date?: string | null
           external_ticket_url?: string | null
           id?: string
+          is_virtual?: boolean
           level_id: string
           location?: string | null
           max_tickets?: number | null
@@ -1637,6 +1639,7 @@ export type Database = {
           event_date?: string | null
           external_ticket_url?: string | null
           id?: string
+          is_virtual?: boolean
           level_id?: string
           location?: string | null
           max_tickets?: number | null

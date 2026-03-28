@@ -190,6 +190,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [isVirtual, setIsVirtual] = useState(false);
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -202,7 +203,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
   const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
-    setName(""); setLocation(""); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
+    setName(""); setLocation(""); setIsVirtual(false); setEventDate(""); setStartTime(""); setEndTime(""); setVotingEnabled(false);
     setUseTimeSlots(true); setTicketingType("free"); setTicketPrice(""); setMaxTickets(""); setExternalTicketUrl(""); setEditingId(null);
   };
 
@@ -215,6 +216,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     setEditingId(e.id);
     setName(e.name);
     setLocation(e.location || "");
+    setIsVirtual((e as any).is_virtual || false);
     setEventDate(e.event_date || "");
     setStartTime(e.start_time || "");
     setEndTime(e.end_time || "");
@@ -232,7 +234,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     if (editingId) {
       setSaving(true);
       await supabase.from("sub_events").update({
-        name, location: location || null, event_date: eventDate || null,
+        name, location: isVirtual ? null : (location || null), is_virtual: isVirtual, event_date: eventDate || null,
         start_time: startTime || null, end_time: endTime || null, voting_enabled: votingEnabled,
         use_time_slots: useTimeSlots,
         ticketing_type: ticketingType,
@@ -247,7 +249,7 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
     } else {
       create.mutate(
         {
-          level_id: levelId, name, location: location || undefined, event_date: eventDate || undefined,
+          level_id: levelId, name, location: isVirtual ? undefined : (location || undefined), is_virtual: isVirtual, event_date: eventDate || undefined,
           start_time: startTime || undefined, end_time: endTime || undefined, voting_enabled: votingEnabled,
           use_time_slots: useTimeSlots,
           ticketing_type: ticketingType,
@@ -326,9 +328,17 @@ function SubEventsPanel({ levelId }: { levelId: string }) {
               <Label className="text-xs">Event Name *</Label>
               <Input placeholder="e.g. Semi-Finals Night" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-            <div>
-              <Label className="text-xs">Location</Label>
-              <Input placeholder="Venue or room" value={location} onChange={(e) => setLocation(e.target.value)} />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Switch id="virtual-toggle-se" checked={isVirtual} onCheckedChange={setIsVirtual} />
+                <Label htmlFor="virtual-toggle-se" className="text-xs">Virtual Event</Label>
+              </div>
+              {!isVirtual && (
+                <div>
+                  <Label className="text-xs">Location</Label>
+                  <Input placeholder="Venue or room" value={location} onChange={(e) => setLocation(e.target.value)} />
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-xs">Date</Label>

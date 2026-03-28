@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 
 export interface LevelSettings {
   location: string;
+  is_virtual: boolean;
   event_date: string | null;
   start_time: string;
   end_time: string;
@@ -29,6 +30,7 @@ export interface LevelSettings {
 
 const DEFAULT_SETTINGS: LevelSettings = {
   location: "",
+  is_virtual: false,
   event_date: null,
   start_time: "",
   end_time: "",
@@ -47,7 +49,7 @@ function useLevelSettings(levelId: string) {
       // Derive settings from the first linked sub_event (they should all share the same settings)
       const { data, error } = await supabase
         .from("sub_events")
-        .select("location, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
+        .select("location, is_virtual, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
         .eq("level_id", levelId)
         .limit(1)
         .maybeSingle();
@@ -55,6 +57,7 @@ function useLevelSettings(levelId: string) {
       if (!data) return DEFAULT_SETTINGS;
       return {
         location: data.location || "",
+        is_virtual: (data as any).is_virtual ?? false,
         event_date: data.event_date || null,
         start_time: data.start_time || "",
         end_time: data.end_time || "",
@@ -85,6 +88,7 @@ function useBulkUpdateSubEvents(levelId: string) {
 
       const updatePayload: Record<string, any> = {};
       if (settings.location !== undefined) updatePayload.location = settings.location || null;
+      if (settings.is_virtual !== undefined) updatePayload.is_virtual = settings.is_virtual;
       if (settings.event_date !== undefined) updatePayload.event_date = settings.event_date || null;
       if (settings.start_time !== undefined) updatePayload.start_time = settings.start_time || null;
       if (settings.end_time !== undefined) updatePayload.end_time = settings.end_time || null;
@@ -138,15 +142,26 @@ export function CategoryLevelSettings({ levelId }: { levelId: string }) {
       </CollapsibleTrigger>
       <CollapsibleContent className="px-3 pb-3 space-y-4">
         {/* Location */}
-        <div className="space-y-1">
-          <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</Label>
-          <Input
-            placeholder="Venue / Room"
-            value={settings.location}
-            onChange={(e) => setSettings(s => ({ ...s, location: e.target.value }))}
-            onBlur={() => applySettings({ location: settings.location })}
-            className="h-8 text-xs"
-          />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={settings.is_virtual}
+              onCheckedChange={(v) => applySettings({ is_virtual: v })}
+            />
+            <Label className="text-xs">Virtual Event</Label>
+          </div>
+          {!settings.is_virtual && (
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</Label>
+              <Input
+                placeholder="Venue / Room"
+                value={settings.location}
+                onChange={(e) => setSettings(s => ({ ...s, location: e.target.value }))}
+                onBlur={() => applySettings({ location: settings.location })}
+                className="h-8 text-xs"
+              />
+            </div>
+          )}
         </div>
 
         {/* Date & Time */}

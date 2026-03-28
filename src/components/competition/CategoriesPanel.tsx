@@ -94,7 +94,7 @@ function useLinkSubEvent() {
       // Fetch current level settings from an existing linked sub_event
       const { data: existing } = await supabase
         .from("sub_events")
-        .select("location, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
+        .select("location, is_virtual, event_date, start_time, end_time, voting_enabled, use_time_slots, ticketing_type, ticket_price, max_tickets, external_ticket_url")
         .eq("level_id", levelId)
         .limit(1)
         .maybeSingle();
@@ -105,6 +105,7 @@ function useLinkSubEvent() {
       };
       if (existing) {
         insertPayload.location = existing.location;
+        insertPayload.is_virtual = (existing as any).is_virtual;
         insertPayload.event_date = existing.event_date;
         insertPayload.start_time = existing.start_time;
         insertPayload.end_time = existing.end_time;
