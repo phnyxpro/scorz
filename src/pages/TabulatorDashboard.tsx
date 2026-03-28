@@ -517,16 +517,31 @@ export default function TabulatorDashboard() {
 
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
 
+  // Offline support
+  const offlineCache = useOfflineCache(selectedCompId || undefined);
+  const offlineQueue = useOfflineQueue();
+
   if (compsLoading) return <CardGridSkeleton cards={3} />;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {/* Offline Banner */}
+      <OfflineBanner
+        isSyncing={offlineCache.isSyncing}
+        syncProgress={offlineCache.syncProgress}
+        lastSyncedAt={offlineCache.lastSyncedAt}
+        isReady={offlineCache.isReady}
+        pendingCount={offlineQueue.pendingCount}
+        isFlushing={offlineQueue.isFlushing}
+        flushErrors={offlineQueue.flushErrors}
+        onRetry={offlineQueue.retry}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
-            <ConnectionIndicator />
+            <ConnectionIndicator pendingCount={offlineQueue.pendingCount} isOfflineReady={offlineCache.isReady} />
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Select a competition, then choose a sub-event to open the workspace.
