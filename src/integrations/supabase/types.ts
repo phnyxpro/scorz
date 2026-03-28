@@ -394,6 +394,7 @@ export type Database = {
           id: string
           is_final_round: boolean
           name: string
+          schedule_dates: Json
           sort_order: number
           special_entries: Json
           structure_type: string
@@ -407,6 +408,7 @@ export type Database = {
           id?: string
           is_final_round?: boolean
           name: string
+          schedule_dates?: Json
           sort_order?: number
           special_entries?: Json
           structure_type?: string
@@ -420,6 +422,7 @@ export type Database = {
           id?: string
           is_final_round?: boolean
           name?: string
+          schedule_dates?: Json
           sort_order?: number
           special_entries?: Json
           structure_type?: string
