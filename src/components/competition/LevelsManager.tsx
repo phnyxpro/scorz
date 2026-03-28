@@ -423,12 +423,104 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const [levelsPage, setLevelsPage] = useState(1);
   const levelsPageSize = 10;
 
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [newLevelId, setNewLevelId] = useState<string | null>(null);
+  const [sourceLevelForCopy, setSourceLevelForCopy] = useState<any>(null);
+  const [copying, setCopying] = useState(false);
+
   const handleAdd = () => {
     if (!newName.trim()) return;
     create.mutate(
       { competition_id: competitionId, name: newName, sort_order: (levels?.length || 0) },
-      { onSuccess: () => setNewName("") }
+      {
+        onSuccess: async (newLevel: any) => {
+          setNewName("");
+          // Check if the previous level uses categories
+          if (levels && levels.length > 0) {
+            const prevLevel = levels[levels.length - 1];
+            if (prevLevel.structure_type === "categories") {
+              const { data: cats } = await supabase
+                .from("competition_categories")
+                .select("id")
+                .eq("level_id", prevLevel.id)
+                .limit(1);
+              if (cats && cats.length > 0) {
+                setSourceLevelForCopy(prevLevel);
+                setNewLevelId(newLevel.id);
+                setCopyDialogOpen(true);
+              }
+            }
+          }
+        },
+      }
     );
+  };
+
+  const handleCopyCategories = async () => {
+    if (!sourceLevelForCopy || !newLevelId) return;
+    setCopying(true);
+    try {
+      // Fetch all categories from source level
+      const { data: sourceCats, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", sourceLevelForCopy.id)
+        .order("sort_order");
+      if (error) throw error;
+      if (!sourceCats?.length) return;
+
+      // Set new level structure_type to categories
+      await supabase.from("competition_levels").update({ structure_type: "categories" } as any).eq("id", newLevelId);
+
+      // Map old IDs to new IDs for parent references
+      const idMap = new Map<string, string>();
+      // Process in order so parents are created before children
+      // Sort by depth (categories with no parent first, then children)
+      const sorted = [...sourceCats].sort((a, b) => {
+        const depthA = a.parent_id ? 1 : 0;
+        const depthB = b.parent_id ? 1 : 0;
+        return depthA - depthB;
+      });
+      // Multi-pass to handle deep nesting
+      const remaining = [...sorted];
+      let maxPasses = 10;
+      while (remaining.length > 0 && maxPasses-- > 0) {
+        const stillRemaining: typeof remaining = [];
+        for (const cat of remaining) {
+          const newParentId = cat.parent_id ? idMap.get(cat.parent_id) || null : null;
+          if (cat.parent_id && !newParentId) {
+            stillRemaining.push(cat);
+            continue;
+          }
+          const { data: newCat, error: insertErr } = await supabase
+            .from("competition_categories")
+            .insert({
+              level_id: newLevelId,
+              parent_id: newParentId,
+              name: cat.name,
+              color: cat.color,
+              sort_order: cat.sort_order,
+            })
+            .select()
+            .single();
+          if (insertErr) throw insertErr;
+          idMap.set(cat.id, newCat.id);
+        }
+        remaining.length = 0;
+        remaining.push(...stillRemaining);
+      }
+
+      qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+      qc.invalidateQueries({ queryKey: ["competition_categories", newLevelId] });
+      toast({ title: "Categories copied", description: `${idMap.size} categories copied to the new level.` });
+    } catch (e: any) {
+      toast({ title: "Error copying categories", description: e.message, variant: "destructive" });
+    } finally {
+      setCopying(false);
+      setCopyDialogOpen(false);
+      setNewLevelId(null);
+      setSourceLevelForCopy(null);
+    }
   };
 
   const updateLevelBanner = async (id: string, url: string | null) => {
