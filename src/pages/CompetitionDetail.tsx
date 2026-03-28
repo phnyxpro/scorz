@@ -551,6 +551,11 @@ export default function CompetitionDetail() {
               </CardContent>
             </Card>
             <RubricBuilder competitionId={id!} />
+            <RubricPreview
+              criteria={existingCriteria || []}
+              scaleLabels={(comp as any)?.rubric_scale_labels ?? { min: 1, max: 5, labels: {} }}
+              competitionName={comp?.name || "Competition"}
+            />
           </div>
         </TabsContent>
 
