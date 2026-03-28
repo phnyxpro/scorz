@@ -119,7 +119,7 @@ function useLinkSubEvent() {
       // Create a sub_event for this leaf category
       const { data: se, error: seErr } = await supabase
         .from("sub_events")
-        .insert(insertPayload)
+        .insert(insertPayload as any)
         .select()
         .single();
       if (seErr) throw seErr;
