@@ -72,12 +72,41 @@ serve(async (req) => {
     // Route: /registrations?competition_id=xxx
     if (path === "registrations") {
       const compId = url.searchParams.get("competition_id");
+
+      // Verify ownership: only return registrations for competitions owned by this user
+      if (compId) {
+        const { data: compCheck } = await supabase
+          .from("competitions")
+          .select("id")
+          .eq("id", compId)
+          .eq("created_by", keyRow.user_id)
+          .maybeSingle();
+        if (!compCheck) {
+          return new Response(JSON.stringify({ error: "Competition not found or not owned by you" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 403,
+          });
+        }
+      }
+
+      // Get all competition IDs owned by this user
+      const { data: ownedComps } = await supabase
+        .from("competitions")
+        .select("id")
+        .eq("created_by", keyRow.user_id);
+      const ownedIds = (ownedComps || []).map((c: any) => c.id);
+      if (ownedIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       let query = supabase
         .from("contestant_registrations")
         .select("id, full_name, email, status, age_category, created_at, competition_id, sub_event_id")
+        .in("competition_id", compId ? [compId] : ownedIds)
         .order("created_at", { ascending: false })
         .limit(500);
-      if (compId) query = query.eq("competition_id", compId);
       const { data, error } = await query;
       if (error) throw error;
       return new Response(JSON.stringify({ data }), {
@@ -88,12 +117,55 @@ serve(async (req) => {
     // Route: /scores?sub_event_id=xxx
     if (path === "scores") {
       const seId = url.searchParams.get("sub_event_id");
+
+      // Get all sub_event IDs belonging to user's competitions
+      const { data: ownedComps } = await supabase
+        .from("competitions")
+        .select("id")
+        .eq("created_by", keyRow.user_id);
+      const ownedCompIds = (ownedComps || []).map((c: any) => c.id);
+      if (ownedCompIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: ownedLevels } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .in("competition_id", ownedCompIds);
+      const ownedLevelIds = (ownedLevels || []).map((l: any) => l.id);
+      if (ownedLevelIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: ownedSubEvents } = await supabase
+        .from("sub_events")
+        .select("id")
+        .in("level_id", ownedLevelIds);
+      const ownedSeIds = (ownedSubEvents || []).map((se: any) => se.id);
+      if (ownedSeIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // If a specific sub_event_id was requested, verify ownership
+      if (seId && !ownedSeIds.includes(seId)) {
+        return new Response(JSON.stringify({ error: "Sub-event not found or not owned by you" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        });
+      }
+
       let query = supabase
         .from("judge_scores")
         .select("id, contestant_registration_id, judge_id, final_score, raw_total, time_penalty, is_certified, created_at, sub_event_id")
+        .in("sub_event_id", seId ? [seId] : ownedSeIds)
         .order("created_at", { ascending: false })
         .limit(500);
-      if (seId) query = query.eq("sub_event_id", seId);
       const { data, error } = await query;
       if (error) throw error;
       return new Response(JSON.stringify({ data }), {
