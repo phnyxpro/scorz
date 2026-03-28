@@ -65,14 +65,45 @@ function useCreateCategory() {
   });
 }
 
+function useRenameCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, level_id, name }: { id: string; level_id: string; name: string }) => {
+      const { error } = await supabase.from("competition_categories").update({ name }).eq("id", id);
+      if (error) throw error;
+      return level_id;
+    },
+    onSuccess: (lid) => {
+      qc.invalidateQueries({ queryKey: ["competition_categories", lid] });
+      toast({ title: "Category renamed" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+function useReorderCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ updates, level_id }: { updates: { id: string; sort_order: number }[]; level_id: string }) => {
+      for (const u of updates) {
+        const { error } = await supabase.from("competition_categories").update({ sort_order: u.sort_order }).eq("id", u.id);
+        if (error) throw error;
+      }
+      return level_id;
+    },
+    onSuccess: (lid) => {
+      qc.invalidateQueries({ queryKey: ["competition_categories", lid] });
+    },
+    onError: (e: any) => toast({ title: "Error reordering", description: e.message, variant: "destructive" }),
+  });
+}
+
 function useDeleteCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, level_id, sub_event_id }: { id: string; level_id: string; sub_event_id: string | null }) => {
-      // Delete the category (cascade will handle children)
       const { error } = await supabase.from("competition_categories").delete().eq("id", id);
       if (error) throw error;
-      // If it had a linked sub_event, delete that too
       if (sub_event_id) {
         await supabase.from("sub_events").delete().eq("id", sub_event_id);
       }
