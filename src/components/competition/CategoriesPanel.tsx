@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ChevronRight, ChevronDown, FolderTree, Link2, Download } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronDown, FolderTree, Link2, Download, Pencil, ArrowUp, ArrowDown, Check, X } from "lucide-react";
 import { CategoryLevelSettings, DEFAULT_SETTINGS } from "@/components/competition/CategoryLevelSettings";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -65,14 +65,45 @@ function useCreateCategory() {
   });
 }
 
+function useRenameCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, level_id, name }: { id: string; level_id: string; name: string }) => {
+      const { error } = await supabase.from("competition_categories").update({ name }).eq("id", id);
+      if (error) throw error;
+      return level_id;
+    },
+    onSuccess: (lid) => {
+      qc.invalidateQueries({ queryKey: ["competition_categories", lid] });
+      toast({ title: "Category renamed" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+function useReorderCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ updates, level_id }: { updates: { id: string; sort_order: number }[]; level_id: string }) => {
+      for (const u of updates) {
+        const { error } = await supabase.from("competition_categories").update({ sort_order: u.sort_order }).eq("id", u.id);
+        if (error) throw error;
+      }
+      return level_id;
+    },
+    onSuccess: (lid) => {
+      qc.invalidateQueries({ queryKey: ["competition_categories", lid] });
+    },
+    onError: (e: any) => toast({ title: "Error reordering", description: e.message, variant: "destructive" }),
+  });
+}
+
 function useDeleteCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, level_id, sub_event_id }: { id: string; level_id: string; sub_event_id: string | null }) => {
-      // Delete the category (cascade will handle children)
       const { error } = await supabase.from("competition_categories").delete().eq("id", id);
       if (error) throw error;
-      // If it had a linked sub_event, delete that too
       if (sub_event_id) {
         await supabase.from("sub_events").delete().eq("id", sub_event_id);
       }
@@ -166,6 +197,11 @@ function CategoryNode({
   onCreate,
   onDelete,
   onLink,
+  onRename,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: {
   cat: Category;
   allCategories: Category[];
@@ -175,10 +211,17 @@ function CategoryNode({
   onCreate: (parentId: string, name: string) => void;
   onDelete: (cat: Category) => void;
   onLink: (cat: Category) => void;
+  onRename: (cat: Category, newName: string) => void;
+  onMoveUp: (cat: Category) => void;
+  onMoveDown: (cat: Category) => void;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(cat.name);
   const children = tree.get(cat.id) || [];
   const isLeaf = children.length === 0;
 
@@ -187,6 +230,16 @@ function CategoryNode({
     onCreate(cat.id, newName.trim());
     setNewName("");
     setAdding(false);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!editName.trim() || editName.trim() === cat.name) {
+      setEditing(false);
+      setEditName(cat.name);
+      return;
+    }
+    onRename(cat, editName.trim());
+    setEditing(false);
   };
 
   return (
@@ -199,36 +252,100 @@ function CategoryNode({
         ) : (
           <span className="w-3.5" />
         )}
-        <span className="text-sm font-medium text-foreground flex-1">{cat.name}</span>
-        {isLeaf && cat.sub_event_id && (
+
+        {editing ? (
+          <div className="flex items-center gap-1 flex-1">
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="h-6 text-xs flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRenameSubmit();
+                if (e.key === "Escape") { setEditing(false); setEditName(cat.name); }
+              }}
+              autoFocus
+            />
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={handleRenameSubmit}>
+              <Check className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditing(false); setEditName(cat.name); }}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <span className="text-sm font-medium text-foreground flex-1 cursor-pointer" onDoubleClick={() => { setEditing(true); setEditName(cat.name); }}>
+            {cat.name}
+          </span>
+        )}
+
+        {!editing && isLeaf && cat.sub_event_id && (
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
             <Link2 className="h-2.5 w-2.5" /> Linked
           </Badge>
         )}
-        {isLeaf && !cat.sub_event_id && (
+        {!editing && isLeaf && !cat.sub_event_id && (
           <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => onLink(cat)}>
             <Link2 className="h-3 w-3 mr-1" /> Link Sub-Event
           </Button>
         )}
-        {children.length > 0 && (
+        {!editing && children.length > 0 && (
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{children.length}</Badge>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-primary"
-          onClick={() => setAdding(!adding)}
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
-          onClick={() => onDelete(cat)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+
+        {/* Reorder arrows */}
+        {!editing && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground"
+              onClick={() => onMoveUp(cat)}
+              disabled={isFirst}
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground"
+              onClick={() => onMoveDown(cat)}
+              disabled={isLast}
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
+          </>
+        )}
+
+        {!editing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground"
+            onClick={() => { setEditing(true); setEditName(cat.name); }}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+        )}
+        {!editing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-primary"
+            onClick={() => setAdding(!adding)}
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        )}
+        {!editing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+            onClick={() => onDelete(cat)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
 
       {adding && (
@@ -250,7 +367,7 @@ function CategoryNode({
         </div>
       )}
 
-      {expanded && children.map((child) => (
+      {expanded && children.map((child, idx) => (
         <CategoryNode
           key={child.id}
           cat={child}
@@ -261,6 +378,11 @@ function CategoryNode({
           onCreate={onCreate}
           onDelete={onDelete}
           onLink={onLink}
+          onRename={onRename}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          isFirst={idx === 0}
+          isLast={idx === children.length - 1}
         />
       ))}
     </div>
@@ -271,6 +393,8 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
   const { data: categories } = useCategories(levelId);
   const createCat = useCreateCategory();
   const deleteCat = useDeleteCategory();
+  const renameCat = useRenameCategory();
+  const reorderCat = useReorderCategory();
   const linkSE = useLinkSubEvent();
   const qc = useQueryClient();
   const [newRootName, setNewRootName] = useState("");
@@ -298,6 +422,25 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
   const handleLink = (cat: Category) => {
     const fullPath = getFullPath(categories || [], cat.id);
     linkSE.mutate({ categoryId: cat.id, levelId, fullPath });
+  };
+
+  const handleRename = (cat: Category, newName: string) => {
+    renameCat.mutate({ id: cat.id, level_id: levelId, name: newName });
+  };
+
+  const handleMove = (cat: Category, direction: "up" | "down") => {
+    const siblings = cat.parent_id ? (tree.get(cat.parent_id) || []) : rootCategories;
+    const idx = siblings.findIndex((c) => c.id === cat.id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= siblings.length) return;
+    reorderCat.mutate({
+      level_id: levelId,
+      updates: [
+        { id: siblings[idx].id, sort_order: siblings[swapIdx].sort_order },
+        { id: siblings[swapIdx].id, sort_order: siblings[idx].sort_order },
+      ],
+    });
   };
 
   const handleAddRoot = () => {
@@ -421,7 +564,7 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
         </div>
       )}
 
-      {rootCategories.map((cat) => (
+      {rootCategories.map((cat, idx) => (
         <CategoryNode
           key={cat.id}
           cat={cat}
@@ -432,6 +575,11 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
           onCreate={handleCreate}
           onDelete={handleDelete}
           onLink={handleLink}
+          onRename={handleRename}
+          onMoveUp={(c) => handleMove(c, "up")}
+          onMoveDown={(c) => handleMove(c, "down")}
+          isFirst={idx === 0}
+          isLast={idx === rootCategories.length - 1}
         />
       ))}
 
