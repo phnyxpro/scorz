@@ -20,6 +20,7 @@ import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import type { CustomFieldDef } from "@/components/competition/RegistrationFormsInline";
 
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -53,6 +54,25 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
+// Hook to fetch custom fields from competition form config
+function useCustomFields(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["competition_custom_fields", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("registration_form_config")
+        .eq("id", competitionId!)
+        .single();
+      if (error) throw error;
+      const cfg = data?.registration_form_config as Record<string, any> | null;
+      const customFields: CustomFieldDef[] = Array.isArray(cfg?._customFields) ? cfg._customFields : [];
+      return customFields.filter(f => f.enabled);
+    },
+  });
+}
+
 // Reusable on-behalf registration form (used in modal from RegistrationsManager)
 export function OnBehalfRegistrationForm({
   competitionId,
@@ -65,6 +85,8 @@ export function OnBehalfRegistrationForm({
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
+  const { data: customFields = [] } = useCustomFields(competitionId);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [currentStep, setCurrentStep] = useState(0);
 
