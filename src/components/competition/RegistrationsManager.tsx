@@ -188,9 +188,10 @@ interface SortableRowProps {
   onMoveDown: (regId: string) => void;
   onInlineNameSave: (regId: string, newName: string) => void;
   onInlineNumberSave: (regId: string, newPosition: number) => void;
+  showSlotColumn: boolean;
 }
 
-function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave }: SortableRowProps) {
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave, showSlotColumn }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState(reg.full_name);
