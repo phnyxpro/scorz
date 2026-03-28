@@ -438,7 +438,7 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
           // Check if the previous level uses categories
           if (levels && levels.length > 0) {
             const prevLevel = levels[levels.length - 1];
-            if (prevLevel.structure_type === "categories") {
+            if ((prevLevel as any).structure_type === "categories") {
               const { data: cats } = await supabase
                 .from("competition_categories")
                 .select("id")
