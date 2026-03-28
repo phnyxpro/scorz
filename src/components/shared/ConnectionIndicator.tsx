@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { Wifi, WifiOff, AlertTriangle, CheckCircle, CloudOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 
 type BackendStatus = "healthy" | "degraded" | "offline";
 
-export const ConnectionIndicator = React.forwardRef<HTMLSpanElement>((_props, outerRef) => {
+interface ConnectionIndicatorProps {
+  pendingCount?: number;
+  isOfflineReady?: boolean;
+}
+
+export const ConnectionIndicator = React.forwardRef<HTMLSpanElement, ConnectionIndicatorProps>(
+  ({ pendingCount = 0, isOfflineReady = false }, outerRef) => {
   const [online, setOnline] = useState(navigator.onLine);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("healthy");
   const consecutiveFailures = useRef(0);
@@ -40,7 +47,6 @@ export const ConnectionIndicator = React.forwardRef<HTMLSpanElement>((_props, ou
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Periodic health check every 30s
     checkBackend();
     checkTimer.current = setInterval(checkBackend, 30_000);
 
@@ -54,21 +60,29 @@ export const ConnectionIndicator = React.forwardRef<HTMLSpanElement>((_props, ou
   const status: BackendStatus = !online ? "offline" : backendStatus;
 
   const icon =
-    status === "offline" ? <WifiOff className="h-4 w-4 text-destructive animate-pulse" /> :
+    status === "offline" ? <CloudOff className="h-4 w-4 text-destructive animate-pulse" /> :
     status === "degraded" ? <AlertTriangle className="h-4 w-4 text-amber-500 animate-pulse" /> :
+    isOfflineReady ? <CheckCircle className="h-4 w-4 text-secondary" /> :
     <Wifi className="h-4 w-4 text-secondary" />;
 
   const label =
-    status === "offline" ? "Offline — no internet connection" :
-    status === "degraded" ? "Backend slow — experiencing timeouts" :
-    "Connected";
+    status === "offline"
+      ? (isOfflineReady ? "Offline — using cached data" : "Offline — no internet connection")
+      : status === "degraded" ? "Backend slow — experiencing timeouts"
+      : isOfflineReady ? "Connected — offline data ready"
+      : "Connected";
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center">
+          <span className="inline-flex items-center gap-1">
             {icon}
+            {pendingCount > 0 && (
+              <Badge variant="outline" className="text-[10px] h-4 min-w-4 px-1 border-amber-500/30 text-amber-600">
+                {pendingCount}
+              </Badge>
+            )}
           </span>
         </TooltipTrigger>
         <TooltipContent side="bottom">
