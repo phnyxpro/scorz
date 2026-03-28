@@ -55,6 +55,11 @@ export function useUpsertTabulatorCert() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (values: Partial<TabulatorCertification> & { sub_event_id: string; tabulator_id: string }) => {
+      if (!navigator.onLine) {
+        const { queueMutation } = await import("@/lib/offline-db");
+        await queueMutation("upsert_tab_cert", { ...values, _mutationType: "upsert_tab_cert" } as any);
+        return values;
+      }
       if (values.id) {
         const { error } = await supabase
           .from("tabulator_certifications")
@@ -74,7 +79,7 @@ export function useUpsertTabulatorCert() {
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ["tabulator_certification", v.sub_event_id] });
-      toast({ title: "Tabulator record saved" });
+      toast({ title: navigator.onLine ? "Tabulator record saved" : "Saved offline" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
