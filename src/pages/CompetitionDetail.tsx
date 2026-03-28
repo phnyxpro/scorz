@@ -19,6 +19,7 @@ import { BrandingManager } from "@/components/competition/BrandingManager";
 import { EventChat } from "@/components/chat/EventChat";
 import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
 import { SpecialAwardsManager } from "@/components/competition/SpecialAwardsManager";
+import { RubricPreview } from "@/components/competition/RubricPreview";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -551,6 +552,11 @@ export default function CompetitionDetail() {
               </CardContent>
             </Card>
             <RubricBuilder competitionId={id!} />
+            <RubricPreview
+              criteria={existingCriteria || []}
+              scaleLabels={(comp as any)?.rubric_scale_labels ?? { min: 1, max: 5, labels: {} }}
+              competitionName={comp?.name || "Competition"}
+            />
           </div>
         </TabsContent>
 
