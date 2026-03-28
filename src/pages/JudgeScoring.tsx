@@ -55,6 +55,8 @@ export default function JudgeScoring() {
   // Offline support
   const offlineCache = useOfflineCache(competitionId);
   const offlineQueue = useOfflineQueue();
+  const { data: specialAwards } = useSpecialAwards(competitionId);
+  const selectedLevel = levels?.find(l => l.id === selectedLevelId) as any;
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
