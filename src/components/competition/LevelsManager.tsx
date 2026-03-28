@@ -516,6 +516,49 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   );
 }
 
+function StructureToggle({ level, competitionId }: { level: any; competitionId: string }) {
+  const qc = useQueryClient();
+  const structureType: string = level.structure_type || "sub_events";
+
+  const handleToggle = async (newType: string) => {
+    await supabase.from("competition_levels").update({ structure_type: newType } as any).eq("id", level.id);
+    qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1">
+        <span className="text-xs text-muted-foreground">Structure:</span>
+        <div className="flex gap-1">
+          {([
+            { value: "sub_events", label: "Sub-Events", icon: List },
+            { value: "categories", label: "Categories", icon: FolderTree },
+          ] as const).map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => handleToggle(value)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                structureType === value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {structureType === "sub_events" ? (
+        <SubEventsPanel levelId={level.id} />
+      ) : (
+        <CategoriesPanel levelId={level.id} />
+      )}
+    </div>
+  );
+}
+
 function SortableLevelItem({ level: l, index, competitionId, onDelete, onUpdateBanner }: {
   level: any;
   index: number;
