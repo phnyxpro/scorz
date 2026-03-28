@@ -15,8 +15,9 @@ type MutationType =
 async function executeMutation(type: MutationType, payload: Record<string, unknown>) {
   switch (type) {
     case "upsert_score": {
-      if (payload.id) {
-        const { error } = await supabase.from("judge_scores").update(payload).eq("id", payload.id as string);
+      const id = payload.id as string | undefined;
+      if (id) {
+        const { error } = await supabase.from("judge_scores").update(payload as any).eq("id", id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("judge_scores").insert(payload as any).select().single();
@@ -26,16 +27,17 @@ async function executeMutation(type: MutationType, payload: Record<string, unkno
     }
     case "certify_score": {
       const { error } = await supabase.from("judge_scores").update({
-        judge_signature: payload.judge_signature,
-        signed_at: payload.signed_at,
+        judge_signature: payload.judge_signature as string,
+        signed_at: payload.signed_at as string,
         is_certified: true,
       }).eq("id", payload.id as string);
       if (error) throw error;
       break;
     }
     case "upsert_chief_cert": {
-      if (payload.id) {
-        const { error } = await supabase.from("chief_judge_certifications").update(payload).eq("id", payload.id as string);
+      const id = payload.id as string | undefined;
+      if (id) {
+        const { error } = await supabase.from("chief_judge_certifications").update(payload as any).eq("id", id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("chief_judge_certifications").insert(payload as any).select().single();
@@ -45,16 +47,17 @@ async function executeMutation(type: MutationType, payload: Record<string, unkno
     }
     case "certify_sub_event": {
       const { error } = await supabase.from("chief_judge_certifications").update({
-        chief_judge_signature: payload.chief_judge_signature,
-        signed_at: payload.signed_at,
+        chief_judge_signature: payload.chief_judge_signature as string,
+        signed_at: payload.signed_at as string,
         is_certified: true,
       }).eq("id", payload.id as string);
       if (error) throw error;
       break;
     }
     case "upsert_tab_cert": {
-      if (payload.id) {
-        const { error } = await supabase.from("tabulator_certifications").update(payload).eq("id", payload.id as string);
+      const id = payload.id as string | undefined;
+      if (id) {
+        const { error } = await supabase.from("tabulator_certifications").update(payload as any).eq("id", id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("tabulator_certifications").insert(payload as any).select().single();
@@ -64,8 +67,8 @@ async function executeMutation(type: MutationType, payload: Record<string, unkno
     }
     case "certify_tabulator": {
       const { error } = await supabase.from("tabulator_certifications").update({
-        tabulator_signature: payload.tabulator_signature,
-        signed_at: payload.signed_at,
+        tabulator_signature: payload.tabulator_signature as string,
+        signed_at: payload.signed_at as string,
         is_certified: true,
       }).eq("id", payload.id as string);
       if (error) throw error;
