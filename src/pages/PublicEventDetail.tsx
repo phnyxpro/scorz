@@ -723,7 +723,13 @@ export default function PublicEventDetail() {
               {/* Rubric Tab */}
               <TabsContent value="rubric">
                 <div className="max-w-4xl mx-auto">
-                  <PublicRubric criteria={criteria || []} penalties={penalties || []} />
+                  <PublicRubric
+                    criteria={criteria || []}
+                    penalties={penalties || []}
+                    infractions={infractions || []}
+                    scaleLabels={(comp as any)?.rubric_scale_labels}
+                    scoringMethod={(comp as any)?.scoring_method}
+                  />
                 </div>
               </TabsContent>
             </div>
