@@ -240,12 +240,16 @@ function CategoryNode({
   );
 }
 
-export function CategoriesPanel({ levelId }: { levelId: string }) {
+export function CategoriesPanel({ levelId, competitionId }: { levelId: string; competitionId?: string }) {
   const { data: categories } = useCategories(levelId);
   const createCat = useCreateCategory();
   const deleteCat = useDeleteCategory();
   const linkSE = useLinkSubEvent();
+  const qc = useQueryClient();
   const [newRootName, setNewRootName] = useState("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importSource, setImportSource] = useState<{ id: string; name: string } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const tree = buildTree(categories || []);
   const rootCategories = tree.get(null) || [];
@@ -275,6 +279,92 @@ export function CategoriesPanel({ levelId }: { levelId: string }) {
     setNewRootName("");
   };
 
+  // Find previous level with categories for import
+  const handleImportClick = async () => {
+    if (!competitionId) return;
+    const { data: allLevels } = await supabase
+      .from("competition_levels")
+      .select("id, name, sort_order, structure_type")
+      .eq("competition_id", competitionId)
+      .order("sort_order");
+    if (!allLevels) return;
+
+    // Find current level's sort_order
+    const currentLevel = allLevels.find((l) => l.id === levelId);
+    if (!currentLevel) return;
+
+    // Scan backwards for levels with categories
+    for (let i = allLevels.length - 1; i >= 0; i--) {
+      const lvl = allLevels[i];
+      if (lvl.id === levelId) continue;
+      if ((lvl as any).structure_type === "categories") {
+        const { data: cats } = await supabase
+          .from("competition_categories")
+          .select("id")
+          .eq("level_id", lvl.id)
+          .limit(1);
+        if (cats && cats.length > 0) {
+          setImportSource({ id: lvl.id, name: lvl.name });
+          setImportDialogOpen(true);
+          return;
+        }
+      }
+    }
+    toast({ title: "No categories to import", description: "No other level has a category structure set up yet." });
+  };
+
+  const handleImportConfirm = async () => {
+    if (!importSource) return;
+    setImporting(true);
+    try {
+      const { data: sourceCats, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", importSource.id)
+        .order("sort_order");
+      if (error) throw error;
+      if (!sourceCats?.length) return;
+
+      const idMap = new Map<string, string>();
+      const remaining = [...sourceCats];
+      let maxPasses = 10;
+      while (remaining.length > 0 && maxPasses-- > 0) {
+        const stillRemaining: typeof remaining = [];
+        for (const cat of remaining) {
+          const newParentId = cat.parent_id ? idMap.get(cat.parent_id) || null : null;
+          if (cat.parent_id && !newParentId) {
+            stillRemaining.push(cat);
+            continue;
+          }
+          const { data: newCat, error: insertErr } = await supabase
+            .from("competition_categories")
+            .insert({
+              level_id: levelId,
+              parent_id: newParentId,
+              name: cat.name,
+              color: cat.color,
+              sort_order: cat.sort_order,
+            })
+            .select()
+            .single();
+          if (insertErr) throw insertErr;
+          idMap.set(cat.id, newCat.id);
+        }
+        remaining.length = 0;
+        remaining.push(...stillRemaining);
+      }
+
+      qc.invalidateQueries({ queryKey: ["competition_categories", levelId] });
+      toast({ title: "Categories imported", description: `${idMap.size} categories imported from "${importSource.name}".` });
+    } catch (e: any) {
+      toast({ title: "Error importing categories", description: e.message, variant: "destructive" });
+    } finally {
+      setImporting(false);
+      setImportDialogOpen(false);
+      setImportSource(null);
+    }
+  };
+
   return (
     <div className="pl-4 border-l border-border/50 space-y-3 mt-3">
       <div className="flex gap-2">
@@ -288,6 +378,11 @@ export function CategoriesPanel({ levelId }: { levelId: string }) {
         <Button size="sm" variant="outline" onClick={handleAddRoot} disabled={!newRootName.trim() || createCat.isPending} className="h-8 text-xs shrink-0">
           <Plus className="h-3 w-3 mr-1" /> Add Category
         </Button>
+        {competitionId && (
+          <Button size="sm" variant="outline" onClick={handleImportClick} className="h-8 text-xs shrink-0">
+            <Download className="h-3 w-3 mr-1" /> Import from Level
+          </Button>
+        )}
       </div>
 
       {rootCategories.length === 0 && (
@@ -317,6 +412,28 @@ export function CategoriesPanel({ levelId }: { levelId: string }) {
           Leaf categories (no children) are automatically linked to sub-events for scoring.
         </p>
       )}
+
+      <AlertDialog open={importDialogOpen} onOpenChange={(open) => {
+        if (!open) { setImportDialogOpen(false); setImportSource(null); }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Download className="h-4 w-4" /> Import Categories
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Import the category structure from <strong>"{importSource?.name}"</strong> into this level?
+              This will copy all categories and subcategories. Existing categories in this level will not be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={importing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleImportConfirm} disabled={importing}>
+              {importing ? "Importing…" : "Import Categories"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
