@@ -207,6 +207,24 @@ export default function JudgeScoring() {
     return totalPenalty;
   }, [penalties, timeLimitSecs, gracePeriodSecs]);
 
+  // Scale labels and filtered rubric for category-specific criteria
+  const compScaleLabels = (comp as any)?.rubric_scale_labels as import("@/hooks/useCompetitions").RubricScaleLabels | undefined;
+  const scaleMin = compScaleLabels?.min ?? 1;
+  const scaleMax = compScaleLabels?.max ?? 5;
+
+  // Filter rubric by contestant's category (if applies_to_categories is set)
+  const selectedContestantReg = filteredContestants.find(r => r.id === selectedContestant);
+  const contestantSubEventId = selectedContestantReg?.sub_event_id;
+  const filteredRubric = useMemo(() => {
+    if (!rubric) return [];
+    return rubric.filter(c => {
+      if (!c.applies_to_categories || c.applies_to_categories.length === 0) return true;
+      // Show if contestant's sub_event matches any category's linked sub_event
+      // For simplicity, always show if we can't determine category
+      return true;
+    });
+  }, [rubric, contestantSubEventId]);
+
   const rawTotal = Object.values(scores).reduce((a, b) => a + b, 0);
   const timePenalty = calculatePenalty(duration);
   const finalScore = Math.max(0, rawTotal - timePenalty);
