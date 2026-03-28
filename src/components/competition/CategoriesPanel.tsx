@@ -393,6 +393,8 @@ export function CategoriesPanel({ levelId, competitionId }: { levelId: string; c
   const { data: categories } = useCategories(levelId);
   const createCat = useCreateCategory();
   const deleteCat = useDeleteCategory();
+  const renameCat = useRenameCategory();
+  const reorderCat = useReorderCategory();
   const linkSE = useLinkSubEvent();
   const qc = useQueryClient();
   const [newRootName, setNewRootName] = useState("");
