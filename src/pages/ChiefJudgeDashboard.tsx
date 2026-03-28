@@ -39,6 +39,9 @@ import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { motion } from "framer-motion";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
 
 export default function ChiefJudgeDashboard() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -52,6 +55,10 @@ export default function ChiefJudgeDashboard() {
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+
+  // Offline support
+  const offlineCache = useOfflineCache(competitionId);
+  const offlineQueue = useOfflineQueue();
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
@@ -182,6 +189,17 @@ export default function ChiefJudgeDashboard() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Offline Banner */}
+      <OfflineBanner
+        isSyncing={offlineCache.isSyncing}
+        syncProgress={offlineCache.syncProgress}
+        lastSyncedAt={offlineCache.lastSyncedAt}
+        isReady={offlineCache.isReady}
+        pendingCount={offlineQueue.pendingCount}
+        isFlushing={offlineQueue.isFlushing}
+        flushErrors={offlineQueue.flushErrors}
+        onRetry={offlineQueue.retry}
+      />
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)}>
           <ArrowLeft className="h-4 w-4" />
@@ -189,7 +207,7 @@ export default function ChiefJudgeDashboard() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">Chief Judge Dashboard <ConnectionIndicator /></h1>
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">Chief Judge Dashboard <ConnectionIndicator pendingCount={offlineQueue.pendingCount} isOfflineReady={offlineCache.isReady} /></h1>
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
