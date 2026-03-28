@@ -505,6 +505,16 @@ export function RegistrationsManager({ competitionId }: Props) {
     return map;
   }, [allSubEvents]);
 
+  // Check if the currently viewed sub-event uses time slots
+  const showSlotColumn = useMemo(() => {
+    if (activeSubEventTab === "all" || activeSubEventTab === "unassigned") {
+      // Show slot column if ANY sub-event uses time slots
+      return allSubEvents?.some((se) => (se as any).use_time_slots !== false) ?? true;
+    }
+    const se = allSubEvents?.find((s) => s.id === activeSubEventTab);
+    return se ? (se as any).use_time_slots !== false : true;
+  }, [activeSubEventTab, allSubEvents]);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
