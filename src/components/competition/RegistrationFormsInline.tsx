@@ -5,10 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { User, Info, Calendar, PenTool, Save, Loader2 } from "lucide-react";
+import { User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical } from "lucide-react";
 import { useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { AGE_CATEGORIES } from "@/lib/age-categories";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +22,16 @@ interface FieldConfig {
   required: boolean;
 }
 
-type FormConfig = Record<string, FieldConfig>;
+export interface CustomFieldDef {
+  id: string;
+  label: string;
+  type: "text" | "textarea" | "select";
+  options?: string[];
+  enabled: boolean;
+  required: boolean;
+}
+
+type FormConfig = Record<string, FieldConfig> & { _customFields?: CustomFieldDef[] };
 
 const DEFAULT_CONFIG: FormConfig = {
   firstName: { enabled: true, required: true },
@@ -46,7 +53,6 @@ const DEFAULT_CONFIG: FormConfig = {
   guardianSignature: { enabled: true, required: false },
 };
 
-// Fields that cannot be disabled (core identity)
 const LOCKED_FIELDS = new Set(["firstName", "lastName", "email"]);
 
 interface FieldDef {
@@ -62,6 +68,7 @@ const sectionIcon: Record<string, React.ElementType> = {
   bio: Info,
   event: Calendar,
   legal: PenTool,
+  custom: Plus,
 };
 
 export function RegistrationFormsInline({ competitionId }: Props) {
@@ -84,6 +91,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   });
 
   const [config, setConfig] = useState<FormConfig>(DEFAULT_CONFIG);
+  const [customFields, setCustomFields] = useState<CustomFieldDef[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -91,16 +99,17 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     if (competition?.registration_form_config) {
       const saved = competition.registration_form_config as Record<string, any>;
       if (Object.keys(saved).length > 0) {
-        // Merge saved config with defaults to pick up any new fields
-        const merged = { ...DEFAULT_CONFIG };
+        const merged: FormConfig = { ...DEFAULT_CONFIG };
         for (const key of Object.keys(merged)) {
-          if (saved[key]) {
+          if (key !== "_customFields" && saved[key]) {
             merged[key] = { ...merged[key], ...saved[key] };
           }
         }
         setConfig(merged);
+        setCustomFields(Array.isArray(saved._customFields) ? saved._customFields : []);
       } else {
         setConfig(DEFAULT_CONFIG);
+        setCustomFields([]);
       }
     }
   }, [competition]);
@@ -113,12 +122,44 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
+  const addCustomField = () => {
+    const newField: CustomFieldDef = {
+      id: `cf_${Date.now()}`,
+      label: "",
+      type: "text",
+      enabled: true,
+      required: false,
+    };
+    setCustomFields((prev) => [...prev, newField]);
+    setDirty(true);
+  };
+
+  const updateCustomField = (id: string, updates: Partial<CustomFieldDef>) => {
+    setCustomFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+    );
+    setDirty(true);
+  };
+
+  const removeCustomField = (id: string) => {
+    setCustomFields((prev) => prev.filter((f) => f.id !== id));
+    setDirty(true);
+  };
+
   const handleSave = async () => {
+    // Validate custom fields have labels
+    const emptyLabel = customFields.find((f) => !f.label.trim());
+    if (emptyLabel) {
+      toast({ title: "Custom field missing label", description: "All custom fields need a label before saving.", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
     try {
+      const fullConfig = { ...config, _customFields: customFields };
       const { error } = await supabase
         .from("competitions")
-        .update({ registration_form_config: config as any })
+        .update({ registration_form_config: fullConfig as any })
         .eq("id", competitionId);
       if (error) throw error;
       toast({ title: "Form configuration saved" });
@@ -208,50 +249,17 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                   const locked = LOCKED_FIELDS.has(field.key);
 
                   return (
-                    <div
+                    <FieldRow
                       key={field.key}
-                      className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
-                        fc.enabled
-                          ? "border-border/40 bg-card/60"
-                          : "border-border/20 bg-muted/20 opacity-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {/* Enable toggle */}
-                        <Switch
-                          checked={fc.enabled}
-                          disabled={locked}
-                          onCheckedChange={(v) => updateField(field.key, "enabled", v)}
-                          className="shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-sm font-medium text-foreground">{field.label}</span>
-                            {locked && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                Required
-                              </Badge>
-                            )}
-                            {field.note && (
-                              <span className="text-[10px] text-muted-foreground">({field.note})</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground capitalize">{field.type === "signature" ? "Signature pad" : field.type}</span>
-                        </div>
-                      </div>
-
-                      {/* Required toggle */}
-                      {!locked && fc.enabled && (
-                        <div className="flex items-center gap-1.5 shrink-0 mt-2 sm:mt-0">
-                          <Label className="text-[10px] text-muted-foreground">Required</Label>
-                          <Switch
-                            checked={fc.required}
-                            onCheckedChange={(v) => updateField(field.key, "required", v)}
-                            className="scale-75"
-                          />
-                        </div>
-                      )}
-                    </div>
+                      label={field.label}
+                      typeLabel={field.type === "signature" ? "Signature pad" : field.type}
+                      note={field.note}
+                      enabled={fc.enabled}
+                      required={fc.required}
+                      locked={locked}
+                      onToggleEnabled={(v) => updateField(field.key, "enabled", v)}
+                      onToggleRequired={(v) => updateField(field.key, "required", v)}
+                    />
                   );
                 })}
               </div>
@@ -259,6 +267,183 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           </Card>
         );
       })}
+
+      {/* Custom Fields Section */}
+      <Card className="border-border/40 bg-muted/10">
+        <CardContent className="p-3 sm:p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium text-foreground">Custom Fields</h3>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={addCustomField} className="gap-1.5 text-xs h-7">
+              <Plus className="h-3 w-3" /> Add Field
+            </Button>
+          </div>
+
+          {customFields.length === 0 && (
+            <p className="text-xs text-muted-foreground italic py-2">
+              No custom fields yet. Add fields like "T-Shirt Size", "Dietary Requirements", etc.
+            </p>
+          )}
+
+          <div className="space-y-2">
+            {customFields.map((cf) => (
+              <CustomFieldRow
+                key={cf.id}
+                field={cf}
+                onUpdate={(updates) => updateCustomField(cf.id, updates)}
+                onRemove={() => removeCustomField(cf.id)}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FieldRow({
+  label,
+  typeLabel,
+  note,
+  enabled,
+  required,
+  locked,
+  onToggleEnabled,
+  onToggleRequired,
+}: {
+  label: string;
+  typeLabel: string;
+  note?: string;
+  enabled: boolean;
+  required: boolean;
+  locked: boolean;
+  onToggleEnabled: (v: boolean) => void;
+  onToggleRequired: (v: boolean) => void;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
+        enabled
+          ? "border-border/40 bg-card/60"
+          : "border-border/20 bg-muted/20 opacity-50"
+      }`}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Switch
+          checked={enabled}
+          disabled={locked}
+          onCheckedChange={onToggleEnabled}
+          className="shrink-0"
+        />
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            {locked && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                Required
+              </Badge>
+            )}
+            {note && (
+              <span className="text-[10px] text-muted-foreground">({note})</span>
+            )}
+          </div>
+          <span className="text-[10px] text-muted-foreground capitalize">{typeLabel}</span>
+        </div>
+      </div>
+
+      {!locked && enabled && (
+        <div className="flex items-center gap-1.5 shrink-0 mt-2 sm:mt-0">
+          <Label className="text-[10px] text-muted-foreground">Required</Label>
+          <Switch
+            checked={required}
+            onCheckedChange={onToggleRequired}
+            className="scale-75"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomFieldRow({
+  field,
+  onUpdate,
+  onRemove,
+}: {
+  field: CustomFieldDef;
+  onUpdate: (updates: Partial<CustomFieldDef>) => void;
+  onRemove: () => void;
+}) {
+  const [optionsText, setOptionsText] = useState(field.options?.join(", ") || "");
+
+  return (
+    <div
+      className={`p-3 rounded-lg border transition-colors space-y-2 ${
+        field.enabled
+          ? "border-border/40 bg-card/60"
+          : "border-border/20 bg-muted/20 opacity-50"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={field.enabled}
+          onCheckedChange={(v) => onUpdate({ enabled: v })}
+          className="shrink-0"
+        />
+        <Input
+          value={field.label}
+          onChange={(e) => onUpdate({ label: e.target.value })}
+          placeholder="Field label (e.g. T-Shirt Size)"
+          className="h-8 text-sm flex-1"
+        />
+        <Select
+          value={field.type}
+          onValueChange={(v) => onUpdate({ type: v as CustomFieldDef["type"] })}
+        >
+          <SelectTrigger className="w-[110px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="text">Text</SelectItem>
+            <SelectItem value="textarea">Text Area</SelectItem>
+            <SelectItem value="select">Dropdown</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-1 shrink-0">
+          <Label className="text-[10px] text-muted-foreground">Req</Label>
+          <Switch
+            checked={field.required}
+            onCheckedChange={(v) => onUpdate({ required: v })}
+            className="scale-75"
+          />
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+          onClick={onRemove}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      {field.type === "select" && (
+        <div className="pl-10">
+          <Input
+            value={optionsText}
+            onChange={(e) => {
+              setOptionsText(e.target.value);
+              const opts = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+              onUpdate({ options: opts });
+            }}
+            placeholder="Options (comma-separated, e.g. S, M, L, XL)"
+            className="h-7 text-xs"
+          />
+        </div>
+      )}
     </div>
   );
 }

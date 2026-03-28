@@ -654,6 +654,7 @@ export type Database = {
           contestant_signature: string | null
           contestant_signed_at: string | null
           created_at: string
+          custom_field_values: Json
           email: string
           full_name: string
           guardian_email: string | null
@@ -683,6 +684,7 @@ export type Database = {
           contestant_signature?: string | null
           contestant_signed_at?: string | null
           created_at?: string
+          custom_field_values?: Json
           email: string
           full_name: string
           guardian_email?: string | null
@@ -712,6 +714,7 @@ export type Database = {
           contestant_signature?: string | null
           contestant_signed_at?: string | null
           created_at?: string
+          custom_field_values?: Json
           email?: string
           full_name?: string
           guardian_email?: string | null
