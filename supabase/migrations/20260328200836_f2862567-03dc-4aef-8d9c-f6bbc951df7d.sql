@@ -1,0 +1,1 @@
+ALTER TABLE public.contestant_registrations ADD COLUMN custom_field_values jsonb NOT NULL DEFAULT '{}'::jsonb;
