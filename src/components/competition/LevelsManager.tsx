@@ -8,7 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown, FolderTree, List } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown, FolderTree, List, Copy } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays, parseISO } from "date-fns";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { CategoriesPanel } from "@/components/competition/CategoriesPanel";
@@ -412,12 +423,104 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const [levelsPage, setLevelsPage] = useState(1);
   const levelsPageSize = 10;
 
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [newLevelId, setNewLevelId] = useState<string | null>(null);
+  const [sourceLevelForCopy, setSourceLevelForCopy] = useState<any>(null);
+  const [copying, setCopying] = useState(false);
+
   const handleAdd = () => {
     if (!newName.trim()) return;
     create.mutate(
       { competition_id: competitionId, name: newName, sort_order: (levels?.length || 0) },
-      { onSuccess: () => setNewName("") }
+      {
+        onSuccess: async (newLevel: any) => {
+          setNewName("");
+          // Check if the previous level uses categories
+          if (levels && levels.length > 0) {
+            const prevLevel = levels[levels.length - 1];
+            if ((prevLevel as any).structure_type === "categories") {
+              const { data: cats } = await supabase
+                .from("competition_categories")
+                .select("id")
+                .eq("level_id", prevLevel.id)
+                .limit(1);
+              if (cats && cats.length > 0) {
+                setSourceLevelForCopy(prevLevel);
+                setNewLevelId(newLevel.id);
+                setCopyDialogOpen(true);
+              }
+            }
+          }
+        },
+      }
     );
+  };
+
+  const handleCopyCategories = async () => {
+    if (!sourceLevelForCopy || !newLevelId) return;
+    setCopying(true);
+    try {
+      // Fetch all categories from source level
+      const { data: sourceCats, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", sourceLevelForCopy.id)
+        .order("sort_order");
+      if (error) throw error;
+      if (!sourceCats?.length) return;
+
+      // Set new level structure_type to categories
+      await supabase.from("competition_levels").update({ structure_type: "categories" } as any).eq("id", newLevelId);
+
+      // Map old IDs to new IDs for parent references
+      const idMap = new Map<string, string>();
+      // Process in order so parents are created before children
+      // Sort by depth (categories with no parent first, then children)
+      const sorted = [...sourceCats].sort((a, b) => {
+        const depthA = a.parent_id ? 1 : 0;
+        const depthB = b.parent_id ? 1 : 0;
+        return depthA - depthB;
+      });
+      // Multi-pass to handle deep nesting
+      const remaining = [...sorted];
+      let maxPasses = 10;
+      while (remaining.length > 0 && maxPasses-- > 0) {
+        const stillRemaining: typeof remaining = [];
+        for (const cat of remaining) {
+          const newParentId = cat.parent_id ? idMap.get(cat.parent_id) || null : null;
+          if (cat.parent_id && !newParentId) {
+            stillRemaining.push(cat);
+            continue;
+          }
+          const { data: newCat, error: insertErr } = await supabase
+            .from("competition_categories")
+            .insert({
+              level_id: newLevelId,
+              parent_id: newParentId,
+              name: cat.name,
+              color: cat.color,
+              sort_order: cat.sort_order,
+            })
+            .select()
+            .single();
+          if (insertErr) throw insertErr;
+          idMap.set(cat.id, newCat.id);
+        }
+        remaining.length = 0;
+        remaining.push(...stillRemaining);
+      }
+
+      qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+      qc.invalidateQueries({ queryKey: ["competition_categories", newLevelId] });
+      toast({ title: "Categories copied", description: `${idMap.size} categories copied to the new level.` });
+    } catch (e: any) {
+      toast({ title: "Error copying categories", description: e.message, variant: "destructive" });
+    } finally {
+      setCopying(false);
+      setCopyDialogOpen(false);
+      setNewLevelId(null);
+      setSourceLevelForCopy(null);
+    }
   };
 
   const updateLevelBanner = async (id: string, url: string | null) => {
@@ -456,6 +559,7 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   };
 
   return (
+    <>
     <Card className="border-border/50 bg-card/80">
       <CardHeader>
         <div className="flex items-center gap-2">
@@ -513,6 +617,34 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
         </DndContext>
       </CardContent>
     </Card>
+
+    <AlertDialog open={copyDialogOpen} onOpenChange={(open) => {
+      if (!open) {
+        setCopyDialogOpen(false);
+        setNewLevelId(null);
+        setSourceLevelForCopy(null);
+      }
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Copy className="h-4 w-4" /> Copy Categories from Previous Level?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            The previous level <strong>"{sourceLevelForCopy?.name}"</strong> uses a category structure.
+            Would you like to copy its categories into the new level? This will replicate the full category tree
+            so you don't have to set it up again.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={copying}>No, start fresh</AlertDialogCancel>
+          <AlertDialogAction onClick={handleCopyCategories} disabled={copying}>
+            {copying ? "Copying…" : "Yes, copy categories"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
