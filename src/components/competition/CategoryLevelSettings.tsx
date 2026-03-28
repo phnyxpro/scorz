@@ -88,6 +88,7 @@ function useBulkUpdateSubEvents(levelId: string) {
 
       const updatePayload: Record<string, any> = {};
       if (settings.location !== undefined) updatePayload.location = settings.location || null;
+      if (settings.is_virtual !== undefined) updatePayload.is_virtual = settings.is_virtual;
       if (settings.event_date !== undefined) updatePayload.event_date = settings.event_date || null;
       if (settings.start_time !== undefined) updatePayload.start_time = settings.start_time || null;
       if (settings.end_time !== undefined) updatePayload.end_time = settings.end_time || null;
