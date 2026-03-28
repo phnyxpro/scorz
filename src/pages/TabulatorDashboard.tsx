@@ -29,6 +29,9 @@ import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { MasterSheetExporter } from "@/components/tabulator/MasterSheetExporter";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
