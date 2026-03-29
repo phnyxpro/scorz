@@ -8,13 +8,14 @@ import {
   useContestantVotes,
   useSubEventNames,
 } from "@/hooks/useContestantProfile";
+import { useContestantAdvancements } from "@/hooks/useRegistrationForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink, ArrowUpRight, Clock } from "lucide-react";
 import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,7 @@ export default function ContestantProfile() {
   const { data: scores } = useContestantScores(registrationIds);
   const { data: voteCounts } = useContestantVotes(registrationIds);
   const { data: subEvents } = useSubEventNames(subEventIds);
+  const { data: advancements } = useContestantAdvancements(registrationIds);
 
   const compMap = useMemo(() => {
     const m: Record<string, { name: string; status: string }> = {};
@@ -189,10 +191,11 @@ export default function ContestantProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="votes">Votes</TabsTrigger>
+          <TabsTrigger value="advancements">Promotions</TabsTrigger>
           <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
 
@@ -401,6 +404,68 @@ export default function ContestantProfile() {
             {competitionIds.map((compId) => (
               <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
             ))}
+          </motion.div>
+        </TabsContent>
+
+        {/* Advancements Tab */}
+        <TabsContent value="advancements">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowUpRight className="h-4 w-4 text-primary" /> Promotions
+                </CardTitle>
+                <CardDescription>History of sub-event and level advancements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!advancements || advancements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No advancement records found.
+                  </p>
+                ) : (
+                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                    {advancements.map((adv, idx) => {
+                      const reg = registrations?.find((r) => r.id === adv.registration_id);
+                      const comp = reg ? compMap[reg.competition_id] : null;
+                      
+                      // Using subEventMap since we fetch all sub_event_ids in useSubEventNames? 
+                      // Note: We might not have the old/new sub-events in subEventMap if the user is no longer assigned to them.
+                      // For now we'll just show the IDs if names aren't in the map.
+                      const fromName = adv.from_sub_event_id && subEventMap[adv.from_sub_event_id]?.name;
+                      const toName = subEventMap[adv.to_sub_event_id]?.name;
+
+                      return (
+                        <div key={adv.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-primary/20 bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                            <ArrowUpRight className="h-4 w-4 text-primary" />
+                          </div>
+                          
+                          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded bg-muted/20 border border-border/50 shadow-sm">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-foreground">{comp?.name || "Competition"}</span>
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> {new Date(adv.advanced_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="text-sm mt-2 text-muted-foreground">
+                              Advanced to <span className="font-semibold text-foreground">{toName || "Next Level"}</span>
+                              {fromName && (
+                                <span className="text-xs ml-1">(from {fromName})</span>
+                              )}
+                            </div>
+                            {adv.notes && (
+                              <p className="text-xs text-muted-foreground mt-2 italic bg-muted/40 p-2 rounded">
+                                "{adv.notes}"
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         </TabsContent>
       </Tabs>

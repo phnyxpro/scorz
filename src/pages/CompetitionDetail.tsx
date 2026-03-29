@@ -10,6 +10,7 @@ import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
+import { RegistrationFormEditor } from "@/components/competition/RegistrationFormEditor";
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { BannerUpload } from "@/components/shared/BannerUpload";
@@ -102,6 +103,7 @@ export default function CompetitionDetail() {
           <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
           <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
           <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
+          <TabsTrigger value="form" className="flex-shrink-0">Registration Form</TabsTrigger>
           <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
           <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
           <TabsTrigger value="invitations" className="flex-shrink-0">Invitations</TabsTrigger>
@@ -209,6 +211,10 @@ export default function CompetitionDetail() {
 
         <TabsContent value="registrations">
           <RegistrationsManager competitionId={id!} />
+        </TabsContent>
+
+        <TabsContent value="form">
+          <RegistrationFormEditor competitionId={id!} />
         </TabsContent>
 
         <TabsContent value="slots">
