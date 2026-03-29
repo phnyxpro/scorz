@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink, Layers, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink, Layers, ChevronRight, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
 import { migrateFormConfig, getProfileFields } from "@/lib/form-builder-types";
