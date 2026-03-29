@@ -756,7 +756,7 @@ export default function JudgeScoring() {
               {/* Contestant Info — custom fields flagged for scorecard */}
               {selectedContestantReg && (
                 <ContestantInfoCard
-                  formConfig={comp?.registration_form_config}
+                  formConfig={(comp as any)?.registration_form_config}
                   customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
                 />
               )}
