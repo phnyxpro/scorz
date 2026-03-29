@@ -794,9 +794,9 @@ function FieldPropertiesPanel({
                 <div className="space-y-1.5">
                   <Label className="text-[10px]">Show when field</Label>
                   <Select
-                    value={field.logic?.show_when?.field_id || ""}
+                    value={field.logic?.show_when?.field_id || "__none__"}
                     onValueChange={(v) => onUpdate({
-                      logic: v ? {
+                      logic: v !== "__none__" ? {
                         show_when: {
                           field_id: v,
                           operator: field.logic?.show_when?.operator || "not_empty",
@@ -809,7 +809,7 @@ function FieldPropertiesPanel({
                       <SelectValue placeholder="Always show" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Always show</SelectItem>
+                      <SelectItem value="__none__">Always show</SelectItem>
                       {logicFieldCandidates.map(f => (
                         <SelectItem key={f.id} value={f.id}>{f.label || f.key || f.id}</SelectItem>
                       ))}
