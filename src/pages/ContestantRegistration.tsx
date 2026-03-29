@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar, Info, Link as LinkIcon, Clock } from "lucide-react";
@@ -21,6 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import type { CustomFieldDef } from "@/components/competition/RegistrationFormsInline";
+import { FormFieldConfig, migrateFormConfig, getCustomRegistrationFields } from "@/lib/form-builder-types";
 
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
