@@ -841,7 +841,8 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
 
   Object.entries(grouped).forEach(([seId, contestants]) => {
     const info = subEventInfo(seId);
-    const isPast = info.date && new Date(info.date) < today;
+    const seDate = info.date ? new Date(info.date + "T00:00:00") : null;
+    const isPast = seDate && (seDate.setHours(0, 0, 0, 0), seDate < today);
     if (isPast) {
       pastEntries.push([seId, contestants]);
     } else {
