@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -277,7 +278,7 @@ export default function Auth() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="login-password">Password</Label>
-                          <Input id="login-password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required placeholder="••••••••" />
+                          <PasswordInput id="login-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required placeholder="••••••••" />
                         </div>
                         <div className="flex justify-end">
                           <button type="button" onClick={handleResetPassword} className="text-xs text-primary hover:underline font-medium">Forgot password?</button>
@@ -375,7 +376,7 @@ export default function Auth() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-password">Password</Label>
-                          <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                          <PasswordInput id="signup-password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
                           {loading ? "Creating account…" : "Create Account"}

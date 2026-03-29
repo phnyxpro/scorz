@@ -8,6 +8,7 @@ import { DynamicRegistrationForm } from "@/components/registration/DynamicRegist
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, UserPlus } from "lucide-react";
@@ -139,8 +140,7 @@ export default function ContestantRegistration() {
               </div>
               <div className="space-y-2">
                 <Label>Password</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   placeholder="••••••••"
                   value={authData.password}
                   onChange={e => setAuthData({ ...authData, password: e.target.value })}
