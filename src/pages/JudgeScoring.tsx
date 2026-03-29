@@ -58,6 +58,7 @@ export default function JudgeScoring() {
   const offlineQueue = useOfflineQueue();
   const { data: specialAwards } = useSpecialAwards(competitionId);
   const [selectedLevelId, setSelectedLevelId] = useState("");
+  const selectedLevel = levels?.find(l => l.id === selectedLevelId) as any;
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [contestantSearch, setContestantSearch] = useState("");
