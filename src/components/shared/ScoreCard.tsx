@@ -17,6 +17,7 @@ interface ScoreCardProps {
   isBlank?: boolean;
   judgeName?: string;
   rubricCriteria?: RubricCriterion[];
+  formConfig?: any;
 }
 
 export function ScoreCard({
@@ -26,7 +27,8 @@ export function ScoreCard({
   judgeScore,
   isBlank = false,
   judgeName,
-  rubricCriteria = []
+  rubricCriteria = [],
+  formConfig,
 }: ScoreCardProps) {
   const cardStyle = {
     width: '8in',
