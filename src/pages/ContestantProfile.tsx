@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink, Layers, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
+import { migrateFormConfig, getProfileFields } from "@/lib/form-builder-types";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -57,6 +58,23 @@ export default function ContestantProfile() {
   const { data: scores } = useContestantScores(registrationIds);
   const { data: voteCounts } = useContestantVotes(registrationIds);
   const { data: subEvents } = useSubEventNames(subEventIds);
+
+  // Fetch competition configs for profile-flagged custom fields
+  const { data: competitionConfigs } = useQuery({
+    queryKey: ["competition_configs_for_profile", competitionIds],
+    enabled: competitionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("id, registration_form_config")
+        .in("id", competitionIds);
+      if (error) throw error;
+      return (data || []).reduce((acc, c) => {
+        acc[c.id] = c.registration_form_config;
+        return acc;
+      }, {} as Record<string, any>);
+    },
+  });
 
   const compMap = useMemo(() => {
     const m: Record<string, { name: string; status: string }> = {};

@@ -36,6 +36,7 @@ import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
+import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -751,6 +752,14 @@ export default function JudgeScoring() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Contestant Info — custom fields flagged for scorecard */}
+              {selectedContestantReg && (
+                <ContestantInfoCard
+                  formConfig={comp?.registration_form_config}
+                  customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
+                />
+              )}
 
               {commentsVisible && (
                 <Card className="border-border/50 bg-card/80">
