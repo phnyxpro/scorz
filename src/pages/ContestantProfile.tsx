@@ -366,7 +366,7 @@ export default function ContestantProfile() {
 
                     {/* Custom Fields flagged for profile */}
                     {(() => {
-                      const formCfg = competitionConfigs?.[reg.competition_id];
+                      const formCfg = (competitions || []).find(c => c.id === reg.competition_id)?.registration_form_config;
                       if (!formCfg) return null;
                       const config = migrateFormConfig(formCfg);
                       const profileFields = getProfileFields(config);
