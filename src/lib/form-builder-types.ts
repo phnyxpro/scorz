@@ -20,10 +20,27 @@ export interface FormFieldConfig {
   section?: string;
 }
 
+export interface SectionConfig {
+  id: string;
+  label: string;
+  icon?: string; // icon key for display
+  is_builtin: boolean;
+  sort_order: number;
+}
+
 export interface FormBuilderConfig {
   fields: FormFieldConfig[];
+  sections?: SectionConfig[];
   version: number; // schema version for forward compat
 }
+
+export const DEFAULT_SECTIONS: SectionConfig[] = [
+  { id: "personal", label: "Personal Info", icon: "user", is_builtin: true, sort_order: 0 },
+  { id: "bio", label: "Bio & Media", icon: "info", is_builtin: true, sort_order: 1 },
+  { id: "event", label: "Event Details", icon: "calendar", is_builtin: true, sort_order: 2 },
+  { id: "legal", label: "Legal & Consent", icon: "pen-tool", is_builtin: true, sort_order: 3 },
+  { id: "custom", label: "Custom Fields", icon: "plus", is_builtin: true, sort_order: 4 },
+];
 
 // Map old config shape → new shape (backwards compat)
 export function migrateFormConfig(raw: any): FormBuilderConfig {
@@ -129,6 +146,14 @@ export const SECTION_LABELS: Record<string, string> = {
   legal: "Legal & Consent",
   custom: "Custom Fields",
 };
+
+/** Get resolved sections list from a config, falling back to defaults */
+export function getConfigSections(config: FormBuilderConfig): SectionConfig[] {
+  if (config.sections && config.sections.length > 0) {
+    return [...config.sections].sort((a, b) => a.sort_order - b.sort_order);
+  }
+  return DEFAULT_SECTIONS;
+}
 
 /** Get fields that should be shown on scorecard from a config */
 export function getScorecardFields(config: FormBuilderConfig): FormFieldConfig[] {
