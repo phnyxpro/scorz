@@ -21,8 +21,7 @@ import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import type { CustomFieldDef } from "@/components/competition/RegistrationFormsInline";
-import { FormFieldConfig, migrateFormConfig, getCustomRegistrationFields } from "@/lib/form-builder-types";
+import { FormFieldConfig, FormBuilderConfig, migrateFormConfig, getCustomRegistrationFields, getConfigSections } from "@/lib/form-builder-types";
 
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -56,10 +55,10 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
-// Hook to fetch custom fields from competition form config (supports both old and new format)
-function useCustomFields(competitionId: string | undefined) {
+// Hook to fetch the full form builder config
+function useFormConfig(competitionId: string | undefined) {
   return useQuery({
-    queryKey: ["competition_custom_fields", competitionId],
+    queryKey: ["competition_form_config", competitionId],
     enabled: !!competitionId,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -69,13 +68,50 @@ function useCustomFields(competitionId: string | undefined) {
         .single();
       if (error) throw error;
       const raw = data?.registration_form_config;
-      const config = migrateFormConfig(raw);
-      return getCustomRegistrationFields(config);
+      return migrateFormConfig(raw);
     },
   });
 }
 
-// Reusable on-behalf registration form (used in modal from RegistrationsManager)
+/** Check if a built-in field key is enabled in the config */
+function isFieldEnabled(config: FormBuilderConfig | undefined, key: string): boolean {
+  if (!config) return true; // no config = show all
+  const field = config.fields.find(f => f.key === key);
+  if (!field) return true; // not in config = show
+  return field.enabled;
+}
+
+/** Check if a built-in field key is required in the config */
+function isFieldRequired(config: FormBuilderConfig | undefined, key: string): boolean {
+  if (!config) return false;
+  const field = config.fields.find(f => f.key === key);
+  return field?.required ?? false;
+}
+
+/** Get the configured label for a built-in field (uses config label if available) */
+function getFieldLabel(config: FormBuilderConfig | undefined, key: string, fallback: string): string {
+  if (!config) return fallback;
+  const field = config.fields.find(f => f.key === key);
+  return field?.label || fallback;
+}
+
+/** Get custom fields for a specific section */
+function getCustomFieldsForSection(config: FormBuilderConfig | undefined, section: string): FormFieldConfig[] {
+  if (!config) return [];
+  return config.fields.filter(f => !f.is_builtin && f.enabled && f.section === section)
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
+
+/** Get custom fields not assigned to a specific built-in section */
+function getCustomFieldsWithoutSection(config: FormBuilderConfig | undefined): FormFieldConfig[] {
+  if (!config) return [];
+  const builtinSections = new Set(["personal", "bio", "event", "legal"]);
+  return config.fields.filter(f => !f.is_builtin && f.enabled && (!f.section || !builtinSections.has(f.section)))
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
+
+// ─── On-Behalf Registration Form ───────────────────────────────────
+
 export function OnBehalfRegistrationForm({
   competitionId,
   onComplete,
@@ -87,7 +123,7 @@ export function OnBehalfRegistrationForm({
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
-  const { data: customFields = [] } = useCustomFields(competitionId);
+  const { data: formConfig } = useFormConfig(competitionId);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -183,11 +219,11 @@ export function OnBehalfRegistrationForm({
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {availableSteps[currentStep].id === "personal" && <PersonalStep />}
-              {availableSteps[currentStep].id === "bio" && <BioStep customFields={customFields} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
+              {availableSteps[currentStep].id === "personal" && <PersonalStep formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
+              {availableSteps[currentStep].id === "bio" && <BioStep formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
               {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId} />}
               {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
-              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId} />}
+              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId} formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
             </motion.div>
           </AnimatePresence>
 
@@ -226,7 +262,7 @@ export default function ContestantRegistration() {
   const { data: existing, isLoading: regLoading } = useMyRegistration(isOnBehalf ? undefined : competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
-  const { data: customFields = [] } = useCustomFields(competitionId);
+  const { data: formConfig } = useFormConfig(competitionId);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -251,62 +287,46 @@ export default function ContestantRegistration() {
     },
   });
 
-  useEffect(() => {
-    if (user && !isOnBehalf) {
-      methods.setValue("email", user.email || "");
-      const fullName = user.user_metadata?.full_name || "";
-      methods.setValue("firstName", fullName.split(" ")[0] || "");
-      methods.setValue("lastName", fullName.split(" ").slice(1).join(" ") || "");
-    }
-  }, [user, methods, isOnBehalf]);
-
   const handleNext = async () => {
     const stepId = availableSteps[currentStep].id;
+    let fieldsToValidate: (keyof RegistrationFormData)[] = [];
 
-    if (stepId === "account" && !user) {
-      if (!authData.email || authData.password.length < 6 || !authData.fullName) {
-        toast({ title: "Validation Error", description: "Please fill in all account fields", variant: "destructive" });
+    if (stepId === "account") {
+      if (!user) {
+        if (!authData.email || !authData.password || !authData.fullName) {
+          toast({ title: "Please fill in all account fields", variant: "destructive" });
+          return;
+        }
+        setAuthLoading(true);
+        try {
+          await signUp(authData.email, authData.password, authData.fullName);
+          toast({ title: "Account created!", description: "Please check your email to verify, then you can continue." });
+          methods.setValue("email", authData.email);
+          const parts = authData.fullName.split(" ");
+          methods.setValue("firstName", parts[0] || "");
+          methods.setValue("lastName", parts.slice(1).join(" ") || "");
+        } catch (err: any) {
+          toast({ title: "Sign up failed", description: err.message, variant: "destructive" });
+        }
+        setAuthLoading(false);
         return;
       }
-      setAuthLoading(true);
-      const { error } = await signUp(authData.email, authData.password, authData.fullName);
-      setAuthLoading(false);
-      if (error) {
-        toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
-        return;
-      }
-      toast({ title: "Account Created", description: "Verification email sent. You can now complete your registration." });
     }
 
-    let fieldsToValidate: (keyof RegistrationFormData)[] = [];
     if (stepId === "personal") fieldsToValidate = ["firstName", "lastName", "email"];
     if (stepId === "bio") fieldsToValidate = ["videoUrl"];
     if (stepId === "event") fieldsToValidate = ["selectedSubEventId"];
     if (stepId === "legal") fieldsToValidate = ["rulesAcknowledged", "contestantSig", "guardianSig"];
 
     const isValid = await methods.trigger(fieldsToValidate);
-    if (isValid) {
-      setCurrentStep(s => s + 1);
-    }
+    if (isValid) setCurrentStep(s => s + 1);
   };
 
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user || !competitionId) return;
 
-    let registrationUserId = user.id;
-    if (isOnBehalf) {
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("email", data.email)
-        .maybeSingle();
-      registrationUserId = existingProfile?.user_id || user.id;
-    } else {
-      await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
-    }
-
     createReg.mutate({
-      user_id: registrationUserId,
+      user_id: user.id,
       competition_id: competitionId,
       full_name: `${data.firstName} ${data.lastName}`.trim(),
       email: data.email,
@@ -326,7 +346,7 @@ export default function ContestantRegistration() {
       guardian_signed_at: data.guardianSig ? new Date().toISOString() : undefined,
       sub_event_id: data.selectedSubEventId,
       special_entry_type: data.specialEntryType || null,
-      status: isOnBehalf ? "approved" : "pending",
+      status: "pending",
       custom_field_values: customFieldValues,
     } as any, {
       onSuccess: async (createdReg: any) => {
@@ -336,56 +356,24 @@ export default function ContestantRegistration() {
             .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
             .eq("id", data.selectedSlotId);
         }
-        const successMsg = isOnBehalf
-          ? "Contestant has been added and auto-approved."
-          : "Your details have been submitted successfully.";
-        toast({ title: "Registration complete", description: successMsg });
-        navigate(isOnBehalf ? `/competitions/${competitionId}` : `/competitions`);
+        toast({ title: "Registration submitted!", description: "Awaiting organiser review." });
+        navigate("/dashboard");
       },
     });
   };
 
   if (compLoading || regLoading) return <LoadingSpinner />;
-
-  // Guard: registration closed
-  const regOpen =
-    !isOnBehalf &&
-    comp &&
-    ((comp as any).registration_enabled === false ||
-      ((comp as any).registration_start_at && new Date() < new Date((comp as any).registration_start_at)) ||
-      ((comp as any).registration_end_at && new Date() > new Date((comp as any).registration_end_at)));
-
-  if (regOpen) {
-    return (
-      <div className="max-w-md mx-auto py-20 text-center space-y-4">
-        <h1 className="text-2xl font-bold">Registration Closed</h1>
-        <p className="text-muted-foreground">Registration for this competition is currently closed.</p>
-        <Button variant="outline" onClick={() => navigate("/competitions")}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Competitions
-        </Button>
-      </div>
-    );
-  }
-
-  if (existing) {
-    return <AlreadyRegisteredView status={existing.status} onBack={() => navigate("/competitions")} />;
-  }
+  if (existing) return <AlreadyRegisteredView status={existing.status} onBack={() => navigate(-1)} />;
 
   return (
-    <div className="max-w-2xl mx-auto pb-12">
-      <header className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate(isOnBehalf ? `/competitions/${competitionId}` : "/competitions")}>
-          <ArrowLeft className="h-5 w-5" />
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-12 space-y-6">
+      <div className="space-y-1">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <ArrowLeft className="mr-1 h-3 w-3" /> Back
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isOnBehalf ? "Add Contestant" : "Registration"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isOnBehalf ? `Registering on behalf · ${comp?.name}` : comp?.name}
-          </p>
-        </div>
-      </header>
+        <h1 className="text-2xl font-bold tracking-tight">{comp?.name || "Competition"}</h1>
+        <p className="text-sm text-muted-foreground">Complete each step to register.</p>
+      </div>
 
       <StepIndicator steps={availableSteps} currentStep={currentStep} />
 
@@ -402,11 +390,11 @@ export default function ContestantRegistration() {
               {availableSteps[currentStep].id === "account" && (
                 <AccountStep data={authData} setData={setAuthData} loading={authLoading} />
               )}
-              {availableSteps[currentStep].id === "personal" && <PersonalStep />}
-              {availableSteps[currentStep].id === "bio" && <BioStep customFields={customFields} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
+              {availableSteps[currentStep].id === "personal" && <PersonalStep formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
+              {availableSteps[currentStep].id === "bio" && <BioStep formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
               {availableSteps[currentStep].id === "event" && <EventStep competitionId={competitionId!} />}
               {availableSteps[currentStep].id === "schedule" && <ScheduleStep />}
-              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId!} />}
+              {availableSteps[currentStep].id === "legal" && <LegalStep competitionId={competitionId!} formConfig={formConfig} customFieldValues={customFieldValues} setCustomFieldValues={setCustomFieldValues} />}
             </motion.div>
           </AnimatePresence>
 
@@ -495,104 +483,17 @@ function AccountStep({ data, setData, loading }: { data: any, setData: any, load
   );
 }
 
-function PersonalStep() {
-  const { register, watch, formState: { errors } } = useFormContext<RegistrationFormData>();
-  const isMinor = watch("ageCategory") === "minor";
+// ─── Shared custom fields rendering ────────────────────────────────
 
-  return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur">
-      <CardHeader>
-        <CardTitle>About You</CardTitle>
-        <CardDescription>Basic details for the competition organisers.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>First Name *</Label>
-            <Input {...register("firstName")} placeholder="First Name" />
-            {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label>Last Name *</Label>
-            <Input {...register("lastName")} placeholder="Last Name" />
-            {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label>Email *</Label>
-            <Input {...register("email")} type="email" />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label>Phone</Label>
-            <Input {...register("phone")} placeholder="+1..." />
-          </div>
-          <div className="space-y-2">
-            <Label>Location</Label>
-            <Input {...register("location")} placeholder="City, State" />
-          </div>
-          <div className="space-y-2">
-            <Label>Age Category</Label>
-            <select
-              {...register("ageCategory")}
-              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-            >
-              <option value="adult">Adult</option>
-              <option value="adult_18_24">Adult | 18-24</option>
-              <option value="adult_25_34">Adult | 25-34</option>
-              <option value="adult_35_44">Adult | 35-44</option>
-              <option value="adult_45_54">Adult | 45-54</option>
-              <option value="adult_55_plus">Adult | 55+</option>
-              <option value="minor">Minor (Under 18)</option>
-            </select>
-          </div>
-        </div>
-
-        {isMinor && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            className="p-4 border border-secondary/20 rounded-lg bg-secondary/5 space-y-4 mt-6"
-          >
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <User className="h-4 w-4 text-secondary" /> Parent / Guardian Info
-            </h3>
-            <div className="space-y-2">
-              <Label>Guardian Name</Label>
-              <Input {...register("guardianName")} placeholder="Full Name" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Guardian Email</Label>
-                <Input {...register("guardianEmail")} type="email" />
-              </div>
-              <div className="space-y-2">
-                <Label>Guardian Phone</Label>
-                <Input {...register("guardianPhone")} />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </CardContent>
-    </Card>
-  );
+interface CustomFieldsSectionProps {
+  fields: FormFieldConfig[];
+  customFieldValues: Record<string, string>;
+  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+  title?: string;
+  description?: string;
 }
 
-function BioStep({
-  customFields = [],
-  customFieldValues = {},
-  setCustomFieldValues,
-}: {
-  customFields?: FormFieldConfig[];
-  customFieldValues?: Record<string, string>;
-  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
-}) {
-  const { register, formState: { errors } } = useFormContext<RegistrationFormData>();
-
-  const updateCustomValue = (id: string, value: string) => {
-    setCustomFieldValues?.((prev) => ({ ...prev, [id]: value }));
-  };
-
-  // Check conditional logic
+function CustomFieldsSection({ fields, customFieldValues, setCustomFieldValues, title, description }: CustomFieldsSectionProps) {
   const shouldShow = (field: FormFieldConfig) => {
     if (!field.logic?.show_when) return true;
     const { field_id, operator, value } = field.logic.show_when;
@@ -606,65 +507,248 @@ function BioStep({
     }
   };
 
+  const visibleFields = fields.filter(shouldShow);
+  if (visibleFields.length === 0) return null;
+
+  return (
+    <Card className="border-border/50 bg-card/80">
+      <CardHeader>
+        <CardTitle>{title || "Additional Information"}</CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          {visibleFields.map((cf) => (
+            <div key={cf.id} className={cf.width === "half" ? "sm:col-span-1" : "col-span-full"} style={{ gridColumn: cf.width === "half" ? undefined : "1 / -1" }}>
+              {cf.field_type === "section_header" ? (
+                <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border/30">{cf.label}</h3>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label>
+                    {cf.label} {cf.required && <span className="text-destructive">*</span>}
+                  </Label>
+                  {cf.help_text && <p className="text-[10px] text-muted-foreground">{cf.help_text}</p>}
+                  <CustomFieldInput
+                    field={cf}
+                    value={customFieldValues[cf.id] || ""}
+                    onChange={(v) => setCustomFieldValues?.((prev) => ({ ...prev, [cf.id]: v }))}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── PersonalStep (config-driven) ──────────────────────────────────
+
+function PersonalStep({
+  formConfig,
+  customFieldValues = {},
+  setCustomFieldValues,
+}: {
+  formConfig?: FormBuilderConfig;
+  customFieldValues?: Record<string, string>;
+  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+}) {
+  const { register, watch, formState: { errors } } = useFormContext<RegistrationFormData>();
+  const isMinor = watch("ageCategory") === "minor";
+
+  const showPhone = isFieldEnabled(formConfig, "phone");
+  const showLocation = isFieldEnabled(formConfig, "location");
+  const showAgeCategory = isFieldEnabled(formConfig, "ageCategory");
+  const showGuardianName = isFieldEnabled(formConfig, "guardianName");
+  const showGuardianEmail = isFieldEnabled(formConfig, "guardianEmail");
+
+  const customFields = getCustomFieldsForSection(formConfig, "personal");
+
   return (
     <div className="space-y-6">
-      <Card className="border-border/50 bg-card/80">
+      <Card className="border-border/50 bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle>Bio & Media</CardTitle>
-          <CardDescription>Tell the audience and judges about your performance.</CardDescription>
+          <CardTitle>About You</CardTitle>
+          <CardDescription>Basic details for the competition organisers.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Biography</Label>
-            <Textarea
-              {...register("bio")}
-              placeholder="Share your story or performance background..."
-              className="min-h-[120px] resize-none"
-            />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{getFieldLabel(formConfig, "firstName", "First Name")} *</Label>
+              <Input {...register("firstName")} placeholder="First Name" />
+              {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label>{getFieldLabel(formConfig, "lastName", "Last Name")} *</Label>
+              <Input {...register("lastName")} placeholder="Last Name" />
+              {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label>{getFieldLabel(formConfig, "email", "Email")} *</Label>
+              <Input {...register("email")} type="email" />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
+            {showPhone && (
+              <div className="space-y-2">
+                <Label>
+                  {getFieldLabel(formConfig, "phone", "Phone")}
+                  {isFieldRequired(formConfig, "phone") && <span className="text-destructive"> *</span>}
+                </Label>
+                <Input {...register("phone")} placeholder="+1..." />
+              </div>
+            )}
+            {showLocation && (
+              <div className="space-y-2">
+                <Label>
+                  {getFieldLabel(formConfig, "location", "Location")}
+                  {isFieldRequired(formConfig, "location") && <span className="text-destructive"> *</span>}
+                </Label>
+                <Input {...register("location")} placeholder="City, State" />
+              </div>
+            )}
+            {showAgeCategory && (
+              <div className="space-y-2">
+                <Label>
+                  {getFieldLabel(formConfig, "ageCategory", "Age Category")}
+                  {isFieldRequired(formConfig, "ageCategory") && <span className="text-destructive"> *</span>}
+                </Label>
+                <select
+                  {...register("ageCategory")}
+                  className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                >
+                  <option value="adult">Adult</option>
+                  <option value="adult_18_24">Adult | 18-24</option>
+                  <option value="adult_25_34">Adult | 25-34</option>
+                  <option value="adult_35_44">Adult | 35-44</option>
+                  <option value="adult_45_54">Adult | 45-54</option>
+                  <option value="adult_55_plus">Adult | 55+</option>
+                  <option value="minor">Minor (Under 18)</option>
+                </select>
+              </div>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <LinkIcon className="h-4 w-4" /> Performance Video URL
-            </Label>
-            <Input {...register("videoUrl")} placeholder="https://youtube.com/..." />
-            {errors.videoUrl && <p className="text-xs text-destructive">{errors.videoUrl.message}</p>}
-            <p className="text-[10px] text-muted-foreground italic">
-              Link to a previous performance or audition tape (YouTube, Vimeo, etc.).
-            </p>
-          </div>
+
+          {isMinor && (showGuardianName || showGuardianEmail) && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="p-4 border border-secondary/20 rounded-lg bg-secondary/5 space-y-4 mt-6"
+            >
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <User className="h-4 w-4 text-secondary" /> Parent / Guardian Info
+              </h3>
+              {showGuardianName && (
+                <div className="space-y-2">
+                  <Label>{getFieldLabel(formConfig, "guardianName", "Guardian Name")}</Label>
+                  <Input {...register("guardianName")} placeholder="Full Name" />
+                </div>
+              )}
+              <div className="grid sm:grid-cols-2 gap-3">
+                {showGuardianEmail && (
+                  <div className="space-y-2">
+                    <Label>{getFieldLabel(formConfig, "guardianEmail", "Guardian Email")}</Label>
+                    <Input {...register("guardianEmail")} type="email" />
+                  </div>
+                )}
+                {isFieldEnabled(formConfig, "guardianPhone") && (
+                  <div className="space-y-2">
+                    <Label>Guardian Phone</Label>
+                    <Input {...register("guardianPhone")} />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </CardContent>
       </Card>
 
       {customFields.length > 0 && (
-        <Card className="border-border/50 bg-card/80">
-          <CardHeader>
-            <CardTitle>Additional Information</CardTitle>
-            <CardDescription>Please fill in the following details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className={`grid gap-4`}>
-              {customFields.filter(shouldShow).map((cf) => (
-                <div key={cf.id} className={cf.width === "half" ? "sm:col-span-1" : "col-span-full"} style={{ gridColumn: cf.width === "half" ? undefined : "1 / -1" }}>
-                  {cf.field_type === "section_header" ? (
-                    <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border/30">{cf.label}</h3>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <Label>
-                        {cf.label} {cf.required && <span className="text-destructive">*</span>}
-                      </Label>
-                      {cf.help_text && <p className="text-[10px] text-muted-foreground">{cf.help_text}</p>}
-                      <CustomFieldInput field={cf} value={customFieldValues[cf.id] || ""} onChange={(v) => updateCustomValue(cf.id, v)} />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <CustomFieldsSection
+          fields={customFields}
+          customFieldValues={customFieldValues}
+          setCustomFieldValues={setCustomFieldValues}
+        />
       )}
     </div>
   );
 }
+
+// ─── BioStep (config-driven) ───────────────────────────────────────
+
+function BioStep({
+  formConfig,
+  customFieldValues = {},
+  setCustomFieldValues,
+}: {
+  formConfig?: FormBuilderConfig;
+  customFieldValues?: Record<string, string>;
+  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+}) {
+  const { register, formState: { errors } } = useFormContext<RegistrationFormData>();
+
+  const showBio = isFieldEnabled(formConfig, "bio");
+  const showVideoUrl = isFieldEnabled(formConfig, "videoUrl");
+
+  const bioCustomFields = getCustomFieldsForSection(formConfig, "bio");
+  const unassignedCustomFields = getCustomFieldsWithoutSection(formConfig);
+  const allCustomFields = [...bioCustomFields, ...unassignedCustomFields];
+
+  const hasBioContent = showBio || showVideoUrl;
+
+  return (
+    <div className="space-y-6">
+      {hasBioContent && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader>
+            <CardTitle>Bio & Media</CardTitle>
+            <CardDescription>Tell the audience and judges about your performance.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showBio && (
+              <div className="space-y-2">
+                <Label>
+                  {getFieldLabel(formConfig, "bio", "Biography")}
+                  {isFieldRequired(formConfig, "bio") && <span className="text-destructive"> *</span>}
+                </Label>
+                <Textarea
+                  {...register("bio")}
+                  placeholder="Share your story or performance background..."
+                  className="min-h-[120px] resize-none"
+                />
+              </div>
+            )}
+            {showVideoUrl && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4" /> {getFieldLabel(formConfig, "videoUrl", "Performance Video URL")}
+                  {isFieldRequired(formConfig, "videoUrl") && <span className="text-destructive"> *</span>}
+                </Label>
+                <Input {...register("videoUrl")} placeholder="https://youtube.com/..." />
+                {errors.videoUrl && <p className="text-xs text-destructive">{errors.videoUrl.message}</p>}
+                <p className="text-[10px] text-muted-foreground italic">
+                  Link to a previous performance or audition tape (YouTube, Vimeo, etc.).
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {allCustomFields.length > 0 && (
+        <CustomFieldsSection
+          fields={allCustomFields}
+          customFieldValues={customFieldValues}
+          setCustomFieldValues={setCustomFieldValues}
+          title="Additional Information"
+          description="Please fill in the following details."
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── CustomFieldInput ──────────────────────────────────────────────
 
 function CustomFieldInput({ field, value, onChange }: { field: FormFieldConfig; value: string; onChange: (v: string) => void }) {
   switch (field.field_type) {
@@ -781,6 +865,8 @@ function CustomFieldInput({ field, value, onChange }: { field: FormFieldConfig; 
   }
 }
 
+// ─── EventStep ─────────────────────────────────────────────────────
+
 function EventStep({ competitionId }: { competitionId: string }) {
   const { setValue, watch } = useFormContext<RegistrationFormData>();
   const { data: levels } = useLevels(competitionId);
@@ -790,12 +876,10 @@ function EventStep({ competitionId }: { competitionId: string }) {
 
   const { data: subEvents } = useSubEvents(selectedLevelId || undefined);
 
-  // Get special entries for the selected level
   const selectedLevel = levels?.find(l => l.id === selectedLevelId);
   const specialEntries: { type: string; label: string }[] = (selectedLevel as any)?.special_entries || [];
   const isCategories = (selectedLevel as any)?.structure_type === "categories";
 
-  // Fetch categories for category-structured levels
   const { data: allCategories } = useQuery({
     queryKey: ["categories-for-registration", selectedLevelId],
     enabled: !!selectedLevelId && isCategories,
@@ -810,11 +894,9 @@ function EventStep({ competitionId }: { competitionId: string }) {
     },
   });
 
-  // Category selection state
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
 
-  // Derive top-level and child categories
   const topCategories = useMemo(
     () => allCategories?.filter(c => !c.parent_id) || [],
     [allCategories]
@@ -828,7 +910,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
     [allCategories, selectedSubCategoryId]
   );
 
-  // When a leaf category is selected, auto-set its sub_event_id
   const selectLeafCategory = (cat: any) => {
     if (cat.sub_event_id) {
       setValue("selectedSubEventId", cat.sub_event_id);
@@ -842,13 +923,11 @@ function EventStep({ competitionId }: { competitionId: string }) {
     }
   }, [levels, selectedLevelId, setValue]);
 
-  // Clear category selections when level changes
   useEffect(() => {
     setSelectedCategoryId("");
     setSelectedSubCategoryId("");
   }, [selectedLevelId]);
 
-  // Clear special entry type when level changes and new level doesn't have that type
   useEffect(() => {
     if (specialEntryType && !specialEntries.some(e => e.type === specialEntryType)) {
       setValue("specialEntryType", "");
@@ -911,10 +990,8 @@ function EventStep({ competitionId }: { competitionId: string }) {
           </div>
         )}
 
-        {/* Category-based picker */}
         {isCategories && topCategories.length > 0 ? (
           <div className="space-y-4">
-            {/* Top-level categories */}
             <div className="space-y-2">
               <Label>Category</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -927,7 +1004,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
                       setSelectedSubCategoryId("");
                       setValue("selectedSubEventId", "");
                       setValue("selectedSlotId", "");
-                      // If this is a leaf (no children), select it directly
                       const hasChildren = allCategories?.some(c => c.parent_id === cat.id);
                       if (!hasChildren) selectLeafCategory(cat);
                     }}
@@ -943,7 +1019,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
               </div>
             </div>
 
-            {/* Sub-categories */}
             {selectedCategoryId && childCategories.length > 0 && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
@@ -976,7 +1051,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
               </motion.div>
             )}
 
-            {/* Grandchild categories (third level) */}
             {selectedSubCategoryId && grandchildCategories.length > 0 && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
@@ -1011,7 +1085,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
               </motion.div>
             )}
 
-            {/* Show selected path */}
             {selectedSubEventId && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
                 <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -1026,7 +1099,6 @@ function EventStep({ competitionId }: { competitionId: string }) {
             )}
           </div>
         ) : (
-          /* Flat sub-event picker (original) */
           <div className="space-y-3">
             <Label>Available Sessions</Label>
             {subEvents && subEvents.length > 0 ? (
@@ -1071,6 +1143,8 @@ function EventStep({ competitionId }: { competitionId: string }) {
     </Card>
   );
 }
+
+// ─── ScheduleStep ──────────────────────────────────────────────────
 
 function ScheduleStep() {
   const { setValue, watch } = useFormContext<RegistrationFormData>();
@@ -1143,11 +1217,29 @@ function ScheduleStep() {
   );
 }
 
-function LegalStep({ competitionId }: { competitionId: string }) {
+// ─── LegalStep (config-driven) ─────────────────────────────────────
+
+function LegalStep({
+  competitionId,
+  formConfig,
+  customFieldValues = {},
+  setCustomFieldValues,
+}: {
+  competitionId: string;
+  formConfig?: FormBuilderConfig;
+  customFieldValues?: Record<string, string>;
+  setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
+}) {
   const { register, setValue, watch, formState: { errors } } = useFormContext<RegistrationFormData>();
   const { data: rubric } = useRubricCriteria(competitionId);
   const { data: penalties } = usePenaltyRules(competitionId);
   const isMinor = watch("ageCategory") === "minor";
+
+  const showRulesAcknowledged = isFieldEnabled(formConfig, "rulesAcknowledged");
+  const showContestantSig = isFieldEnabled(formConfig, "contestantSignature");
+  const showGuardianSig = isFieldEnabled(formConfig, "guardianSignature");
+
+  const customFields = getCustomFieldsForSection(formConfig, "legal");
 
   return (
     <div className="space-y-6">
@@ -1182,42 +1274,58 @@ function LegalStep({ competitionId }: { competitionId: string }) {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-            <Checkbox
-              id="rules"
-              onCheckedChange={v => setValue("rulesAcknowledged", !!v)}
-              checked={watch("rulesAcknowledged")}
-            />
-            <label htmlFor="rules" className="text-sm leading-tight cursor-pointer">
-              I acknowledge that I have read the competition rules and agree to the scoring system and penalties.
-            </label>
-          </div>
-          {errors.rulesAcknowledged && <p className="text-xs text-destructive">{errors.rulesAcknowledged.message}</p>}
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/50 bg-card/80 backdrop-blur">
-        <CardHeader>
-          <CardTitle>Final Certification</CardTitle>
-          <CardDescription>Draw your signature below to complete the registration.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <SignaturePad label="Contestant Signature *" onSignature={v => setValue("contestantSig", v)} signerRole="Contestant" />
-            {errors.contestantSig && <p className="text-xs text-destructive">{errors.contestantSig.message}</p>}
-          </div>
-
-          {isMinor && (
-            <div className="space-y-2">
-              <SignaturePad label="Guardian Signature *" onSignature={v => setValue("guardianSig", v)} signerRole="Guardian" />
-              {errors.guardianSig && <p className="text-xs text-destructive">{errors.guardianSig.message}</p>}
-            </div>
+          {showRulesAcknowledged && (
+            <>
+              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
+                <Checkbox
+                  id="rules"
+                  onCheckedChange={v => setValue("rulesAcknowledged", !!v)}
+                  checked={watch("rulesAcknowledged")}
+                />
+                <label htmlFor="rules" className="text-sm leading-tight cursor-pointer">
+                  I acknowledge that I have read the competition rules and agree to the scoring system and penalties.
+                </label>
+              </div>
+              {errors.rulesAcknowledged && <p className="text-xs text-destructive">{errors.rulesAcknowledged.message}</p>}
+            </>
           )}
         </CardContent>
       </Card>
+
+      {showContestantSig && (
+        <Card className="border-border/50 bg-card/80 backdrop-blur">
+          <CardHeader>
+            <CardTitle>Final Certification</CardTitle>
+            <CardDescription>Draw your signature below to complete the registration.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <SignaturePad label={`${getFieldLabel(formConfig, "contestantSignature", "Contestant Signature")} *`} onSignature={v => setValue("contestantSig", v)} signerRole="Contestant" />
+              {errors.contestantSig && <p className="text-xs text-destructive">{errors.contestantSig.message}</p>}
+            </div>
+
+            {isMinor && showGuardianSig && (
+              <div className="space-y-2">
+                <SignaturePad label={`${getFieldLabel(formConfig, "guardianSignature", "Guardian Signature")} *`} onSignature={v => setValue("guardianSig", v)} signerRole="Guardian" />
+                {errors.guardianSig && <p className="text-xs text-destructive">{errors.guardianSig.message}</p>}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {customFields.length > 0 && (
+        <CustomFieldsSection
+          fields={customFields}
+          customFieldValues={customFieldValues}
+          setCustomFieldValues={setCustomFieldValues}
+        />
+      )}
     </div>
   );
 }
+
+// ─── Shared components ─────────────────────────────────────────────
 
 function LoadingSpinner() {
   return (
@@ -1249,5 +1357,3 @@ function AlreadyRegisteredView({ status, onBack }: { status: string, onBack: () 
     </div>
   );
 }
-
-
