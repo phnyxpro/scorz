@@ -1,6 +1,26 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+
+/** Subscribe to realtime changes on tabulator_certifications */
+export function useTabulatorCertificationRealtime(subEventId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`tab_cert_${subEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tabulator_certifications", filter: `sub_event_id=eq.${subEventId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["tabulator_certification", subEventId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, qc]);
+}
 
 export interface TabulatorCertification {
   id: string;
@@ -35,6 +55,11 @@ export function useUpsertTabulatorCert() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (values: Partial<TabulatorCertification> & { sub_event_id: string; tabulator_id: string }) => {
+      if (!navigator.onLine) {
+        const { queueMutation } = await import("@/lib/offline-db");
+        await queueMutation("upsert_tab_cert", { ...values, _mutationType: "upsert_tab_cert" } as any);
+        return values;
+      }
       if (values.id) {
         const { error } = await supabase
           .from("tabulator_certifications")
@@ -54,7 +79,7 @@ export function useUpsertTabulatorCert() {
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ["tabulator_certification", v.sub_event_id] });
-      toast({ title: "Tabulator record saved" });
+      toast({ title: navigator.onLine ? "Tabulator record saved" : "Saved offline" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

@@ -29,6 +29,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "level-sheet": "Level Sheet",
   "rules-rubric": "Rules & Rubric",
   contestants: "Contestants",
+  "contestant-scores": "Contestant Scores",
   about: "About",
 };
 

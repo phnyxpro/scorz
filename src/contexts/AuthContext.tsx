@@ -1,23 +1,25 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getTierByProductId, type SubscriptionTier } from "@/lib/stripe-tiers";
 
-type AppRole = "admin" | "organizer" | "chief_judge" | "judge" | "tabulator" | "witness" | "contestant" | "audience";
+type AppRole = "admin" | "organizer" | "judge" | "chief_judge" | "tabulator" | "witness" | "contestant" | "audience";
 
 interface MasqueradeTarget {
   userId: string;
   email: string;
   fullName: string;
+  competitionId?: string;
 }
 
 export interface SubscriptionStatus {
   subscribed: boolean;
   productId?: string;
   priceId?: string;
-  subscriptionEnd?: string;
   tier?: SubscriptionTier;
-  competitionLimit: number; // -1 = unlimited, 0 = none
+  creditsTotal: number;
+  creditsUsed: number;
+  creditsAvailable: number;
 }
 
 interface AuthContextType {
@@ -27,8 +29,9 @@ interface AuthContextType {
   roles: AppRole[];
   subscription: SubscriptionStatus;
   refreshSubscription: () => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
@@ -39,7 +42,7 @@ interface AuthContextType {
   isMasquerading: boolean;
 }
 
-const DEFAULT_SUB: SubscriptionStatus = { subscribed: false, competitionLimit: 0 };
+const DEFAULT_SUB: SubscriptionStatus = { subscribed: false, creditsTotal: 0, creditsUsed: 0, creditsAvailable: 0 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,95 +54,195 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [masquerade, setMasquerade] = useState<MasqueradeTarget | null>(null);
   const [realRoles, setRealRoles] = useState<AppRole[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus>(DEFAULT_SUB);
+  const welcomeSent = useRef(false);
 
-  const fetchRoles = useCallback(async (userId: string) => {
+  const fetchRoles = useCallback(async (userId: string, retries = 3) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        if (error) throw error;
+        const loadedRoles = data?.map((r: any) => r.role as AppRole) || [];
+        setRoles(loadedRoles);
+        return loadedRoles;
+      } catch (err) {
+        if (attempt < retries) {
+          const delay = Math.min(1000 * 2 ** attempt, 8000);
+          await new Promise((res) => setTimeout(res, delay));
+        } else {
+          console.error("Error fetching roles after retries:", err);
+          setRoles([]);
+          return [] as AppRole[];
+        }
+      }
+    }
+    return [] as AppRole[];
+  }, []);
+
+  const fireWelcomeEmail = useCallback(async (currentUser: User, userRoles: AppRole[]) => {
+    if (welcomeSent.current || userRoles.length === 0) return;
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-      if (error) throw error;
-      if (data) setRoles(data.map((r: any) => r.role as AppRole));
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("welcome_email_sent")
+        .eq("user_id", currentUser.id)
+        .single();
+      if ((profile as any)?.welcome_email_sent) { welcomeSent.current = true; return; }
+      welcomeSent.current = true;
+      const userName = currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "there";
+      await supabase.functions.invoke("send-welcome-email", {
+        body: { user_name: userName, primary_role: userRoles[0] },
+      });
     } catch (err) {
-      console.error("Error fetching roles:", err);
-      setRoles([]);
+      console.error("Welcome email error:", err);
     }
   }, []);
 
   const refreshSubscription = useCallback(async () => {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
+      if (error) {
+        setSubscription(DEFAULT_SUB);
+        return;
+      }
       if (data) {
         const tier = data.product_id ? getTierByProductId(data.product_id) : undefined;
         setSubscription({
           subscribed: data.subscribed,
           productId: data.product_id,
-          priceId: data.price_id,
-          subscriptionEnd: data.subscription_end,
           tier,
-          competitionLimit: tier ? tier.competitionLimit : 0,
+          creditsTotal: data.credits_total ?? 0,
+          creditsUsed: data.credits_used ?? 0,
+          creditsAvailable: data.credits_available ?? 0,
         });
       }
-    } catch (err) {
-      console.error("Error checking subscription:", err);
+    } catch {
       setSubscription(DEFAULT_SUB);
     }
   }, []);
 
+  const assignSignupRole = useCallback(async (currentUser: User) => {
+    const signupRole = currentUser.user_metadata?.signup_role;
+    if (!signupRole) return;
+    const allowedRoles: AppRole[] = ["organizer", "contestant", "audience"];
+    if (!allowedRoles.includes(signupRole as AppRole)) return;
+    try {
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("role", signupRole);
+      if (!existing || existing.length === 0) {
+        await supabase.from("user_roles").insert({ user_id: currentUser.id, role: signupRole });
+      }
+      await supabase.auth.updateUser({ data: { signup_role: null } });
+    } catch (err) {
+      console.error("Error assigning signup role:", err);
+    }
+  }, []);
+
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        if (event === "INITIAL_SESSION") return;
+
+        // Retry invitation acceptance on token refresh (in case initial login failed)
+        if (event === "TOKEN_REFRESHED" && session?.user) {
+          supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(({ error: rpcErr }) => {
+            if (rpcErr) console.error("accept_staff_invitations retry failed:", rpcErr);
+          });
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
           fetchRoles(session.user.id);
+
+          if (event === "SIGNED_IN") {
+            // Mark any pending staff invitations as accepted
+            supabase.rpc("accept_staff_invitations", { _user_id: session.user.id }).then(({ error: rpcErr }) => {
+              if (rpcErr) console.error("accept_staff_invitations failed:", rpcErr);
+            });
+
+            assignSignupRole(session.user).then(() =>
+              fetchRoles(session.user!.id).then((r) => {
+                fireWelcomeEmail(session.user!, r || []);
+                // Log login activity for tracked roles
+                const trackedRoles: AppRole[] = ["organizer", "judge", "chief_judge", "tabulator", "contestant"];
+                const matchedRoles = (r || []).filter((role) => trackedRoles.includes(role));
+                if (matchedRoles.length > 0) {
+                  const userName = session.user!.user_metadata?.full_name || session.user!.email || "Unknown";
+                  const roleLabel = matchedRoles.join(", ");
+                  supabase.from("activity_log").insert({
+                    event_type: "user_login",
+                    title: `${userName} logged in`,
+                    description: `Role(s): ${roleLabel}`,
+                    actor_id: session.user!.id,
+                    metadata: { roles: matchedRoles, email: session.user!.email },
+                  }).then(() => {});
+                }
+              })
+            );
+          }
         } else if (event === "SIGNED_OUT") {
           setRoles([]);
           setSubscription(DEFAULT_SUB);
         }
 
-        if (event !== "INITIAL_SESSION") {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (initialSessionHandled) return;
+      initialSessionHandled = true;
+
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        fetchRoles(session.user.id);
+        await fetchRoles(session.user.id);
       }
+
       setLoading(false);
     });
 
     return () => authSub.unsubscribe();
-  }, [fetchRoles]);
+  }, [fetchRoles, assignSignupRole, fireWelcomeEmail]);
 
-  // Check subscription after roles are loaded (need auth token)
   useEffect(() => {
     if (session?.user) {
       refreshSubscription();
     }
   }, [session?.user?.id, refreshSubscription]);
 
-  // Periodic refresh every 60s
   useEffect(() => {
     if (!session?.user) return;
     const interval = setInterval(refreshSubscription, 60_000);
     return () => clearInterval(interval);
   }, [session?.user?.id, refreshSubscription]);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role?: AppRole) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, ...(role ? { signup_role: role } : {}) },
         emailRedirectTo: window.location.origin,
       },
+    });
+    return { error };
+  };
+
+  const signInWithMagicLink = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/welcome` },
     });
     return { error };
   };
@@ -200,7 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, loading, roles, subscription, refreshSubscription,
-      signUp, signIn, signOut, resetPassword, signInWithGoogle, hasRole,
+      signUp, signIn, signInWithMagicLink, signOut, resetPassword, signInWithGoogle, hasRole,
       masquerade, startMasquerade, stopMasquerade, isMasquerading,
     }}>
       {children}

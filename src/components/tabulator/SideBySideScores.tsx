@@ -1,30 +1,45 @@
 import { Link } from "react-router-dom";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Timer } from "lucide-react";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 interface Props {
   scores: JudgeScore[];
   rubricNames: string[];
-  /** Map from numeric index ("0","1",...) to rubric name */
   indexToName?: Record<string, string>;
   contestantName: string;
   contestantUserId?: string;
+  judgeProfiles?: Record<string, string>;
+  durationSeconds?: number;
 }
 
-export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId }: Props) {
+function formatDuration(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export function SideBySideScores({ scores, rubricNames, indexToName = {}, contestantName, contestantUserId, judgeProfiles = {}, durationSeconds }: Props) {
   if (scores.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-foreground">
-        {contestantUserId ? (
-          <Link to={`/profile/${contestantUserId}`} className="hover:text-primary hover:underline transition-colors">
-            {contestantName}
-          </Link>
-        ) : contestantName}
-      </h4>
+      <div className="flex items-center gap-2 flex-wrap">
+        <h4 className="text-sm font-medium text-foreground">
+          {contestantUserId ? (
+            <Link to={`/profile/${contestantUserId}`} className="hover:text-secondary hover:underline transition-colors">
+              {contestantName}
+            </Link>
+          ) : contestantName}
+        </h4>
+        {durationSeconds != null && durationSeconds > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-mono">
+            <Timer className="h-2.5 w-2.5" />
+            {formatDuration(durationSeconds)}
+          </Badge>
+        )}
+      </div>
       <div className="overflow-x-auto border border-border rounded-md">
         <Table>
           <TableHeader>
@@ -42,24 +57,23 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
           <TableBody>
             {scores.map((s) => {
               const cs = s.criterion_scores as Record<string, number>;
-              // Remap numeric indices to rubric names
               const mapped: Record<string, number> = {};
               for (const [k, v] of Object.entries(cs)) {
                 mapped[indexToName[k] ?? k] = v;
               }
               return (
                 <TableRow key={s.id}>
-                  <TableCell className="font-mono text-xs">{s.judge_id}</TableCell>
+                  <TableCell className="text-xs">{judgeProfiles[s.judge_id] || s.judge_id.slice(0, 8)}</TableCell>
                   {rubricNames.map((n) => (
                     <TableCell key={n} className="text-center font-mono text-xs">
                       {mapped[n] != null ? mapped[n] : "—"}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center font-mono text-xs">{s.raw_total}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{s.raw_total.toFixed(2)}</TableCell>
                   <TableCell className="text-center font-mono text-xs text-destructive">
                     {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                   </TableCell>
-                  <TableCell className="text-center font-mono font-bold">{s.final_score}</TableCell>
+                  <TableCell className="text-center font-mono font-bold">{s.final_score.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
                     {s.is_certified ? (
                       <CheckCircle className="h-3.5 w-3.5 text-secondary inline-block" />
@@ -74,7 +88,7 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
             <TableRow className="bg-muted/30 font-semibold">
               <TableCell className="text-xs">Average</TableCell>
               {rubricNames.map((n) => {
-                const vals = scores.filter(s => s.is_certified).map(s => {
+                const vals = scores.map(s => {
                   const cs = s.criterion_scores as Record<string, number>;
                   const mapped: Record<string, number> = {};
                   for (const [k, v] of Object.entries(cs)) { mapped[indexToName[k] ?? k] = v; }
@@ -88,18 +102,18 @@ export function SideBySideScores({ scores, rubricNames, indexToName = {}, contes
                 );
               })}
               <TableCell className="text-center font-mono text-xs">
-                {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.raw_total, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
+                {scores.length > 0
+                  ? (scores.reduce((a, s) => a + s.raw_total, 0) / scores.length).toFixed(2)
                   : "—"}
               </TableCell>
               <TableCell className="text-center font-mono text-xs text-destructive">
-                {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.time_penalty, 0) / scores.filter(s => s.is_certified).length).toFixed(1)
+                {scores.length > 0
+                  ? (scores.reduce((a, s) => a + s.time_penalty, 0) / scores.length).toFixed(2)
                   : "—"}
               </TableCell>
               <TableCell className="text-center font-mono font-bold">
-                {scores.filter(s => s.is_certified).length > 0
-                  ? (scores.filter(s => s.is_certified).reduce((a, s) => a + s.final_score, 0) / scores.filter(s => s.is_certified).length).toFixed(2)
+                {scores.length > 0
+                  ? (scores.reduce((a, s) => a + s.final_score, 0) / scores.length).toFixed(2)
                   : "—"}
               </TableCell>
               <TableCell />

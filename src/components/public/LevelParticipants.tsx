@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Award } from "lucide-react";
+import { friendlyDisplayName } from "@/lib/utils";
 
 export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
   const { data } = useQuery({
@@ -17,19 +18,19 @@ export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
       const judgeIds = [...new Set((assignments || []).map(a => a.user_id))];
       let judges: { full_name: string | null }[] = [];
       if (judgeIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
+        // Use safe public_profiles view (no PII)
+        const { data: profiles } = await (supabase
+          .from("public_profiles" as any)
           .select("full_name")
-          .in("user_id", judgeIds);
-        judges = profiles || [];
+          .in("user_id", judgeIds) as any);
+        judges = (profiles || []) as { full_name: string | null }[];
       }
 
-      // Get contestants
+      // Use safe public_contestants view (no PII)
       const { data: contestants } = await supabase
-        .from("contestant_registrations")
+        .from("public_contestants" as any)
         .select("full_name")
-        .in("sub_event_id", subEventIds)
-        .eq("status", "approved");
+        .in("sub_event_id", subEventIds);
 
       return { judges, contestants: contestants || [] };
     },
@@ -44,7 +45,7 @@ export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
           <Award className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
           <div>
             <span className="font-medium text-foreground">Judges:</span>{" "}
-            {data.judges.map(j => j.full_name || "Unknown").join(", ")}
+            {data.judges.map((j: any) => friendlyDisplayName(j.full_name, null)).join(", ")}
           </div>
         </div>
       )}
@@ -53,7 +54,7 @@ export function LevelParticipants({ subEventIds }: { subEventIds: string[] }) {
           <Users className="h-3.5 w-3.5 text-secondary mt-0.5 shrink-0" />
           <div>
             <span className="font-medium text-foreground">Contestants ({data.contestants.length}):</span>{" "}
-            {data.contestants.map(c => c.full_name).join(", ")}
+            {data.contestants.map((c: any) => c.full_name).join(", ")}
           </div>
         </div>
       )}

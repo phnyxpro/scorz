@@ -1,47 +1,113 @@
 
 
-## Fix Blank Rendering in Browser Automation
+# Ultimate Registration Form Editor
 
-The app appears blank in headless browser testing due to two compounding issues:
+## Overview
+Transform the current simple toggle-based registration form editor (`RegistrationFormsInline`) into a full drag-and-drop form builder inspired by iSD Health Solutions and Mission CTRL. Add visibility flags so organisers can control which fields appear on contestant profiles and judge score cards.
 
-1. **CSS `filter` always applied**: The `auditorium-filter` class applies `brightness()` and `contrast()` CSS filters to the entire page even at default 100% values. Some headless browsers have poor support for CSS `filter` on root-level elements, causing the page to render as blank or invisible.
+## Current State
+- `RegistrationFormsInline.tsx` has hardcoded sections (Personal, Bio, Event, Legal) with toggle/required switches
+- Custom fields support only 3 types: text, textarea, select
+- No drag-and-drop, no field properties panel, no conditional logic
+- Custom field values stored in `contestant_registrations.custom_field_values` (JSONB) — no schema change needed
+- Config stored in `competitions.registration_form_config` (JSONB) — no schema change needed
 
-2. **Dark theme default**: The theme initializes to `isDark = true` before reading `localStorage`, meaning the very first paint is a near-black background (`hsl(220 20% 6%)`). Combined with the filter issue, this results in an invisible page.
+## Architecture Decision: No DB Migration
+All form configuration will continue to live in `registration_form_config` JSONB. The enhanced field definitions (with visibility flags, validation, conditional logic) fit naturally in this column. No new tables needed — this keeps it simpler than Mission CTRL's separate `form_fields` table approach since each competition has exactly one registration form.
 
----
+## Changes
 
-### Fix 1: Conditionally apply auditorium filter
+### 1. Rewrite `RegistrationFormsInline.tsx` as a full form builder
 
-**File: `src/contexts/ThemeContext.tsx`**
+Replace the toggle-list UI with a two-panel builder layout:
 
-- Only set the CSS custom properties when brightness or contrast differ from 100 (default). When at defaults, clear the properties so no `filter` is applied.
+**Left panel — Field canvas:**
+- Draggable field cards showing label, type badge, required indicator, visibility badges
+- "Add Field" button opens a field type picker dialog
+- Support reordering via drag-and-drop
 
-### Fix 2: Remove filter class when at defaults
+**Right panel — Properties sidebar (when a field is selected):**
+- Label, placeholder, help text inputs
+- Required toggle
+- Width selector (full / half)
+- **Visibility flags** (new):
+  - "Show on Contestant Profile" toggle
+  - "Show on Judge Score Card" toggle
+- Options editor (for dropdown/radio/checkbox types)
+- Validation rules (min/max length, min/max value)
+- Conditional logic ("Show when [field] [operator] [value]")
 
-**File: `src/components/AppLayout.tsx` and `src/pages/Auth.tsx`**
+**Field types supported:**
+- Basic: Short Text, Long Text, Email, Phone, URL, Number, Date
+- Choice: Dropdown, Radio, Checkbox
+- Advanced: File Upload, Signature, Consent Checkbox
+- Layout: Section Header
 
-- Make the `auditorium-filter` class conditional: only add it when brightness or contrast are non-default values. This prevents the CSS `filter` from being applied unnecessarily.
-- Import `useTheme` and check `brightness !== 100 || contrast !== 100` before adding the class.
+**Built-in fields (locked, non-deletable):**
+- First Name, Last Name, Email (always required)
+- Phone, Location, Age Category, Bio, Video URL
+- Level/Category/SubEvent selectors
+- Rules Acknowledged, Contestant Signature, Guardian fields
 
-### Fix 3: Update CSS to use filter only when properties exist
+Built-in fields can be toggled on/off and have visibility flags set, but cannot be deleted or reordered out of their section.
 
-**File: `src/index.css`**
+### 2. Update `ContestantRegistration.tsx` to render new field types
 
-- Change `.auditorium-filter` to only apply filter when the custom properties are actually set, using a fallback of `none`:
+The registration form currently renders custom fields as text/textarea/select. Update the `BioStep` (or create a dynamic `CustomFieldsStep`) to render all supported field types based on the enhanced config:
+- Render fields respecting width, conditional logic, validation
+- Support new types (radio, checkbox, date, number, consent, section header)
 
-```css
-.auditorium-filter {
-  filter: var(--auditorium-brightness, none) var(--auditorium-contrast, none);
+### 3. Add "Contestant Info" card to Judge Scoring page
+
+In `JudgeScoring.tsx`, after the Raw Total card (line ~753), add a collapsible card:
+- Title: "Contestant Info"
+- Reads `custom_field_values` from the selected contestant's registration
+- Only shows fields where `show_on_scorecard: true` in the form config
+- Renders as a simple label/value list in an accordion
+- Example: "Group Name: Team Alpha" for SPARK competitions
+
+### 4. Show flagged fields on Contestant Profile
+
+In `ContestantProfile.tsx`, in the details tab, add a section for custom registration data:
+- Read the competition's `registration_form_config` to find fields with `show_on_profile: true`
+- Display those custom field values from the registration record
+- Render below the existing personal info section
+
+### 5. Update `ScoreCard.tsx` (printed score card)
+
+Add a small section between contestant info and scoring criteria that shows fields flagged as `show_on_scorecard: true`, so printed/exported score cards also include this data.
+
+## Enhanced Field Config Shape
+
+```typescript
+interface FieldConfig {
+  id: string;
+  key?: string; // for built-in fields
+  field_type: string;
+  label: string;
+  placeholder?: string;
+  help_text?: string;
+  enabled: boolean;
+  required: boolean;
+  sort_order: number;
+  width: "full" | "half";
+  options?: { label: string; value: string }[];
+  validation?: { min_length?: number; max_length?: number; min?: number; max?: number };
+  logic?: { show_when?: { field_id: string; operator: string; value: string } };
+  show_on_profile: boolean;
+  show_on_scorecard: boolean;
+  is_builtin: boolean;
+  section?: string; // grouping for built-in fields
 }
 ```
 
-This ensures no filter is applied when properties are unset, which is the default state.
+## Files Modified
 
----
-
-### Summary
-
-- Modified: `src/index.css`, `src/contexts/ThemeContext.tsx`, `src/components/AppLayout.tsx`, `src/pages/Auth.tsx`
-- No database or backend changes needed
-- The auditorium filter will still work exactly as before when the user adjusts brightness/contrast sliders -- it simply won't apply an identity filter at defaults
+| File | Change |
+|------|--------|
+| `src/components/competition/RegistrationFormsInline.tsx` | Full rewrite: drag-and-drop builder with properties panel, field picker, visibility flags |
+| `src/pages/ContestantRegistration.tsx` | Update custom fields rendering to support new field types, validation, conditional logic |
+| `src/pages/JudgeScoring.tsx` | Add collapsible "Contestant Info" card after Raw Total showing scorecard-flagged fields |
+| `src/pages/ContestantProfile.tsx` | Add custom fields section for profile-flagged fields |
+| `src/components/shared/ScoreCard.tsx` | Add scorecard-flagged custom fields to printed card |
 

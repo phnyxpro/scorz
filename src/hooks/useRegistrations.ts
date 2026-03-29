@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,8 @@ export interface ContestantRegistration {
   guardian_signature: string | null;
   guardian_signed_at: string | null;
   status: string;
+  special_entry_type: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +61,8 @@ export function useRegistrations(competitionId: string | undefined) {
         .from("contestant_registrations")
         .select("*")
         .eq("competition_id", competitionId!)
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data as ContestantRegistration[];
     },
@@ -74,7 +78,12 @@ export function useCreateRegistration() {
         .insert(values)
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("This contestant is already registered for this competition.");
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: (_, v) => {
@@ -103,4 +112,26 @@ export function useUpdateRegistration() {
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
+}
+
+export function useRegistrationsRealtime(competitionId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!competitionId) return;
+    const channel = supabase
+      .channel(`reg-order-${competitionId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "contestant_registrations" },
+        (payload) => {
+          if ((payload.new as any)?.competition_id === competitionId) {
+            qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+            qc.invalidateQueries({ queryKey: ["judging_overview", competitionId] });
+            qc.invalidateQueries({ queryKey: ["approved-contestants-order"] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [competitionId, qc]);
 }

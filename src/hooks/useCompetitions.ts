@@ -12,6 +12,9 @@ export interface Competition {
   status: string;
   created_by: string;
   created_at: string;
+  active_scoring_level_id?: string | null;
+  active_scoring_sub_event_id?: string | null;
+  scoring_method?: string;
 }
 
 export interface CompetitionLevel {
@@ -30,6 +33,9 @@ export interface SubEvent {
   start_time: string | null;
   end_time: string | null;
   status: string;
+  timer_visible?: boolean;
+  comments_visible?: boolean;
+  use_time_slots?: boolean;
 }
 
 export interface RubricCriterion {
@@ -37,11 +43,24 @@ export interface RubricCriterion {
   competition_id: string;
   name: string;
   sort_order: number;
+  guidelines: string | null;
+  weight_percent: number;
   description_1: string;
   description_2: string;
   description_3: string;
   description_4: string;
   description_5: string;
+  scale_descriptions: Record<string, string>;
+  point_values: Record<string, number | { min: number; max: number }>;
+  is_bonus: boolean;
+  applies_to_categories: string[];
+  notes: string | null;
+}
+
+export interface RubricScaleLabels {
+  min: number;
+  max: number;
+  labels: Record<string, string>;
 }
 
 export interface PenaltyRule {
@@ -53,6 +72,16 @@ export interface PenaltyRule {
   from_seconds: number;
   to_seconds: number | null;
   penalty_points: number;
+}
+
+export interface Infraction {
+  id: string;
+  competition_id: string;
+  category: "penalty" | "disqualification";
+  title: string;
+  description: string | null;
+  penalty_points: number;
+  sort_order: number;
 }
 
 export function useCompetitions() {
@@ -117,6 +146,35 @@ export function useSubEvents(levelId: string | undefined) {
   });
 }
 
+export function useAllSubEvents(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["all_sub_events", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      // First get all levels for the competition
+      const { data: levels, error: levelsError } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .eq("competition_id", competitionId!);
+
+      if (levelsError) throw levelsError;
+
+      if (!levels || levels.length === 0) return [];
+
+      // Then get all sub-events for those levels
+      const levelIds = levels.map(l => l.id);
+      const { data, error } = await supabase
+        .from("sub_events")
+        .select("*")
+        .in("level_id", levelIds)
+        .order("event_date");
+
+      if (error) throw error;
+      return data as SubEvent[];
+    },
+  });
+}
+
 export function useSubEvent(id: string | undefined) {
   return useQuery({
     queryKey: ["sub_event", id],
@@ -165,6 +223,18 @@ export function usePenaltyRules(competitionId: string | undefined) {
   });
 }
 
+const DEFAULT_INFRACTIONS: Omit<Infraction, "id" | "competition_id">[] = [
+  { category: "penalty", title: "Using Props", description: "The use of props is not allowed, and doing so will result in a point deduction from the final score.", penalty_points: 20, sort_order: 0 },
+  { category: "penalty", title: "Using Music or Instruments", description: "Using pre-recorded audio or live instruments will result in a point deduction. Beatboxing or using your body to create rhythm is allowed.", penalty_points: 20, sort_order: 1 },
+  { category: "penalty", title: "Unauthorized Assistance", description: "Receiving assistance from anyone on or off stage (unless it's an approved translator or natural crowd call-and-response) will result in a point deduction.", penalty_points: 20, sort_order: 2 },
+  { category: "penalty", title: "Late Arrival", description: "Arriving more than 20 minutes past the communicated call time without a verifiable extenuating circumstance will result in a point deduction.", penalty_points: 5, sort_order: 3 },
+  { category: "disqualification", title: "Plagiarism or AI Use", description: "Performers who plagiarize, have a poem composed for them, or use generative AI to craft their poems will be disqualified. This can be enforced retroactively.", penalty_points: 0, sort_order: 0 },
+  { category: "disqualification", title: "Reusing Poems at Finals", description: "Performing a poem that is not new, has been used in a previous round, or was entered into any prior competition will result in disqualification.", penalty_points: 0, sort_order: 1 },
+  { category: "disqualification", title: "Prohibited Content", description: "Using hate speech, discriminatory, defamatory, or obscene language may result in disqualification after a review.", penalty_points: 0, sort_order: 2 },
+  { category: "disqualification", title: "Skipping the Photoshoot", description: "Finalists who fail to participate in the mandatory photoshoot without an adequate reason will be disqualified for breaching the terms of agreement.", penalty_points: 0, sort_order: 3 },
+  { category: "disqualification", title: "No-Shows", description: "If the live event or broadcast recording begins and a performer is not present, they forfeit their spot and will be replaced by a standby poet.", penalty_points: 0, sort_order: 4 },
+];
+
 export function useCreateCompetition() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -178,6 +248,14 @@ export function useCreateCompetition() {
         .select()
         .single();
       if (error) throw error;
+
+      // Seed default infractions
+      const infractions = DEFAULT_INFRACTIONS.map(inf => ({
+        ...inf,
+        competition_id: data.id,
+      }));
+      await supabase.from("competition_infractions").insert(infractions);
+
       return data;
     },
     onSuccess: () => {
@@ -199,6 +277,47 @@ export function useUpdateCompetition() {
       qc.invalidateQueries({ queryKey: ["competitions"] });
       qc.invalidateQueries({ queryKey: ["competition", v.id] });
       toast({ title: "Competition updated" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useUpdateActiveScoringConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ competitionId, levelId, subEventId }: { competitionId: string; levelId: string | null; subEventId: string | null }) => {
+      const { error } = await supabase
+        .from("competitions")
+        .update({ 
+          active_scoring_level_id: levelId,
+          active_scoring_sub_event_id: subEventId 
+        })
+        .eq("id", competitionId);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["competition", v.competitionId] });
+      toast({ title: "Active scoring updated" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useSetActiveScoring() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ competitionId, levelId, subEventId }: { competitionId: string; levelId: string | null; subEventId: string | null }) => {
+      const { error } = await supabase.rpc("set_active_scoring", {
+        _competition_id: competitionId,
+        _level_id: levelId,
+        _sub_event_id: subEventId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["competition", v.competitionId] });
+      qc.invalidateQueries({ queryKey: ["active_scoring", v.competitionId] });
+      toast({ title: "Active scoring updated" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -256,7 +375,7 @@ export function useDeleteLevel() {
 export function useCreateSubEvent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (values: { level_id: string; name: string; location?: string; event_date?: string; start_time?: string; end_time?: string }) => {
+    mutationFn: async (values: { level_id: string; name: string; location?: string; event_date?: string; start_time?: string; end_time?: string; voting_enabled?: boolean }) => {
       const { data, error } = await supabase.from("sub_events").insert(values).select().single();
       if (error) throw error;
       return data;
@@ -328,6 +447,55 @@ export function useDeleteRubricCriterion() {
     onSuccess: (cid) => {
       qc.invalidateQueries({ queryKey: ["rubric_criteria", cid] });
       toast({ title: "Criterion deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+// Infraction hooks
+export function useInfractions(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["infractions", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_infractions")
+        .select("*")
+        .eq("competition_id", competitionId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data as Infraction[];
+    },
+  });
+}
+
+export function useCreateInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Omit<Infraction, "id">) => {
+      const { data, error } = await supabase.from("competition_infractions").insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["infractions", v.competition_id] });
+      toast({ title: "Infraction rule added" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+export function useDeleteInfraction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, competition_id }: { id: string; competition_id: string }) => {
+      const { error } = await supabase.from("competition_infractions").delete().eq("id", id);
+      if (error) throw error;
+      return competition_id;
+    },
+    onSuccess: (cid) => {
+      qc.invalidateQueries({ queryKey: ["infractions", cid] });
+      toast({ title: "Infraction rule deleted" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

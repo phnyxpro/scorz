@@ -10,7 +10,7 @@ const DEMO_PASSWORD = "demo1234";
 const DEMO_SLUG = "fcnps-2025";
 
 const DEMO_USERS = [
-  { email: "organizer@demo.scorz.app", fullName: "Demo Organizer", role: "organizer" },
+  { email: "organizer@demo.scorz.app", fullName: "Demo Organiser", role: "organizer" },
   { email: "chief_judge@demo.scorz.app", fullName: "Demo Chief Judge", role: "chief_judge" },
   { email: "judge@demo.scorz.app", fullName: "Demo Judge", role: "judge" },
   { email: "tabulator@demo.scorz.app", fullName: "Demo Tabulator", role: "tabulator" },
@@ -111,6 +111,22 @@ serve(async (req) => {
   }
 
   try {
+    // Require a secret guard to prevent public abuse
+    const authHeader = req.headers.get("Authorization");
+    const seedSecret = Deno.env.get("SEED_SECRET");
+    if (!seedSecret) {
+      return new Response(JSON.stringify({ error: "SEED_SECRET not configured — seed endpoint disabled" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!authHeader || authHeader !== `Bearer ${seedSecret}`) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -251,16 +267,16 @@ serve(async (req) => {
 
     // 10. Create sub-event assignments
     const assignmentRoles = [
-      { userId: userIds.judge, role: "judge" },
-      { userId: userIds.chief_judge, role: "chief_judge" },
-      { userId: userIds.tabulator, role: "tabulator" },
-      { userId: userIds.witness, role: "witness" },
+      { userId: userIds.judge, role: "judge", is_chief: false },
+      { userId: userIds.chief_judge, role: "judge", is_chief: true },
+      { userId: userIds.tabulator, role: "tabulator", is_chief: false },
+      { userId: userIds.witness, role: "witness", is_chief: false },
     ];
     for (const seId of subEventIds) {
       for (const a of assignmentRoles) {
         const { error } = await supabaseAdmin
           .from("sub_event_assignments")
-          .insert({ sub_event_id: seId, user_id: a.userId, role: a.role });
+          .insert({ sub_event_id: seId, user_id: a.userId, role: a.role, is_chief: a.is_chief });
         if (error) console.error(`Assignment error: ${error.message}`);
       }
     }

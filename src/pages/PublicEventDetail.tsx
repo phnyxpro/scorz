@@ -1,22 +1,45 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { DetailPageSkeleton } from "@/components/shared/PageSkeletons";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetitionSponsors } from "@/hooks/useCompetitionSponsors";
 import { useCompetitionUpdates } from "@/hooks/useCompetitionUpdates";
-import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useRubricCriteria, usePenaltyRules, useInfractions } from "@/hooks/useCompetitions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, Calendar, MapPin, Clock, UserPlus, Ticket,
-  FileText, Users, Award, Info, Heart, ExternalLink, Newspaper, ListOrdered
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Clock,
+  UserPlus,
+  Ticket,
+  FileText,
+  Users,
+  Award,
+  Info,
+  Heart,
+  ExternalLink,
+  Newspaper,
+  ListOrdered,
+  Video,
+  Globe,
+  ChevronRight,
+  AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
 import scorzLogo from "@/assets/scorz-logo.svg";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { SocialLinks } from "@/components/public/SocialLinks";
 import { AudienceTicketForm } from "@/components/public/AudienceTicketForm";
 import { LevelParticipants } from "@/components/public/LevelParticipants";
@@ -24,6 +47,9 @@ import { PublicRoleList } from "@/components/public/PublicRoleList";
 import { SponsorsStrip } from "@/components/public/SponsorsStrip";
 import { NewsFeed } from "@/components/public/NewsFeed";
 import { PublicRubric } from "@/components/public/PublicRubric";
+import { PublicVotingForm } from "@/components/public/PublicVotingForm";
+import { SEO } from "@/components/SEO";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function usePublicCompetition(slug: string | undefined) {
   return useQuery({
@@ -45,16 +71,22 @@ function usePublicLevelsWithSubEvents(compId: string | undefined) {
     enabled: !!compId,
     queryFn: async () => {
       const { data: levels, error: le } = await supabase
-        .from("competition_levels").select("*").eq("competition_id", compId!).order("sort_order");
+        .from("competition_levels")
+        .select("*")
+        .eq("competition_id", compId!)
+        .order("sort_order");
       if (le) throw le;
-      const allLevelIds = (levels || []).map(l => l.id);
+      const allLevelIds = (levels || []).map((l) => l.id);
       if (allLevelIds.length === 0) return [];
       const { data: subEvents, error: se } = await supabase
-        .from("sub_events").select("*").in("level_id", allLevelIds).order("event_date");
+        .from("sub_events")
+        .select("*")
+        .in("level_id", allLevelIds)
+        .order("event_date");
       if (se) throw se;
-      return (levels || []).map(l => ({
+      return (levels || []).map((l) => ({
         ...l,
-        sub_events: (subEvents || []).filter(s => s.level_id === l.id),
+        sub_events: (subEvents || []).filter((s) => s.level_id === l.id),
       }));
     },
   });
@@ -65,16 +97,78 @@ function useLineup(subEventIds: string[]) {
     queryKey: ["public-lineup", subEventIds],
     enabled: subEventIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contestant_registrations")
-        .select("id, full_name, profile_photo_url, sub_event_id, sort_order, age_category")
+      const { data: contestants, error } = await (supabase
+        .from("public_contestants" as any)
+        .select(
+          "id, full_name, profile_photo_url, sub_event_id, sort_order, age_category, bio, location, social_handles, performance_video_url, user_id",
+        )
         .in("sub_event_id", subEventIds)
-        .eq("status", "approved")
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true }) as any);
       if (error) throw error;
-      return data;
+
+      const { data: slots } = await supabase
+        .from("performance_slots")
+        .select("contestant_registration_id, start_time, end_time, slot_index")
+        .in("sub_event_id", subEventIds)
+        .eq("is_booked", true);
+
+      const slotMap = new Map<string, { start_time: string; end_time: string }>();
+      (slots || []).forEach((s) => {
+        if (s.contestant_registration_id) {
+          slotMap.set(s.contestant_registration_id, { start_time: s.start_time, end_time: s.end_time });
+        }
+      });
+
+      return (contestants || []).map((c) => ({
+        ...c,
+        slot: slotMap.get(c.id) || null,
+      }));
     },
   });
+}
+
+/** Classify levels as current/upcoming vs past based on sub-event dates */
+function classifyLevels(levels: any[] | undefined) {
+  if (!levels) return { current: [], past: [] };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const current: any[] = [];
+  const past: any[] = [];
+
+  levels.forEach((level) => {
+    const subEvents = level.sub_events || [];
+    if (subEvents.length === 0) {
+      current.push(level);
+      return;
+    }
+    // A level is past if ALL its sub-events have dates before today
+    const allPast = subEvents.every((se: any) => {
+      if (!se.event_date) return false;
+      return new Date(se.event_date) < today;
+    });
+    if (allPast) {
+      past.push(level);
+    } else {
+      current.push(level);
+    }
+  });
+
+  return { current, past };
+}
+
+/** Check if any sub-event across levels has ticketing enabled (not just free with no setup) */
+function hasTicketingSetup(levels: any[] | undefined): boolean {
+  if (!levels) return false;
+  return levels.some((l) =>
+    l.sub_events?.some((se: any) => {
+      const type = se.ticketing_type || "free";
+      if (type === "paid" && se.ticket_price > 0) return true;
+      if (type === "external" && se.external_ticket_url) return true;
+      if (type === "free") return true;
+      return false;
+    }),
+  );
 }
 
 export default function PublicEventDetail() {
@@ -89,6 +183,7 @@ export default function PublicEventDetail() {
   const { data: updates } = useCompetitionUpdates(compId);
   const { data: criteria } = useRubricCriteria(compId);
   const { data: penalties } = usePenaltyRules(compId);
+  const { data: infractions } = useInfractions(compId);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -96,290 +191,596 @@ export default function PublicEventDetail() {
 
   const socialLinks = (comp as any)?.social_links as Record<string, string> | undefined;
   const rulesUrl = (comp as any)?.rules_url as string | undefined;
+  const rulesContent = (comp as any)?.rules_content as string | undefined;
+  const rulesDocumentUrl = (comp as any)?.rules_document_url as string | undefined;
 
-  if (isLoading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>
-    </div>
+  const anyVotingEnabled = useMemo(
+    () => levels?.some((l) => l.sub_events?.some((se: any) => se.voting_enabled)) || false,
+    [levels],
+  );
+  const ticketingAvailable = useMemo(() => hasTicketingSetup(levels), [levels]);
+  const { current: currentLevels, past: pastLevels } = useMemo(() => classifyLevels(levels), [levels]);
+
+  // Separate infractions by category
+  const generalPenalties = useMemo(
+    () => (infractions || []).filter((i) => i.category === "penalty"),
+    [infractions],
+  );
+  const disqualificationRules = useMemo(
+    () => (infractions || []).filter((i) => i.category === "disqualification"),
+    [infractions],
   );
 
-  if (!comp) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <p className="text-muted-foreground">Event not found</p>
-      <Button asChild variant="outline"><Link to="/">Back to Events</Link></Button>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+          <DetailPageSkeleton />
+        </div>
+      </div>
+    );
 
-  const allSubEventIds = levels?.flatMap(l => l.sub_events.map((s: any) => s.id)) || [];
+  if (!comp)
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Event not found</p>
+        <Button asChild variant="outline">
+          <Link to="/">Back to Events</Link>
+        </Button>
+      </div>
+    );
+
+  const allSubEventIds = levels?.flatMap((l) => l.sub_events.map((s: any) => s.id)) || [];
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
-            <span className="font-bold tracking-tighter text-foreground font-mono">SCOR<span className="text-accent">Z</span></span>
-          </Link>
-          <div className="flex items-center gap-2">
-            {socialLinks && <SocialLinks links={socialLinks} />}
-            {user ? (
-              <Button asChild size="sm" variant="outline"><Link to="/dashboard">Dashboard</Link></Button>
-            ) : (
-              <Button asChild size="sm"><Link to="/auth">Sign In</Link></Button>
-            )}
-          </div>
-        </div>
-      </header>
+  const eventTitle = `${comp.name} | Live Leaderboard & Results | Scorz`;
+  const eventDescription = `View live scores, results, and standings for ${comp.name}. Real-time competition management platform for judged events.`;
+  const canonicalUrl = `${window.location.origin}/events/${comp.slug || comp.id}`;
 
-      {/* Banner */}
-      <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
-        {comp.banner_url ? (
-          <img src={comp.banner_url} alt={comp.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <img src={scorzLogo} alt="Scorz" className="h-16 w-16 opacity-20" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 max-w-5xl mx-auto">
-          <Button asChild variant="ghost" size="sm" className="mb-2 text-foreground/70 -ml-2">
-            <Link to="/"><ArrowLeft className="h-3 w-3 mr-1" /> All Events</Link>
-          </Button>
-          <h1 className="text-2xl sm:text-4xl font-bold text-foreground font-mono">{comp.name}</h1>
-          <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
-            {comp.start_date && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                {format(new Date(comp.start_date), "MMMM d, yyyy")}
-                {comp.end_date && ` — ${format(new Date(comp.end_date), "MMMM d, yyyy")}`}
-              </span>
-            )}
-            <Badge variant={comp.status === "active" ? "default" : "secondary"}>
-              {comp.status === "active" ? "Live" : comp.status}
-            </Badge>
-          </div>
-        </div>
-      </div>
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: comp.name,
+    description: comp.description || eventDescription,
+    startDate: comp.start_date,
+    endDate: comp.end_date,
+    location: comp.location
+      ? { "@type": "Place", name: comp.location }
+      : { "@type": "VirtualLocation", url: canonicalUrl },
+    eventStatus: "https://schema.org/EventScheduled",
+    organizer: { "@type": "Organization", name: "Scorz", url: window.location.origin },
+  };
 
-      <div className="max-w-5xl mx-auto px-0 sm:px-6 py-6 space-y-8">
-        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <div className="px-4 sm:px-0 overflow-x-auto no-scrollbar">
-            <TabsList className="w-full sm:w-auto flex justify-start sm:justify-center mb-6 bg-muted/20 backdrop-blur p-1">
-              <TabsTrigger value="schedule" className="flex-1 sm:flex-none gap-2 px-6">
-                <Calendar className="h-4 w-4" /> Schedule
-              </TabsTrigger>
-              <TabsTrigger value="contestants" className="flex-1 sm:flex-none gap-2 px-6">
-                <Users className="h-4 w-4" /> Contestants
-              </TabsTrigger>
-              <TabsTrigger value="judges" className="flex-1 sm:flex-none gap-2 px-6">
-                <Award className="h-4 w-4" /> Judges
-              </TabsTrigger>
-              {(comp as any).voting_enabled && (
-                <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-2 px-6">
-                  <Heart className="h-4 w-4" /> Voting
-                </TabsTrigger>
+  const renderLevelCard = (level: any, showTickets: boolean) => (
+    <Card key={level.id} className="border-border/50 bg-card/80 overflow-hidden shadow-sm">
+      {level.banner_url && (
+        <div className="h-32 overflow-hidden">
+          <img src={level.banner_url} alt={level.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{level.name}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <LevelParticipants subEventIds={level.sub_events.map((s: any) => s.id)} />
+
+        {level.sub_events.length > 0 ? (
+          level.sub_events.map((se: any) => (
+            <div
+              key={se.id}
+              className="border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/10"
+            >
+              <div className="space-y-2">
+                {se.banner_url && (
+                  <img src={se.banner_url} alt={se.name} className="w-full sm:w-48 h-24 object-cover rounded-md" />
+                )}
+                <div>
+                  <p className="font-bold text-base text-foreground">{se.name}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
+                    {se.event_date && (
+                      <span className="flex items-center gap-1 font-mono">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(se.event_date), "MMM d, yyyy")}
+                      </span>
+                    )}
+                    {se.start_time && (
+                      <span className="flex items-center gap-1 font-mono">
+                        <Clock className="h-3 w-3" />
+                        {se.start_time}
+                        {se.end_time ? ` – ${se.end_time}` : ""}
+                      </span>
+                    )}
+                    {se.location && (
+                      <span className="flex items-center gap-1 font-mono">
+                        <MapPin className="h-3 w-3" />
+                        {se.location}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {showTickets && ticketingAvailable && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => setSelectedTicketEvent(selectedTicketEvent === se.id ? null : se.id)}
+                >
+                  <Ticket className="h-4 w-4 mr-2" /> Get Ticket
+                </Button>
               )}
-              <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-2 px-6">
-                <ListOrdered className="h-4 w-4" /> Lineup
-              </TabsTrigger>
-              <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-2 px-6">
-                <FileText className="h-4 w-4" /> Rules
-              </TabsTrigger>
-              <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-2 px-6">
-                <Info className="h-4 w-4" /> Rubric
-              </TabsTrigger>
-            </TabsList>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground italic text-center py-4">No sessions scheduled yet.</p>
+        )}
+
+        {showTickets &&
+          level.sub_events.map(
+            (se: any) =>
+              selectedTicketEvent === se.id && (
+                <motion.div
+                  key={`ticket-${se.id}`}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="border border-primary/20 rounded-lg p-4 bg-primary/5 mt-2"
+                >
+                  <AudienceTicketForm
+                    subEventId={se.id}
+                    subEventName={se.name}
+                    ticketingType={(se as any).ticketing_type}
+                    ticketPrice={(se as any).ticket_price}
+                    maxTickets={(se as any).max_tickets}
+                    externalTicketUrl={(se as any).external_ticket_url}
+                  />
+                </motion.div>
+              ),
+          )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <>
+      <SEO
+        title={eventTitle}
+        description={eventDescription}
+        canonical={canonicalUrl}
+        ogType="event"
+        structuredData={structuredData}
+      />
+      <div className="sr-only" aria-hidden="true">
+        Current Leader: View live scores and results for {comp.name}. Competition status: {comp.status}. Location:{" "}
+        {comp.location || "Online"}. Start date: {comp.start_date}.
+      </div>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              {(comp as any).white_label && (comp as any).branding_logo_url ? (
+                <>
+                  <img src={(comp as any).branding_logo_url} alt={comp.name} className="h-7 w-7 rounded" />
+                  <span className="font-bold tracking-tight text-foreground text-lg">{comp.name}</span>
+                </>
+              ) : (
+                <>
+                  <img src={scorzLogo} alt="Scorz" className="h-6 w-6" />
+                  <span className="font-bold tracking-tighter text-foreground font-mono">
+                    SCOR<span className="text-accent">Z</span>
+                  </span>
+                </>
+              )}
+            </Link>
+            <div className="flex items-center gap-2">
+              {socialLinks && <SocialLinks links={socialLinks} />}
+              {user ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
+              ) : (
+                <Button asChild size="sm">
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+              )}
+            </div>
           </div>
+        </header>
 
-          <div className="px-4 sm:px-0">
-            {/* Schedule Tab */}
-            <TabsContent value="schedule" className="space-y-6">
-              <div className="max-w-3xl mx-auto space-y-6">
-                {comp.description && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-muted-foreground leading-relaxed text-sm">
-                    {comp.description}
-                  </motion.p>
+        {/* Banner */}
+        <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
+          {comp.banner_url ? (
+            <img src={comp.banner_url} alt={comp.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <img src={scorzLogo} alt="Scorz" className="h-16 w-16 opacity-20" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 max-w-5xl mx-auto">
+            <Button asChild variant="ghost" size="sm" className="mb-2 text-foreground/70 -ml-2">
+              <Link to="/">
+                <ArrowLeft className="h-3 w-3 mr-1" /> All Events
+              </Link>
+            </Button>
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground font-mono">{comp.name}</h1>
+            <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
+              {comp.start_date && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {format(new Date(comp.start_date), "MMMM d, yyyy")}
+                  {comp.end_date && ` — ${format(new Date(comp.end_date), "MMMM d, yyyy")}`}
+                </span>
+              )}
+              <Badge variant={comp.status === "active" ? "default" : "secondary"}>
+                {comp.status === "active" ? "Live" : comp.status}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-0 sm:px-6 py-6 space-y-8">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+            <div className="px-4 sm:px-0 overflow-x-auto no-scrollbar">
+              <TabsList className="w-full sm:w-auto flex justify-start sm:justify-center mb-6 bg-muted/20 backdrop-blur p-1">
+                <TabsTrigger value="schedule" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                  <Calendar className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Schedule</span>
+                </TabsTrigger>
+                {anyVotingEnabled && (
+                  <TabsTrigger value="voting" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                    <Heart className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">Voting</span>
+                  </TabsTrigger>
                 )}
+                <TabsTrigger value="lineup" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                  <ListOrdered className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Lineup</span>
+                </TabsTrigger>
+                <TabsTrigger value="rules" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Rules</span>
+                </TabsTrigger>
+                <TabsTrigger value="rubric" className="flex-1 sm:flex-none gap-1 sm:gap-2 px-2 sm:px-6">
+                  <Info className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Rubric</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-                {comp.status === "active" && (
-                  <Button size="lg" className="w-full sm:w-auto" onClick={() => {
-                    if (user) navigate(`/competitions/${compId}/register`);
-                    else navigate(`/auth?redirect=/competitions/${compId}/register`);
-                  }}>
-                    <UserPlus className="h-4 w-4 mr-2" /> Register as Contestant
-                  </Button>
-                )}
+            <div className="px-4 sm:px-0">
+              {/* Schedule Tab */}
+              <TabsContent value="schedule" className="space-y-6">
+                <div className="max-w-3xl mx-auto space-y-6">
+                  {comp.description && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-muted-foreground leading-relaxed text-sm"
+                    >
+                      {comp.description}
+                    </motion.p>
+                  )}
 
-                <div className="space-y-4">
-                  {levels && levels.length > 0 ? levels.map(level => (
-                    <Card key={level.id} className="border-border/50 bg-card/80 overflow-hidden shadow-sm">
-                      {level.banner_url && (
-                        <div className="h-32 overflow-hidden">
-                          <img src={level.banner_url} alt={level.name} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{level.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <LevelParticipants subEventIds={level.sub_events.map((s: any) => s.id)} />
+                  {comp.status === "active" &&
+                    (comp as any).registration_enabled !== false &&
+                    (!(comp as any).registration_start_at ||
+                      new Date() >= new Date((comp as any).registration_start_at)) &&
+                    (!(comp as any).registration_end_at ||
+                      new Date() <= new Date((comp as any).registration_end_at)) && (
+                      <Button
+                        size="lg"
+                        className="w-full sm:w-auto"
+                        onClick={() => {
+                          if (user) navigate(`/competitions/${compId}/register`);
+                          else navigate(`/auth?redirect=/competitions/${compId}/register`);
+                        }}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" /> Register as Contestant
+                      </Button>
+                    )}
 
-                        {level.sub_events.length > 0 ? level.sub_events.map((se: any) => (
-                          <div key={se.id} className="border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/10">
-                            <div className="space-y-2">
-                              {se.banner_url && (
-                                <img src={se.banner_url} alt={se.name} className="w-full sm:w-48 h-24 object-cover rounded-md" />
-                              )}
-                              <div>
-                                <p className="font-bold text-base text-foreground">{se.name}</p>
-                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
-                                  {se.event_date && <span className="flex items-center gap-1 font-mono"><Calendar className="h-3 w-3" />{format(new Date(se.event_date), "MMM d, yyyy")}</span>}
-                                  {se.start_time && <span className="flex items-center gap-1 font-mono"><Clock className="h-3 w-3" />{se.start_time}{se.end_time ? ` – ${se.end_time}` : ""}</span>}
-                                  {se.location && <span className="flex items-center gap-1 font-mono"><MapPin className="h-3 w-3" />{se.location}</span>}
-                                </div>
-                              </div>
-                            </div>
-                            <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSelectedTicketEvent(selectedTicketEvent === se.id ? null : se.id)}>
-                              <Ticket className="h-4 w-4 mr-2" /> Get Ticket
-                            </Button>
+                  {/* Current / Upcoming levels */}
+                  <div className="space-y-4">
+                    {currentLevels.length > 0 ? (
+                      currentLevels.map((level) => renderLevelCard(level, true))
+                    ) : !pastLevels.length ? (
+                      <p className="text-muted-foreground text-center py-12 font-mono">
+                        No levels defined for this competition yet.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* Past levels in accordion */}
+                  {pastLevels.length > 0 && (
+                    <Accordion type="single" collapsible className="space-y-2">
+                      <AccordionItem value="past-levels" className="border-border/30">
+                        <AccordionTrigger className="text-sm text-muted-foreground hover:no-underline py-3">
+                          <span className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Past Rounds ({pastLevels.length})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            {pastLevels.map((level) => renderLevelCard(level, false))}
                           </div>
-                        )) : (
-                          <p className="text-sm text-muted-foreground italic text-center py-4">No sessions scheduled yet.</p>
-                        )}
-
-                        {level.sub_events.map((se: any) => (
-                          selectedTicketEvent === se.id && (
-                            <motion.div key={`ticket-${se.id}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="border border-primary/20 rounded-lg p-4 bg-primary/5 mt-2">
-                              <AudienceTicketForm subEventId={se.id} subEventName={se.name} />
-                            </motion.div>
-                          )
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )) : (
-                    <p className="text-muted-foreground text-center py-12 font-mono">No levels defined for this competition yet.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   )}
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            {/* Contestants Tab */}
-            <TabsContent value="contestants">
-              <div className="max-w-4xl mx-auto">
-                <PublicRoleList
-                  subEventIds={allSubEventIds}
-                  competitionId={id}
-                  role="contestants"
-                />
-              </div>
-            </TabsContent>
+              {/* Voting Tab (conditional) */}
+              {anyVotingEnabled && (
+                <TabsContent value="voting" className="space-y-6">
+                  <PublicVotingForm competitionId={compId} levels={levels} />
+                </TabsContent>
+              )}
 
-            {/* Judges Tab */}
-            <TabsContent value="judges">
-              <div className="max-w-4xl mx-auto">
-                <PublicRoleList subEventIds={allSubEventIds} role="judges" />
-              </div>
-            </TabsContent>
+              {/* Live Lineup Tab */}
+              <TabsContent value="lineup">
+                <LiveLineup allSubEventIds={allSubEventIds} levels={levels} />
+              </TabsContent>
 
-            {/* Voting Tab (conditional) */}
-            {(comp as any).voting_enabled && (
-              <TabsContent value="voting" className="space-y-6 text-center py-12">
-                <div className="max-w-md mx-auto space-y-4">
-                  <Heart className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                  <h2 className="text-2xl font-bold font-mono">People's Choice Awards</h2>
-                  <p className="text-muted-foreground">
-                    Supporters can vote for their favorite contestants across all events.
-                    Every vote helps promote their artistic journey!
-                  </p>
-                  <Button size="lg" className="w-full" onClick={() => navigate(`/competitions/${compId}/vote`)}>
-                    <Ticket className="h-5 w-5 mr-2" /> Go to Voting Page
-                  </Button>
+              {/* Rules Tab */}
+              <TabsContent value="rules">
+                <div className="max-w-4xl mx-auto space-y-8">
+                  {rulesContent && (
+                    <Card className="border-border/50 bg-card/80 overflow-hidden">
+                      <CardContent className="p-6">
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none text-foreground"
+                          dangerouslySetInnerHTML={{
+                            __html: (() => {
+                              const text = rulesContent;
+                              const div = document.createElement("div");
+                              div.innerHTML = text;
+                              const innerText = div.textContent || "";
+                              if (
+                                innerText.trimStart().startsWith("<p>") ||
+                                innerText.includes("</p><p>")
+                              ) {
+                                return innerText;
+                              }
+                              return text;
+                            })(),
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {rulesDocumentUrl && (
+                    <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">Rules Document</h3>
+                          <p className="text-sm text-muted-foreground">Download the official rules document</p>
+                        </div>
+                      </div>
+                      <Button asChild size="lg" variant="default" className="w-full sm:w-auto">
+                        <a href={rulesDocumentUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" /> Download
+                        </a>
+                      </Button>
+                    </Card>
+                  )}
+
+                  {rulesUrl && (
+                    <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">Official Rules</h3>
+                          <p className="text-sm text-muted-foreground">View the full competition handbook</p>
+                        </div>
+                      </div>
+                      <Button asChild size="lg" variant="default" className="w-full sm:w-auto">
+                        <a href={rulesUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" /> View Handbook
+                        </a>
+                      </Button>
+                    </Card>
+                  )}
+
+                  {/* Penalties & Disqualification Sections */}
+                  {(penalties && penalties.length > 0) && (
+                    <Card className="border-border/50 bg-card/80 overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-secondary" />
+                          Time Penalties
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs uppercase font-mono">Condition</TableHead>
+                              <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {penalties.map((rule) => {
+                              const timeLimit =
+                                Math.floor(rule.time_limit_seconds / 60) +
+                                ":" +
+                                (rule.time_limit_seconds % 60).toString().padStart(2, "0");
+                              return (
+                                <TableRow key={rule.id}>
+                                  <TableCell className="text-sm">
+                                    {rule.from_seconds === 0 ? (
+                                      <span>Up to {rule.to_seconds} seconds over {timeLimit}</span>
+                                    ) : rule.to_seconds ? (
+                                      <span>{rule.from_seconds} to {rule.to_seconds} seconds over {timeLimit}</span>
+                                    ) : (
+                                      <span>More than {rule.from_seconds} seconds over {timeLimit}</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Badge variant="destructive" className="font-mono">
+                                      -{rule.penalty_points} pts
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                        <div className="mt-4 flex items-start gap-2 p-3 rounded bg-secondary/10 border border-secondary/20">
+                          <AlertTriangle className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            A grace period of {penalties[0].grace_period_seconds} seconds applies before penalties are
+                            calculated.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {generalPenalties.length > 0 && (
+                    <Card className="border-border/50 bg-card/80 overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-destructive" />
+                          General Penalties
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs uppercase font-mono">Infraction</TableHead>
+                              <TableHead className="text-xs uppercase font-mono text-right">Penalty</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {generalPenalties.map((inf) => (
+                              <TableRow key={inf.id}>
+                                <TableCell>
+                                  <p className="text-sm font-medium">{inf.title}</p>
+                                  {inf.description && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">{inf.description}</p>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="destructive" className="font-mono">
+                                    -{inf.penalty_points} pts
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {disqualificationRules.length > 0 && (
+                    <Card className="border-destructive/30 bg-destructive/5 overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                          <ShieldAlert className="h-4 w-4" />
+                          Disqualification Rules
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {disqualificationRules.map((inf) => (
+                            <li key={inf.id} className="flex items-start gap-2">
+                              <ShieldAlert className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{inf.title}</p>
+                                {inf.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{inf.description}</p>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {!rulesContent && !rulesUrl && !rulesDocumentUrl && !penalties?.length && !generalPenalties.length && !disqualificationRules.length && (
+                    <p className="text-sm text-muted-foreground italic text-center py-8">
+                      No official rules document has been published yet.
+                    </p>
+                  )}
                 </div>
               </TabsContent>
+
+              {/* Rubric Tab */}
+              <TabsContent value="rubric">
+                <div className="max-w-4xl mx-auto">
+                  <PublicRubric
+                    criteria={criteria || []}
+                    penalties={penalties || []}
+                    infractions={infractions || []}
+                    scaleLabels={(comp as any)?.rubric_scale_labels}
+                    scoringMethod={(comp as any)?.scoring_method}
+                  />
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+
+          {/* Sponsors & Updates */}
+          <div className="px-4 sm:px-0 space-y-12 border-t border-border/30 pt-12">
+            {updates && updates.length > 0 && (
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center gap-2 mb-6">
+                  <Newspaper className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-bold font-mono">Latest News</h2>
+                </div>
+                <NewsFeed updates={updates} />
+              </div>
             )}
 
-            {/* Live Lineup Tab */}
-            <TabsContent value="lineup">
-              <LiveLineup allSubEventIds={allSubEventIds} levels={levels} />
-            </TabsContent>
-
-            {/* Rules Tab */}
-            <TabsContent value="rules">
-              <div className="max-w-4xl mx-auto space-y-8">
-                {rulesUrl ? (
-                  <Card className="border-border/50 bg-card/80 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex gap-4 items-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg">Official Rules</h3>
-                        <p className="text-sm text-muted-foreground">Download the full competition handbook</p>
-                      </div>
-                    </div>
-                    <Button asChild size="lg" variant="default" className="w-full sm:w-auto">
-                      <a href={rulesUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" /> View Handbook
-                      </a>
-                    </Button>
-                  </Card>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic text-center py-8">No official rules document has been published yet.</p>
-                )}
+            {sponsors && sponsors.length > 0 && (
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center gap-2 mb-6">
+                  <Users className="h-5 w-5 text-secondary" />
+                  <h2 className="text-xl font-bold font-mono">Our Sponsors</h2>
+                </div>
+                <SponsorsStrip sponsors={sponsors} />
               </div>
-            </TabsContent>
-
-            {/* Rubric Tab */}
-            <TabsContent value="rubric">
-              <div className="max-w-4xl mx-auto">
-                <PublicRubric criteria={criteria || []} penalties={penalties || []} />
-              </div>
-            </TabsContent>
+            )}
           </div>
-        </Tabs>
-
-        {/* Sponsors & Updates */}
-        <div className="px-4 sm:px-0 space-y-12 border-t border-border/30 pt-12">
-          {updates && updates.length > 0 && (
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center gap-2 mb-6">
-                <Newspaper className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold font-mono">Latest News</h2>
-              </div>
-              <NewsFeed updates={updates} />
-            </div>
-          )}
-
-          {sponsors && sponsors.length > 0 && (
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center gap-2 mb-6">
-                <Users className="h-5 w-5 text-secondary" />
-                <h2 className="text-xl font-bold font-mono">Our Sponsors</h2>
-              </div>
-              <SponsorsStrip sponsors={sponsors} />
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-10 px-4 text-center space-y-6">
-        {socialLinks && <SocialLinks links={socialLinks} />}
-        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-          @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
-        </p>
-      </footer>
-    </div>
+        {/* Footer */}
+        <footer className="border-t border-border/50 py-10 px-4 text-center space-y-6">
+          {socialLinks && <SocialLinks links={socialLinks} />}
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+            @ 2026 {comp.name} <span className="mx-2 opacity-30">|</span> @ 2026 SCORZ{" "}
+            <span className="mx-2 opacity-30">|</span> Powered by phnyx.dev
+          </p>
+        </footer>
+      </div>
+    </>
   );
 }
 
 function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; levels: any[] | undefined }) {
   const { data: lineup } = useLineup(allSubEventIds);
+  const [now, setNow] = useState(new Date());
+  const [selectedContestant, setSelectedContestant] = useState<any>(null);
+
+  useState(() => {
+    const interval = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(interval);
+  });
 
   if (!lineup || lineup.length === 0) {
     return (
@@ -392,49 +793,300 @@ function LiveLineup({ allSubEventIds, levels }: { allSubEventIds: string[]; leve
 
   // Group by sub-event
   const grouped: Record<string, typeof lineup> = {};
-  lineup.forEach(c => {
+  lineup.forEach((c) => {
     const key = c.sub_event_id || "unassigned";
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(c);
   });
 
-  const subEventName = (seId: string) => {
+  const subEventInfo = (seId: string) => {
     for (const l of levels || []) {
       const se = l.sub_events?.find((s: any) => s.id === seId);
-      if (se) return `${l.name} — ${se.name}`;
+      if (se) return { name: `${l.name} — ${se.name}`, date: se.event_date, levelId: l.id };
     }
-    return "Event";
+    return { name: "Event", date: null, levelId: null };
+  };
+
+  const isCurrentlyPerforming = (
+    slot: { start_time: string; end_time: string } | null,
+    eventDate: string | null,
+  ) => {
+    if (!slot || !eventDate) return false;
+    const todayStr = format(now, "yyyy-MM-dd");
+    if (eventDate !== todayStr) return false;
+    const [sh, sm] = slot.start_time.split(":").map(Number);
+    const [eh, em] = slot.end_time.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
+  };
+
+  const isUpNext = (slot: { start_time: string; end_time: string } | null, eventDate: string | null) => {
+    if (!slot || !eventDate) return false;
+    const todayStr = format(now, "yyyy-MM-dd");
+    if (eventDate !== todayStr) return false;
+    const [sh, sm] = slot.start_time.split(":").map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const startMins = sh * 60 + sm;
+    return startMins > nowMins && startMins - nowMins <= 10;
+  };
+
+  // Classify sub-event groups into current vs past
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const currentEntries: [string, typeof lineup][] = [];
+  const pastEntries: [string, typeof lineup][] = [];
+
+  Object.entries(grouped).forEach(([seId, contestants]) => {
+    const info = subEventInfo(seId);
+    const isPast = info.date && new Date(info.date) < today;
+    if (isPast) {
+      pastEntries.push([seId, contestants]);
+    } else {
+      currentEntries.push([seId, contestants]);
+    }
+  });
+
+  const renderLineupGroup = (seId: string, contestants: typeof lineup) => {
+    const info = subEventInfo(seId);
+    let foundCurrent = false;
+    let nextIdx = -1;
+    contestants.forEach((c, idx) => {
+      const slot = (c as any).slot;
+      if (isCurrentlyPerforming(slot, info.date)) foundCurrent = true;
+      else if (foundCurrent && nextIdx === -1 && slot) nextIdx = idx;
+    });
+
+    return (
+      <Card key={seId} className="border-border/50 bg-card/80">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{info.name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1">
+            {contestants.map((c, idx) => {
+              const slot = (c as any).slot;
+              const performing = isCurrentlyPerforming(slot, info.date);
+              const upNext = nextIdx === idx || (!foundCurrent && isUpNext(slot, info.date));
+
+              return (
+                <motion.div
+                  key={c.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  onClick={() => setSelectedContestant(c)}
+                  className={cn(
+                    "flex items-center gap-3 p-2 rounded-md transition-colors relative cursor-pointer",
+                    performing && "bg-primary/10 border border-primary/30 shadow-sm",
+                    upNext && !performing && "bg-accent/10 border border-accent/20",
+                    !performing && !upNext && "hover:bg-muted/30",
+                  )}
+                >
+                  {performing && (
+                    <span className="absolute -left-1 top-1/2 -translate-y-1/2 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "text-lg font-bold font-mono w-8 text-center",
+                      performing ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {idx + 1}
+                  </span>
+                  {c.profile_photo_url ? (
+                    <img
+                      src={c.profile_photo_url}
+                      alt={c.full_name}
+                      className={cn(
+                        "w-8 h-8 rounded-full object-cover",
+                        performing && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      )}
+                    />
+                  ) : (
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full bg-muted flex items-center justify-center",
+                        performing && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      )}
+                    >
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className={cn("text-sm font-medium", performing ? "text-primary" : "text-foreground")}>
+                        {c.full_name}
+                      </p>
+                      {performing && (
+                        <Badge className="text-[9px] px-1.5 py-0 bg-primary text-primary-foreground animate-pulse">
+                          NOW PERFORMING
+                        </Badge>
+                      )}
+                      {upNext && !performing && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-accent text-accent-foreground">
+                          UP NEXT
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {c.age_category}
+                      </Badge>
+                      {slot && (
+                        <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {slot.start_time} – {slot.end_time}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </motion.div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {Object.entries(grouped).map(([seId, contestants]) => (
-        <Card key={seId} className="border-border/50 bg-card/80">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{subEventName(seId)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {contestants.map((c, idx) => (
-                <div key={c.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
-                  <span className="text-lg font-bold font-mono text-muted-foreground w-8 text-center">{idx + 1}</span>
-                  {c.profile_photo_url ? (
-                    <img src={c.profile_photo_url} alt={c.full_name} className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{c.full_name}</p>
-                    <Badge variant="outline" className="text-[10px]">{c.age_category}</Badge>
-                  </div>
+      {/* Current / Upcoming lineup groups */}
+      {currentEntries.map(([seId, contestants]) => renderLineupGroup(seId, contestants))}
+
+      {/* Past lineup groups in accordion */}
+      {pastEntries.length > 0 && (
+        <Accordion type="single" collapsible>
+          <AccordionItem value="past-lineup" className="border-border/30">
+            <AccordionTrigger className="text-sm text-muted-foreground hover:no-underline py-3">
+              <span className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Past Rounds ({pastEntries.length})
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pt-2">
+                {pastEntries.map(([seId, contestants]) => renderLineupGroup(seId, contestants))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
+      {currentEntries.length === 0 && pastEntries.length === 0 && (
+        <div className="text-center py-12">
+          <ListOrdered className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">No lineup published yet.</p>
+        </div>
+      )}
+
+      {/* Contestant Detail Sheet */}
+      <Sheet open={!!selectedContestant} onOpenChange={(open) => !open && setSelectedContestant(null)}>
+        <SheetContent className="sm:max-w-md overflow-y-auto">
+          <SheetHeader className="pb-4">
+            <SheetTitle className="text-base">Contestant Profile</SheetTitle>
+          </SheetHeader>
+          {selectedContestant && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage
+                    src={selectedContestant.profile_photo_url || undefined}
+                    alt={selectedContestant.full_name}
+                  />
+                  <AvatarFallback className="text-lg bg-muted">
+                    {selectedContestant.full_name
+                      ?.split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{selectedContestant.full_name}</h3>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedContestant.age_category}
+                  </Badge>
                 </div>
-              ))}
+              </div>
+
+              {selectedContestant.bio && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">About</p>
+                    <p className="text-sm text-foreground leading-relaxed">{selectedContestant.bio}</p>
+                  </div>
+                </>
+              )}
+
+              {selectedContestant.location && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{selectedContestant.location}</span>
+                </div>
+              )}
+
+              {selectedContestant.slot && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-mono">
+                    {selectedContestant.slot.start_time} – {selectedContestant.slot.end_time}
+                  </span>
+                </div>
+              )}
+
+              {selectedContestant.performance_video_url && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Performance Video</p>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <a href={selectedContestant.performance_video_url} target="_blank" rel="noopener noreferrer">
+                        <Video className="h-4 w-4 mr-2" /> Watch Video
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {selectedContestant.social_handles &&
+                Object.keys(selectedContestant.social_handles).some(
+                  (k: string) => selectedContestant.social_handles[k],
+                ) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Social Media</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(selectedContestant.social_handles as Record<string, string>)
+                          .filter(([, v]) => v)
+                          .map(([platform, url]) => (
+                            <Button key={platform} asChild variant="outline" size="sm">
+                              <a
+                                href={url.startsWith("http") ? url : `https://${url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Globe className="h-3 w-3 mr-1" />
+                                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                              </a>
+                            </Button>
+                          ))}
+                      </div>
+                    </div>
+                  </>
+                )}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

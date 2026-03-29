@@ -1,18 +1,20 @@
-import { TIERS } from "@/lib/stripe-tiers";
+import { TIERS, USD_DISCLAIMER, getLocalCurrencyApprox } from "@/lib/stripe-tiers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Eye, Mic, Heart, HelpCircle, Mail } from "lucide-react";
+import { Check, ArrowRight, Shield, Users, Trophy, ClipboardCheck, Mic, Heart, HelpCircle, Mail, BookOpen, Home, LogIn } from "lucide-react";
+import { InstallPWA } from "@/components/shared/InstallPWA";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import scorzLogo from "@/assets/scorz-logo.svg";
+import ServicePackageSection from "@/components/about/ServicePackageSection";
 
 const ROLES = [
   {
     icon: Users,
-    title: "Organizer",
+    title: "Organiser",
     description: "Full control over your competition from creation to results.",
     features: [
       "Create & manage competitions, levels, and sub-events",
@@ -48,22 +50,15 @@ const ROLES = [
   {
     icon: Trophy,
     title: "Tabulator",
-    description: "Aggregate scores, audit votes, and prepare official rankings.",
+    description: "Aggregate scores, time performances, audit votes, and verify process integrity.",
     features: [
+      "Time each performance and flag overruns",
       "View side-by-side score comparisons",
       "Audit individual judge votes for discrepancies",
+      "Observe and verify scoring integrity",
       "Generate master score sheets per level",
-      "Certify digital-vs-physical score match",
-    ],
-  },
-  {
-    icon: Eye,
-    title: "Witness",
-    description: "Independently verify the fairness and accuracy of the process.",
-    features: [
-      "Observe scoring in real time",
       "Log observations and flag concerns",
-      "Digitally sign witness certification",
+      "Certify digital-vs-physical score match",
     ],
   },
   {
@@ -82,7 +77,7 @@ const ROLES = [
     title: "Audience",
     description: "Engage with the competition through voting and ticketing.",
     features: [
-      "Cast votes for favorite performers",
+      "Cast votes for favourite performers",
       "Purchase event tickets online",
       "Follow live competition updates and news",
     ],
@@ -96,35 +91,39 @@ const FAQ = [
   },
   {
     q: "How does digital scoring work?",
-    a: "Judges score each contestant using a customizable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
+    a: "Judges score each contestant using a customisable rubric you build. Scores are submitted in real time via any device. The system automatically calculates totals, applies time penalties, and generates rankings instantly.",
   },
   {
     q: "Can I assign different staff to different events?",
-    a: "Absolutely. You can assign judges, chief judges, tabulators, and witnesses per sub-event. Each person only sees the events they're assigned to, keeping things organized and secure.",
+    a: "Absolutely. You can assign judges, chief judges, and tabulators per sub-event. Each person only sees the events they're assigned to, keeping things organised and secure.",
   },
   {
     q: "Is my scoring data secure?",
-    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organizers only see their own competitions, and all certifications are digitally signed and timestamped.",
+    a: "Yes. All data is protected with row-level security policies. Judges can only access their own scores, organisers only see their own competitions, and all certifications are digitally signed and timestamped.",
   },
   {
     q: "Do contestants need an account to register?",
-    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgment, and optional performance slot selection.",
+    a: "Yes, contestants create a free account and complete a self-service registration form that includes profile details, guardian consent (for minors), rules acknowledgement, and optional performance slot selection.",
   },
   {
     q: "Can the audience participate?",
-    a: "When enabled, audience members can vote for their favorite contestants and purchase event tickets—all through the public event page. No account required for voting.",
+    a: "When enabled, audience members can vote for their favourite contestants and purchase event tickets—all through the public event page. No account required for voting.",
   },
   {
     q: "What happens if there's a tie?",
     a: "The Chief Judge can break ties using criterion-level analysis—comparing specific rubric scores to determine the winner. All tie-break decisions are logged with notes for full transparency.",
   },
   {
-    q: "Can I upgrade or downgrade my plan?",
-    a: "Yes. You can change your plan at any time from your billing settings. Changes take effect immediately, and billing is prorated.",
+    q: "Can I buy multiple competition credits?",
+    a: "Yes. Each purchase unlocks one competition at the selected tier. You can buy as many credits as you need, and they never expire.",
   },
   {
-    q: "What if I need more than the Enterprise plan offers?",
-    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organization's needs, including white-label options, API access, and dedicated support.",
+    q: "What's included in the Full-Service Package?",
+    a: "Our Full-Service Package covers everything from start to finish. On the adjudication side: judge recruitment and training, custom rubric design consultation, chief judge coordination, real-time scoring oversight, and results certification. On the production side: complete event setup on the Scorz platform, contestant registration management, scheduling and slot coordination, branding and sponsor configuration, on-the-day technical support, and post-event reporting and analytics. Pricing is custom-quoted based on your event's size and requirements — request a free discovery meeting above to get started.",
+  },
+  {
+    q: "What if I need a custom solution?",
+    a: "Contact us at dev@phnyx.pro and we'll build a custom plan tailored to your organisation's needs, including white-label options, API access, and dedicated support.",
   },
 ];
 
@@ -144,12 +143,25 @@ export default function About() {
             <img src={scorzLogo} alt="Scorz" className="h-7 w-7" />
             <span className="font-bold tracking-tighter text-foreground text-lg font-mono">SCOR<span className="text-accent">Z</span></span>
           </Link>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/">Home</Link>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <InstallPWA />
+            <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/">
+                <Home className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
             </Button>
-            <Button size="sm" asChild>
-              <Link to="/auth">Get Started</Link>
+            <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/help">
+                <BookOpen className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Knowledge Base</span>
+              </Link>
+            </Button>
+            <Button size="sm" className="px-2 sm:px-3" asChild>
+              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">
+                <LogIn className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Get Started</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -169,7 +181,7 @@ export default function About() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" asChild>
-              <Link to="/auth">Start Free <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/auth?view=signup&role=organizer&redirect=/onboarding">Start Now <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="#roles">Explore Roles</a>
@@ -183,7 +195,7 @@ export default function About() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
           {[
             { title: "Real-Time Scoring", desc: "Judges score on any device. Results update instantly—no waiting, no manual tallying." },
-            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator, witness—gets exactly the tools they need and nothing more." },
+            { title: "Role-Based Access", desc: "Every participant—organizer, judge, tabulator—gets exactly the tools they need and nothing more." },
             { title: "End-to-End Integrity", desc: "Digital signatures, audit trails, and tie-break protocols ensure every result is defensible." },
           ].map((item, i) => (
             <motion.div key={item.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.12 }}>
@@ -202,10 +214,10 @@ export default function About() {
               Built for every role
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              One platform, seven roles, zero confusion
+              One platform, six roles, zero confusion
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
-              From the organizer setting up the event to the audience casting their vote, every participant gets a tailored experience.
+              From the organiser setting up the event to the audience casting their vote, every participant gets a tailored experience.
             </p>
           </motion.div>
 
@@ -254,7 +266,7 @@ export default function About() {
               Simple, transparent pricing
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
-              Plans for every organizer
+              Plans for every organiser
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Whether you're running a local talent show or a national championship, Scorz scales with you.
@@ -282,8 +294,14 @@ export default function About() {
                     <CardTitle className="text-base font-mono">{tier.name}</CardTitle>
                     <div className="flex items-baseline gap-1 mt-2">
                       <span className="text-4xl font-bold text-foreground">${tier.price}</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
+                      <span className="text-sm text-muted-foreground">/competition</span>
                     </div>
+                    {(() => {
+                      const localApprox = getLocalCurrencyApprox(tier.price);
+                      return localApprox ? (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{localApprox} approx.</p>
+                      ) : null;
+                    })()}
                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{tier.description}</p>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
@@ -291,7 +309,7 @@ export default function About() {
                       {tier.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm">
                           <Check className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{f}</span>
+                          <span className={`text-muted-foreground ${f.includes("coming soon") ? "italic" : ""}`}>{f}</span>
                         </li>
                       ))}
                     </ul>
@@ -305,8 +323,16 @@ export default function About() {
               </motion.div>
             ))}
           </div>
+          <p className="text-center text-[10px] text-muted-foreground font-mono mt-6">
+            {USD_DISCLAIMER}
+          </p>
         </div>
       </section>
+
+      <Separator className="max-w-5xl mx-auto" />
+
+      {/* ── Service Package ── */}
+      <ServicePackageSection />
 
       <Separator className="max-w-5xl mx-auto" />
 
@@ -338,6 +364,20 @@ export default function About() {
             ))}
           </Accordion>
         </div>
+      </section>
+
+      {/* ── Help Centre CTA ── */}
+      <section className="border-t border-border/40 py-16 text-center px-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <BookOpen className="h-5 w-5 text-secondary" />
+          <h2 className="text-xl font-bold text-foreground">Need help getting started?</h2>
+        </div>
+        <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+          Browse our Knowledge Base for step-by-step guides, walkthroughs, and video tutorials for every role.
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/help">Browse Knowledge Base <ArrowRight className="h-4 w-4 ml-1" /></Link>
+        </Button>
       </section>
 
       {/* ── Contact ── */}

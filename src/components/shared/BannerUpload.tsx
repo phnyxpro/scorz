@@ -69,7 +69,7 @@ export function BannerUpload({ currentUrl, folder, onUploaded, onRemoved, classN
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="w-full h-24 border-2 border-dashed border-border rounded-md flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors text-xs"
+          className="w-full h-24 border-2 border-dashed border-border rounded-md flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-accent/50 hover:text-accent transition-colors text-xs"
         >
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
           {uploading ? "Uploading…" : `Upload ${aspectLabel}`}

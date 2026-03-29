@@ -10,5 +10,18 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI Bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://scorz.live/functions/v1/sitemap

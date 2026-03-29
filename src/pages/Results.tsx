@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
-import { useTabulatorCertification } from "@/hooks/useTabulator";
-import { useWitnessCertification } from "@/hooks/useWitness";
+import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
+import { useTabulatorCertification, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
+import { useWitnessCertification, useWitnessCertificationRealtime } from "@/hooks/useWitness";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useVoteCounts } from "@/hooks/useAudienceVoting";
 import { PrintableResults } from "@/components/results/PrintableResults";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { motion } from "framer-motion";
 const medalColors = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 
 export default function Results() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("organizer");
@@ -38,6 +40,10 @@ export default function Results() {
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
   const { data: voteCounts } = useVoteCounts(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
+  useWitnessCertificationRealtime(selectedSubEventId || undefined);
 
   const selectedSubEvent = subEvents?.find((se) => se.id === selectedSubEventId);
 
@@ -52,7 +58,7 @@ export default function Results() {
   // Map from numeric index ("0","1",...) to rubric name
   const indexToName = useMemo(() => {
     const map: Record<string, string> = {};
-    sortedRubric.forEach((r, i) => { map[String(i)] = r.name; });
+    sortedRubric.forEach((r) => { map[r.id] = r.name; });
     return map;
   }, [sortedRubric]);
 
@@ -106,8 +112,8 @@ export default function Results() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon">
-          <Link to={`/competitions`}><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -117,7 +123,7 @@ export default function Results() {
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
         {allCertified && leaderboard.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link to={`/competitions/${competitionId}/post-event`}>My Feedback</Link>
             </Button>
@@ -131,6 +137,11 @@ export default function Results() {
                   chiefJudge: chiefCert?.signed_at || undefined,
                   tabulator: tabCert?.signed_at || undefined,
                   witness: witnessCert?.signed_at || undefined,
+                }}
+                certificationSignatures={{
+                  chiefJudge: chiefCert?.chief_judge_signature,
+                  tabulator: tabCert?.tabulator_signature,
+                  witness: witnessCert?.witness_signature,
                 }}
               />
             )}
@@ -204,7 +215,7 @@ export default function Results() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">Rank</TableHead>
@@ -227,7 +238,7 @@ export default function Results() {
                             )}
                           </TableCell>
                           <TableCell className="font-medium">
-                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                            <Link to={`/profile/${contestantUserId(r.regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">
                               {r.name}
                             </Link>
                           </TableCell>
@@ -269,7 +280,7 @@ export default function Results() {
                         <div key={regId} className="flex items-center gap-3">
                           <span className="font-mono text-xs text-muted-foreground w-6">{i + 1}.</span>
                           <span className="text-sm font-medium text-foreground w-32 truncate">
-                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-primary hover:underline transition-colors">
+                            <Link to={`/profile/${contestantUserId(regId) || ""}`} className="hover:text-secondary hover:underline transition-colors">
                               {contestantName(regId)}
                             </Link>
                           </span>

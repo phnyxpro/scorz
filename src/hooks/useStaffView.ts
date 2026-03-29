@@ -9,30 +9,58 @@ import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
  * Represents the restricted roles that operate within the scope of a specific sub-event.
  * These staff members are assigned via the `sub_event_assignments` table.
  */
-export type StaffRole = "judge" | "chief_judge" | "tabulator" | "witness";
+export type StaffRole = "judge" | "tabulator";
 
 /**
  * A custom hook to fetch and aggregate data for a staff member (like a judge or tabulator).
  * It retrieves the user's assigned sub-events, the details of those sub-events (including parent level),
  * and the top-level competitions they belong to.
  * 
- * @param {StaffRole} [role] - Optional filter to only fetch assignments where the user has this specific role.
- * @returns An object containing:
- * - `assignedCompetitions`: An array of `Competition` objects the user is assigned to.
- * - `subEventDetails`: An array of `SubEvent` objects (with nested `level` data) the user is assigned to.
- * - `myAssignments`: The raw assignment records from `sub_event_assignments`.
- * - `isLoading`: Boolean indicating if any of the underlying queries are still loading.
+ * Falls back to `staff_invitations` + `staff_invitation_sub_events` when
+ * `sub_event_assignments` is empty (invitation not yet accepted).
  */
 export function useStaffView(role?: StaffRole) {
     const { user } = useAuth();
     const { data: competitions, isLoading: compsLoading } = useCompetitions();
     const { data: myAssignments, isLoading: assignmentsLoading } = useMyAssignedSubEvents(role);
 
-    // Get distinct sub-event IDs from assignments
+    // Fall back to staff_invitations when no direct assignments exist
+    const { data: fallbackSubEventIds, isLoading: fallbackLoading } = useQuery({
+        queryKey: ["staff_invitation_fallback", user?.id, user?.email, role],
+        enabled: !!user?.email && !assignmentsLoading && (!myAssignments || myAssignments.length === 0),
+        queryFn: async () => {
+            const { data: invites } = await supabase
+                .from("staff_invitations")
+                .select("id, is_chief, role")
+                .ilike("email", user!.email!)
+                .is("accepted_at", null);
+
+            if (!invites?.length) return [];
+
+            // Filter by role if specified
+            const filtered = role ? invites.filter(i => i.role === role) : invites;
+            if (!filtered.length) return [];
+
+            const inviteIds = filtered.map(i => i.id);
+            const { data: invSubEvents } = await supabase
+                .from("staff_invitation_sub_events")
+                .select("sub_event_id")
+                .in("staff_invitation_id", inviteIds);
+
+            return invSubEvents?.map(s => s.sub_event_id) || [];
+        },
+    });
+
+    // Get distinct sub-event IDs from assignments OR fallback
     const assignedSubEventIds = useMemo(() => {
-        if (!myAssignments) return [];
-        return [...new Set(myAssignments.map((a) => a.sub_event_id))];
-    }, [myAssignments]);
+        if (myAssignments && myAssignments.length > 0) {
+            return [...new Set(myAssignments.map((a) => a.sub_event_id))];
+        }
+        if (fallbackSubEventIds && fallbackSubEventIds.length > 0) {
+            return [...new Set(fallbackSubEventIds)];
+        }
+        return [];
+    }, [myAssignments, fallbackSubEventIds]);
 
     // Fetch sub-event details to get competition_id and level_id
     const { data: subEventDetails, isLoading: detailsLoading } = useQuery({
@@ -54,10 +82,15 @@ export function useStaffView(role?: StaffRole) {
         return competitions.filter((c) => compIds.includes(c.id));
     }, [subEventDetails, competitions]);
 
+    const isFallback = !myAssignments?.length && (fallbackSubEventIds?.length ?? 0) > 0;
+
     return {
         assignedCompetitions,
         subEventDetails,
         myAssignments,
-        isLoading: compsLoading || assignmentsLoading || (assignedSubEventIds.length > 0 && detailsLoading),
+        isLoading: compsLoading || assignmentsLoading || 
+            ((!myAssignments || myAssignments.length === 0) && fallbackLoading) ||
+            (assignedSubEventIds.length > 0 && detailsLoading),
+        isFallback,
     };
 }

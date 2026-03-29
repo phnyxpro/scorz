@@ -1,0 +1,187 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-api-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+async function hashKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
+  try {
+    // Authenticate via x-api-key header
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    const keyHash = await hashKey(apiKey);
+    const { data: keyRow, error: keyErr } = await supabase
+      .from("api_keys")
+      .select("id, user_id, is_active")
+      .eq("key_hash", keyHash)
+      .eq("is_active", true)
+      .single();
+
+    if (keyErr || !keyRow) {
+      return new Response(JSON.stringify({ error: "Invalid or inactive API key" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Update last_used_at
+    await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyRow.id);
+
+    const url = new URL(req.url);
+    const path = url.pathname.replace(/^\/api-v1\/?/, "").replace(/\/$/, "");
+
+    // Route: /competitions
+    if (path === "competitions" || path === "") {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("id, name, slug, status, start_date, end_date, description, created_at")
+        .eq("created_by", keyRow.user_id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Route: /registrations?competition_id=xxx
+    if (path === "registrations") {
+      const compId = url.searchParams.get("competition_id");
+
+      // Verify ownership: only return registrations for competitions owned by this user
+      if (compId) {
+        const { data: compCheck } = await supabase
+          .from("competitions")
+          .select("id")
+          .eq("id", compId)
+          .eq("created_by", keyRow.user_id)
+          .maybeSingle();
+        if (!compCheck) {
+          return new Response(JSON.stringify({ error: "Competition not found or not owned by you" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 403,
+          });
+        }
+      }
+
+      // Get all competition IDs owned by this user
+      const { data: ownedComps } = await supabase
+        .from("competitions")
+        .select("id")
+        .eq("created_by", keyRow.user_id);
+      const ownedIds = (ownedComps || []).map((c: any) => c.id);
+      if (ownedIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let query = supabase
+        .from("contestant_registrations")
+        .select("id, full_name, email, status, age_category, created_at, competition_id, sub_event_id")
+        .in("competition_id", compId ? [compId] : ownedIds)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      const { data, error } = await query;
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Route: /scores?sub_event_id=xxx
+    if (path === "scores") {
+      const seId = url.searchParams.get("sub_event_id");
+
+      // Get all sub_event IDs belonging to user's competitions
+      const { data: ownedComps } = await supabase
+        .from("competitions")
+        .select("id")
+        .eq("created_by", keyRow.user_id);
+      const ownedCompIds = (ownedComps || []).map((c: any) => c.id);
+      if (ownedCompIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: ownedLevels } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .in("competition_id", ownedCompIds);
+      const ownedLevelIds = (ownedLevels || []).map((l: any) => l.id);
+      if (ownedLevelIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: ownedSubEvents } = await supabase
+        .from("sub_events")
+        .select("id")
+        .in("level_id", ownedLevelIds);
+      const ownedSeIds = (ownedSubEvents || []).map((se: any) => se.id);
+      if (ownedSeIds.length === 0) {
+        return new Response(JSON.stringify({ data: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // If a specific sub_event_id was requested, verify ownership
+      if (seId && !ownedSeIds.includes(seId)) {
+        return new Response(JSON.stringify({ error: "Sub-event not found or not owned by you" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        });
+      }
+
+      let query = supabase
+        .from("judge_scores")
+        .select("id, contestant_registration_id, judge_id, final_score, raw_total, time_penalty, is_certified, created_at, sub_event_id")
+        .in("sub_event_id", seId ? [seId] : ownedSeIds)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      const { data, error } = await query;
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Unknown endpoint. Available: /competitions, /registrations, /scores" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 404,
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: msg }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});

@@ -45,22 +45,19 @@ serve(async (req) => {
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-
-      // Check if already subscribed
-      const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-      if (subs.data.length > 0) {
-        logStep("User already has active subscription");
-        throw new Error("You already have an active subscription. Please manage it from the billing portal.");
-      }
     }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
+      mode: "payment",
       success_url: `${req.headers.get("origin")}/dashboard?checkout=success`,
       cancel_url: `${req.headers.get("origin")}/dashboard?checkout=cancelled`,
+      metadata: {
+        user_id: user.id,
+        price_id: priceId,
+      },
     });
 
     logStep("Checkout session created", { sessionId: session.id });

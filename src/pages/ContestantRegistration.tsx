@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition } from "@/hooks/useCompetitions";
 import { useMyRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function ContestantRegistration() {
   const { id: competitionId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isOnBehalf = searchParams.get("behalf") === "true";
   const navigate = useNavigate();
   const { user, signUp } = useAuth();
   const { data: comp, isLoading: compLoading } = useCompetition(competitionId);
@@ -24,6 +26,8 @@ export default function ContestantRegistration() {
   const { data: formConfig, isLoading: configLoading } = useRegistrationFormConfig(competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
+  const { data: formConfig } = useFormConfig(competitionId);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [authLoading, setAuthLoading] = useState(false);
   const [authData, setAuthData] = useState({ email: "", password: "", fullName: "" });
@@ -50,9 +54,6 @@ export default function ContestantRegistration() {
 
   const handleDynamicSubmit = async (builtinData: Record<string, any>, customData: Record<string, any>) => {
     if (!user || !competitionId) return;
-
-    // Ensure user has contestant role
-    await supabase.from("user_roles").upsert({ user_id: user.id, role: "contestant" as any }, { onConflict: "user_id,role" });
 
     createReg.mutate({
       user_id: user.id,
@@ -85,8 +86,8 @@ export default function ContestantRegistration() {
             .update({ is_booked: true, contestant_registration_id: createdReg.id } as any)
             .eq("id", slotId);
         }
-        toast({ title: "Registration complete", description: "Your details have been submitted successfully." });
-        navigate(`/competitions`);
+        toast({ title: "Registration submitted!", description: "Awaiting organiser review." });
+        navigate("/dashboard");
       },
       onError: (e: any) => {
         toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -106,73 +107,75 @@ export default function ContestantRegistration() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/competitions")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Registration</h1>
-          <p className="text-muted-foreground">{comp?.name}</p>
-        </div>
-      </header>
-
-      {!user ? (
-        <AnimatePresence mode="wait">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <Card className="border-border/50 bg-card/80 backdrop-blur max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Create Account</CardTitle>
-                <CardDescription>Join Scorz to track your performance and scores.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Full Name</Label>
-                  <Input
-                    placeholder="John Doe"
-                    value={authData.fullName}
-                    onChange={e => setAuthData({ ...authData, fullName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="john@example.com"
-                    value={authData.email}
-                    onChange={e => setAuthData({ ...authData, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={authData.password}
-                    onChange={e => setAuthData({ ...authData, password: e.target.value })}
-                  />
-                </div>
-                <Button className="w-full" onClick={handleSignUp} disabled={authLoading}>
-                  {authLoading ? "Creating Account..." : "Create Account & Continue"}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground mt-4">
-                  Already have an account? <a href="/login" className="text-primary hover:underline">Log in</a>
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <DynamicRegistrationForm
-          formSchema={formSchema}
-          competitionId={competitionId!}
-          mode="registration"
-          onSubmit={handleDynamicSubmit}
-          isSubmitting={createReg.isPending}
-          initialValues={{
-            full_name: user.user_metadata?.full_name || "",
-            email: user.email || "",
-          }}
-        />
-      )}
+        <h1 className="text-2xl font-bold tracking-tight">{comp?.name || "Competition"}</h1>
+        <p className="text-sm text-muted-foreground">Complete each step to register.</p>
     </div>
+
+      {
+    !user ? (
+      <AnimatePresence mode="wait">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <Card className="border-border/50 bg-card/80 backdrop-blur max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Create Account</CardTitle>
+              <CardDescription>Join Scorz to track your performance and scores.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  placeholder="John Doe"
+                  value={authData.fullName}
+                  onChange={e => setAuthData({ ...authData, fullName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={authData.email}
+                  onChange={e => setAuthData({ ...authData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={authData.password}
+                  onChange={e => setAuthData({ ...authData, password: e.target.value })}
+                />
+              </div>
+              <Button className="w-full" onClick={handleSignUp} disabled={authLoading}>
+                {authLoading ? "Creating Account..." : "Create Account & Continue"}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground mt-4">
+                Already have an account? <a href="/login" className="text-primary hover:underline">Log in</a>
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </AnimatePresence>
+    ) : (
+    <DynamicRegistrationForm
+      formSchema={formSchema}
+      competitionId={competitionId!}
+      mode="registration"
+      onSubmit={handleDynamicSubmit}
+      isSubmitting={createReg.isPending}
+      initialValues={{
+        full_name: user.user_metadata?.full_name || "",
+        email: user.email || "",
+      }}
+    />
+  )
+  }
+    </div >
   );
 }
+
+// ─── Shared components ─────────────────────────────────────────────
 
 function LoadingSpinner() {
   return (

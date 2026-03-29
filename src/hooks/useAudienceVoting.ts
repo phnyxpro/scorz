@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -13,20 +14,38 @@ export interface AudienceVote {
   created_at: string;
 }
 
+export function useVoteCountsRealtime(subEventId: string | undefined) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!subEventId) return;
+    const channel = supabase
+      .channel(`vote_counts_${subEventId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "audience_votes",
+        filter: `sub_event_id=eq.${subEventId}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ["vote_counts", subEventId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [subEventId, queryClient]);
+}
+
 export function useVoteCounts(subEventId: string | undefined) {
+  useVoteCountsRealtime(subEventId);
   return useQuery({
     queryKey: ["vote_counts", subEventId],
     enabled: !!subEventId,
-    refetchInterval: 15_000,
     queryFn: async () => {
+      // Use safe RPC function that returns aggregated counts only (no PII)
       const { data, error } = await supabase
-        .from("audience_votes")
-        .select("contestant_registration_id")
-        .eq("sub_event_id", subEventId!);
+        .rpc("get_vote_counts", { _sub_event_id: subEventId! });
       if (error) throw error;
       const counts: Record<string, number> = {};
-      for (const v of data || []) {
-        counts[v.contestant_registration_id] = (counts[v.contestant_registration_id] || 0) + 1;
+      for (const v of (data || []) as any[]) {
+        counts[v.contestant_registration_id] = Number(v.vote_count);
       }
       return counts;
     },

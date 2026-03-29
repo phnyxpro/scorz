@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { DashboardSkeleton } from "@/components/shared/PageSkeletons";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, Legend
 } from "recharts";
-import { DollarSign, TrendingUp, Users, CreditCard, Activity } from "lucide-react";
+import { DollarSign, TrendingUp, Users, CreditCard, Activity, Ticket } from "lucide-react";
 import { format } from "date-fns";
 
 export default function FinanceDashboard() {
@@ -18,192 +17,246 @@ export default function FinanceDashboard() {
         queryKey: ["finance_stats", user?.id],
         enabled: !!user,
         queryFn: async () => {
-            // Fetch competitions to calculate total revenue
-            let compQuery = supabase.from("competitions").select("id, name, registration_fee, created_at");
+            // --- Ticket revenue ---
+            const { data: tickets } = await supabase
+                .from("event_tickets")
+                .select("id, ticket_type, payment_status, created_at, sub_event_id");
+
+            const paidTickets = (tickets || []).filter(t => t.payment_status === "paid");
+            // We don't have ticket price on the ticket row, so join with sub_events
+            const subEventIds = [...new Set(paidTickets.map(t => t.sub_event_id))];
+            let ticketPriceMap = new Map<string, number>();
+            if (subEventIds.length > 0) {
+                const { data: subEvents } = await supabase
+                    .from("sub_events")
+                    .select("id, ticket_price")
+                    .in("id", subEventIds);
+                (subEvents || []).forEach(se => ticketPriceMap.set(se.id, Number(se.ticket_price) || 0));
+            }
+
+            let ticketRevenue = 0;
+            paidTickets.forEach(t => { ticketRevenue += ticketPriceMap.get(t.sub_event_id) || 0; });
+
+            // --- Credit revenue ---
+            const { data: credits } = await supabase
+                .from("competition_credits")
+                .select("id, tier_product_id, purchased_at");
+
+            // Map tier to price
+            const tierPrices: Record<string, number> = {
+                "prod_start": 15,
+                "prod_pro": 49,
+                "prod_enterprise": 149,
+            };
+            let creditRevenue = 0;
+            (credits || []).forEach(c => {
+                // Try exact match or partial match
+                const price = tierPrices[c.tier_product_id] ||
+                    (c.tier_product_id?.includes("start") ? 15 :
+                     c.tier_product_id?.includes("pro") ? 49 :
+                     c.tier_product_id?.includes("enterprise") ? 149 : 0);
+                creditRevenue += price;
+            });
+
+            const totalRevenue = ticketRevenue + creditRevenue;
+
+            // --- Active events ---
+            const { count: activeEventsCount } = await supabase
+                .from("competitions")
+                .select("id", { count: "exact", head: true })
+                .eq("status", "active");
+
+            // --- Total registrations ---
+            let regQuery = supabase.from("contestant_registrations").select("id, competition_id, created_at, status");
             if (!isAdmin) {
-                compQuery = compQuery.eq("created_by", user!.id);
+                // For non-admin, filter by their competitions
+                const { data: myComps } = await supabase
+                    .from("competitions")
+                    .select("id")
+                    .eq("created_by", user!.id);
+                const compIds = (myComps || []).map(c => c.id);
+                if (compIds.length > 0) {
+                    regQuery = regQuery.in("competition_id", compIds);
+                }
             }
-            const response = await (compQuery as any);
-            const comps: any[] = response.data;
+            const { data: registrations } = await regQuery;
 
-            if (!comps) return { totalRevenue: 0, totalRegistrations: 0, monthlyData: [], recentTransactions: [] };
+            const totalRegistrations = registrations?.length || 0;
+            const approvedRegistrations = (registrations || []).filter(r => r.status === "approved").length;
+            const approvalRate = totalRegistrations > 0 ? Math.round((approvedRegistrations / totalRegistrations) * 100) : 0;
 
-            const compIds = comps.map(c => c.id);
+            // --- Monthly data for chart ---
+            const monthlyStats: Record<string, { month: string; tickets: number; credits: number }> = {};
 
-            // Fetch registrations for those competitions
-            const { data: registrations } = await supabase
-                .from("contestant_registrations")
-                .select("id, competition_id, created_at, status")
-                .in("competition_id", compIds);
+            paidTickets.forEach(t => {
+                const monthKey = format(new Date(t.created_at), "MMM yyyy");
+                if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { month: monthKey, tickets: 0, credits: 0 };
+                monthlyStats[monthKey].tickets += ticketPriceMap.get(t.sub_event_id) || 0;
+            });
 
-            const compMap = new Map(comps.map(c => [c.id, c]));
+            (credits || []).forEach(c => {
+                const monthKey = format(new Date(c.purchased_at), "MMM yyyy");
+                if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { month: monthKey, tickets: 0, credits: 0 };
+                const price = tierPrices[c.tier_product_id] ||
+                    (c.tier_product_id?.includes("start") ? 15 :
+                     c.tier_product_id?.includes("pro") ? 49 :
+                     c.tier_product_id?.includes("enterprise") ? 149 : 0);
+                monthlyStats[monthKey].credits += price;
+            });
 
-            let totalRevenue = 0;
-            let totalRegistrations = 0;
-            const monthlyStats: Record<string, { month: string; revenue: number; registrations: number }> = {};
-            const recentTransactions: any[] = [];
-
-            if (registrations) {
-                registrations.forEach(reg => {
-                    const comp = compMap.get(reg.competition_id);
-                    const fee = comp?.registration_fee || 0;
-                    const monthKey = format(new Date(reg.created_at), "MMM yyyy");
-
-                    if (!monthlyStats[monthKey]) {
-                        monthlyStats[monthKey] = { month: monthKey, revenue: 0, registrations: 0 };
-                    }
-
-                    if (reg.status === "approved" || reg.status === "certified") {
-                        totalRevenue += fee;
-                        monthlyStats[monthKey].revenue += fee;
-                    }
-
-                    totalRegistrations += 1;
-                    monthlyStats[monthKey].registrations += 1;
-
-                    if (recentTransactions.length < 10) {
-                        recentTransactions.push({
-                            id: reg.id,
-                            date: reg.created_at,
-                            amount: fee,
-                            status: reg.status,
-                            competition_name: comp?.name || "Unknown"
-                        });
-                    }
+            // --- Recent transactions (credits purchased) ---
+            const recentTransactions = (credits || [])
+                .sort((a, b) => new Date(b.purchased_at).getTime() - new Date(a.purchased_at).getTime())
+                .slice(0, 10)
+                .map(c => {
+                    const price = tierPrices[c.tier_product_id] ||
+                        (c.tier_product_id?.includes("start") ? 15 :
+                         c.tier_product_id?.includes("pro") ? 49 :
+                         c.tier_product_id?.includes("enterprise") ? 149 : 0);
+                    const tierName = c.tier_product_id?.includes("enterprise") ? "Enterprise" :
+                        c.tier_product_id?.includes("pro") ? "Pro" : "Start";
+                    return {
+                        id: c.id,
+                        date: c.purchased_at,
+                        amount: price,
+                        label: `${tierName} Scorz Credit`,
+                    };
                 });
-            }
-
-            recentTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
             return {
                 totalRevenue,
+                ticketRevenue,
+                creditRevenue,
                 totalRegistrations,
-                monthlyData: Object.values(monthlyStats).reverse(),
-                recentTransactions
+                activeEventsCount: activeEventsCount || 0,
+                approvalRate,
+                monthlyData: Object.values(monthlyStats).reverse().slice(-12),
+                recentTransactions,
             };
         }
     });
 
     if (isLoading) {
-        return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading financial data...</div>;
+        return <DashboardSkeleton />;
     }
 
-    const { totalRevenue, totalRegistrations, monthlyData, recentTransactions } = stats || { totalRevenue: 0, totalRegistrations: 0, monthlyData: [], recentTransactions: [] };
+    const { totalRevenue, ticketRevenue, creditRevenue, totalRegistrations, activeEventsCount, approvalRate, monthlyData, recentTransactions } = stats || {
+        totalRevenue: 0, ticketRevenue: 0, creditRevenue: 0, totalRegistrations: 0, activeEventsCount: 0, approvalRate: 0, monthlyData: [], recentTransactions: []
+    };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Finance Dashboard</h2>
-                <p className="text-muted-foreground">
-                    {isAdmin ? "Platform-wide revenue and registration metrics." : "Revenue and registration metrics for your events."}
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Finance Dashboard</h2>
+                <p className="text-sm text-muted-foreground">
+                    {isAdmin ? "Platform-wide revenue and financial metrics." : "Revenue and financial metrics for your events."}
                 </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <Card className="bg-primary/5 border-primary/20 col-span-2 sm:col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
                         <DollarSign className="h-4 w-4 text-primary" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                            ${ticketRevenue.toFixed(2)} tickets · ${creditRevenue.toFixed(2)} credits
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Registrations</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Registrations</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+{totalRegistrations}</div>
-                        <p className="text-xs text-muted-foreground">+12% from last month</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{totalRegistrations}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Total registrations</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Events</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Active Events</CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+12</div>
-                        <p className="text-xs text-muted-foreground">3 ending soon</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{activeEventsCount}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Active competitions</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Approval Rate</CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">89%</div>
-                        <p className="text-xs text-muted-foreground">Paid vs Draft</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl sm:text-2xl font-bold">{approvalRate}%</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Approved registrations</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Revenue Over Time</CardTitle>
-                        <CardDescription>Monthly registration revenue.</CardDescription>
+            <div className="grid gap-3 sm:gap-4 lg:grid-cols-7">
+                <Card className="lg:col-span-4">
+                    <CardHeader className="px-4 pt-4 pb-2">
+                        <CardTitle className="text-sm sm:text-base">Revenue Over Time</CardTitle>
+                        <CardDescription className="text-xs">Monthly ticket and credit revenue.</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={monthlyData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                                    <XAxis
-                                        dataKey="month"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        fontSize={12}
-                                    />
-                                    <YAxis
-                                        tickFormatter={(value) => `$${value}`}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        fontSize={12}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: 'hsl(var(--muted))' }}
-                                        contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-                                    />
-                                    <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    <CardContent className="px-2 sm:px-4 pb-4">
+                        <div className="h-[220px] sm:h-[300px]">
+                            {monthlyData.length === 0 ? (
+                                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                                    No revenue data yet
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={monthlyData}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                        <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={10} />
+                                        <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} fontSize={10} width={40} />
+                                        <Tooltip
+                                            cursor={{ fill: 'hsl(var(--muted))' }}
+                                            contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', fontSize: '12px' }}
+                                        />
+                                        <Bar dataKey="tickets" name="Ticket Revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} stackId="a" />
+                                        <Bar dataKey="credits" name="Credit Revenue" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} stackId="a" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Recent Transactions</CardTitle>
-                        <CardDescription>Latest approved registrations.</CardDescription>
+                <Card className="lg:col-span-3">
+                    <CardHeader className="px-4 pt-4 pb-2">
+                        <CardTitle className="text-sm sm:text-base">Recent Transactions</CardTitle>
+                        <CardDescription className="text-xs">Latest credit purchases.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {recentTransactions.map(tx => (
-                                <div key={tx.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 bg-primary/10 rounded-full flex items-center justify-center">
-                                            <CreditCard className="h-4 w-4 text-primary" />
+                    <CardContent className="px-4 pb-4">
+                        <div className="space-y-3 sm:space-y-4">
+                            {recentTransactions.map((tx: any) => (
+                                <div key={tx.id} className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                        <div className="h-8 w-8 sm:h-9 sm:w-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                                            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-medium leading-none">{tx.competition_name}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">
+                                        <div className="min-w-0">
+                                            <p className="text-xs sm:text-sm font-medium leading-none truncate">{tx.label}</p>
+                                            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                                                 {format(new Date(tx.date), "MMM d, yyyy")}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="font-bold text-sm">
+                                    <div className="font-bold text-xs sm:text-sm shrink-0">
                                         +${tx.amount.toFixed(2)}
                                     </div>
                                 </div>
                             ))}
                             {recentTransactions.length === 0 && (
-                                <div className="text-center text-sm text-muted-foreground py-8">
-                                    No recent transactions found.
+                                <div className="text-center text-xs sm:text-sm text-muted-foreground py-6 sm:py-8">
+                                    No transactions yet.
                                 </div>
                             )}
                         </div>

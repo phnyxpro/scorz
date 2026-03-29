@@ -7,7 +7,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck } from "lucide-react";
+import { Bell, Info, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck, BellRing, BellOff } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,18 +31,19 @@ export function NotificationCenter() {
     const navigate = useNavigate();
     const qc = useQueryClient();
     const [open, setOpen] = useState(false);
+    const { isSupported: pushSupported, isSubscribed: pushSubscribed, isLoading: pushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications();
 
     const { data: notifications, isLoading } = useQuery({
         queryKey: ["notifications", user?.id],
         enabled: !!user,
         queryFn: async () => {
-            const { data, error } = await (supabase.from("notifications") as any)
+            const { data, error } = await (supabase as any).from("notifications")
                 .select("*")
                 .eq("user_id", user!.id)
                 .order("created_at", { ascending: false })
                 .limit(20);
             if (error) throw error;
-            return data as unknown as Notification[];
+            return data as Notification[];
         },
     });
 
@@ -76,7 +78,7 @@ export function NotificationCenter() {
 
     const markRead = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase.from("notifications") as any)
+            const { error } = await (supabase as any).from("notifications")
                 .update({ is_read: true })
                 .eq("id", id);
             if (error) throw error;
@@ -86,7 +88,7 @@ export function NotificationCenter() {
 
     const markAllRead = useMutation({
         mutationFn: async () => {
-            const { error } = await (supabase.from("notifications") as any)
+            const { error } = await (supabase as any).from("notifications")
                 .update({ is_read: true })
                 .eq("user_id", user!.id)
                 .eq("is_read", false);
@@ -97,7 +99,7 @@ export function NotificationCenter() {
 
     const deleteNotification = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase.from("notifications") as any)
+            const { error } = await (supabase as any).from("notifications")
                 .delete()
                 .eq("id", id);
             if (error) throw error;
@@ -117,28 +119,43 @@ export function NotificationCenter() {
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+                <Button variant="ghost" size="icon" className="relative text-muted-foreground" aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}>
                     <Bell className="h-4 w-4" />
                     {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-primary-foreground text-[8px] animate-pulse">
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-primary-foreground text-[8px] animate-pulse" aria-hidden="true">
                             {unreadCount}
                         </Badge>
                     )}
+                    {unreadCount > 0 && <span className="sr-only">{unreadCount} unread notifications</span>}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0 border-border/50 bg-card/95 backdrop-blur-xl" align="end">
                 <div className="flex items-center justify-between p-4 border-b border-border/10">
                     <h3 className="text-xs font-bold uppercase tracking-widest">Notifications</h3>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-[10px] uppercase font-mono tracking-tighter"
-                            onClick={() => markAllRead.mutate()}
-                        >
-                            <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {unreadCount > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] uppercase font-mono tracking-tighter"
+                                onClick={() => markAllRead.mutate()}
+                            >
+                                <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
+                            </Button>
+                        )}
+                        {pushSupported && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                disabled={pushLoading}
+                                onClick={() => pushSubscribed ? pushUnsubscribe() : pushSubscribe()}
+                                title={pushSubscribed ? "Disable push notifications" : "Enable push notifications"}
+                            >
+                                {pushSubscribed ? <BellRing className="h-3 w-3 text-primary" /> : <BellOff className="h-3 w-3 text-muted-foreground" />}
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <ScrollArea className="h-80">
                     {notifications && notifications.length > 0 ? (

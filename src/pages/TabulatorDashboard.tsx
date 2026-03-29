@@ -1,70 +1,106 @@
-import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { friendlyDisplayName } from "@/lib/utils";
+import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
-import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
-import { useRegistrations } from "@/hooks/useRegistrations";
+import { usePenaltyRules, useSetActiveScoring } from "@/hooks/useCompetitions";
+import { Switch } from "@/components/ui/switch";
+import { useStaffView } from "@/hooks/useStaffView";
 import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
-import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator } from "@/hooks/useTabulator";
+import { useTabulatorCertification, useUpsertTabulatorCert, useCertifyTabulator, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
+import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWitnessCertificationRealtime } from "@/hooks/useWitness";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useRegistrationsRealtime } from "@/hooks/useRegistrations";
+import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
+
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
+import { JudgeScoreSheets } from "@/components/tabulator/JudgeScoreSheets";
 import { SideBySideScores } from "@/components/tabulator/SideBySideScores";
 import { VoteAudit } from "@/components/tabulator/VoteAudit";
+import { usePerformanceDurations, useDurationsRealtime, getAvgDuration } from "@/hooks/usePerformanceTimer";
+import { JudgeActivityIndicator } from "@/components/chief-judge/JudgeActivityIndicator";
+import { ScoringProgressBar } from "@/components/shared/ScoringProgressBar";
+import { TabulatorTimer } from "@/components/scoring/TabulatorTimer";
 import { SignaturePad } from "@/components/registration/SignaturePad";
-import { Card, CardContent } from "@/components/ui/card";
+import { EventChat } from "@/components/chat/EventChat";
+import { useChatUnreadCount } from "@/hooks/useEventChat";
+import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
+import { MasterSheetExporter } from "@/components/tabulator/MasterSheetExporter";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Calculator, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+
+import {
+  Calculator, Lock, CheckCircle, AlertTriangle, MessageSquare,
+  Timer, Search, Trophy, ChevronRight, ChevronLeft, ClipboardList, Eye, ArrowUpCircle,
+} from "lucide-react";
 import { motion } from "framer-motion";
+import type { JudgeScore } from "@/hooks/useJudgeScores";
 
-export default function TabulatorDashboard() {
-  const { id: competitionId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+import { useJudgingOverview } from "@/hooks/useJudgingOverview";
+
+/* ─── Sub-event Workspace ─── */
+function SubEventWorkspace({
+  subEventId, competitionId, registrations, rubricNames, indexToName, onOpenChat, unreadCount: externalUnreadCount, onContestantChange,
+}: {
+  subEventId: string; competitionId: string;
+  registrations: any[]; rubricNames: string[];
+  indexToName: Record<string, string>;
+  onOpenChat: () => void; unreadCount: number;
+  onContestantChange: (id: string) => void;
+}) {
   const { user } = useAuth();
+  const { data: penalties } = usePenaltyRules(competitionId);
 
-  const { data: comp } = useCompetition(competitionId);
-  const { data: levels } = useLevels(competitionId);
-  const { data: rubric } = useRubricCriteria(competitionId);
-  const { data: registrations } = useRegistrations(competitionId);
-
-  const [selectedLevelId, setSelectedLevelId] = useState("");
-  const [selectedSubEventId, setSelectedSubEventId] = useState("");
+   const [performanceDuration, setPerformanceDuration] = useState(0);
+   const seContestants = useMemo(() => registrations.filter((r: any) => r.sub_event_id === subEventId && r.status !== "rejected").sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)), [registrations, subEventId]);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
+  const [certifyMode, setCertifyMode] = useState<"tabulator" | "witness">("tabulator");
   const [signature, setSignature] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
   const [physicalMatch, setPhysicalMatch] = useState(false);
   const [discrepancyNotes, setDiscrepancyNotes] = useState("");
+  const [observations, setObservations] = useState("");
+  const [selectedDetailRegId, setSelectedDetailRegId] = useState("");
 
-  if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
-
-  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
-  const { data: myAssignments } = useMyAssignedSubEvents("tabulator");
-
-  const subEvents = useMemo(() => {
-    if (!allSubEvents || !myAssignments) return [];
-    const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
-    return allSubEvents.filter((se) => assignedIds.has(se.id));
-  }, [allSubEvents, myAssignments]);
-
-  const { data: allScores } = useAllScoresForSubEvent(selectedSubEventId || undefined);
-  const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
-  const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
-  useJudgeScoresRealtime(selectedSubEventId || undefined);
-  useCertificationRealtime(selectedSubEventId || undefined);
+  const { data: allScores } = useAllScoresForSubEvent(subEventId);
+  const { data: chiefCert } = useCertification(subEventId);
+  const { data: tabCert } = useTabulatorCertification(subEventId);
+  const { data: witnessCert } = useWitnessCertification(subEventId);
+  const { data: perfDurations } = usePerformanceDurations(subEventId);
+  useJudgeScoresRealtime(subEventId);
+  useCertificationRealtime(subEventId);
+  useTabulatorCertificationRealtime(subEventId);
+  useWitnessCertificationRealtime(subEventId);
+  useDurationsRealtime(subEventId);
 
   const upsertTab = useUpsertTabulatorCert();
   const certifyTab = useCertifyTabulator();
+  const upsertWitness = useUpsertWitnessCert();
+  const certifyWitness = useCertifyWitness();
 
-  const isCertified = tabCert?.is_certified ?? false;
   const chiefCertified = chiefCert?.is_certified ?? false;
-
-  const rubricNames = useMemo(() => rubric?.map((r) => r.name) ?? [], [rubric]);
+  const tabCertified = tabCert?.is_certified ?? false;
+  const witnessCertified = witnessCert?.is_certified ?? false;
 
   const scoresByContestant = useMemo(() => {
     if (!allScores) return {};
@@ -76,246 +112,685 @@ export default function TabulatorDashboard() {
     return map;
   }, [allScores]);
 
-  const contestantName = (regId: string) =>
-    registrations?.find((r) => r.id === regId)?.full_name ?? "Unknown";
+  // Build judge profiles map for display names (staff invitation name → profile name → friendly email)
+  const judgeIds = useMemo(() => [...new Set((allScores || []).map(s => s.judge_id))], [allScores]);
+  const staffNameMap = useStaffDisplayNames(judgeIds);
+  const judgeProfiles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const [uid, name] of staffNameMap.entries()) m[uid] = name;
+    return m;
+  }, [staffNameMap]);
 
-  const contestantUserId = (regId: string) =>
-    registrations?.find((r) => r.id === regId)?.user_id;
+  const contestantMap = useMemo(() => {
+    const m = new Map<string, any>();
+    registrations.forEach((r: any) => m.set(r.id, r));
+    return m;
+  }, [registrations]);
+  const contestantName = (regId: string) => contestantMap.get(regId)?.full_name ?? "Unknown";
+  const contestantUserId = (regId: string) => contestantMap.get(regId)?.user_id;
 
-  const handleInitCertify = async () => {
-    if (!user || !selectedSubEventId) return;
-    if (!tabCert) {
-      await upsertTab.mutateAsync({
-        sub_event_id: selectedSubEventId,
-        tabulator_id: user.id,
-        digital_vs_physical_match: physicalMatch,
-        discrepancy_notes: discrepancyNotes || null,
-      } as any);
-    } else {
-      await upsertTab.mutateAsync({
-        id: tabCert.id,
-        sub_event_id: selectedSubEventId,
-        tabulator_id: user.id,
-        digital_vs_physical_match: physicalMatch,
-        discrepancy_notes: discrepancyNotes || null,
-      } as any);
-    }
+  /* ── Tabulator certification ── */
+  const handleInitTabCertify = async () => {
+    if (!user || !subEventId) return;
+    const payload: any = {
+      sub_event_id: subEventId, tabulator_id: user.id,
+      digital_vs_physical_match: physicalMatch, discrepancy_notes: discrepancyNotes || null,
+    };
+    if (tabCert) payload.id = tabCert.id;
+    await upsertTab.mutateAsync(payload);
+    setCertifyMode("tabulator");
     setConsentChecked(false);
     setSignature("");
     setShowCertifyDialog(true);
   };
 
-  const handleCertify = async () => {
-    const cert = tabCert;
-    if (!cert?.id || !signature) return;
-    await certifyTab.mutateAsync({
-      id: cert.id,
-      tabulator_signature: signature,
-      sub_event_id: selectedSubEventId,
-    });
+  const handleTabCertify = async () => {
+    if (!tabCert?.id || !signature) return;
+    await certifyTab.mutateAsync({ id: tabCert.id, tabulator_signature: signature, sub_event_id: subEventId });
+    setShowCertifyDialog(false);
+  };
+
+  /* ── Witness certification ── */
+  const handleInitWitnessCertify = async () => {
+    if (!user || !subEventId) return;
+    const payload: any = { sub_event_id: subEventId, witness_id: user.id, observations: observations || null };
+    if (witnessCert) payload.id = witnessCert.id;
+    await upsertWitness.mutateAsync(payload);
+    setCertifyMode("witness");
+    setConsentChecked(false);
+    setSignature("");
+    setShowCertifyDialog(true);
+  };
+
+  const handleWitnessCertify = async () => {
+    if (!witnessCert?.id || !signature) return;
+    await certifyWitness.mutateAsync({ id: witnessCert.id, witness_signature: signature, sub_event_id: subEventId });
     setShowCertifyDialog(false);
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/competitions/${competitionId}`)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">Tabulator Dashboard</h1>
-          </div>
-          <p className="text-muted-foreground text-xs">{comp?.name}</p>
-        </div>
-        {isCertified && (
-          <Badge className="bg-secondary/20 text-secondary">
-            <CheckCircle className="h-3 w-3 mr-1" /> Certified
-          </Badge>
-        )}
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      {/* Certification chain */}
+      <div className="flex flex-wrap gap-2">
+        <Badge variant={chiefCertified ? "secondary" : "outline"} className="gap-1">
+          {chiefCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+          Chief Judge {chiefCertified ? "Certified" : "Pending"}
+        </Badge>
+        <Badge variant={tabCertified ? "secondary" : "outline"} className="gap-1">
+          {tabCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+          Tabulator {tabCertified ? "Certified" : "Pending"}
+        </Badge>
+        <Badge variant={witnessCertified ? "secondary" : "outline"} className="gap-1">
+          {witnessCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+          2nd Tabulator (Witness) {witnessCertified ? "Certified" : "Pending"}
+        </Badge>
       </div>
 
-      {/* Sub-event selector */}
-      <Card className="border-border/50 bg-card/80 mb-4">
-        <CardContent className="pt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Level</label>
-              <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                <SelectContent>
-                  {levels?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+      {/* Performance Timer with contestant selector */}
+      <TabulatorTimer
+        subEventId={subEventId}
+        timeLimitSeconds={penalties?.[0]?.time_limit_seconds ?? 300}
+        gracePeriodSeconds={penalties?.[0]?.grace_period_seconds ?? 30}
+        contestants={seContestants}
+        onDurationChange={setPerformanceDuration}
+        onContestantChange={onContestantChange}
+      />
+
+      {/* Scoring Progress + Judge Activity */}
+      <div className="space-y-3">
+        <ScoringProgressBar allScores={allScores} />
+        <JudgeActivityIndicator
+          subEventId={subEventId}
+          allScores={allScores}
+          contestantCount={Object.keys(scoresByContestant).length}
+        />
+      </div>
+
+      {/* Score Tables link */}
+      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+        <Link to={`/competitions/${competitionId}/score-tables?sub_event=${subEventId}`}>
+          <ClipboardList className="h-3.5 w-3.5" /> Score Tables
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </Button>
+
+      {/* Tabulator certification controls */}
+      {!tabCertified && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-primary" /> Tabulator Certification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Checkbox id="physical-match" checked={physicalMatch} onCheckedChange={(c) => setPhysicalMatch(!!c)} />
+              <label htmlFor="physical-match" className="text-sm text-foreground leading-snug">
+                I confirm that digital scores match the physical scorecards
+              </label>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Sub-Event</label>
-              <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
-                <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
-                <SelectContent>
-                  {subEvents?.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <label className="text-xs text-muted-foreground">Discrepancy Notes (optional)</label>
+              <Textarea value={discrepancyNotes} onChange={(e) => setDiscrepancyNotes(e.target.value)}
+                placeholder="Note any discrepancies between digital and physical records…" rows={2} />
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {selectedSubEventId && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Certification chain status */}
-          <div className="flex gap-2 mb-4">
-            <Badge variant={chiefCertified ? "secondary" : "outline"} className="gap-1">
-              {chiefCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-              Chief Judge {chiefCertified ? "Certified" : "Pending"}
-            </Badge>
-            <Badge variant={isCertified ? "secondary" : "outline"} className="gap-1">
-              {isCertified ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-              Tabulator {isCertified ? "Certified" : "Pending"}
-            </Badge>
-          </div>
-
-          <Tabs defaultValue="summary" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="summary">Score Summary</TabsTrigger>
-              <TabsTrigger value="detail">Side-by-Side Detail</TabsTrigger>
-              <TabsTrigger value="votes">Vote Audit</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="summary">
-              <Card className="border-border/50 bg-card/80">
-                <CardContent className="pt-4">
-                  <ScoreSummaryTable
-                    scoresByContestant={scoresByContestant}
-                    contestantName={contestantName}
-                    contestantUserId={contestantUserId}
-                    rubricNames={rubricNames}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="detail">
-              <div className="space-y-4">
-                {Object.entries(scoresByContestant).map(([regId, scores]) => (
-                  <Card key={regId} className="border-border/50 bg-card/80">
-                    <CardContent className="pt-4">
-                      <SideBySideScores
-                        scores={scores}
-                        rubricNames={rubricNames}
-                        contestantName={contestantName(regId)}
-                        contestantUserId={contestantUserId(regId)}
-                      />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="votes">
-              <VoteAudit subEventId={selectedSubEventId} />
-            </TabsContent>
-          </Tabs>
-
-          {/* Physical match & certification */}
-          {!isCertified && (
-            <Card className="border-border/50 bg-card/80 mt-4">
-              <CardContent className="pt-4 space-y-4">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="physical-match"
-                    checked={physicalMatch}
-                    onCheckedChange={(c) => setPhysicalMatch(!!c)}
-                  />
-                  <label htmlFor="physical-match" className="text-sm text-foreground leading-snug">
-                    I confirm that digital scores match the physical scorecards
-                  </label>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Discrepancy Notes (optional)</label>
-                  <Textarea
-                    value={discrepancyNotes}
-                    onChange={(e) => setDiscrepancyNotes(e.target.value)}
-                    placeholder="Note any discrepancies between digital and physical records…"
-                    rows={2}
-                  />
-                </div>
-                <Button
-                  onClick={handleInitCertify}
-                  disabled={!physicalMatch || !chiefCertified || upsertTab.isPending}
-                  className="w-full"
-                >
-                  <Lock className="h-4 w-4 mr-1" /> Certify as Tabulator
-                </Button>
-                {!chiefCertified && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Waiting for Chief Judge certification before tabulator can sign off.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </motion.div>
+            <Button onClick={handleInitTabCertify} disabled={!physicalMatch || !chiefCertified || upsertTab.isPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" /> Certify as Tabulator
+            </Button>
+            {!chiefCertified && (
+              <p className="text-xs text-muted-foreground text-center">
+                Waiting for Chief Judge certification before tabulator can sign off.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Certify Dialog */}
+      {/* Witness certification controls */}
+      {tabCertified && !witnessCertified && (
+        <Card className="border-border/50 bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> 2nd Tabulator / Witness Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground">Observations (optional)</label>
+              <Textarea value={observations} onChange={(e) => setObservations(e.target.value)}
+                placeholder="Record any observations about the scoring process…" rows={3} />
+            </div>
+            <Button onClick={handleInitWitnessCertify} disabled={upsertWitness.isPending} className="w-full">
+              <Lock className="h-4 w-4 mr-1" /> Certify as Witness
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Master Sheet Export */}
+      {tabCertified && (
+        <MasterSheetExporter
+          competitionId={competitionId}
+          subEventId={subEventId}
+          allScores={allScores}
+          registrations={registrations}
+          judgeProfiles={judgeProfiles}
+          chiefCert={chiefCert}
+          tabCert={tabCert}
+          witnessCert={witnessCert}
+        />
+      )}
+
+      {/* Certify Dialog (shared for tabulator & witness) */}
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tabulator Certification</DialogTitle>
+            <DialogTitle>{certifyMode === "tabulator" ? "Tabulator Certification" : "Witness Certification"}</DialogTitle>
             <DialogDescription>
-              Sign to certify that digital records match physical scorecards.
+              {certifyMode === "tabulator"
+                ? "Sign to certify that digital records match physical scorecards."
+                : "Sign to witness and counter-sign the certified results."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
               <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-foreground">
-                By signing, you certify that all digital scores have been cross-verified against
-                physical scorecards and the totals are accurate.
+                {certifyMode === "tabulator"
+                  ? "By signing, you certify that all digital scores have been cross-verified against physical scorecards and the totals are accurate."
+                  : "By signing, you attest that the scoring process was conducted fairly and the results are accurate as presented."}
               </p>
             </div>
 
-            <div className="text-sm space-y-1 text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Contestants</span>
-                <span className="font-mono">{Object.keys(scoresByContestant).length}</span>
+            {certifyMode === "tabulator" && (
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <div className="flex justify-between"><span>Contestants</span><span className="font-mono">{Object.keys(scoresByContestant).length}</span></div>
+                <div className="flex justify-between"><span>Total scorecards</span><span className="font-mono">{allScores?.length ?? 0}</span></div>
+                <div className="flex justify-between"><span>Physical match</span><span className="font-mono">{physicalMatch ? "Yes" : "No"}</span></div>
               </div>
-              <div className="flex justify-between">
-                <span>Total scorecards</span>
-                <span className="font-mono">{allScores?.length ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Physical match</span>
-                <span className="font-mono">{physicalMatch ? "Yes" : "No"}</span>
-              </div>
-            </div>
+            )}
 
-            <SignaturePad label="Tabulator Signature" onSignature={setSignature} />
+            <SignaturePad
+              label={certifyMode === "tabulator" ? "Tabulator Signature" : "Witness Signature"}
+              onSignature={setSignature}
+              signerRole={certifyMode === "tabulator" ? "Tabulator" : "Witness"}
+            />
 
             <div className="flex items-start gap-2">
-              <Checkbox
-                id="certify-consent"
-                checked={consentChecked}
-                onCheckedChange={(v) => setConsentChecked(v === true)}
-              />
+              <Checkbox id="certify-consent" checked={consentChecked} onCheckedChange={(v) => setConsentChecked(v === true)} />
               <Label htmlFor="certify-consent" className="text-xs text-muted-foreground leading-snug cursor-pointer">
-                I confirm that all digital scores have been cross-verified against physical scorecards, the totals are accurate, and I consent to certify and permanently lock these results.
+                {certifyMode === "tabulator"
+                  ? "I confirm that all digital scores have been cross-verified against physical scorecards, the totals are accurate, and I consent to certify and permanently lock these results."
+                  : "I attest that the scoring process was conducted fairly, the results are accurate as presented, and I consent to certify these results."}
               </Label>
             </div>
 
             <Button
-              onClick={handleCertify}
-              disabled={!signature || !consentChecked || certifyTab.isPending}
+              onClick={certifyMode === "tabulator" ? handleTabCertify : handleWitnessCertify}
+              disabled={!signature || !consentChecked || (certifyMode === "tabulator" ? certifyTab.isPending : certifyWitness.isPending)}
               className="w-full"
             >
               <Lock className="h-4 w-4 mr-1" />
-              {certifyTab.isPending ? "Certifying…" : "Certify Records"}
+              {certifyMode === "tabulator"
+                ? (certifyTab.isPending ? "Certifying…" : "Certify Records")
+                : (certifyWitness.isPending ? "Certifying…" : "Witness & Certify")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+    </motion.div>
+  );
+}
+
+/* ─── Level Tab Label with completion badge ─── */
+function LevelTabLabel({ levelId, name }: { levelId: string; name: string }) {
+  const { data: completion } = useLevelCompletion(levelId);
+  if (!completion) return <span>{name}</span>;
+  if (completion.isComplete) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+      </span>
+    );
+  }
+  if (completion.certifiedSubEvents > 0) {
+    return (
+      <span className="flex items-center gap-1.5">
+        {name}
+        <span className="text-[10px] text-muted-foreground font-mono">
+          {completion.certifiedSubEvents}/{completion.totalSubEvents}
+        </span>
+      </span>
+    );
+  }
+  return <span>{name}</span>;
+}
+
+/* ─── Level Promotion Banner ─── */
+function LevelPromotionBanner({
+  levelId, competitionId, advancementCount, isFinalRound, scoringMethod, levelSortOrder,
+}: {
+  levelId: string; competitionId: string; advancementCount: number | null;
+  isFinalRound: boolean; scoringMethod: string; levelSortOrder: number;
+}) {
+  const { data: completion } = useLevelCompletion(levelId);
+  const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
+  const promote = usePromoteContestants();
+
+  if (!completion?.isComplete) return null;
+
+  const canPromote = !isFinalRound && !!advancementCount && advancementCount > 0 && !!nextLevel;
+
+  return (
+    <Card className="border-green-500/30 bg-green-500/5">
+      <CardContent className="py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-green-500" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Level Complete — All sub-events certified</p>
+            {isFinalRound && (
+              <p className="text-xs text-muted-foreground">This is the final round. Champion placements are on the Level Master Sheet.</p>
+            )}
+          </div>
+        </div>
+        {canPromote && (
+          <Button
+            size="sm"
+            onClick={() => promote.mutate({
+              competitionId,
+              currentLevelId: levelId,
+              nextLevelId: nextLevel.id,
+              advancementCount: advancementCount!,
+              scoringMethod,
+            })}
+            disabled={promote.isPending}
+            className="gap-1.5"
+          >
+            <ArrowUpCircle className="h-4 w-4" />
+            {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+export default function TabulatorDashboard() {
+  const { id: routeCompId } = useParams<{ id: string }>();
+  const { assignedCompetitions, isLoading: compsLoading } = useStaffView("tabulator");
+
+  const activeComps = useMemo(
+    () => (assignedCompetitions || []).filter((c) => c.status === "active" || c.status === "completed"),
+    [assignedCompetitions]
+  );
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCompId, setSelectedCompId] = useState(routeCompId || "");
+  const [activeSubEventId, setActiveSubEventId] = useState("");
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [onStageContestantId, setOnStageContestantId] = useState("");
+
+  const { data: overview, isLoading: overviewLoading } = useJudgingOverview(selectedCompId || undefined);
+  useRegistrationsRealtime(selectedCompId || undefined);
+
+  // Real-time: invalidate judging_overview when judge_scores change for this competition's sub-events
+  const overviewSubEventIds = useMemo(
+    () => (overview?.subEvents || []).map((se: any) => se.id as string),
+    [overview?.subEvents]
+  );
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!selectedCompId || overviewSubEventIds.length === 0) return;
+    const channel = supabase
+      .channel(`tab_overview_scores_${selectedCompId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "judge_scores" },
+        (payload: any) => {
+          const subEventId = payload.new?.sub_event_id || payload.old?.sub_event_id;
+          if (overviewSubEventIds.includes(subEventId)) {
+            qc.invalidateQueries({ queryKey: ["judging_overview", selectedCompId] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCompId, overviewSubEventIds, qc]);
+
+  // Realtime: invalidate level_completion when any certification changes
+  useEffect(() => {
+    if (!selectedCompId) return;
+    const channel = supabase
+      .channel(`tab_level_completion_${selectedCompId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chief_judge_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tabulator_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "witness_certifications" }, () => {
+        overview?.levels.forEach((l) => qc.invalidateQueries({ queryKey: ["level_completion", l.id] }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedCompId, overview?.levels, qc]);
+
+  const filteredComps = useMemo(() => {
+    if (!searchQuery.trim()) return activeComps;
+    const q = searchQuery.toLowerCase();
+    return activeComps.filter((c) => c.name.toLowerCase().includes(q));
+  }, [activeComps, searchQuery]);
+
+  const overviewUserIds = useMemo(() => (overview?.profiles || []).map((p: any) => p.user_id), [overview?.profiles]);
+  const profileMap = useStaffDisplayNames(overviewUserIds);
+
+  const rubricNames = useMemo(
+    () => (overview?.rubric || []).map((r: any) => r.name), [overview?.rubric]
+  );
+
+  const indexToName = useMemo(() => {
+    const m: Record<string, string> = {};
+    (overview?.rubric || []).forEach((r: any) => { m[r.id] = r.name; });
+    return m;
+  }, [overview?.rubric]);
+
+  const unreadCount = useChatUnreadCount(selectedCompId || "");
+
+  // Active scoring config for the selected competition
+  const { data: activeComp } = useQuery({
+    queryKey: ["active_scoring", selectedCompId],
+    enabled: !!selectedCompId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("name, active_scoring_level_id, active_scoring_sub_event_id, scoring_method")
+        .eq("id", selectedCompId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const activeScoringSubEventId = activeComp?.active_scoring_sub_event_id;
+  const setActiveScoring = useSetActiveScoring();
+
+  const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
+
+  // Offline support
+  const offlineCache = useOfflineCache(selectedCompId || undefined);
+  const offlineQueue = useOfflineQueue();
+
+  if (compsLoading) return <CardGridSkeleton cards={3} />;
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Offline Banner */}
+      <OfflineBanner
+        isSyncing={offlineCache.isSyncing}
+        syncProgress={offlineCache.syncProgress}
+        lastSyncedAt={offlineCache.lastSyncedAt}
+        isReady={offlineCache.isReady}
+        pendingCount={offlineQueue.pendingCount}
+        isFlushing={offlineQueue.isFlushing}
+        flushErrors={offlineQueue.flushErrors}
+        onRetry={offlineQueue.retry}
+      />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Calculator className="h-6 w-6 text-primary" /> Tabulator Dashboard
+            <ConnectionIndicator pendingCount={offlineQueue.pendingCount} isOfflineReady={offlineCache.isReady} />
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Select a competition, then choose a sub-event to open the workspace.
+          </p>
+        </div>
+        {activeSubEventId && selectedCompId && (
+          <Button variant="outline" size="sm" className="relative gap-2" onClick={() => setShowChatModal(true)}>
+            <MessageSquare className="h-4 w-4" /> Chat
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
+
+      {/* Competition selector */}
+      <Card className="border-border/50 bg-card/80">
+        <CardContent className="pt-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search competitions…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          </div>
+          {filteredComps.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No competitions found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Competition</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Start</TableHead>
+                    <TableHead className="text-center">End</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredComps.map((c) => (
+                    <TableRow key={c.id}
+                      className={`cursor-pointer transition-colors ${selectedCompId === c.id ? "bg-primary/10" : ""}`}
+                      onClick={() => { setSelectedCompId(c.id); setActiveSubEventId(""); }}
+                    >
+                      <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={c.status === "active" ? "default" : "secondary"}>{c.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-xs">{c.start_date || "—"}</TableCell>
+                      <TableCell className="text-center font-mono text-xs">{c.end_date || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Loading */}
+      {selectedCompId && overviewLoading && (
+        <CardGridSkeleton cards={2} />
+      )}
+
+      {/* Level tabs + sub-event cards */}
+      {selectedCompId && overview && (
+        <>
+          {overview.levels.length === 0 ? (
+            <Card className="border-border/50 bg-card/80">
+              <CardContent className="py-8 text-center text-muted-foreground text-sm">
+                <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                No levels configured for this competition yet.
+              </CardContent>
+            </Card>
+          ) : (
+            <Tabs defaultValue={overview.levels[0]?.id} className="w-full">
+              <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+                {overview.levels.map((level) => (
+                  <TabsTrigger key={level.id} value={level.id} className="text-xs sm:text-sm flex-1 min-w-[80px]">
+                    <LevelTabLabel levelId={level.id} name={level.name} />
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {overview.levels.map((level) => {
+                const levelSubEvents = overview.subEvents.filter((se) => se.level_id === level.id);
+                return (
+                  <TabsContent key={level.id} value={level.id}>
+                    <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 mt-4">
+                      {/* Level completion promotion banner */}
+                      <LevelPromotionBanner
+                        levelId={level.id}
+                        competitionId={selectedCompId!}
+                        advancementCount={level.advancement_count}
+                        isFinalRound={level.is_final_round}
+                        scoringMethod={activeComp?.scoring_method || "olympic"}
+                        levelSortOrder={level.sort_order}
+                      />
+
+                      <div className="flex justify-end">
+                        <Button asChild variant="default" size="sm">
+                          <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
+                            <Trophy className="h-3.5 w-3.5 mr-1.5" />
+                            Level Master Sheet
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+
+                      {levelSubEvents.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">No sub-events yet.</p>
+                      ) : (
+                        (activeSubEventId ? levelSubEvents.filter((se) => se.id === activeSubEventId) : levelSubEvents).map((se) => {
+                          const judges = overview.assignments.filter((a: any) => a.sub_event_id === se.id);
+                          const contestants = overview.registrations.filter((r: any) => r.sub_event_id === se.id);
+                          const seScores = (overview.scores || []).filter((s) => s.sub_event_id === se.id);
+                          const isActive = activeSubEventId === se.id;
+
+                          return (
+                            <motion.div key={se.id} variants={item}>
+                              <Card className={`border-border/40 bg-card/80 ${isActive ? "ring-2 ring-primary/40" : ""}`}>
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <CardTitle className="text-sm">{se.name}</CardTitle>
+                                      <CardDescription className="font-mono text-xs">
+                                        {se.event_date || "No date"} {se.start_time ? `• ${se.start_time}` : ""}
+                                      </CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Badge className={
+                                        se.status === "in_progress" ? "bg-primary/20 text-primary"
+                                          : se.status === "completed" ? "bg-secondary/20 text-secondary"
+                                          : "bg-muted text-muted-foreground"
+                                      }>
+                                        {se.status}
+                                      </Badge>
+                                      <Switch
+                                        checked={activeScoringSubEventId === se.id}
+                                        onCheckedChange={(checked) => {
+                                          setActiveScoring.mutate({
+                                            competitionId: selectedCompId!,
+                                            levelId: checked ? level.id : null,
+                                            subEventId: checked ? se.id : null,
+                                          });
+                                        }}
+                                      />
+                                      <Button
+                                        size="sm"
+                                        variant={isActive ? "secondary" : "default"}
+                                        onClick={() => setActiveSubEventId(isActive ? "" : se.id)}
+                                      >
+                                        {isActive ? "Close" : "Select"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  {/* Judges */}
+                                  <div>
+                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Judges ({judges.length})</p>
+                                    {judges.length === 0 ? (
+                                      <p className="text-xs text-muted-foreground italic">No judges assigned</p>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {judges.map((j: any) => (
+                                          <span key={j.id} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                            {profileMap.get(j.user_id) || "Unknown"}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                   {/* Contestants – link to overview */}
+                                  <div>
+                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Contestants ({contestants.length})</p>
+                                    <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                                      <Link to={`/competitions/${selectedCompId}/contestant-scores?sub_event=${se.id}`}>
+                                        <Eye className="h-3.5 w-3.5 mr-1.5" /> Contestant Scores Overview
+                                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                      </Link>
+                                    </Button>
+                                  </div>
+
+                                  {/* Score sheet link */}
+                                  <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                                    <Link to={`/competitions/${selectedCompId}/master-sheet?sub_event=${se.id}`}>
+                                      <ClipboardList className="h-3.5 w-3.5 mr-1.5" /> Master Score Sheet
+                                      <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                    </Link>
+                                  </Button>
+
+                                  {/* Per-judge score sheets */}
+                                  <JudgeScoreSheets
+                                    subEventId={se.id}
+                                    subEventName={se.name}
+                                    competitionName={activeComp?.name || "Competition"}
+                                    scores={overview.scores}
+                                    registrations={overview.registrations}
+                                    rubric={overview.rubric}
+                                    judgeProfiles={Object.fromEntries(profileMap)}
+                                    indexToName={indexToName}
+                                  />
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })
+                      )}
+                    </motion.div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
+        </>
+      )}
+
+      {/* Active sub-event workspace */}
+      {activeSubEventId && selectedCompId && overview && (
+        <div className="space-y-2">
+          <SubEventWorkspace
+            subEventId={activeSubEventId}
+            competitionId={selectedCompId}
+            registrations={overview.registrations}
+            rubricNames={rubricNames}
+            indexToName={indexToName}
+            onOpenChat={() => setShowChatModal(true)}
+            unreadCount={unreadCount}
+            onContestantChange={setOnStageContestantId}
+          />
+        </div>
+      )}
+
+      {/* Production Chat Modal */}
+      {selectedCompId && (
+        <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+          <DialogContent className="max-w-lg p-0 gap-0">
+            <DialogHeader className="px-4 pt-4 pb-2">
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4 text-primary" /> Production Chat
+              </DialogTitle>
+            </DialogHeader>
+            <div className="px-4 pb-4">
+              <EventChat competitionId={selectedCompId} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

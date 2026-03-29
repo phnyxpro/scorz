@@ -29,6 +29,7 @@ export interface ChiefJudgeCertification {
   chief_judge_id: string;
   tie_break_criterion_id: string | null;
   tie_break_notes: string | null;
+  tie_break_order: { regId: string; rank: number }[];
   penalty_adjustments: Record<string, number>;
   chief_judge_signature: string | null;
   signed_at: string | null;
@@ -74,6 +75,11 @@ export function useUpsertCertification() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (values: Partial<ChiefJudgeCertification> & { sub_event_id: string; chief_judge_id: string }) => {
+      if (!navigator.onLine) {
+        const { queueMutation } = await import("@/lib/offline-db");
+        await queueMutation("upsert_chief_cert", { ...values, _mutationType: "upsert_chief_cert" } as any);
+        return values;
+      }
       if (values.id) {
         const { error } = await supabase
           .from("chief_judge_certifications")
@@ -93,7 +99,7 @@ export function useUpsertCertification() {
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ["certification", v.sub_event_id] });
-      toast({ title: "Certification saved" });
+      toast({ title: navigator.onLine ? "Certification saved" : "Certification saved offline" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -113,10 +119,18 @@ export function useCertifySubEvent() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: (_, v) => {
+    onSuccess: async (_, v) => {
       qc.invalidateQueries({ queryKey: ["certification", v.sub_event_id] });
       qc.invalidateQueries({ queryKey: ["all_scores", v.sub_event_id] });
       toast({ title: "Sub-event certified!" });
+      // Fire score alert emails to contestants
+      try {
+        await supabase.functions.invoke("send-score-alert", {
+          body: { sub_event_id: v.sub_event_id },
+        });
+      } catch (err) {
+        console.error("Score alert email error:", err);
+      }
     },
     onError: (e: any) => toast({ title: "Error certifying", description: e.message, variant: "destructive" }),
   });

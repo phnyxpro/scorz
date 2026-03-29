@@ -8,6 +8,8 @@ export interface SubEventAssignment {
   sub_event_id: string;
   user_id: string;
   role: string;
+  responsibility?: string | null;
+  is_chief: boolean;
   created_at: string;
 }
 
@@ -29,37 +31,43 @@ export function useSubEventAssignments(subEventId: string | undefined) {
         .eq("sub_event_id", subEventId!)
         .order("created_at");
       if (error) throw error;
-      return data as SubEventAssignment[];
+      return data as unknown as SubEventAssignment[];
     },
   });
 }
 
-/** Fetch sub-events the current user is assigned to, optionally filtered by role(s) */
-export function useMyAssignedSubEvents(role?: string | string[]) {
+/** Fetch sub-events the current user is assigned to, optionally filtered by role(s) and is_chief */
+export function useMyAssignedSubEvents(role?: string | string[], options?: { isChief?: boolean }) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["my_assigned_sub_events", user?.id, role],
+    queryKey: ["my_assigned_sub_events", user?.id, role, options?.isChief],
     enabled: !!user,
     queryFn: async () => {
-      let query = supabase
+      const baseQuery = supabase
         .from("sub_event_assignments")
         .select("*")
         .eq("user_id", user!.id);
+      
+      // Build filter chain
+      let finalQuery: any = baseQuery;
       if (role) {
         if (Array.isArray(role)) {
-          query = query.in("role", role as any);
+          finalQuery = finalQuery.in("role", role);
         } else {
-          query = query.eq("role", role as any);
+          finalQuery = finalQuery.eq("role", role);
         }
       }
-      const { data, error } = await query.order("created_at");
+      if (options?.isChief !== undefined) {
+        finalQuery = finalQuery.eq("is_chief", options.isChief);
+      }
+      const { data, error } = await finalQuery.order("created_at");
       if (error) throw error;
-      return data as SubEventAssignment[];
+      return (data || []) as SubEventAssignment[];
     },
   });
 }
 
-/** Fetch all users who have assignable roles (judge, chief_judge, tabulator, witness) */
+/** Fetch all users who have assignable roles (judge, tabulator, witness) */
 export function useAssignableUsers() {
   return useQuery({
     queryKey: ["assignable_users"],
@@ -67,7 +75,7 @@ export function useAssignableUsers() {
       const { data: roles, error: rolesErr } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["judge", "chief_judge", "tabulator", "witness"]);
+        .in("role", ["judge", "tabulator", "witness"]);
       if (rolesErr) throw rolesErr;
 
       const userIds = [...new Set((roles || []).map((r) => r.user_id))];
@@ -98,10 +106,12 @@ export function useAssignableUsers() {
 export function useAddAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (values: { sub_event_id: string; user_id: string; role: string }) => {
+    mutationFn: async (values: { sub_event_id: string; user_id: string; role: string; is_chief?: boolean }) => {
+      const insertData: any = { sub_event_id: values.sub_event_id, user_id: values.user_id, role: values.role as any };
+      if (values.is_chief !== undefined) insertData.is_chief = values.is_chief;
       const { data, error } = await supabase
         .from("sub_event_assignments")
-        .insert({ sub_event_id: values.sub_event_id, user_id: values.user_id, role: values.role as any })
+        .insert(insertData)
         .select()
         .single();
       if (error) throw error;

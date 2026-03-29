@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, User, Info, Calendar, PenTool, Link as LinkIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContestantDetailSheet } from "./ContestantDetailSheet";
+import { ContestantRegistration } from "@/hooks/useRegistrations";
 import { Label } from "@/components/ui/label";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { toast } from "@/hooks/use-toast";
@@ -26,8 +28,342 @@ const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
   pending: "bg-primary/20 text-primary border-primary/30",
   rejected: "bg-destructive/20 text-destructive border-destructive/30",
+  no_show: "bg-muted text-muted-foreground border-muted-foreground/30",
+  disqualified: "bg-destructive/20 text-destructive border-destructive/30",
+  drop_out: "bg-muted text-muted-foreground border-muted-foreground/30",
 };
 
+const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"];
+
+type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
+type SortDir = "asc" | "desc";
+
+// ─── Slot Picker Cell ──────────────────────────────────────────────
+interface SlotPickerCellProps {
+  regId: string;
+  subEventId: string | null;
+  slot?: { id: string; start_time: string; end_time: string };
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
+  onAssign: (regId: string, slotId: string) => void;
+  onUpdate: (slotId: string, startTime: string, endTime: string) => void;
+  formatTime: (time: string) => string;
+}
+
+function SlotPickerCell({ regId, subEventId, slot, allSlots, onAssign, onUpdate, formatTime }: SlotPickerCellProps) {
+  const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+
+  // Available slots: same sub-event, unbooked OR currently assigned to this reg
+  const available = allSlots.filter(
+    (s) => s.sub_event_id === subEventId && (!s.is_booked || s.contestant_registration_id === regId)
+  );
+
+  const handleSelectSlot = (slotId: string) => {
+    onAssign(regId, slotId);
+    setOpen(false);
+  };
+
+  const handleEditSave = () => {
+    if (slot) {
+      onUpdate(slot.id, editStart + ":00", editEnd + ":00");
+    }
+    setEditMode(false);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(o) => {
+      setOpen(o);
+      if (o && slot) {
+        setEditStart(slot.start_time?.slice(0, 5) || "");
+        setEditEnd(slot.end_time?.slice(0, 5) || "");
+      }
+      if (!o) setEditMode(false);
+    }}>
+      <PopoverTrigger asChild>
+        <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 whitespace-nowrap">
+          <Clock className="h-3 w-3" />
+          {slot ? `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}` : "Assign slot"}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3 space-y-2" align="start">
+        {!editMode ? (
+          <>
+            <p className="text-xs font-medium text-foreground">
+              {slot ? "Change Slot" : "Select Slot"}
+            </p>
+            {available.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No available slots</p>
+            ) : (
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {available.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSelectSlot(s.id)}
+                    className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent ${slot?.id === s.id ? "bg-accent font-medium" : ""
+                      }`}
+                  >
+                    {formatTime(s.start_time)} – {formatTime(s.end_time)}
+                    {s.contestant_registration_id === regId && (
+                      <span className="text-muted-foreground ml-1">(current)</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {slot && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full h-7 text-xs mt-1"
+                onClick={() => setEditMode(true)}
+              >
+                Edit Time Manually
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-foreground">Edit Slot Time</p>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Start</Label>
+                <Input type="time" value={editStart} onChange={(e) => setEditStart(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">End</Label>
+                <Input type="time" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="h-8 text-sm" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" className="flex-1 h-7 text-xs" onClick={handleEditSave}>
+                Save
+              </Button>
+            </div>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── Sortable Row ──────────────────────────────────────────────────
+interface SortableRowProps {
+  reg: ContestantRegistration;
+  idx: number;
+  totalCount: number;
+  slot?: { id: string; start_time: string; end_time: string };
+  allSlots: { id: string; start_time: string; end_time: string; contestant_registration_id: string | null; is_booked: boolean; sub_event_id: string }[];
+  onSlotAssign: (regId: string, slotId: string) => void;
+  onSlotUpdate: (slotId: string, startTime: string, endTime: string) => void;
+  formatTime: (time: string) => string;
+  onSelect: (reg: ContestantRegistration) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onStatusChange: (id: string, status: string) => void;
+  onMoveUp: (regId: string) => void;
+  onMoveDown: (regId: string) => void;
+  onInlineNameSave: (regId: string, newName: string) => void;
+  onInlineNumberSave: (regId: string, newPosition: number) => void;
+  showSlotColumn: boolean;
+}
+
+function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlotUpdate, formatTime, onSelect, onApprove, onReject, onStatusChange, onMoveUp, onMoveDown, onInlineNameSave, onInlineNumberSave, showSlotColumn }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: reg.id });
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(reg.full_name);
+  const [editingNumber, setEditingNumber] = useState(false);
+  const [editNumber, setEditNumber] = useState(String(idx + 1));
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const saveName = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== reg.full_name) {
+      onInlineNameSave(reg.id, trimmed);
+    }
+    setEditingName(false);
+  };
+
+  const saveNumber = () => {
+    const num = parseInt(editNumber, 10);
+    if (!isNaN(num) && num >= 1 && num <= totalCount && num !== idx + 1) {
+      onInlineNumberSave(reg.id, num);
+    }
+    setEditingNumber(false);
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
+      <TableCell className="w-[60px]">
+        <div className="flex items-center gap-0.5">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col">
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === 0} onClick={() => onMoveUp(reg.id)}>
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === totalCount - 1} onClick={() => onMoveDown(reg.id)}>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">
+        {editingNumber ? (
+          <Input
+            value={editNumber}
+            onChange={(e) => setEditNumber(e.target.value)}
+            onBlur={saveNumber}
+            onKeyDown={(e) => { if (e.key === "Enter") saveNumber(); if (e.key === "Escape") setEditingNumber(false); }}
+            className="h-6 w-10 text-xs font-mono px-1 text-center"
+            type="number"
+            min={1}
+            max={totalCount}
+            autoFocus
+          />
+        ) : (
+          <button className="hover:text-foreground hover:underline" onClick={() => { setEditNumber(String(idx + 1)); setEditingNumber(true); }}>
+            {idx + 1}
+          </button>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1 flex-wrap">
+          {editingName ? (
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditingName(false); }}
+              className="h-7 text-sm w-48"
+              autoFocus
+            />
+          ) : (
+            <button
+              className="text-sm font-medium text-primary hover:underline text-left"
+              onClick={() => onSelect(reg)}
+              onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
+            >
+              {reg.full_name}
+            </button>
+          )}
+          {(reg as any).special_entry_type && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              {(reg as any).special_entry_type === "previous_winner" ? "Previous Winner"
+                : (reg as any).special_entry_type === "wild_card" ? "Wild Card"
+                  : (reg as any).special_entry_type === "sub_competition_winner" ? "Sub-Comp Winner"
+                    : (reg as any).special_entry_type}
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="text-[10px]">
+            {getAgeCategoryLabel(reg.age_category)}
+          </Badge>
+          {reg.age_category === "minor" && !reg.guardian_name && (
+            <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/50 text-amber-600 dark:text-amber-400">
+              <ShieldAlert className="h-2.5 w-2.5" /> No Guardian
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      {showSlotColumn && (
+        <TableCell>
+          <SlotPickerCell
+            regId={reg.id}
+            subEventId={reg.sub_event_id}
+            slot={slot}
+            allSlots={allSlots}
+            onAssign={onSlotAssign}
+            onUpdate={onSlotUpdate}
+            formatTime={formatTime}
+          />
+        </TableCell>
+      )}
+      <TableCell>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="cursor-pointer">
+              <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""} hover:opacity-80 transition-opacity`}>
+                {reg.status}
+              </Badge>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-1" align="start">
+            <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Change status</p>
+            {ALL_STATUSES.map(s => (
+              <button
+                key={s}
+                disabled={s === reg.status}
+                onClick={() => onStatusChange(reg.id, s)}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent disabled:opacity-40 flex items-center gap-1.5 ${s === reg.status ? "font-semibold" : ""}`}
+              >
+                <Badge variant="outline" className={`text-[9px] ${statusColor[s] || ""}`}>{s}</Badge>
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {reg.status === "pending" && (
+            <>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-secondary hover:text-secondary" onClick={() => onApprove(reg.id)} title="Approve">
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onReject(reg.id)} title="Reject">
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          {reg.status === "rejected" && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onApprove(reg.id)}>Re-approve</Button>
+          )}
+          {reg.status === "approved" && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => onReject(reg.id)}>Revoke</Button>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// ─── Sortable Column Header ───────────────────────────────────────
+function SortHeader({ label, field, sortField, sortDir, onSort }: {
+  label: string;
+  field: SortField;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (field: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <button className="flex items-center gap-0.5 text-xs hover:text-foreground" onClick={() => onSort(field)}>
+      {label}
+      {active ? (
+        sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-30" />
+      )}
+    </button>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────
 interface Props {
   competitionId: string;
 }
@@ -119,9 +455,18 @@ export function RegistrationsManager({ competitionId }: Props) {
   const filtered = useMemo(() => {
     if (!registrations) return [];
     let list = [...registrations];
+
+    // Sub-event tab filter
+    if (activeSubEventTab === "unassigned") {
+      list = list.filter((r) => !r.sub_event_id);
+    } else if (activeSubEventTab !== "all") {
+      list = list.filter((r) => r.sub_event_id === activeSubEventTab);
+    }
+
+    // Search
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(r => r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+      list = list.filter((r) => r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
     }
     if (filterSubEvent !== "all") {
       if (filterSubEvent === "unassigned") {
@@ -136,8 +481,52 @@ export function RegistrationsManager({ competitionId }: Props) {
       );
       list = list.filter(r => r.sub_event_id && levelSubEventIds.has(r.sub_event_id));
     }
-    // Sort by sort_order, then by name
-    list.sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0));
+
+    // Age filter
+    if (filterAge !== "all") {
+      if (filterAge === "minor") {
+        list = list.filter((r) => r.age_category === "minor");
+      } else if (filterAge === "adult_all") {
+        list = list.filter((r) => r.age_category !== "minor");
+      } else {
+        list = list.filter((r) => r.age_category === filterAge);
+      }
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "sort_order":
+          cmp = ((a as any).sort_order || 0) - ((b as any).sort_order || 0);
+          if (cmp === 0) {
+            const slotA = slotsByRegId[a.id]?.start_time || "";
+            const slotB = slotsByRegId[b.id]?.start_time || "";
+            cmp = slotA.localeCompare(slotB);
+          }
+          break;
+        case "name":
+          cmp = a.full_name.localeCompare(b.full_name);
+          break;
+        case "email":
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case "age":
+          cmp = a.age_category.localeCompare(b.age_category);
+          break;
+        case "status":
+          cmp = a.status.localeCompare(b.status);
+          break;
+        case "slot": {
+          const sa = slotsByRegId[a.id]?.start_time || "zzz";
+          const sb = slotsByRegId[b.id]?.start_time || "zzz";
+          cmp = sa.localeCompare(sb);
+          break;
+        }
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
     return list;
   }, [registrations, search, filterSubEvent, filterLevelId, allData]);
 
@@ -150,11 +539,7 @@ export function RegistrationsManager({ competitionId }: Props) {
         .single();
 
       await supabase.functions.invoke("notify-registration-status", {
-        body: {
-          registration_id: registrationId,
-          status,
-          competition_name: comp?.name || "Competition",
-        },
+        body: { registration_id: registrationId, status, competition_name: comp?.name || "Competition" },
       });
     } catch (e) {
       console.error("Failed to send notification:", e);
@@ -162,29 +547,47 @@ export function RegistrationsManager({ competitionId }: Props) {
   };
 
   const handleApprove = (id: string) => {
-    updateReg.mutate({ id, status: "approved" } as any, {
-      onSuccess: () => sendNotification(id, "approved"),
-    });
+    updateReg.mutate({ id, status: "approved" } as any, { onSuccess: () => sendNotification(id, "approved") });
   };
 
   const handleReject = (id: string) => {
-    updateReg.mutate({ id, status: "rejected" } as any, {
-      onSuccess: () => sendNotification(id, "rejected"),
-    });
+    updateReg.mutate({ id, status: "rejected" } as any, { onSuccess: () => sendNotification(id, "rejected") });
   };
 
-  const handleMoveOrder = async (id: string, direction: "up" | "down") => {
-    const idx = filtered.findIndex(r => r.id === id);
-    if (idx < 0) return;
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= filtered.length) return;
+  const handleSlotTimeUpdate = async (slotId: string, startTime: string, endTime: string) => {
+    const { error } = await supabase.from("performance_slots").update({ start_time: startTime, end_time: endTime }).eq("id", slotId);
+    if (error) {
+      toast({ title: "Error updating slot", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Slot time updated" });
+      qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+      qc.invalidateQueries({ queryKey: ["available_slots"] });
+    }
+  };
 
-    const currentOrder = (filtered[idx] as any).sort_order || 0;
-    const swapOrder = (filtered[swapIdx] as any).sort_order || 0;
+  const handleSlotAssign = async (regId: string, slotId: string) => {
+    // Unbook the current slot if any
+    const currentSlot = slotsByRegId[regId];
+    if (currentSlot) {
+      await supabase.from("performance_slots").update({ contestant_registration_id: null, is_booked: false }).eq("id", currentSlot.id);
+    }
+    // Book the new slot
+    const { error } = await supabase.from("performance_slots").update({ contestant_registration_id: regId, is_booked: true }).eq("id", slotId);
+    if (error) {
+      toast({ title: "Error assigning slot", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Slot assigned" });
+      qc.invalidateQueries({ queryKey: ["performance_slots_for_regs", competitionId] });
+      qc.invalidateQueries({ queryKey: ["available_slots"] });
+    }
+  };
 
-    await supabase.from("contestant_registrations").update({ sort_order: swapOrder } as any).eq("id", filtered[idx].id);
-    await supabase.from("contestant_registrations").update({ sort_order: currentOrder } as any).eq("id", filtered[swapIdx].id);
-    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+  const formatSlotTime = (time: string) => {
+    const [h, m] = time.split(":");
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${h12}:${m} ${ampm}`;
   };
 
   /** Reassign a single contestant to a different sub-event */
@@ -207,7 +610,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     setIsAdvancing(true);
     try {
       const ids = Array.from(selectedIds);
-      
+
       // Get current assignments before advancing
       const { data: currentRegs } = await supabase
         .from("contestant_registrations")
@@ -260,6 +663,38 @@ export function RegistrationsManager({ competitionId }: Props) {
         .maybeSingle();
 
       const userId = existingProfile?.user_id || user.id;
+
+      // Calculate sort_order based on options
+      let sortOrder = 0;
+      const targetSubEvent = walkInSubEvent || undefined;
+      if (walkInPosition && parseInt(walkInPosition, 10) > 0) {
+        sortOrder = parseInt(walkInPosition, 10);
+        // Shift existing contestants at or after this position
+        const toShift = registrations?.filter(r =>
+          (targetSubEvent ? r.sub_event_id === targetSubEvent : true) &&
+          ((r as any).sort_order || 0) >= sortOrder
+        ) || [];
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else if (walkInAfterLastTimed && targetSubEvent) {
+        // Find last timed contestant position
+        const { data: durs } = await supabase.from("performance_durations").select("contestant_registration_id").eq("sub_event_id", targetSubEvent);
+        const timedIds = new Set(durs?.map(d => d.contestant_registration_id) || []);
+        const subRegs = registrations?.filter(r => r.sub_event_id === targetSubEvent).sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0)) || [];
+        let lastTimedOrder = 0;
+        subRegs.forEach(r => { if (timedIds.has(r.id)) lastTimedOrder = (r as any).sort_order || 0; });
+        sortOrder = lastTimedOrder + 1;
+        // Shift
+        const toShift = subRegs.filter(r => ((r as any).sort_order || 0) >= sortOrder);
+        for (const r of toShift) {
+          await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
+        }
+      } else {
+        // Default: end of list
+        const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
+        sortOrder = maxOrder + 1;
+      }
 
       await createReg.mutateAsync({
         user_id: userId,
@@ -321,7 +756,7 @@ export function RegistrationsManager({ competitionId }: Props) {
             <div>
               <CardTitle className="text-base">Contestant Registrations</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                {registrations?.length || 0} total · {pendingCount} pending approval
+                {registrations?.length || 0} total · {pendingCount} pending · {filtered.length} shown
               </p>
             </div>
             <div className="flex gap-2">
@@ -354,7 +789,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Input
                 placeholder="Search by name or email…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9 text-sm"
               />
             </div>

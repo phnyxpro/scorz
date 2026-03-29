@@ -1,3 +1,4 @@
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,35 +8,92 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
-import Index from "./pages/Index";
-import PublicEvents from "./pages/PublicEvents";
-import PublicEventDetail from "./pages/PublicEventDetail";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Competitions from "./pages/Competitions";
-import CompetitionContestants from "./pages/CompetitionContestants";
-import CompetitionDetail from "./pages/CompetitionDetail";
-import ContestantRegistration from "./pages/ContestantRegistration";
-import JudgeScoring from "./pages/JudgeScoring";
-import JudgingHub from "./pages/JudgingHub";
-import ChiefJudgeDashboard from "./pages/ChiefJudgeDashboard";
-import TabulatorDashboard from "./pages/TabulatorDashboard";
-import WitnessDashboard from "./pages/WitnessDashboard";
-import Results from "./pages/Results";
-import PostEventPortal from "./pages/PostEventPortal";
-import AudienceVoting from "./pages/AudienceVoting";
-import ContestantProfile from "./pages/ContestantProfile";
-import AdminPanel from "./pages/AdminPanel";
-import MasterScoreSheet from "./pages/MasterScoreSheet";
-import LevelMasterSheet from "./pages/LevelMasterSheet";
-import JudgeDashboard from "./pages/JudgeDashboard";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
-import RulesAndRubric from "./pages/RulesAndRubric";
-import Settings from "./pages/Settings";
-import FinanceDashboard from "./pages/FinanceDashboard";
+import { UpdateNotice } from "@/components/shared/UpdateNotice";
 
-const queryClient = new QueryClient();
+// Eagerly loaded (public entry points)
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+
+// Lazy-loaded routes
+const PublicEvents = lazy(() => import("./pages/PublicEvents"));
+const PublicEventDetail = lazy(() => import("./pages/PublicEventDetail"));
+const About = lazy(() => import("./pages/About"));
+const MagicLinkLanding = lazy(() => import("./pages/MagicLinkLanding"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AudienceEvents = lazy(() => import("./pages/AudienceEvents"));
+const MyTickets = lazy(() => import("./pages/MyTickets"));
+const Competitions = lazy(() => import("./pages/Competitions"));
+const CompetitionContestants = lazy(() => import("./pages/CompetitionContestants"));
+const CompetitionDetail = lazy(() => import("./pages/CompetitionDetail"));
+const ContestantRegistration = lazy(() => import("./pages/ContestantRegistration"));
+const JudgeScoring = lazy(() => import("./pages/JudgeScoring"));
+const JudgingHub = lazy(() => import("./pages/JudgingHub"));
+const ChiefJudgeDashboard = lazy(() => import("./pages/ChiefJudgeDashboard"));
+const TabulatorDashboard = lazy(() => import("./pages/TabulatorDashboard"));
+const Results = lazy(() => import("./pages/Results"));
+const PostEventPortal = lazy(() => import("./pages/PostEventPortal"));
+const AudienceVoting = lazy(() => import("./pages/AudienceVoting"));
+const ContestantProfile = lazy(() => import("./pages/ContestantProfile"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminSettings = lazy(() => import("./pages/AdminSettings"));
+const AdminBilling = lazy(() => import("./pages/AdminBilling"));
+const AdminLogs = lazy(() => import("./pages/AdminLogs"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const MasterScoreSheet = lazy(() => import("./pages/MasterScoreSheet"));
+const LevelMasterSheet = lazy(() => import("./pages/LevelMasterSheet"));
+const JudgeDashboard = lazy(() => import("./pages/JudgeDashboard"));
+const RulesAndRubric = lazy(() => import("./pages/RulesAndRubric"));
+const RulesPage = lazy(() => import("./pages/RulesPage"));
+const RubricPage = lazy(() => import("./pages/RubricPage"));
+const PenaltiesPage = lazy(() => import("./pages/PenaltiesPage"));
+const Settings = lazy(() => import("./pages/Settings"));
+const FinanceDashboard = lazy(() => import("./pages/FinanceDashboard"));
+const PeoplesChoiceManager = lazy(() => import("./pages/PeoplesChoiceManager"));
+const RegistrationsHub = lazy(() => import("./pages/RegistrationsHub"));
+const ContestantProfilesHub = lazy(() => import("./pages/ContestantProfilesHub"));
+const ResultsHub = lazy(() => import("./pages/ResultsHub"));
+const CheckInHub = lazy(() => import("./pages/CheckInHub"));
+const TicketsHub = lazy(() => import("./pages/TicketsHub"));
+const UpdatesHub = lazy(() => import("./pages/UpdatesHub"));
+const ContestantFeedback = lazy(() => import("./pages/ContestantFeedback"));
+const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
+const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const HelpCategory = lazy(() => import("./pages/HelpCategory"));
+const HelpArticle = lazy(() => import("./pages/HelpArticle"));
+const CompetitionFormsPage = lazy(() => import("./pages/CompetitionFormsPage"));
+const TicketSuccess = lazy(() => import("./pages/TicketSuccess"));
+const WitnessDashboard = lazy(() => import("./pages/WitnessDashboard"));
+const ContestantRegistrationProfile = lazy(() => import("./pages/ContestantRegistrationProfile"));
+const ProductionAssistantDashboard = lazy(() => import("./pages/ProductionAssistantDashboard"));
+const ScoreTablesPage = lazy(() => import("./pages/ScoreTablesPage"));
+const ContestantScoresOverview = lazy(() => import("./pages/ContestantScoresOverview"));
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000,   // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const PageLoader = React.forwardRef<HTMLDivElement>((_props, ref) => (
+  <div ref={ref} className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>
+  </div>
+));
+PageLoader.displayName = "PageLoader";
+
+function ProtectedPage({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AppLayout>{children}</AppLayout>
+    </ProtectedRoute>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -44,255 +102,71 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <UpdateNotice />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/public-events" element={<PublicEvents />} />
-              <Route path="/events/:id" element={<PublicEventDetail />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/about" element={<About />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Dashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/judging"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <JudgingHub />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/judge-dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <JudgeDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Competitions />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <CompetitionDetail />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/register"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <ContestantRegistration />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/score"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <JudgeScoring />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/chief-judge"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <ChiefJudgeDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/tabulator"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <TabulatorDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/witness"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <WitnessDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/results"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Results />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/post-event"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <PostEventPortal />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/vote"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <AudienceVoting />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <ContestantProfile />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Settings />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/finance"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <FinanceDashboard />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile/:userId"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <ContestantProfile />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <AdminPanel />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/master-sheet"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <MasterScoreSheet />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/level-sheet"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <LevelMasterSheet />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/rules-rubric"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <RulesAndRubric />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/competitions/:id/contestants"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <CompetitionContestants />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chief-judge"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Competitions />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/tabulator"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Competitions />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/public-events" element={<PublicEvents />} />
+                <Route path="/events/:id" element={<PublicEventDetail />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/help/:category" element={<HelpCategory />} />
+                <Route path="/help/:category/:slug" element={<HelpArticle />} />
+                <Route path="/welcome" element={<MagicLinkLanding />} />
+                <Route path="/ticket-success" element={<TicketSuccess />} />
+                <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+                <Route path="/audience-events" element={<ProtectedPage><AudienceEvents /></ProtectedPage>} />
+                <Route path="/my-tickets" element={<ProtectedPage><MyTickets /></ProtectedPage>} />
+                <Route path="/judging" element={<ProtectedPage><JudgingHub /></ProtectedPage>} />
+                <Route path="/judge-dashboard" element={<ProtectedPage><JudgeDashboard /></ProtectedPage>} />
+                <Route path="/competitions" element={<ProtectedPage><Competitions /></ProtectedPage>} />
+                <Route path="/competitions/:id" element={<ProtectedPage><CompetitionDetail /></ProtectedPage>} />
+                <Route path="/competitions/:id/forms" element={<ProtectedPage><CompetitionFormsPage /></ProtectedPage>} />
+                <Route path="/competitions/:id/register" element={<ProtectedPage><ContestantRegistration /></ProtectedPage>} />
+                <Route path="/competitions/:id/score" element={<ProtectedPage><JudgeScoring /></ProtectedPage>} />
+                <Route path="/competitions/:id/chief-judge" element={<ProtectedPage><ChiefJudgeDashboard /></ProtectedPage>} />
+                <Route path="/competitions/:id/tabulator" element={<ProtectedPage><TabulatorDashboard /></ProtectedPage>} />
+                <Route path="/competitions/:id/results" element={<ProtectedPage><Results /></ProtectedPage>} />
+                <Route path="/competitions/:id/post-event" element={<ProtectedPage><PostEventPortal /></ProtectedPage>} />
+                <Route path="/competitions/:id/witness" element={<ProtectedPage><WitnessDashboard /></ProtectedPage>} />
+                <Route path="/competitions/:id/score-tables" element={<ProtectedPage><ScoreTablesPage /></ProtectedPage>} />
+                <Route path="/competitions/:id/contestant-scores" element={<ProtectedPage><ContestantScoresOverview /></ProtectedPage>} />
+                <Route path="/competitions/:id/contestant/:registrationId" element={<ProtectedPage><ContestantRegistrationProfile /></ProtectedPage>} />
+                <Route path="/competitions/:id/vote" element={<ProtectedPage><AudienceVoting /></ProtectedPage>} />
+                <Route path="/profile" element={<ProtectedPage><ContestantProfile /></ProtectedPage>} />
+                <Route path="/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
+                <Route path="/finance" element={<ProtectedPage><FinanceDashboard /></ProtectedPage>} />
+                <Route path="/peoples-choice" element={<ProtectedPage><PeoplesChoiceManager /></ProtectedPage>} />
+                <Route path="/profile/:userId" element={<ProtectedPage><ContestantProfile /></ProtectedPage>} />
+                <Route path="/admin/users" element={<ProtectedPage><AdminUsers /></ProtectedPage>} />
+                <Route path="/admin/settings" element={<ProtectedPage><AdminSettings /></ProtectedPage>} />
+                <Route path="/admin/billing" element={<ProtectedPage><AdminBilling /></ProtectedPage>} />
+                <Route path="/admin/logs" element={<ProtectedPage><AdminLogs /></ProtectedPage>} />
+                <Route path="/onboarding" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
+                <Route path="/competitions/:id/master-sheet" element={<ProtectedPage><MasterScoreSheet /></ProtectedPage>} />
+                <Route path="/competitions/:id/level-sheet" element={<ProtectedPage><LevelMasterSheet /></ProtectedPage>} />
+                <Route path="/competitions/:id/rules-rubric" element={<ProtectedPage><RulesAndRubric /></ProtectedPage>} />
+                <Route path="/competitions/:id/rules" element={<ProtectedPage><RulesPage /></ProtectedPage>} />
+                <Route path="/competitions/:id/rubric" element={<ProtectedPage><RubricPage /></ProtectedPage>} />
+                <Route path="/competitions/:id/penalties" element={<ProtectedPage><PenaltiesPage /></ProtectedPage>} />
+                <Route path="/competitions/:id/contestants" element={<ProtectedPage><CompetitionContestants /></ProtectedPage>} />
+                <Route path="/chief-judge" element={<ProtectedPage><Competitions /></ProtectedPage>} />
+                <Route path="/tabulator" element={<ProtectedPage><TabulatorDashboard /></ProtectedPage>} />
+                <Route path="/registrations" element={<ProtectedPage><RegistrationsHub /></ProtectedPage>} />
+                <Route path="/contestant-profiles" element={<ProtectedPage><ContestantProfilesHub /></ProtectedPage>} />
+                <Route path="/results-hub" element={<ProtectedPage><ResultsHub /></ProtectedPage>} />
+                <Route path="/tickets-hub" element={<ProtectedPage><TicketsHub /></ProtectedPage>} />
+                <Route path="/updates" element={<ProtectedPage><UpdatesHub /></ProtectedPage>} />
+                <Route path="/check-in" element={<ProtectedPage><CheckInHub /></ProtectedPage>} />
+                <Route path="/feedback" element={<ProtectedPage><ContestantFeedback /></ProtectedPage>} />
+                <Route path="/analytics" element={<ProtectedPage><AnalyticsDashboard /></ProtectedPage>} />
+                <Route path="/api-keys" element={<ProtectedPage><ApiKeysPage /></ProtectedPage>} />
+                <Route path="/production-assistant" element={<ProtectedPage><ProductionAssistantDashboard /></ProtectedPage>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

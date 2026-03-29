@@ -5,8 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileText, FileSpreadsheet, Printer } from "lucide-react";
-import { exportCSV, exportXLSX, exportPDF, type SheetRow } from "@/lib/export-utils";
+import { Download, FileText, FileSpreadsheet, Printer, Sheet } from "lucide-react";
+import { exportCSV, exportXLSX, exportPDF, exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 
 interface ExportDropdownProps {
   rows: SheetRow[];
@@ -24,14 +24,18 @@ export function ExportDropdown({ rows, filename, sheetName = "Scores", disabled 
           Export
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[160px]">
+      <DropdownMenuContent align="end" className="min-w-[180px]">
         <DropdownMenuItem onClick={() => exportPDF()}>
           <Printer className="h-4 w-4 mr-2" />
           Print / PDF
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportGoogleSheets(rows, filename)}>
+          <Sheet className="h-4 w-4 mr-2" />
+          Google Sheets (CSV)
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => exportCSV(rows, filename)}>
           <FileText className="h-4 w-4 mr-2" />
-          CSV (Google Sheets)
+          CSV
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => exportXLSX(rows, filename, sheetName)}>
           <FileSpreadsheet className="h-4 w-4 mr-2" />

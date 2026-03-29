@@ -1,0 +1,1 @@
+ALTER TABLE public.sub_events ADD COLUMN use_time_slots boolean NOT NULL DEFAULT true;

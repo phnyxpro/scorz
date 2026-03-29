@@ -1,5 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProfileSkeleton } from "@/components/shared/PageSkeletons";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useContestantRegistrations,
@@ -22,6 +27,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
+import { migrateFormConfig, getProfileFields } from "@/lib/form-builder-types";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -33,6 +40,9 @@ export default function ContestantProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("details");
+  const isJudgeViewer = hasRole("judge") && userId && userId !== user?.id;
 
   const profileUserId = userId || user?.id;
   const isOwnProfile = profileUserId === user?.id;
@@ -65,7 +75,7 @@ export default function ContestantProfile() {
   }, [competitions]);
 
   const subEventMap = useMemo(() => {
-    const m: Record<string, { name: string; event_date: string | null }> = {};
+    const m: Record<string, { name: string; event_date: string | null; level_id: string; level_name: string; level_sort_order: number }> = {};
     (subEvents || []).forEach((s) => (m[s.id] = s));
     return m;
   }, [subEvents]);
@@ -97,11 +107,7 @@ export default function ContestantProfile() {
       : 0;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!registrations || registrations.length === 0) {
@@ -181,13 +187,90 @@ export default function ContestantProfile() {
               {/* Stats */}
               <div className="flex md:flex-col gap-4 md:gap-2 md:text-right">
                 <StatBadge icon={Trophy} label="Competitions" value={totalComps} />
-                <StatBadge icon={Star} label="Avg Score" value={avgScore > 0 ? avgScore.toFixed(1) : "–"} />
+                <StatBadge icon={Star} label="Avg Score" value={avgScore > 0 ? avgScore.toFixed(2) : "–"} />
                 <StatBadge icon={Heart} label="People's Choice" value={totalVotes} />
               </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Level Journey Indicator */}
+      {(() => {
+        // Group registrations by competition, then show levels
+        const compGroups = new Map<string, typeof registrations>();
+        (registrations || []).forEach((reg) => {
+          if (!compGroups.has(reg.competition_id)) compGroups.set(reg.competition_id, []);
+          compGroups.get(reg.competition_id)!.push(reg);
+        });
+
+        // Only show if at least one registration has level info
+        const hasLevelInfo = (registrations || []).some((r) => r.sub_event_id && subEventMap[r.sub_event_id]?.level_name);
+        if (!hasLevelInfo) return null;
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" /> Level Journey
+                </CardTitle>
+                <CardDescription>Levels and sub-events this contestant is registered in</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Array.from(compGroups.entries()).map(([compId, regs]) => {
+                  const comp = compMap[compId];
+                  // Build unique levels from registrations, sorted by level_sort_order
+                  const levelEntries = regs
+                    .filter((r) => r.sub_event_id && subEventMap[r.sub_event_id]?.level_name)
+                    .map((r) => ({
+                      reg: r,
+                      sub: subEventMap[r.sub_event_id!],
+                    }))
+                    .sort((a, b) => (a.sub.level_sort_order ?? 0) - (b.sub.level_sort_order ?? 0));
+
+                  if (levelEntries.length === 0) return null;
+
+                  // Group by level
+                  const byLevel = new Map<string, { levelName: string; sortOrder: number; subEvents: { name: string; date: string | null; status: string }[] }>();
+                  levelEntries.forEach(({ sub }) => {
+                    if (!byLevel.has(sub.level_id)) {
+                      byLevel.set(sub.level_id, { levelName: sub.level_name, sortOrder: sub.level_sort_order, subEvents: [] });
+                    }
+                    byLevel.get(sub.level_id)!.subEvents.push({ name: sub.name, date: sub.event_date, status: regs.find((r) => r.sub_event_id && subEventMap[r.sub_event_id!]?.level_id === sub.level_id)?.status || "approved" });
+                  });
+
+                  const levels = Array.from(byLevel.values()).sort((a, b) => a.sortOrder - b.sortOrder);
+
+                  return (
+                    <div key={compId} className="space-y-2">
+                      {compGroups.size > 1 && (
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{comp?.name || "Unknown"}</p>
+                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {levels.map((level, idx) => (
+                          <div key={level.levelName} className="flex items-center gap-1">
+                            {idx > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground leading-tight">{level.levelName}</p>
+                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                  {level.subEvents.map((se) => se.name).join(", ")}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Tabs */}
       <Tabs defaultValue="history" className="space-y-4">
@@ -198,6 +281,139 @@ export default function ContestantProfile() {
           <TabsTrigger value="advancements">Promotions</TabsTrigger>
           <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
+        )}
+
+        {/* Media Gallery Tab */}
+        <TabsContent value="media">
+          <ContestantMediaGallery userId={profileUserId!} isOwnProfile={isOwnProfile} />
+        </TabsContent>
+
+        {/* Registration Details Tab */}
+        <TabsContent value="details">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            {(registrations || []).map((reg) => {
+              const comp = compMap[reg.competition_id];
+              const sub = reg.sub_event_id ? subEventMap[reg.sub_event_id] : null;
+              const socialHandles = reg.social_handles as Record<string, string> | null;
+
+              return (
+                <Card key={reg.id} className="border-border/50 bg-card/80">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{comp?.name || "Unknown Competition"}</CardTitle>
+                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>{reg.status}</Badge>
+                    </div>
+                    {sub && <CardDescription>{sub.name}{sub.event_date ? ` · ${sub.event_date}` : ""}</CardDescription>}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Personal Info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DetailField icon={User} label="Full Name" value={reg.full_name} />
+                      <DetailField icon={Mail} label="Email" value={reg.email} />
+                      <DetailField icon={Phone} label="Phone" value={reg.phone} />
+                      <DetailField icon={MapPin} label="Location" value={reg.location} />
+                      <DetailField icon={Calendar} label="Age Category" value={reg.age_category === "minor" ? "Minor" : "Adult"} />
+                      <DetailField icon={Calendar} label="Registered" value={new Date(reg.created_at).toLocaleDateString()} />
+                    </div>
+
+                    {/* Bio */}
+                    {reg.bio && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bio</p>
+                        <p className="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-3 border border-border/30">{reg.bio}</p>
+                      </div>
+                    )}
+
+                    {/* Social Handles */}
+                    {socialHandles && Object.keys(socialHandles).length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Globe className="h-3 w-3" /> Social Handles
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(socialHandles).filter(([, v]) => v).map(([platform, handle]) => (
+                            <Badge key={platform} variant="outline" className="text-xs font-mono">
+                              {platform}: {handle}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Media */}
+                    <div className="flex flex-wrap gap-3">
+                      {reg.profile_photo_url && (
+                        <a href={reg.profile_photo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                          <User className="h-3 w-3" /> Profile Photo <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {reg.performance_video_url && (
+                        <a href={reg.performance_video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                          <Video className="h-3 w-3" /> Performance Video <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Guardian Info (minors) */}
+                    {reg.age_category === "minor" && (reg.guardian_name || reg.guardian_email) && (
+                      <div className="space-y-1.5 pt-2 border-t border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Shield className="h-3 w-3" /> Guardian Information
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <DetailField icon={User} label="Guardian Name" value={reg.guardian_name} />
+                          <DetailField icon={Mail} label="Guardian Email" value={reg.guardian_email} />
+                          <DetailField icon={Phone} label="Guardian Phone" value={reg.guardian_phone} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Fields flagged for profile */}
+                    {(() => {
+                      const formCfg = competitionConfigs?.[reg.competition_id];
+                      if (!formCfg) return null;
+                      const config = migrateFormConfig(formCfg);
+                      const profileFields = getProfileFields(config);
+                      const cfValues = (reg as any).custom_field_values as Record<string, any> || {};
+                      const entries = profileFields
+                        .filter(f => cfValues[f.id] != null && cfValues[f.id] !== "")
+                        .map(f => ({ label: f.label, value: String(cfValues[f.id]) }));
+                      if (entries.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-2 border-t border-border/30">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Additional Details</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {entries.map((e, i) => (
+                              <DetailField key={i} icon={Info} label={e.label} value={e.value} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Compliance */}
+                    <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
+                      <Badge variant={reg.rules_acknowledged ? "default" : "outline"} className="text-[10px]">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Rules {reg.rules_acknowledged ? "Acknowledged" : "Not Acknowledged"}
+                      </Badge>
+                      {reg.contestant_signed_at && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Signed {new Date(reg.contestant_signed_at).toLocaleDateString()}
+                        </Badge>
+                      )}
+                      {reg.guardian_signed_at && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Guardian Signed {new Date(reg.guardian_signed_at).toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </motion.div>
+        </TabsContent>
 
         {/* Performance History Tab */}
         <TabsContent value="history">
@@ -291,7 +507,7 @@ export default function ContestantProfile() {
                                 {s.time_penalty > 0 ? `-${s.time_penalty}` : "0"}
                               </TableCell>
                               <TableCell className="text-center font-mono font-bold text-primary text-sm">
-                                {s.final_score}
+                                {Number(s.final_score).toFixed(2)}
                               </TableCell>
                               <TableCell className="text-center">
                                 {s.is_certified ? (
@@ -331,7 +547,7 @@ export default function ContestantProfile() {
                         <div key={s.id} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-foreground">{comp?.name || "Unknown"}</span>
-                            <span className="text-xs font-mono text-primary font-bold">{s.final_score} pts</span>
+                            <span className="text-xs font-mono text-primary font-bold">{Number(s.final_score).toFixed(2)} pts</span>
                           </div>
                           <p className="text-sm text-muted-foreground leading-relaxed">{s.comments}</p>
                         </div>
@@ -427,7 +643,7 @@ export default function ContestantProfile() {
                     {advancements.map((adv, idx) => {
                       const reg = registrations?.find((r) => r.id === adv.registration_id);
                       const comp = reg ? compMap[reg.competition_id] : null;
-                      
+
                       // Using subEventMap since we fetch all sub_event_ids in useSubEventNames? 
                       // Note: We might not have the old/new sub-events in subEventMap if the user is no longer assigned to them.
                       // For now we'll just show the IDs if names aren't in the map.
@@ -439,7 +655,7 @@ export default function ContestantProfile() {
                           <div className="flex items-center justify-center w-10 h-10 rounded-full border border-primary/20 bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                             <ArrowUpRight className="h-4 w-4 text-primary" />
                           </div>
-                          
+
                           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded bg-muted/20 border border-border/50 shadow-sm">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-bold text-foreground">{comp?.name || "Competition"}</span>
@@ -473,61 +689,6 @@ export default function ContestantProfile() {
   );
 }
 
-function CompetitionRubricSection({ competitionId, competitionName }: { competitionId: string; competitionName: string }) {
-  const { data: criteria } = useRubricCriteria(competitionId);
-  const { data: penalties } = usePenaltyRules(competitionId);
-  const { data: comp } = useQuery({
-    queryKey: ["competition-rules", competitionId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("competitions").select("rules_url, description").eq("id", competitionId).single();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const rulesUrl = (comp as any)?.rules_url as string | undefined;
-  const description = (comp as any)?.description as string | undefined;
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold font-mono">{competitionName}</h3>
-
-      {/* Official Rules */}
-      {(rulesUrl || description) && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <h4 className="text-base font-bold font-mono">Official Rules</h4>
-          </div>
-          {description && (
-            <Card className="border-border/50 bg-card/80">
-              <CardContent className="pt-4">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{description}</p>
-              </CardContent>
-            </Card>
-          )}
-          {rulesUrl && (
-            <Card className="border-border/50 bg-card/80 p-4 flex items-center justify-between gap-4">
-              <div className="flex gap-3 items-center">
-                <FileText className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium text-sm">Competition Handbook</p>
-                  <p className="text-xs text-muted-foreground">Official rules document</p>
-                </div>
-              </div>
-              <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
-                <ExternalLink className="h-3.5 w-3.5" /> View
-              </a>
-            </Card>
-          )}
-        </section>
-      )}
-
-      <PublicRubric criteria={criteria || []} penalties={penalties || []} />
-    </div>
-  );
-}
-
 function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) {
   return (
     <div className="flex items-center gap-2 md:justify-end">
@@ -535,6 +696,19 @@ function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; val
       <div>
         <p className="font-mono font-bold text-sm text-foreground">{value}</p>
         <p className="text-[10px] text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function DetailField({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-sm text-foreground">{value}</p>
       </div>
     </div>
   );

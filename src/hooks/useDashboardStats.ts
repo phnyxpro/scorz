@@ -8,84 +8,45 @@ export interface DashboardStat {
   to: string;
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(effectiveUserId?: string) {
   const { user, roles } = useAuth();
+  const uid = effectiveUserId || user?.id;
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const isAdminOrOrg = roles.includes("admin") || roles.includes("organizer");
+  const isJudge = roles.includes("judge");
+  const isTabulator = roles.includes("tabulator");
+  const isContestant = roles.includes("contestant");
+
   const fetchStats = useCallback(async () => {
-    if (!user) {
+    if (!uid) {
       setStats([]);
       setLoading(false);
       return;
     }
 
-    const results: DashboardStat[] = [];
-
     try {
-      const { count: activeComps } = await supabase
-        .from("competitions")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["active", "draft"]);
-      results.push({ label: "Active Events", value: activeComps ?? 0, to: "/competitions" });
+      const { data, error } = await supabase.rpc("get_dashboard_stats", {
+        _user_id: uid,
+        _is_admin_or_org: isAdminOrOrg,
+        _is_judge: isJudge,
+        _is_tabulator: isTabulator,
+        _is_contestant: isContestant,
+      });
 
-      const isAdminOrOrg = roles.includes("admin") || roles.includes("organizer");
-      const isJudge = roles.includes("judge") || roles.includes("chief_judge");
-      const isTabulator = roles.includes("tabulator") || roles.includes("witness");
-      const isContestant = roles.includes("contestant");
-
-      if (isAdminOrOrg) {
-        const { count: pendingRegs } = await supabase
-          .from("contestant_registrations")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "pending");
-        results.push({ label: "Pending Registrations", value: pendingRegs ?? 0, to: "/competitions" });
-
-        const { count: totalContestants } = await supabase
-          .from("contestant_registrations")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "approved");
-        results.push({ label: "Approved Contestants", value: totalContestants ?? 0, to: "/competitions" });
-      }
-
-      if (isJudge) {
-        const { count: unscoredCount } = await supabase
-          .from("sub_event_assignments")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .in("role", ["judge", "chief_judge"]);
-        results.push({ label: "My Assignments", value: unscoredCount ?? 0, to: "/judge-dashboard" });
-
-        const { count: uncertified } = await supabase
-          .from("judge_scores")
-          .select("id", { count: "exact", head: true })
-          .eq("judge_id", user.id)
-          .eq("is_certified", false);
-        results.push({ label: "Uncertified Scores", value: uncertified ?? 0, to: "/judge-dashboard" });
-      }
-
-      if (isTabulator) {
-        const { count: pendingCerts } = await supabase
-          .from("tabulator_certifications")
-          .select("id", { count: "exact", head: true })
-          .eq("is_certified", false);
-        results.push({ label: "Pending Verifications", value: pendingCerts ?? 0, to: "/tabulator" });
-      }
-
-      if (isContestant) {
-        const { count: myRegs } = await supabase
-          .from("contestant_registrations")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        results.push({ label: "My Registrations", value: myRegs ?? 0, to: "/profile" });
+      if (error) {
+        console.error("Error fetching dashboard stats:", error);
+        setStats([]);
+      } else {
+        setStats((data as unknown as DashboardStat[]) || []);
       }
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
     }
 
-    setStats(results);
     setLoading(false);
-  }, [user?.id, roles]);
+  }, [uid, isAdminOrOrg, isJudge, isTabulator, isContestant]);
 
   // Initial fetch
   useEffect(() => {
@@ -94,9 +55,7 @@ export function useDashboardStats() {
 
   // Realtime subscriptions – refetch counts on any relevant change
   useEffect(() => {
-    if (!user) return;
-
-    const tables = ["competitions", "contestant_registrations", "judge_scores", "tabulator_certifications", "sub_event_assignments"];
+    if (!uid) return;
 
     const channel = supabase
       .channel("dashboard-stats")
@@ -110,7 +69,7 @@ export function useDashboardStats() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchStats]);
+  }, [uid, fetchStats]);
 
   return { stats, loading };
 }

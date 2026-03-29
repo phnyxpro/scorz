@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CardGridSkeleton } from "@/components/shared/PageSkeletons";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,10 +47,9 @@ export default function Competitions() {
   const isAdmin = hasRole("admin");
   const isOrganizer = hasRole("organizer");
   const canManage = isAdmin || isOrganizer;
-  const isJudge = hasRole("judge") || hasRole("chief_judge");
-  const isChiefJudge = hasRole("chief_judge");
+  const isJudge = hasRole("judge");
   const isTabulator = hasRole("tabulator");
-  const isWitness = hasRole("witness");
+  
 
   const [open, setOpen] = useState(false);
 
@@ -58,13 +58,11 @@ export default function Competitions() {
     defaultValues: { name: "", slug: "", description: "", startDate: "", endDate: "" },
   });
 
-  // Subscription enforcement for organizers (admins bypass)
+  // Subscription enforcement for organisers (admins bypass)
   const { user } = useAuth();
-  const myCompetitions = isAdmin ? competitions : competitions?.filter(c => c.created_by === user?.id);
-  const competitionCount = myCompetitions?.length ?? 0;
-  const limit = isAdmin ? -1 : subscription.competitionLimit; // admins have no limit
-  const isAtLimit = limit !== -1 && competitionCount >= limit;
-  const needsSubscription = !isAdmin && !subscription.subscribed;
+  const creditsAvailable = isAdmin ? 999 : subscription.creditsAvailable;
+  const isAtLimit = !isAdmin && creditsAvailable <= 0;
+  const needsSubscription = !isAdmin && subscription.creditsTotal === 0;
 
   const onSubmit = (data: CompetitionFormValues) => {
     if (needsSubscription) {
@@ -73,7 +71,7 @@ export default function Competitions() {
     }
 
     if (isAtLimit) {
-      toast.error(`You've reached your plan limit of ${limit} competitions. Upgrade your plan to create more.`);
+      toast.error("You have no competition credits remaining. Purchase more from the billing page.");
       return;
     }
 
@@ -94,7 +92,7 @@ export default function Competitions() {
     );
   };
 
-  if (isLoading) return <div className="text-muted-foreground font-mono text-sm animate-pulse">Loading…</div>;
+  if (isLoading) return <CardGridSkeleton cards={3} />;
 
   return (
     <div>
@@ -195,29 +193,29 @@ export default function Competitions() {
         )}
       </div>
 
-      {/* Subscription warnings for organizers */}
+      {/* Subscription warnings for organisers */}
       {canManage && !isAdmin && needsSubscription && (
         <Alert className="mb-4 border-accent/30 bg-accent/5">
           <Lock className="h-4 w-4 text-accent" />
           <AlertDescription className="text-sm">
             You need an active subscription to create competitions.{" "}
-            <Link to="/admin" className="text-accent underline font-medium">Subscribe now</Link>
+            <Link to="/admin/billing" className="text-accent underline font-medium">Subscribe now</Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && isAtLimit && (
+      {canManage && !isAdmin && subscription.creditsTotal > 0 && isAtLimit && (
         <Alert className="mb-4 border-secondary/30 bg-secondary/5">
           <AlertDescription className="text-sm">
-            You've used {competitionCount}/{limit} competitions on your <strong>{subscription.tier?.name}</strong> plan.{" "}
-            <Link to="/admin" className="text-secondary underline font-medium">Upgrade</Link> for more.
+            You have no competition credits remaining.{" "}
+            <Link to="/admin/billing" className="text-secondary underline font-medium">Purchase more</Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {canManage && !isAdmin && subscription.subscribed && !isAtLimit && limit !== -1 && (
+      {canManage && !isAdmin && subscription.creditsAvailable > 0 && (
         <p className="text-xs text-muted-foreground mb-4 font-mono">
-          {competitionCount}/{limit} competitions used • {subscription.tier?.name}
+          {subscription.creditsAvailable} competition credit{subscription.creditsAvailable !== 1 ? "s" : ""} available
         </p>
       )}
 
@@ -275,7 +273,7 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}`}><Settings className="h-3 w-3 mr-1" /> Configure</Link>
                       </Button>
                     )}
-                    {c.status === "active" && !canManage && !isJudge && !isTabulator && !isWitness && (
+                    {c.status === "active" && !canManage && !isJudge && !isTabulator && (
                       <Button asChild variant="default" size="sm">
                         <Link to={`/competitions/${c.id}/register`}>Register</Link>
                       </Button>
@@ -285,19 +283,9 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}/score`}><ClipboardList className="h-3 w-3 mr-1" /> Score</Link>
                       </Button>
                     )}
-                    {c.status === "active" && isChiefJudge && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/competitions/${c.id}/chief-judge`}><Shield className="h-3 w-3 mr-1" /> Panel</Link>
-                      </Button>
-                    )}
                     {c.status === "active" && isTabulator && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/tabulator`}><Calculator className="h-3 w-3 mr-1" /> Tabulate</Link>
-                      </Button>
-                    )}
-                    {c.status === "active" && isWitness && (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/competitions/${c.id}/witness`}><Eye className="h-3 w-3 mr-1" /> Witness</Link>
                       </Button>
                     )}
                     {(c.status === "active" || c.status === "completed") && (
@@ -305,7 +293,7 @@ export default function Competitions() {
                         <Link to={`/competitions/${c.id}/results`}><BarChart3 className="h-3 w-3 mr-1" /> Results</Link>
                       </Button>
                     )}
-                    {c.status === "active" && !canManage && !isJudge && !isTabulator && !isWitness && (
+                    {c.status === "active" && !canManage && !isJudge && !isTabulator && (
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/competitions/${c.id}/vote`}><Heart className="h-3 w-3 mr-1" /> Vote</Link>
                       </Button>

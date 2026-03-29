@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents } from "@/hooks/useCompetitions";
 import { useRegistrations } from "@/hooks/useRegistrations";
 import { useVoteCounts, useMyVote, useCastVote } from "@/hooks/useAudienceVoting";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +14,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Heart, CheckCircle, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
+/** Fetch all votes cast by a specific email across a competition's sub-events */
+function useMyVotesForCompetition(competitionId: string | undefined, email: string | undefined) {
+  return useQuery({
+    queryKey: ["my-competition-votes", competitionId, email],
+    enabled: !!competitionId && !!email,
+    queryFn: async () => {
+      // Get all sub-event IDs for this competition
+      const { data: levels } = await supabase
+        .from("competition_levels")
+        .select("id")
+        .eq("competition_id", competitionId!);
+      if (!levels?.length) return [];
+      const { data: subs } = await supabase
+        .from("sub_events")
+        .select("id, name, level_id, voting_enabled")
+        .in("level_id", levels.map(l => l.id));
+      if (!subs?.length) return [];
+
+      const { data: votes } = await supabase
+        .from("audience_votes")
+        .select("*, contestant_registrations!audience_votes_contestant_registration_id_fkey(full_name)")
+        .in("sub_event_id", subs.map(s => s.id))
+        .eq("voter_email", email!);
+
+      return (votes || []).map(v => ({
+        ...v,
+        sub_event_name: subs.find(s => s.id === v.sub_event_id)?.name || "Event",
+        contestant_name: (v as any).contestant_registrations?.full_name || "Unknown",
+      }));
+    },
+  });
+}
+
 export default function AudienceVoting() {
+  const navigate = useNavigate();
   const { id: competitionId } = useParams<{ id: string }>();
   const { user } = useAuth();
 
   const { data: comp } = useCompetition(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: registrations } = useRegistrations(competitionId);
+  const { data: myVotes, isLoading: votesLoading } = useMyVotesForCompetition(competitionId, user?.email || undefined);
 
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const [selectedSubEventId, setSelectedSubEventId] = useState("");
@@ -35,17 +72,20 @@ export default function AudienceVoting() {
   const { data: myVote } = useMyVote(selectedSubEventId || undefined, voterEmail || undefined);
   const castVote = useCastVote();
 
+  // Sub-events where voting is enabled and user hasn't voted
+  const votedSubEventIds = new Set((myVotes || []).map(v => v.sub_event_id));
+  const openSubEvents = useMemo(() => {
+    return (subEvents || []).filter(
+      se => (se as any).voting_enabled && !votedSubEventIds.has(se.id)
+    );
+  }, [subEvents, votedSubEventIds]);
+
   const contestants = useMemo(() => {
     if (!registrations || !selectedSubEventId) return [];
     return registrations.filter(
       (r) => r.status !== "rejected" && (r.sub_event_id === selectedSubEventId || !r.sub_event_id)
     );
   }, [registrations, selectedSubEventId]);
-
-  const totalVotes = useMemo(() => {
-    if (!voteCounts) return 0;
-    return Object.values(voteCounts).reduce((a, b) => a + b, 0);
-  }, [voteCounts]);
 
   const hasVoted = !!myVote;
 
@@ -64,8 +104,8 @@ export default function AudienceVoting() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Button asChild variant="ghost" size="icon">
-          <Link to={`/competitions`}><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -76,129 +116,128 @@ export default function AudienceVoting() {
         </div>
       </div>
 
-      {/* Sub-event selector */}
-      <Card className="border-border/50 bg-card/80 mb-4">
-        <CardContent className="pt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Level</label>
-              <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                <SelectContent>
-                  {levels?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Sub-Event</label>
-              <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
-                <SelectTrigger><SelectValue placeholder="Select sub-event" /></SelectTrigger>
-                <SelectContent>
-                  {subEvents?.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {selectedSubEventId && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Vote counts */}
-          {voteCounts && totalVotes > 0 && (
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Users className="h-4 w-4" /> Live Vote Tally
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {contestants
-                    .sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0))
-                    .map((c) => {
-                      const count = voteCounts[c.id] || 0;
-                      const pct = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
-                      return (
-                        <div key={c.id} className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-foreground w-32 truncate">{c.full_name}</span>
-                          <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary/80 rounded-full transition-all duration-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-mono text-muted-foreground w-12 text-right">
-                            {count} ({pct.toFixed(0)}%)
-                          </span>
-                        </div>
-                      );
-                    })}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">{totalVotes} total votes</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Voting form or confirmation */}
-          {hasVoted ? (
-            <Card className="border-secondary/30 bg-secondary/10">
-              <CardContent className="flex flex-col items-center py-8">
-                <CheckCircle className="h-10 w-10 text-secondary mb-3" />
-                <p className="text-foreground font-medium">You've already voted!</p>
-                <p className="text-muted-foreground text-xs mt-1">
-                  Voted for: {registrations?.find((r) => r.id === myVote?.contestant_registration_id)?.full_name}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader>
-                <CardTitle className="text-base">Cast Your Vote</CardTitle>
-                <CardDescription>One vote per person per sub-event</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Your Name *</label>
-                  <Input value={voterName} onChange={(e) => setVoterName(e.target.value)} placeholder="Full name" />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Email *</label>
-                  <Input type="email" value={voterEmail} onChange={(e) => setVoterEmail(e.target.value)} placeholder="email@example.com" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+      {/* My existing votes */}
+      {myVotes && myVotes.length > 0 && (
+        <Card className="border-secondary/30 bg-secondary/5 mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-secondary" /> Your Votes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {myVotes.map(v => (
+                <div key={v.id} className="flex items-center justify-between p-2 rounded-md bg-secondary/10">
                   <div>
-                    <label className="text-xs text-muted-foreground">Phone</label>
-                    <Input value={voterPhone} onChange={(e) => setVoterPhone(e.target.value)} placeholder="Optional" />
+                    <p className="text-sm font-medium text-foreground">{v.sub_event_name}</p>
+                    <p className="text-xs text-muted-foreground">Voted for: {v.contestant_name}</p>
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Ticket / Seat #</label>
-                    <Input value={ticketNumber} onChange={(e) => setTicketNumber(e.target.value)} placeholder="Optional" />
-                  </div>
+                  <Badge variant="secondary" className="text-xs">Voted</Badge>
                 </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {votesLoading ? (
+        <p className="text-sm text-muted-foreground animate-pulse text-center py-8">Loading your votes…</p>
+      ) : (
+        <>
+          {/* Voting form for events not yet voted on */}
+          <Card className="border-border/50 bg-card/80 mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Cast a Vote</CardTitle>
+              <CardDescription className="text-xs">Select an event where voting is open</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground">Vote For *</label>
-                  <Select value={selectedContestant} onValueChange={setSelectedContestant}>
-                    <SelectTrigger><SelectValue placeholder="Select contestant" /></SelectTrigger>
+                  <label className="text-xs text-muted-foreground">Level</label>
+                  <Select value={selectedLevelId} onValueChange={(v) => { setSelectedLevelId(v); setSelectedSubEventId(""); }}>
+                    <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                     <SelectContent>
-                      {contestants.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
-                      ))}
+                      {levels?.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                  onClick={handleVote}
-                  disabled={!selectedContestant || !voterName.trim() || !voterEmail.trim() || castVote.isPending}
-                  className="w-full"
-                >
-                  <Heart className="h-4 w-4 mr-1" />
-                  {castVote.isPending ? "Submitting…" : "Cast Vote"}
-                </Button>
-              </CardContent>
-            </Card>
+                <div>
+                  <label className="text-xs text-muted-foreground">Event</label>
+                  <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId}>
+                    <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
+                    <SelectContent>
+                      {openSubEvents.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedSubEventId && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              {hasVoted ? (
+                <Card className="border-secondary/30 bg-secondary/10">
+                  <CardContent className="flex flex-col items-center py-8">
+                    <CheckCircle className="h-10 w-10 text-secondary mb-3" />
+                    <p className="text-foreground font-medium">You've already voted for this event!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-border/50 bg-card/80">
+                  <CardContent className="pt-4 space-y-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Your Name *</label>
+                      <Input value={voterName} onChange={e => setVoterName(e.target.value)} placeholder="Full name" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Email *</label>
+                      <Input type="email" value={voterEmail} onChange={e => setVoterEmail(e.target.value)} placeholder="email@example.com" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Phone</label>
+                        <Input value={voterPhone} onChange={e => setVoterPhone(e.target.value)} placeholder="Optional" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Ticket / Seat #</label>
+                        <Input value={ticketNumber} onChange={e => setTicketNumber(e.target.value)} placeholder="Optional" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Vote For *</label>
+                      <Select value={selectedContestant} onValueChange={setSelectedContestant}>
+                        <SelectTrigger><SelectValue placeholder="Select contestant" /></SelectTrigger>
+                        <SelectContent>
+                          {contestants.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleVote}
+                      disabled={!selectedContestant || !voterName.trim() || !voterEmail.trim() || castVote.isPending}
+                      className="w-full"
+                    >
+                      <Heart className="h-4 w-4 mr-1" />
+                      {castVote.isPending ? "Submitting…" : "Cast Vote"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
           )}
-        </motion.div>
+
+          {!selectedSubEventId && openSubEvents.length === 0 && (
+            <div className="text-center py-8">
+              <Heart className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">
+                {myVotes && myVotes.length > 0
+                  ? "You've voted in all open events. Thank you!"
+                  : "No events with voting open right now."}
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

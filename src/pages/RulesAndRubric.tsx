@@ -4,7 +4,7 @@ import { useCompetition, useRubricCriteria, usePenaltyRules } from "@/hooks/useC
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, ExternalLink, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, ExternalLink, BookOpen, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RulesAndRubric() {
@@ -15,6 +15,8 @@ export default function RulesAndRubric() {
   const { data: penalties, isLoading: penaltiesLoading } = usePenaltyRules(competitionId);
 
   const isLoading = compLoading || criteriaLoading || penaltiesLoading;
+  const rulesContent = (comp as any)?.rules_content as string | undefined;
+  const rubricContent = (comp as any)?.rubric_content as string | undefined;
 
   // Scroll to hash section on load
   useEffect(() => {
@@ -59,6 +61,72 @@ export default function RulesAndRubric() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Extracted rules content */}
+            {rulesContent && (
+              <Card className="border-border/50 bg-card/80">
+                <CardContent className="pt-4">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rulesContent }} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fallback: iframe for PDF if no extracted content */}
+            {!rulesContent && (comp as any)?.rules_document_url && (
+              <Card className="border-border/50 bg-card/80 overflow-hidden">
+                <CardContent className="p-0">
+                  {(comp as any).rules_document_url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={(comp as any).rules_document_url}
+                      className="w-full h-[600px] border-0"
+                      title="Rules Document"
+                    />
+                  ) : (
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-3 items-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Rules Document</p>
+                          <p className="text-xs text-muted-foreground">Uploaded document</p>
+                        </div>
+                      </div>
+                      <a
+                        href={(comp as any).rules_document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Download link when extracted content is shown */}
+            {rulesContent && (comp as any)?.rules_document_url && (
+              <Card className="border-border/50 bg-card/80">
+                <CardContent className="pt-4 flex items-center justify-between gap-4">
+                  <div className="flex gap-3 items-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium text-sm">Original Document</p>
+                      <p className="text-xs text-muted-foreground">Download the full PDF</p>
+                    </div>
+                  </div>
+                  <a
+                    href={(comp as any).rules_document_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary text-sm flex items-center gap-1 hover:underline"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
             {(comp as any)?.rules_url ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4 flex items-center justify-between gap-4">
@@ -80,14 +148,79 @@ export default function RulesAndRubric() {
                 </CardContent>
               </Card>
             ) : (
-              !comp?.description && (
+              !comp?.description && !rulesContent && !(comp as any)?.rules_document_url && (
                 <p className="text-sm text-muted-foreground italic">No rules have been published for this competition.</p>
               )
             )}
           </section>
 
           {/* Scoring Rubric */}
-          <section id="rubric" className="scroll-mt-20">
+          <section id="rubric" className="space-y-3 scroll-mt-20">
+            {/* Extracted rubric content */}
+            {rubricContent && (
+              <Card className="border-border/50 bg-card/80 mb-4">
+                <CardContent className="pt-4">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rubricContent }} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fallback: iframe for PDF if no extracted content */}
+            {!rubricContent && (comp as any)?.rubric_document_url && (
+              <Card className="border-border/50 bg-card/80 overflow-hidden mb-4">
+                <CardContent className="p-0">
+                  {(comp as any).rubric_document_url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={(comp as any).rubric_document_url}
+                      className="w-full h-[600px] border-0"
+                      title="Rubric Document"
+                    />
+                  ) : (
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-3 items-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Rubric Document</p>
+                          <p className="text-xs text-muted-foreground">Uploaded document</p>
+                        </div>
+                      </div>
+                      <a
+                        href={(comp as any).rubric_document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Download link when extracted content is shown */}
+            {rubricContent && (comp as any)?.rubric_document_url && (
+              <Card className="border-border/50 bg-card/80 mb-4">
+                <CardContent className="pt-4 flex items-center justify-between gap-4">
+                  <div className="flex gap-3 items-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium text-sm">Original Document</p>
+                      <p className="text-xs text-muted-foreground">Download the full PDF</p>
+                    </div>
+                  </div>
+                  <a
+                    href={(comp as any).rubric_document_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary text-sm flex items-center gap-1 hover:underline"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+
             <PublicRubric criteria={criteria || []} penalties={penalties || []} />
           </section>
         </>

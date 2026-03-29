@@ -18,12 +18,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
     logStep("Function started");
 
@@ -31,56 +25,111 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { email: user.email });
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-
-    if (customers.data.length === 0) {
-      logStep("No Stripe customer found");
-      return new Response(JSON.stringify({ subscribed: false }), {
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ credits_total: 0, credits_used: 0, credits_available: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+    const token = authHeader.replace("Bearer ", "");
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
-    const hasActiveSub = subscriptions.data.length > 0;
-    let productId = null;
-    let priceId = null;
-    let subscriptionEnd = null;
-
-    if (hasActiveSub) {
-      const sub = subscriptions.data[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-      productId = sub.items.data[0].price.product;
-      priceId = sub.items.data[0].price.id;
-      logStep("Active subscription found", { productId, priceId, subscriptionEnd });
-    } else {
-      logStep("No active subscription");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ credits_total: 0, credits_used: 0, credits_available: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
+
+    const user = userData.user;
+    logStep("User authenticated", { email: user.email });
+
+    // Sync: check Stripe for completed one-time payments and ensure credits exist
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
+
+    if (customers.data.length > 0) {
+      const customerId = customers.data[0].id;
+      logStep("Found Stripe customer", { customerId });
+
+      // Get completed checkout sessions (one-time payments)
+      const sessions = await stripe.checkout.sessions.list({
+        customer: customerId,
+        status: "complete",
+        limit: 100,
+      });
+
+      const paymentSessions = sessions.data.filter(s => s.mode === "payment");
+      logStep("Found payment sessions", { count: paymentSessions.length });
+
+      // Ensure each session has a corresponding credit row
+      for (const session of paymentSessions) {
+        const { data: existing } = await supabaseClient
+          .from("competition_credits")
+          .select("id")
+          .eq("stripe_session_id", session.id)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          // Determine product ID from line items
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
+          const priceObj = lineItems.data[0]?.price;
+          const productId = priceObj?.product as string || "";
+
+          await supabaseClient.from("competition_credits").insert({
+            user_id: user.id,
+            tier_product_id: productId,
+            stripe_session_id: session.id,
+            purchased_at: new Date(session.created * 1000).toISOString(),
+          });
+          logStep("Created credit for session", { sessionId: session.id, productId });
+        }
+      }
+    }
+
+    // Now count credits
+    const { data: allCredits } = await supabaseClient
+      .from("competition_credits")
+      .select("id, used_at, tier_product_id")
+      .eq("user_id", user.id);
+
+    const credits = allCredits || [];
+    const creditsTotal = credits.length;
+    const creditsUsed = credits.filter(c => c.used_at !== null).length;
+    const creditsAvailable = creditsTotal - creditsUsed;
+
+    // Determine the "best" tier from purchased credits for display
+    const tierPriority: Record<string, number> = {
+      "prod_U65G1kKSbu9uDM": 3, // Enterprise
+      "prod_U65GjQ5kHCWQRe": 2, // Pro
+      "prod_U65F5A4sKTnuVF": 1, // Start
+    };
+    let bestProductId: string | null = null;
+    let bestPriority = 0;
+    for (const c of credits) {
+      const p = tierPriority[c.tier_product_id] || 0;
+      if (p > bestPriority) {
+        bestPriority = p;
+        bestProductId = c.tier_product_id;
+      }
+    }
+
+    logStep("Credits summary", { creditsTotal, creditsUsed, creditsAvailable, bestProductId });
 
     return new Response(
       JSON.stringify({
-        subscribed: hasActiveSub,
-        product_id: productId,
-        price_id: priceId,
-        subscription_end: subscriptionEnd,
+        subscribed: creditsAvailable > 0,
+        product_id: bestProductId,
+        credits_total: creditsTotal,
+        credits_used: creditsUsed,
+        credits_available: creditsAvailable,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

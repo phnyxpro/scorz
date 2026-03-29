@@ -4,9 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompetition, useLevels, useSubEvents, useRubricCriteria } from "@/hooks/useCompetitions";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
 import { useRegistrations } from "@/hooks/useRegistrations";
-import { useAllScoresForSubEvent, useCertification } from "@/hooks/useChiefJudge";
-import { useTabulatorCertification } from "@/hooks/useTabulator";
-import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness } from "@/hooks/useWitness";
+import { useAllScoresForSubEvent, useCertification, useCertificationRealtime } from "@/hooks/useChiefJudge";
+import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
+import { useTabulatorCertification, useTabulatorCertificationRealtime } from "@/hooks/useTabulator";
+import { useWitnessCertification, useUpsertWitnessCert, useCertifyWitness, useWitnessCertificationRealtime } from "@/hooks/useWitness";
 import { ScoreSummaryTable } from "@/components/tabulator/ScoreSummaryTable";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ArrowLeft, Eye, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
+import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 
 export default function WitnessDashboard() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -52,6 +54,10 @@ export default function WitnessDashboard() {
   const { data: chiefCert } = useCertification(selectedSubEventId || undefined);
   const { data: tabCert } = useTabulatorCertification(selectedSubEventId || undefined);
   const { data: witnessCert } = useWitnessCertification(selectedSubEventId || undefined);
+  useJudgeScoresRealtime(selectedSubEventId || undefined);
+  useCertificationRealtime(selectedSubEventId || undefined);
+  useTabulatorCertificationRealtime(selectedSubEventId || undefined);
+  useWitnessCertificationRealtime(selectedSubEventId || undefined);
 
   const upsertWitness = useUpsertWitnessCert();
   const certifyWitness = useCertifyWitness();
@@ -99,12 +105,16 @@ export default function WitnessDashboard() {
   const handleCertify = async () => {
     const cert = witnessCert;
     if (!cert?.id || !signature) return;
-    await certifyWitness.mutateAsync({
-      id: cert.id,
-      witness_signature: signature,
-      sub_event_id: selectedSubEventId,
-    });
-    setShowCertifyDialog(false);
+    try {
+      await certifyWitness.mutateAsync({
+        id: cert.id,
+        witness_signature: signature,
+        sub_event_id: selectedSubEventId,
+      });
+      setShowCertifyDialog(false);
+    } catch (error) {
+      console.error("Certification error:", error);
+    }
   };
 
   return (
@@ -116,7 +126,7 @@ export default function WitnessDashboard() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">Witness Verification</h1>
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">Witness Verification <ConnectionIndicator /></h1>
           </div>
           <p className="text-muted-foreground text-xs">{comp?.name}</p>
         </div>
@@ -231,7 +241,7 @@ export default function WitnessDashboard() {
               </p>
             </div>
 
-            <SignaturePad label="Witness Signature" onSignature={setSignature} />
+            <SignaturePad label="Witness Signature" onSignature={setSignature} signerRole="Witness" />
 
             <div className="flex items-start gap-2">
               <Checkbox

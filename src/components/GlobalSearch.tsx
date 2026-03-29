@@ -46,7 +46,7 @@ export function GlobalSearch() {
                     .limit(5),
 
                 // Sub-events (if staff/org)
-                (hasRole("admin") || hasRole("organizer") || hasRole("judge") || hasRole("chief_judge"))
+                (hasRole("admin") || hasRole("organizer") || hasRole("judge"))
                     ? supabase
                         .from("sub_events")
                         .select("id, name, competition_id")
@@ -82,6 +82,7 @@ export function GlobalSearch() {
             <button
                 onClick={() => setOpen(true)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border border-border/50 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors w-full max-w-[200px]"
+                aria-label="Search competitions, contestants, and more"
             >
                 <Search className="h-4 w-4" />
                 <span className="flex-1 text-left">Search...</span>
@@ -134,7 +135,7 @@ export function GlobalSearch() {
                             {results.contestants.map((con) => (
                                 <CommandItem
                                     key={con.id}
-                                    onSelect={() => runCommand(() => navigate(`/admin`))}
+                                    onSelect={() => runCommand(() => navigate(`/competitions/${con.competition_id}`))}
                                     className="gap-2"
                                 >
                                     <Users className="h-4 w-4 text-secondary" />
@@ -152,10 +153,20 @@ export function GlobalSearch() {
                             <span>Dashboard</span>
                         </CommandItem>
                         {hasRole("admin") && (
-                            <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
-                                <Shield className="mr-2 h-4 w-4" />
-                                <span>Admin Panel</span>
-                            </CommandItem>
+                            <>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>User Management</span>
+                                </CommandItem>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/settings"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>Global Settings</span>
+                                </CommandItem>
+                                <CommandItem onSelect={() => runCommand(() => navigate("/admin/billing"))}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>Billing</span>
+                                </CommandItem>
+                            </>
                         )}
                         <CommandItem onSelect={() => runCommand(() => navigate("/settings"))}>
                             <Users className="mr-2 h-4 w-4" />
