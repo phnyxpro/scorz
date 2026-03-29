@@ -7,21 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown,
+  User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
-  RadioTower, CalendarDays,
+  RadioTower, CalendarDays, Edit2, Layers,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import {
-  FormFieldConfig, FormBuilderConfig, migrateFormConfig, LOCKED_KEYS,
-  FIELD_TYPE_LABELS, SECTION_LABELS,
+  FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
+  FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections,
 } from "@/lib/form-builder-types";
 
 // Re-export for backward compat with ContestantRegistration import
@@ -55,13 +55,18 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   section_header: Heading,
 };
 
-const sectionIcon: Record<string, React.ElementType> = {
-  personal: User,
-  bio: Info,
-  event: Calendar,
-  legal: PenTool,
-  custom: Plus,
+const SECTION_ICON_MAP: Record<string, React.ElementType> = {
+  user: User,
+  info: Info,
+  calendar: Calendar,
+  "pen-tool": PenTool,
+  plus: Plus,
+  layers: Layers,
 };
+
+function getSectionIcon(section: SectionConfig): React.ElementType {
+  return SECTION_ICON_MAP[section.icon || "layers"] || Layers;
+}
 
 export function RegistrationFormsInline({ competitionId }: Props) {
   const qc = useQueryClient();
@@ -79,20 +84,33 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     },
   });
 
-  const [config, setConfig] = useState<FormBuilderConfig>({ fields: [], version: 1 });
+  const [config, setConfig] = useState<FormBuilderConfig>({ fields: [], sections: DEFAULT_SECTIONS, version: 1 });
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [addFieldOpen, setAddFieldOpen] = useState(false);
+  const [addFieldSection, setAddFieldSection] = useState<string>("custom");
+
+  // Section management state
+  const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<SectionConfig | null>(null);
+  const [sectionName, setSectionName] = useState("");
+  const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (competition?.registration_form_config) {
       const migrated = migrateFormConfig(competition.registration_form_config);
+      // Ensure sections exist
+      if (!migrated.sections || migrated.sections.length === 0) {
+        migrated.sections = DEFAULT_SECTIONS;
+      }
       setConfig(migrated);
     } else {
-      setConfig(migrateFormConfig({}));
+      setConfig({ ...migrateFormConfig({}), sections: DEFAULT_SECTIONS });
     }
   }, [competition]);
+
+  const sections = useMemo(() => getConfigSections(config), [config]);
 
   const selectedField = useMemo(
     () => config.fields.find(f => f.id === selectedFieldId) || null,
@@ -107,7 +125,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
-  const addField = (type: FormFieldConfig["field_type"]) => {
+  const addField = (type: FormFieldConfig["field_type"], sectionId: string) => {
     const newField: FormFieldConfig = {
       id: `cf_${Date.now()}`,
       field_type: type,
@@ -119,7 +137,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       show_on_profile: false,
       show_on_scorecard: false,
       is_builtin: false,
-      section: "custom",
+      section: sectionId,
     };
     if (type === "dropdown" || type === "radio" || type === "checkbox") {
       newField.options = [{ label: "Option 1", value: "option_1" }];
@@ -155,6 +173,75 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
+  // --- Section CRUD ---
+  const handleAddSection = () => {
+    setEditingSection(null);
+    setSectionName("");
+    setSectionDialogOpen(true);
+  };
+
+  const handleEditSection = (section: SectionConfig) => {
+    setEditingSection(section);
+    setSectionName(section.label);
+    setSectionDialogOpen(true);
+  };
+
+  const handleSaveSectionDialog = () => {
+    if (!sectionName.trim()) {
+      toast({ title: "Section name is required", variant: "destructive" });
+      return;
+    }
+    if (editingSection) {
+      // Edit existing
+      setConfig(prev => ({
+        ...prev,
+        sections: (prev.sections || DEFAULT_SECTIONS).map(s =>
+          s.id === editingSection.id ? { ...s, label: sectionName.trim() } : s
+        ),
+      }));
+    } else {
+      // Add new
+      const id = `section_${Date.now()}`;
+      const maxOrder = Math.max(...(config.sections || DEFAULT_SECTIONS).map(s => s.sort_order), 0);
+      setConfig(prev => ({
+        ...prev,
+        sections: [...(prev.sections || DEFAULT_SECTIONS), {
+          id,
+          label: sectionName.trim(),
+          icon: "layers",
+          is_builtin: false,
+          sort_order: maxOrder + 1,
+        }],
+      }));
+    }
+    setSectionDialogOpen(false);
+    setDirty(true);
+  };
+
+  const handleDeleteSection = (sectionId: string) => {
+    // Move fields in this section to "custom"
+    setConfig(prev => ({
+      ...prev,
+      sections: (prev.sections || DEFAULT_SECTIONS).filter(s => s.id !== sectionId),
+      fields: prev.fields.map(f => f.section === sectionId ? { ...f, section: "custom" } : f),
+    }));
+    setDeleteSectionId(null);
+    setDirty(true);
+  };
+
+  const moveSectionOrder = (sectionId: string, direction: "up" | "down") => {
+    setConfig(prev => {
+      const secs = [...(prev.sections || DEFAULT_SECTIONS)].sort((a, b) => a.sort_order - b.sort_order);
+      const idx = secs.findIndex(s => s.id === sectionId);
+      if (idx < 0) return prev;
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= secs.length) return prev;
+      [secs[idx], secs[targetIdx]] = [secs[targetIdx], secs[idx]];
+      return { ...prev, sections: secs.map((s, i) => ({ ...s, sort_order: i })) };
+    });
+    setDirty(true);
+  };
+
   const handleSave = async () => {
     const emptyLabel = config.fields.find(f => !f.is_builtin && !f.label.trim() && f.field_type !== "section_header");
     if (emptyLabel) {
@@ -178,130 +265,118 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     }
   };
 
-  // Group built-in fields by section
-  const builtinSections = useMemo(() => {
-    const sections: Record<string, FormFieldConfig[]> = {};
-    config.fields.filter(f => f.is_builtin).forEach(f => {
-      const sec = f.section || "personal";
-      if (!sections[sec]) sections[sec] = [];
-      sections[sec].push(f);
-    });
-    return sections;
-  }, [config.fields]);
-
-  const customFields = useMemo(
-    () => config.fields.filter(f => !f.is_builtin),
-    [config.fields]
-  );
+  // Group fields by section
+  const fieldsBySection = useMemo(() => {
+    const map: Record<string, FormFieldConfig[]> = {};
+    for (const s of sections) {
+      map[s.id] = [];
+    }
+    for (const f of config.fields) {
+      const sec = f.section || "custom";
+      if (!map[sec]) map[sec] = [];
+      map[sec].push(f);
+    }
+    return map;
+  }, [config.fields, sections]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-muted-foreground">
-          Configure the registration form fields. Toggle visibility on profiles and score cards.
+          Configure sections and fields for the registration form.
         </p>
-        <Button size="sm" onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-          {saving ? "Saving…" : "Save"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleAddSection} className="gap-1.5 text-xs h-7">
+            <Plus className="h-3 w-3" /> Add Section
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-        {/* Left: Field Canvas */}
+        {/* Left: Sections & Fields Canvas */}
         <div className="space-y-3">
-          {/* Built-in sections */}
-          {Object.entries(builtinSections).map(([sectionKey, fields]) => {
-            const Icon = sectionIcon[sectionKey] || User;
+          {sections.map((section, sIdx) => {
+            const Icon = getSectionIcon(section);
+            const sectionFields = fieldsBySection[section.id] || [];
+
             return (
-              <Collapsible key={sectionKey} defaultOpen>
+              <Collapsible key={section.id} defaultOpen>
                 <Card className="border-border/40 bg-muted/10">
                   <CardContent className="p-3 sm:p-4 space-y-2">
-                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-sm font-medium text-foreground flex-1">{SECTION_LABELS[sectionKey] || sectionKey}</h3>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
-                    </CollapsibleTrigger>
+                    <div className="flex items-center gap-2 w-full">
+                      <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
+                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
+                        <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
+                      </CollapsibleTrigger>
+
+                      {/* Section action buttons */}
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {sIdx > 0 && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "up")}>
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {sIdx < sections.length - 1 && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "down")}>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditSection(section)}>
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        {!section.is_builtin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteSectionId(section.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs gap-1"
+                          onClick={() => { setAddFieldSection(section.id); setAddFieldOpen(true); }}
+                        >
+                          <Plus className="h-3 w-3" /> Field
+                        </Button>
+                      </div>
+                    </div>
+
                     <CollapsibleContent className="space-y-1.5">
-                      {fields.map(field => (
-                        <FieldCard
-                          key={field.id}
-                          field={field}
-                          isSelected={selectedFieldId === field.id}
-                          onClick={() => setSelectedFieldId(field.id)}
-                          onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                        />
-                      ))}
+                      {sectionFields.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic py-3 text-center">
+                          No fields in this section
+                        </p>
+                      ) : (
+                        sectionFields.map((field, idx) => (
+                          <FieldCard
+                            key={field.id}
+                            field={field}
+                            isSelected={selectedFieldId === field.id}
+                            onClick={() => setSelectedFieldId(field.id)}
+                            onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
+                            onRemove={!field.is_builtin ? () => removeField(field.id) : undefined}
+                            onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
+                            onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
+                          />
+                        ))
+                      )}
                     </CollapsibleContent>
                   </CardContent>
                 </Card>
               </Collapsible>
             );
           })}
-
-          {/* Custom fields section */}
-          <Card className="border-border/40 bg-muted/10">
-            <CardContent className="p-3 sm:p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-medium text-foreground">Custom Fields</h3>
-                  <Badge variant="secondary" className="text-[10px]">{customFields.length}</Badge>
-                </div>
-                <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
-                      <Plus className="h-3 w-3" /> Add Field
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add Field</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid grid-cols-2 gap-2 py-2">
-                      {(Object.entries(FIELD_TYPE_LABELS) as [FormFieldConfig["field_type"], string][])
-                        .filter(([t]) => !["signature", "consent"].includes(t))
-                        .map(([type, label]) => {
-                          const Icon = FIELD_TYPE_ICONS[type] || Type;
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => addField(type)}
-                              className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 text-sm transition-colors text-left"
-                            >
-                              <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span>{label}</span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              {customFields.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic py-3 text-center">
-                  No custom fields. Add fields like "Group Name", "T-Shirt Size", etc.
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  {customFields.map((field, idx) => (
-                    <FieldCard
-                      key={field.id}
-                      field={field}
-                      isSelected={selectedFieldId === field.id}
-                      onClick={() => setSelectedFieldId(field.id)}
-                      onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                      onRemove={() => removeField(field.id)}
-                      onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                      onMoveDown={idx < customFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right: Properties Panel */}
@@ -310,6 +385,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
             <FieldPropertiesPanel
               field={selectedField}
               allFields={config.fields}
+              sections={sections}
               onUpdate={(updates) => updateField(selectedField.id, updates)}
               onClose={() => setSelectedFieldId(null)}
             />
@@ -323,6 +399,79 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           )}
         </div>
       </div>
+
+      {/* Add Field Dialog */}
+      <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Field</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {(Object.entries(FIELD_TYPE_LABELS) as [FormFieldConfig["field_type"], string][])
+              .filter(([t]) => !["signature", "consent"].includes(t))
+              .map(([type, label]) => {
+                const Icon = FIELD_TYPE_ICONS[type] || Type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => addField(type, addFieldSection)}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 text-sm transition-colors text-left"
+                  >
+                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Section Dialog */}
+      <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{editingSection ? "Edit Section" : "Add Section"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Section Name</Label>
+              <Input
+                value={sectionName}
+                onChange={(e) => setSectionName(e.target.value)}
+                placeholder="e.g. Group Details"
+                className="h-8 text-sm"
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && handleSaveSectionDialog()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setSectionDialogOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveSectionDialog}>
+              {editingSection ? "Save" : "Add Section"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Section Confirmation */}
+      <Dialog open={!!deleteSectionId} onOpenChange={() => setDeleteSectionId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Section?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Fields in this section will be moved to "Custom Fields". This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteSectionId(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteSectionId && handleDeleteSection(deleteSectionId)}>
+              Delete Section
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -358,11 +507,16 @@ function FieldCard({
             : "border-border/20 bg-muted/20 opacity-50"
       }`}
     >
-      {!field.is_builtin && (
+      {!field.is_builtin && (onMoveUp || onMoveDown) && (
         <div className="flex flex-col gap-0.5 shrink-0">
           {onMoveUp && (
             <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-muted-foreground hover:text-foreground">
-              <GripVertical className="h-3 w-3 rotate-90" />
+              <ChevronUp className="h-3 w-3" />
+            </button>
+          )}
+          {onMoveDown && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-muted-foreground hover:text-foreground">
+              <ChevronDown className="h-3 w-3" />
             </button>
           )}
         </div>
@@ -409,11 +563,13 @@ function FieldCard({
 function FieldPropertiesPanel({
   field,
   allFields,
+  sections,
   onUpdate,
   onClose,
 }: {
   field: FormFieldConfig;
   allFields: FormFieldConfig[];
+  sections: SectionConfig[];
   onUpdate: (updates: Partial<FormFieldConfig>) => void;
   onClose: () => void;
 }) {
@@ -421,7 +577,6 @@ function FieldPropertiesPanel({
   const hasOptions = ["dropdown", "radio", "checkbox"].includes(field.field_type);
   const hasValidation = ["short_text", "long_text", "number"].includes(field.field_type);
 
-  // Options as editable text
   const [optionsText, setOptionsText] = useState(
     field.options?.map(o => o.label).join(", ") || ""
   );
@@ -430,7 +585,6 @@ function FieldPropertiesPanel({
     setOptionsText(field.options?.map(o => o.label).join(", ") || "");
   }, [field.id, field.options]);
 
-  // Conditional logic fields (only non-section custom fields)
   const logicFieldCandidates = allFields.filter(
     f => f.id !== field.id && f.enabled && f.field_type !== "section_header"
   );
@@ -483,6 +637,23 @@ function FieldPropertiesPanel({
         </div>
 
         <Separator />
+
+        {/* Section assignment */}
+        {!field.is_builtin && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Section</Label>
+            <Select value={field.section || "custom"} onValueChange={(v) => onUpdate({ section: v })}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Required */}
         <div className="flex items-center justify-between">
