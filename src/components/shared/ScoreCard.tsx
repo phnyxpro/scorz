@@ -1,6 +1,7 @@
 import React from "react";
 import type { ContestantRegistration } from "@/hooks/useRegistrations";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+import { ScorecardFieldsInline } from "@/components/shared/ContestantInfoCard";
 
 export interface RubricCriterion {
   id: string;
