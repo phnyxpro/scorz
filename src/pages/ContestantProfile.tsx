@@ -281,8 +281,6 @@ export default function ContestantProfile() {
           <TabsTrigger value="advancements">Promotions</TabsTrigger>
           <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
-        )}
-
         {/* Media Gallery Tab */}
         <TabsContent value="media">
           <ContestantMediaGallery userId={profileUserId!} isOwnProfile={isOwnProfile} />
