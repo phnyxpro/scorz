@@ -41,6 +41,13 @@ const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualifie
 type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
 type SortDir = "asc" | "desc";
 
+const getAgeCategoryLabel = (cat: string) => {
+  if (cat === "minor") return "Minor";
+  if (cat === "adult") return "Adult";
+  return cat;
+};
+type SortDir = "asc" | "desc";
+
 // ─── Slot Picker Cell ──────────────────────────────────────────────
 interface SlotPickerCellProps {
   regId: string;
