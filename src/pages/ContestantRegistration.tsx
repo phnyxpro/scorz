@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, CheckCircle, User, UserPlus, FileText, PenTool, Calendar, Info, Link as LinkIcon, Clock } from "lucide-react";
@@ -21,6 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import type { CustomFieldDef } from "@/components/competition/RegistrationFormsInline";
+import { FormFieldConfig, migrateFormConfig, getCustomRegistrationFields } from "@/lib/form-builder-types";
 
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -54,7 +56,7 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
-// Hook to fetch custom fields from competition form config
+// Hook to fetch custom fields from competition form config (supports both old and new format)
 function useCustomFields(competitionId: string | undefined) {
   return useQuery({
     queryKey: ["competition_custom_fields", competitionId],
@@ -66,9 +68,9 @@ function useCustomFields(competitionId: string | undefined) {
         .eq("id", competitionId!)
         .single();
       if (error) throw error;
-      const cfg = data?.registration_form_config as Record<string, any> | null;
-      const customFields: CustomFieldDef[] = Array.isArray(cfg?._customFields) ? cfg._customFields : [];
-      return customFields.filter(f => f.enabled);
+      const raw = data?.registration_form_config;
+      const config = migrateFormConfig(raw);
+      return getCustomRegistrationFields(config);
     },
   });
 }
@@ -580,7 +582,7 @@ function BioStep({
   customFieldValues = {},
   setCustomFieldValues,
 }: {
-  customFields?: CustomFieldDef[];
+  customFields?: FormFieldConfig[];
   customFieldValues?: Record<string, string>;
   setCustomFieldValues?: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
 }) {
@@ -588,6 +590,20 @@ function BioStep({
 
   const updateCustomValue = (id: string, value: string) => {
     setCustomFieldValues?.((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // Check conditional logic
+  const shouldShow = (field: FormFieldConfig) => {
+    if (!field.logic?.show_when) return true;
+    const { field_id, operator, value } = field.logic.show_when;
+    const actual = customFieldValues[field_id] || "";
+    switch (operator) {
+      case "equals": return actual === value;
+      case "not_equals": return actual !== value;
+      case "contains": return actual.toLowerCase().includes(value.toLowerCase());
+      case "not_empty": return actual.trim().length > 0;
+      default: return true;
+    }
   };
 
   return (
@@ -626,48 +642,143 @@ function BioStep({
             <CardDescription>Please fill in the following details.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {customFields.map((cf) => (
-              <div key={cf.id} className="space-y-2">
-                <Label>
-                  {cf.label} {cf.required && <span className="text-destructive">*</span>}
-                </Label>
-                {cf.type === "text" && (
-                  <Input
-                    value={customFieldValues[cf.id] || ""}
-                    onChange={(e) => updateCustomValue(cf.id, e.target.value)}
-                    placeholder={cf.label}
-                  />
-                )}
-                {cf.type === "textarea" && (
-                  <Textarea
-                    value={customFieldValues[cf.id] || ""}
-                    onChange={(e) => updateCustomValue(cf.id, e.target.value)}
-                    placeholder={cf.label}
-                    className="min-h-[80px] resize-none"
-                  />
-                )}
-                {cf.type === "select" && cf.options && cf.options.length > 0 && (
-                  <Select
-                    value={customFieldValues[cf.id] || ""}
-                    onValueChange={(v) => updateCustomValue(cf.id, v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${cf.label}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cf.options.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            ))}
+            <div className={`grid gap-4`}>
+              {customFields.filter(shouldShow).map((cf) => (
+                <div key={cf.id} className={cf.width === "half" ? "sm:col-span-1" : "col-span-full"} style={{ gridColumn: cf.width === "half" ? undefined : "1 / -1" }}>
+                  {cf.field_type === "section_header" ? (
+                    <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border/30">{cf.label}</h3>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Label>
+                        {cf.label} {cf.required && <span className="text-destructive">*</span>}
+                      </Label>
+                      {cf.help_text && <p className="text-[10px] text-muted-foreground">{cf.help_text}</p>}
+                      <CustomFieldInput field={cf} value={customFieldValues[cf.id] || ""} onChange={(v) => updateCustomValue(cf.id, v)} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
     </div>
   );
+}
+
+function CustomFieldInput({ field, value, onChange }: { field: FormFieldConfig; value: string; onChange: (v: string) => void }) {
+  switch (field.field_type) {
+    case "short_text":
+    case "email":
+    case "phone":
+    case "url":
+      return (
+        <Input
+          type={field.field_type === "email" ? "email" : field.field_type === "phone" ? "tel" : field.field_type === "url" ? "url" : "text"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder || field.label}
+          minLength={field.validation?.min_length}
+          maxLength={field.validation?.max_length}
+        />
+      );
+    case "long_text":
+      return (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder || field.label}
+          className="min-h-[80px] resize-none"
+          minLength={field.validation?.min_length}
+          maxLength={field.validation?.max_length}
+        />
+      );
+    case "number":
+      return (
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder || field.label}
+          min={field.validation?.min}
+          max={field.validation?.max}
+        />
+      );
+    case "date":
+      return (
+        <Input
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+    case "dropdown":
+      return (
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger>
+            <SelectValue placeholder={field.placeholder || `Select ${field.label}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {(field.options || []).map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    case "radio":
+      return (
+        <RadioGroup value={value} onValueChange={onChange} className="space-y-1">
+          {(field.options || []).map((opt) => (
+            <div key={opt.value} className="flex items-center gap-2">
+              <RadioGroupItem value={opt.value} id={`${field.id}_${opt.value}`} />
+              <Label htmlFor={`${field.id}_${opt.value}`} className="text-sm font-normal">{opt.label}</Label>
+            </div>
+          ))}
+        </RadioGroup>
+      );
+    case "checkbox":
+      return (
+        <div className="space-y-1">
+          {(field.options || []).map((opt) => {
+            const selected = value ? value.split(",") : [];
+            const isChecked = selected.includes(opt.value);
+            return (
+              <div key={opt.value} className="flex items-center gap-2">
+                <Checkbox
+                  id={`${field.id}_${opt.value}`}
+                  checked={isChecked}
+                  onCheckedChange={(checked) => {
+                    const next = checked
+                      ? [...selected, opt.value]
+                      : selected.filter(v => v !== opt.value);
+                    onChange(next.join(","));
+                  }}
+                />
+                <Label htmlFor={`${field.id}_${opt.value}`} className="text-sm font-normal">{opt.label}</Label>
+              </div>
+            );
+          })}
+        </div>
+      );
+    case "consent":
+      return (
+        <div className="flex items-start gap-2">
+          <Checkbox
+            checked={value === "true"}
+            onCheckedChange={(v) => onChange(v ? "true" : "")}
+          />
+          <span className="text-sm">{field.placeholder || field.label}</span>
+        </div>
+      );
+    default:
+      return (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder || field.label}
+        />
+      );
+  }
 }
 
 function EventStep({ competitionId }: { competitionId: string }) {

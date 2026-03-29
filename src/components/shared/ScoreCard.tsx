@@ -1,6 +1,7 @@
 import React from "react";
 import type { ContestantRegistration } from "@/hooks/useRegistrations";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
+import { ScorecardFieldsInline } from "@/components/shared/ContestantInfoCard";
 
 export interface RubricCriterion {
   id: string;
@@ -16,6 +17,7 @@ interface ScoreCardProps {
   isBlank?: boolean;
   judgeName?: string;
   rubricCriteria?: RubricCriterion[];
+  formConfig?: any;
 }
 
 export function ScoreCard({
@@ -25,7 +27,8 @@ export function ScoreCard({
   judgeScore,
   isBlank = false,
   judgeName,
-  rubricCriteria = []
+  rubricCriteria = [],
+  formConfig,
 }: ScoreCardProps) {
   const cardStyle = {
     width: '8in',
@@ -97,6 +100,14 @@ export function ScoreCard({
           <span><span style={labelStyle}>Date:</span> {isBlank ? '__/__/____' : new Date().toLocaleDateString()}</span>
         </div>
       </div>
+
+      {/* Custom scorecard fields */}
+      {formConfig && !isBlank && (
+        <ScorecardFieldsInline
+          formConfig={formConfig}
+          customFieldValues={(contestant as any)?.custom_field_values || {}}
+        />
+      )}
 
       <div style={sectionStyle}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Scoring Criteria:</div>

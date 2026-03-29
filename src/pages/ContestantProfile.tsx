@@ -3,6 +3,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProfileSkeleton } from "@/components/shared/PageSkeletons";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useContestantRegistrations,
@@ -17,9 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink, Layers, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, FileText, Shield, Globe, ExternalLink, Layers, ChevronRight, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
+import { migrateFormConfig, getProfileFields } from "@/lib/form-builder-types";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -57,6 +60,23 @@ export default function ContestantProfile() {
   const { data: scores } = useContestantScores(registrationIds);
   const { data: voteCounts } = useContestantVotes(registrationIds);
   const { data: subEvents } = useSubEventNames(subEventIds);
+
+  // Fetch competition configs for profile-flagged custom fields
+  const { data: competitionConfigs } = useQuery({
+    queryKey: ["competition_configs_for_profile", competitionIds],
+    enabled: competitionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("id, registration_form_config")
+        .in("id", competitionIds);
+      if (error) throw error;
+      return (data || []).reduce((acc, c) => {
+        acc[c.id] = c.registration_form_config;
+        return acc;
+      }, {} as Record<string, any>);
+    },
+  });
 
   const compMap = useMemo(() => {
     const m: Record<string, { name: string; status: string }> = {};
@@ -371,6 +391,29 @@ export default function ContestantProfile() {
                         </div>
                       </div>
                     )}
+
+                    {/* Custom Fields flagged for profile */}
+                    {(() => {
+                      const formCfg = competitionConfigs?.[reg.competition_id];
+                      if (!formCfg) return null;
+                      const config = migrateFormConfig(formCfg);
+                      const profileFields = getProfileFields(config);
+                      const cfValues = (reg as any).custom_field_values as Record<string, any> || {};
+                      const entries = profileFields
+                        .filter(f => cfValues[f.id] != null && cfValues[f.id] !== "")
+                        .map(f => ({ label: f.label, value: String(cfValues[f.id]) }));
+                      if (entries.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-2 border-t border-border/30">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Additional Details</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {entries.map((e, i) => (
+                              <DetailField key={i} icon={Info} label={e.label} value={e.value} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
