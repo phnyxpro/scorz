@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
