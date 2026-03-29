@@ -101,6 +101,14 @@ export function ScoreCard({
         </div>
       </div>
 
+      {/* Custom scorecard fields */}
+      {formConfig && !isBlank && (
+        <ScorecardFieldsInline
+          formConfig={formConfig}
+          customFieldValues={(contestant as any)?.custom_field_values || {}}
+        />
+      )}
+
       <div style={sectionStyle}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Scoring Criteria:</div>
         <div style={scoreGridStyle}>
