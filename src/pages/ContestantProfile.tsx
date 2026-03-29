@@ -20,11 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink, ArrowUpRight, Clock } from "lucide-react";
+import { ArrowLeft, User, Trophy, Star, Heart, MapPin, Mail, Phone, Calendar, Video, Award, Info, FileText, ExternalLink, ArrowUpRight, Clock, Layers, ChevronRight, Globe, Shield } from "lucide-react";
 import { useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
@@ -281,8 +279,6 @@ export default function ContestantProfile() {
           <TabsTrigger value="advancements">Promotions</TabsTrigger>
           <TabsTrigger value="rubric">Rules & Rubric</TabsTrigger>
         </TabsList>
-        )}
-
         {/* Media Gallery Tab */}
         <TabsContent value="media">
           <ContestantMediaGallery userId={profileUserId!} isOwnProfile={isOwnProfile} />
@@ -368,28 +364,7 @@ export default function ContestantProfile() {
                       </div>
                     )}
 
-                    {/* Custom Fields flagged for profile */}
-                    {(() => {
-                      const formCfg = competitionConfigs?.[reg.competition_id];
-                      if (!formCfg) return null;
-                      const config = migrateFormConfig(formCfg);
-                      const profileFields = getProfileFields(config);
-                      const cfValues = (reg as any).custom_field_values as Record<string, any> || {};
-                      const entries = profileFields
-                        .filter(f => cfValues[f.id] != null && cfValues[f.id] !== "")
-                        .map(f => ({ label: f.label, value: String(cfValues[f.id]) }));
-                      if (entries.length === 0) return null;
-                      return (
-                        <div className="space-y-1.5 pt-2 border-t border-border/30">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Additional Details</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {entries.map((e, i) => (
-                              <DetailField key={i} icon={Info} label={e.label} value={e.value} />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
+                    {/* Custom fields section placeholder */}
 
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
@@ -617,9 +592,19 @@ export default function ContestantProfile() {
         {/* Rules & Rubric Tab */}
         <TabsContent value="rubric">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {competitionIds.map((compId) => (
-              <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
-            ))}
+            {competitionIds.map((compId) => {
+              const compName = compMap[compId]?.name || "Unknown";
+              return (
+                <Card key={compId} className="border-border/50 bg-card/80">
+                  <CardHeader>
+                    <CardTitle className="text-base">{compName} — Rules & Rubric</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">View the competition page for full rubric details.</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </motion.div>
         </TabsContent>
 

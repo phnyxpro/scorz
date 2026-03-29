@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useRegistrations, useUpdateRegistration, useCreateRegistration } from "@/hooks/useRegistrations";
 import { useSubEvents, useLevels, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, User, Info, Calendar, PenTool, Link as LinkIcon } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -34,7 +37,11 @@ const statusColor: Record<string, string> = {
 };
 
 const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"];
-
+const getAgeCategoryLabel = (cat: string) => {
+  if (cat === "minor") return "Minor";
+  if (cat === "adult") return "Adult";
+  return cat;
+};
 type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
 type SortDir = "asc" | "desc";
 
@@ -415,6 +422,59 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [filterLevelId, setFilterLevelId] = useState("all");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [activeSubEventTab, setActiveSubEventTab] = useState("all");
+  const [filterAge, setFilterAge] = useState("all");
+  const [sortField, setSortField] = useState<SortField>("sort_order");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [walkInSubEvent, setWalkInSubEvent] = useState("");
+  const [walkInPosition, setWalkInPosition] = useState("");
+  const [walkInAfterLastTimed, setWalkInAfterLastTimed] = useState(false);
+
+  // Slots query
+  const { data: slotsData } = useQuery({
+    queryKey: ["performance_slots_for_regs", competitionId],
+    enabled: !!competitionId,
+    queryFn: async () => {
+      const levelIds = (allData?.levels || []).map(l => l.id);
+      if (!levelIds.length) return [];
+      const seIds = (allData?.subEvents || []).map(se => se.id);
+      if (!seIds.length) return [];
+      const { data, error } = await supabase
+        .from("performance_slots")
+        .select("*")
+        .in("sub_event_id", seIds);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const slotsByRegId = useMemo(() => {
+    const m: Record<string, { id: string; start_time: string; end_time: string }> = {};
+    (slotsData || []).forEach((s: any) => {
+      if (s.contestant_registration_id) m[s.contestant_registration_id] = s;
+    });
+    return m;
+  }, [slotsData]);
+
+  const handleMoveOrder = async (regId: string, direction: "up" | "down") => {
+    const idx = filtered.findIndex(r => r.id === regId);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= filtered.length) return;
+    const a = filtered[idx];
+    const b = filtered[swapIdx];
+    const orderA = (a as any).sort_order || idx;
+    const orderB = (b as any).sort_order || swapIdx;
+    await supabase.from("contestant_registrations").update({ sort_order: orderB } as any).eq("id", a.id);
+    await supabase.from("contestant_registrations").update({ sort_order: orderA } as any).eq("id", b.id);
+    qc.invalidateQueries({ queryKey: ["registrations", competitionId] });
+  };
+
+  const getAgeCategoryLabel = (cat: string) => {
+    if (cat === "minor") return "Minor";
+    if (cat === "adult") return "Adult";
+    return cat;
+  };
 
   const formSchema = useMemo(() => {
     if (formConfig?.form_schema && formConfig.form_schema.length > 0) return formConfig.form_schema;

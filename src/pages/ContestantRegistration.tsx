@@ -26,7 +26,6 @@ export default function ContestantRegistration() {
   const { data: formConfig, isLoading: configLoading } = useRegistrationFormConfig(competitionId);
   const createReg = useCreateRegistration();
   const { toast } = useToast();
-  const { data: formConfig } = useFormConfig(competitionId);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   const [authLoading, setAuthLoading] = useState(false);
@@ -109,7 +108,7 @@ export default function ContestantRegistration() {
         </Button>
         <h1 className="text-2xl font-bold tracking-tight">{comp?.name || "Competition"}</h1>
         <p className="text-sm text-muted-foreground">Complete each step to register.</p>
-    </div>
+      </header>
 
       {
     !user ? (

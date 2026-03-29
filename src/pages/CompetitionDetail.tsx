@@ -26,6 +26,7 @@ import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsPillLayout } from "@/components/competition/RegistrationsPillLayout";
+import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";

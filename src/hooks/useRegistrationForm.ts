@@ -177,7 +177,7 @@ export function useContestantAdvancements(registrationIds: string[]) {
         .in("registration_id", registrationIds)
         .order("advanced_at", { ascending: true });
       if (error) throw error;
-      return (data || []) as ContestantAdvancement[];
+      return (data || []) as unknown as ContestantAdvancement[];
     },
   });
 }
