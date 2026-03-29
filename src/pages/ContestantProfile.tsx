@@ -392,6 +392,29 @@ export default function ContestantProfile() {
                       </div>
                     )}
 
+                    {/* Custom Fields flagged for profile */}
+                    {(() => {
+                      const formCfg = competitionConfigs?.[reg.competition_id];
+                      if (!formCfg) return null;
+                      const config = migrateFormConfig(formCfg);
+                      const profileFields = getProfileFields(config);
+                      const cfValues = (reg as any).custom_field_values as Record<string, any> || {};
+                      const entries = profileFields
+                        .filter(f => cfValues[f.id] != null && cfValues[f.id] !== "")
+                        .map(f => ({ label: f.label, value: String(cfValues[f.id]) }));
+                      if (entries.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-2 border-t border-border/30">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Additional Details</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {entries.map((e, i) => (
+                              <DetailField key={i} icon={Info} label={e.label} value={e.value} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
                       <Badge variant={reg.rules_acknowledged ? "default" : "outline"} className="text-[10px]">
