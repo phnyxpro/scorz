@@ -809,7 +809,7 @@ function FieldPropertiesPanel({
                       <SelectValue placeholder="Always show" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Always show</SelectItem>
+                      <SelectItem value="__none__">Always show</SelectItem>
                       {logicFieldCandidates.map(f => (
                         <SelectItem key={f.id} value={f.id}>{f.label || f.key || f.id}</SelectItem>
                       ))}
