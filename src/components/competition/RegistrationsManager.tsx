@@ -42,6 +42,7 @@ const getAgeCategoryLabel = (cat: string) => {
   if (cat === "adult") return "Adult";
   return cat;
 };
+type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
 type SortDir = "asc" | "desc";
 
 // ─── Slot Picker Cell ──────────────────────────────────────────────
