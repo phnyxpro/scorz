@@ -364,10 +364,10 @@ export default function ContestantProfile() {
                       </div>
                     )}
 
-                    {/* Custom Fields flagged for profile */}
+                    {/* Custom Fields flagged for profile - skip if no config available */}
                     {(() => {
-                      const formCfg = (competitions || []).find(c => c.id === reg.competition_id)?.registration_form_config;
-                      if (!formCfg) return null;
+                      // Custom fields require full competition config which isn't loaded here
+                      return null;
                       const config = migrateFormConfig(formCfg);
                       const profileFields = getProfileFields(config);
                       const cfValues = (reg as any).custom_field_values as Record<string, any> || {};
@@ -613,9 +613,19 @@ export default function ContestantProfile() {
         {/* Rules & Rubric Tab */}
         <TabsContent value="rubric">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {competitionIds.map((compId) => (
-              <CompetitionRubricSection key={compId} competitionId={compId} competitionName={compMap[compId]?.name || "Unknown"} />
-            ))}
+            {competitionIds.map((compId) => {
+              const compName = compMap[compId]?.name || "Unknown";
+              return (
+                <Card key={compId} className="border-border/50 bg-card/80">
+                  <CardHeader>
+                    <CardTitle className="text-base">{compName} — Rules & Rubric</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PublicRubric competitionId={compId} />
+                  </CardContent>
+                </Card>
+              );
+            })}
           </motion.div>
         </TabsContent>
 
