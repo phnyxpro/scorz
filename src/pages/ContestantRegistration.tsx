@@ -56,7 +56,7 @@ const STEPS = [
   { id: "legal", label: "Legal", icon: PenTool },
 ];
 
-// Hook to fetch custom fields from competition form config
+// Hook to fetch custom fields from competition form config (supports both old and new format)
 function useCustomFields(competitionId: string | undefined) {
   return useQuery({
     queryKey: ["competition_custom_fields", competitionId],
@@ -68,9 +68,9 @@ function useCustomFields(competitionId: string | undefined) {
         .eq("id", competitionId!)
         .single();
       if (error) throw error;
-      const cfg = data?.registration_form_config as Record<string, any> | null;
-      const customFields: CustomFieldDef[] = Array.isArray(cfg?._customFields) ? cfg._customFields : [];
-      return customFields.filter(f => f.enabled);
+      const raw = data?.registration_form_config;
+      const config = migrateFormConfig(raw);
+      return getCustomRegistrationFields(config);
     },
   });
 }
