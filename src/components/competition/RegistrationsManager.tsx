@@ -37,10 +37,6 @@ const statusColor: Record<string, string> = {
 };
 
 const ALL_STATUSES = ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"];
-
-type SortField = "sort_order" | "name" | "email" | "age" | "status" | "slot";
-type SortDir = "asc" | "desc";
-
 const getAgeCategoryLabel = (cat: string) => {
   if (cat === "minor") return "Minor";
   if (cat === "adult") return "Adult";
