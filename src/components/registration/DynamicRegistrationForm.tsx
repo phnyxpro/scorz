@@ -274,7 +274,7 @@ function WalkinForm({
           <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
         </Button>
         {currentStep < formSchema.length - 1 ? (
-          <Button type="button" size="sm" onClick={() => setCurrentStep(s => s + 1)}>
+          <Button type="button" size="sm" onClick={() => { if (validateSection(formSchema[currentStep])) setCurrentStep(s => s + 1); }}>
             Continue <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         ) : (
