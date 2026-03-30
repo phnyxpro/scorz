@@ -308,13 +308,13 @@ export default function CompetitionDetail() {
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
             <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
             <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
+            <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
             <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
             <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+            <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
             <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
-            <TabsTrigger value="form" className="flex-shrink-0">Registration Form</TabsTrigger>
-            <TabsTrigger value="slots" className="flex-shrink-0">Time Slots</TabsTrigger>
-            <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
-            <TabsTrigger value="invitations" className="flex-shrink-0">Invitations</TabsTrigger>
+            <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>
+            <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>
             <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
             <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
           </TabsList>
@@ -546,18 +546,14 @@ export default function CompetitionDetail() {
           </TabsContent>
 
           <TabsContent value="registrations">
-            <RegistrationsManager competitionId={id!} />
+            <RegistrationsPillLayout competitionId={id!} />
           </TabsContent>
 
-          <TabsContent value="form">
-            <RegistrationFormsInline competitionId={id!} />
-          </TabsContent>
-
-          <TabsContent value="slots">
+          <TabsContent value="order">
             <SlotsManager competitionId={id!} />
           </TabsContent>
 
-          <TabsContent value="assignments">
+          <TabsContent value="staff">
             <SubEventAssignments competitionId={id!} competitionName={comp?.name} />
           </TabsContent>
 
