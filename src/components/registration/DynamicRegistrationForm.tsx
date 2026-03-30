@@ -204,7 +204,7 @@ export function DynamicRegistrationForm({
 
 // ─── Walkin mode: all sections in a single scrollable view ───
 function WalkinForm({
-  formSchema, competitionId, values, errors, updateValue,
+  formSchema, competitionId, values, errors, updateValue, validateSection,
   rubric, penalties, onSubmit, isSubmitting,
 }: {
   formSchema: FormSchema;
