@@ -602,15 +602,55 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
         </label>
       </div>
       {subFields.map((sf, i) => (
-        <div key={sf.id} className="flex items-center gap-1 bg-muted/20 rounded px-1.5 py-0.5">
-          <Input value={sf.label} onChange={e => updateSubField(i, { label: e.target.value })} className="h-5 text-[10px] flex-1 px-1 border-transparent" />
-          <Select value={sf.type} onValueChange={v => updateSubField(i, { type: v as FieldType })}>
-            <SelectTrigger className="h-5 text-[10px] w-16 px-1 border-transparent"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["text", "email", "number", "url", "phone", "date", "select", "textarea", "checkbox", "radio", "file", "toggle", "rating"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeSubField(i)}><Trash2 className="h-2.5 w-2.5" /></Button>
+        <div key={sf.id} className="space-y-0.5">
+          <div className="flex items-center gap-1 bg-muted/20 rounded px-1.5 py-0.5">
+            <Input value={sf.label} onChange={e => updateSubField(i, { label: e.target.value })} className="h-5 text-[10px] flex-1 px-1 border-transparent" />
+            <Select value={sf.type} onValueChange={v => updateSubField(i, { type: v as FieldType })}>
+              <SelectTrigger className="h-5 text-[10px] w-16 px-1 border-transparent"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["text", "email", "number", "url", "phone", "date", "select", "textarea", "checkbox", "radio", "file", "toggle", "rating"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-0.5 text-[9px]">
+              <Switch className="scale-[0.6]" checked={sf.required} onCheckedChange={v => updateSubField(i, { required: v })} />
+              Req
+            </label>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeSubField(i)}><Trash2 className="h-2.5 w-2.5" /></Button>
+          </div>
+          {/* Options for select/radio sub-fields */}
+          {(sf.type === "select" || sf.type === "radio") && (
+            <div className="pl-3">
+              <OptionsEditor options={sf.options || []} onChange={opts => updateSubField(i, { options: opts })} />
+            </div>
+          )}
+          {/* Conditional visibility for sub-fields */}
+          <div className="pl-3 flex items-center gap-1">
+            <label className="flex items-center gap-0.5 text-[9px] text-muted-foreground cursor-pointer">
+              <Switch
+                className="scale-[0.6]"
+                checked={!!sf.showWhen}
+                onCheckedChange={v => {
+                  if (v) updateSubField(i, { showWhen: { fieldKey: "", equals: "" } });
+                  else updateSubField(i, { showWhen: undefined });
+                }}
+              />
+              Show when
+            </label>
+            {sf.showWhen && (
+              <>
+                <Select value={sf.showWhen.fieldKey} onValueChange={v => updateSubField(i, { showWhen: { ...sf.showWhen!, fieldKey: v } })}>
+                  <SelectTrigger className="h-4 text-[9px] w-20 px-1"><SelectValue placeholder="field" /></SelectTrigger>
+                  <SelectContent>
+                    {subFields.filter((_f, fi) => fi !== i).map(f => <SelectItem key={f.key} value={f.key} className="text-[10px]">{f.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-[9px]">=</span>
+                <Input value={sf.showWhen.equals} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, equals: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
+              </>
+            )}
+          </div>
+        </div>
+      ))}
         </div>
       ))}
       <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1" onClick={addSubField}>
