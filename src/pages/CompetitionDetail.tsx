@@ -12,7 +12,7 @@ import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
-import { RegistrationFormEditor } from "@/components/competition/RegistrationFormEditor";
+import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
@@ -550,7 +550,7 @@ export default function CompetitionDetail() {
           </TabsContent>
 
           <TabsContent value="form">
-            <RegistrationFormEditor competitionId={id!} />
+            <RegistrationFormsInline competitionId={id!} />
           </TabsContent>
 
           <TabsContent value="slots">
