@@ -651,8 +651,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
           </div>
         </div>
       ))}
-        </div>
-      ))}
+
       <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1" onClick={addSubField}>
         <Plus className="h-2.5 w-2.5 mr-0.5" /> Sub-Field
       </Button>
