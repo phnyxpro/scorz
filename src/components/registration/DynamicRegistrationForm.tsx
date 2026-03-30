@@ -460,7 +460,7 @@ function FieldRenderer({
       );
 
     case "level_selector":
-      return <LevelSelectorField competitionId={competitionId} value={values.__level_selector_value || values.selectedLevelId} onChange={v => { onChange(v); updateValue("selectedLevelId", v); updateValue("__level_selector_value", v); updateValue("__subevent_selector", ""); updateValue("selectedSubEventId", ""); updateValue("__category_selector", ""); updateValue("selectedCategoryId", ""); updateValue("__subcategory_selector", ""); updateValue("selectedSubCategoryId", ""); }} error={error} field={field} />;
+      return <LevelSelectorField competitionId={competitionId} value={values.__level_selector_value || values.selectedLevelId} onChange={v => { onChange(v); updateValue("selectedLevelId", v); updateValue("__level_selector_value", v); updateValue("__subevent_selector", ""); updateValue("selectedSubEventId", ""); updateValue("__category_selector", ""); updateValue("selectedCategoryId", ""); updateValue("__subcategory_selector", ""); updateValue("selectedSubCategoryId", ""); updateValue("__deepest_category_id", ""); for (let d = 0; d < 10; d++) updateValue(`__cat_depth_${d}`, ""); }} error={error} field={field} />;
 
     case "subevent_selector":
       return <SubEventSelectorField competitionId={competitionId} levelId={values.__level_selector_value || values.selectedLevelId} value={value} onChange={v => { onChange(v); updateValue("selectedSubEventId", v); }} error={error} field={field} />;
