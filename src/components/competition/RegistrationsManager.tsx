@@ -26,6 +26,8 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRegistrationFormConfig, createDefaultFormSchema, useCreateAdvancement } from "@/hooks/useRegistrationForm";
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
+import { BulkUploadDialog } from "./BulkUploadDialog";
+import { Upload } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -422,6 +424,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [filterLevelId, setFilterLevelId] = useState("all");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
   const [filterAge, setFilterAge] = useState("all");
   const [sortField, setSortField] = useState<SortField>("sort_order");
@@ -835,6 +838,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                   Advance Selected ({selectedIds.size})
                 </Button>
               )}
+              <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
+                <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Registration
               </Button>
@@ -1142,6 +1148,8 @@ export function RegistrationsManager({ competitionId }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BulkUploadDialog competitionId={competitionId} open={showBulkUpload} onOpenChange={setShowBulkUpload} />
     </div>
   );
 }
