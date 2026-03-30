@@ -349,7 +349,8 @@ export function RegistrationFormEditor({ competitionId }: Props) {
                       className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
                     >
                       <f.icon className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="text-xs font-medium truncate">{f.label}</span>
+                      <span className="text-xs font-medium truncate flex-1">{f.label}</span>
+                      <Badge variant="secondary" className="text-[9px] shrink-0 ml-auto">{f.type}</Badge>
                     </button>
                   ))}
                   {BUILTIN_FIELDS.filter(f => !usedBuiltinKeys.has(f.key)).length === 0 && (
@@ -418,15 +419,11 @@ function FieldEditor({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
-          {field.builtin ? (
-            <span className="text-xs font-medium">{field.label}</span>
-          ) : (
-            <Input
-              value={field.label}
-              onChange={e => onUpdate({ label: e.target.value })}
-              className="h-6 text-xs font-medium border-transparent hover:border-border focus:border-border px-1 flex-1"
-            />
-          )}
+          <Input
+            value={field.label}
+            onChange={e => onUpdate({ label: e.target.value })}
+            className="h-6 text-xs font-medium border-transparent hover:border-border focus:border-border px-1 flex-1"
+          />
           <Badge variant="outline" className="text-[9px] shrink-0">
             {field.builtin ? "built-in" : field.type}
           </Badge>
@@ -435,17 +432,15 @@ function FieldEditor({
 
         {/* Inline settings */}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px]">
-          {!field.builtin && (
-            <label className="flex items-center gap-1 cursor-pointer">
-              <Switch
-                className="scale-75"
-                checked={field.required}
-                onCheckedChange={v => onUpdate({ required: v })}
-              />
-              <span>Required</span>
-            </label>
-          )}
-          {!field.builtin && field.type !== "heading" && field.type !== "paragraph" && (
+          <label className="flex items-center gap-1 cursor-pointer">
+            <Switch
+              className="scale-75"
+              checked={field.required}
+              onCheckedChange={v => onUpdate({ required: v })}
+            />
+            <span>Required</span>
+          </label>
+          {field.type !== "heading" && field.type !== "paragraph" && (
             <label className="flex items-center gap-1 cursor-pointer">
               <Switch
                 className="scale-75"
@@ -455,18 +450,16 @@ function FieldEditor({
               <span>Full Width</span>
             </label>
           )}
-          {!field.builtin && (
-            <Input
-              value={field.placeholder || ""}
-              onChange={e => onUpdate({ placeholder: e.target.value })}
-              placeholder="Placeholder…"
-              className="h-5 text-[10px] w-24 border-transparent hover:border-border px-1"
-            />
-          )}
+          <Input
+            value={field.placeholder || ""}
+            onChange={e => onUpdate({ placeholder: e.target.value })}
+            placeholder="Placeholder…"
+            className="h-5 text-[10px] w-24 border-transparent hover:border-border px-1"
+          />
         </div>
 
         {/* Options editor for select/radio */}
-        {(field.type === "select" || field.type === "radio") && !field.builtin && (
+        {(field.type === "select" || field.type === "radio") && (
           <OptionsEditor
             options={field.options || []}
             onChange={opts => onUpdate({ options: opts })}
@@ -479,7 +472,7 @@ function FieldEditor({
         )}
 
         {/* Conditional visibility */}
-        {!field.builtin && (
+        {(
           <div className="mt-1.5">
             <label className="flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer">
               <Switch
