@@ -1,68 +1,28 @@
 
 
-# Fix: Missing Judge Assignments for Semi-Finals
+## Plan: Remove 8 Accidentally Promoted Registrations
 
-## Root Cause
+### Problem
+You accidentally triggered promotion from Auditions to Semi-final in the National Poetry Slam 2026 competition, creating 8 duplicate registrations in the Semi-final level.
 
-The four judges (Jean Claude Cournand, Patti-Anne Ali, Shivanee Ramlochan, Kwame Weekes) and the tabulators were assigned to the Semi-final sub-event in `staff_invitation_sub_events` **after** they had already accepted their invitations. The `accept_staff_invitations` RPC only runs once at login and doesn't retroactively sync new sub-event additions — so their `sub_event_assignments` rows for the Semi-final were never created.
+### Solution
+Run a single database migration to delete these 8 specific registration records by their IDs. These were all created at `2026-03-30 07:25:41-42` and are duplicates of contestants who already exist in the Semi-final.
 
-Only `chromatics.tt` (Richard Rajkumar) shows because his invitation was accepted after the Semi-final assignment was added.
+### Records to Delete
 
-## Fix
+| # | Name | ID |
+|---|------|-----|
+| 1 | Ronaldo Mohammed | `c8c02d89-ffbb-4b3b-8091-ce2b8f898f7a` |
+| 2 | Shimiah Lewis | `4c6f46c9-4776-40ca-893d-5a252545ec64` |
+| 3 | Renaldo Briggs | `9b5505a5-3f15-4950-af8b-9e6868da193d` |
+| 4 | Jabari Collins | `89fc8cad-da61-447d-90ca-edf022b4854d` |
+| 5 | Miguel Jagarnath | `c4487819-59fb-4985-b9c3-5d03d3282d2d` |
+| 6 | Kyla Wilson | `cd69113c-64e0-4fea-9118-e3202d3fc0b6` |
+| 7 | Winston Trotman | `c12404c6-6452-4276-9586-6987c73f4590` |
+| 8 | Rickibah Isaac | `f7699435-f33a-4c49-b0e9-21df70306b41` |
 
-### 1. Insert missing `sub_event_assignments` (immediate data fix)
-
-Run a migration that backfills missing assignments by joining accepted invitations with their sub-events and inserting any that don't already exist:
-
-```sql
-INSERT INTO sub_event_assignments (user_id, sub_event_id, role, is_chief, is_production_assistant)
-SELECT p.user_id, sise.sub_event_id, si.role, si.is_chief, si.is_production_assistant
-FROM staff_invitations si
-JOIN staff_invitation_sub_events sise ON sise.staff_invitation_id = si.id
-JOIN profiles p ON lower(p.email) = lower(si.email)
-WHERE si.accepted_at IS NOT NULL
-ON CONFLICT (user_id, sub_event_id, role) DO NOTHING;
-```
-
-### 2. Add a database trigger to auto-sync future additions
-
-Create a trigger on `staff_invitation_sub_events` so that when an organiser adds a sub-event to an **already-accepted** invitation, the corresponding `sub_event_assignment` is created immediately:
-
-```sql
-CREATE OR REPLACE FUNCTION sync_invitation_sub_event_assignment()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
-DECLARE
-  _inv record;
-  _uid uuid;
-BEGIN
-  SELECT * INTO _inv FROM staff_invitations WHERE id = NEW.staff_invitation_id;
-  IF _inv.accepted_at IS NULL THEN RETURN NEW; END IF;
-
-  SELECT user_id INTO _uid FROM profiles WHERE lower(email) = lower(_inv.email) LIMIT 1;
-  IF _uid IS NULL THEN RETURN NEW; END IF;
-
-  INSERT INTO sub_event_assignments (user_id, sub_event_id, role, is_chief, is_production_assistant)
-  VALUES (_uid, NEW.sub_event_id, _inv.role, _inv.is_chief, _inv.is_production_assistant)
-  ON CONFLICT (user_id, sub_event_id, role) DO NOTHING;
-
-  RETURN NEW;
-END; $$;
-
-CREATE TRIGGER trg_sync_invitation_sub_event
-AFTER INSERT ON staff_invitation_sub_events
-FOR EACH ROW EXECUTE FUNCTION sync_invitation_sub_event_assignment();
-```
-
-## Impact
-
-- Immediately fixes the Semi-final judges/tabulators not showing.
-- Prevents the same problem from recurring when sub-events are added to accepted invitations in the future.
-- No application code changes needed.
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| New migration | Backfill missing assignments + add sync trigger |
+### Technical Details
+- Single SQL migration: `DELETE FROM contestant_registrations WHERE id IN (...)` targeting exactly these 8 IDs
+- No associated judge_scores exist for these records (they all show 0.00 scores)
+- The original Semi-final registrations for these contestants remain untouched
 
