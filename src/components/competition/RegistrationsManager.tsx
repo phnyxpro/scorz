@@ -837,6 +837,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                   Advance Selected ({selectedIds.size})
                 </Button>
               )}
+              <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
+                <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Registration
               </Button>
