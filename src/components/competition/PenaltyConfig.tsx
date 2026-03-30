@@ -124,34 +124,32 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
   return (
-    <div className="space-y-4">
-      {/* Category pill bar */}
-      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-        <div className="flex gap-2 min-w-max">
-          {(Object.keys(categories) as Category[]).map((key) => {
-            const cat = categories[key];
-            const Icon = cat.icon;
-            const isActive = activeCategory === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveCategory(key)}
-                className={`inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium border transition-all ${
-                  isActive
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+    <div className="flex flex-col sm:flex-row gap-4">
+      {/* Vertical pill sidebar */}
+      <div className="flex sm:flex-col gap-2 sm:w-48 shrink-0 overflow-x-auto sm:overflow-x-visible no-scrollbar">
+        {(Object.keys(categories) as Category[]).map((key) => {
+          const cat = categories[key];
+          const Icon = cat.icon;
+          const isActive = activeCategory === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveCategory(key)}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium border transition-all whitespace-nowrap ${
+                isActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Active category card */}
-      <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
+      {/* Content area */}
+      <Card className="rounded-xl border-border/50 bg-card/80 flex-1 min-w-0" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
           {/* Time Penalties */}
           {activeCategory === "time" && (
