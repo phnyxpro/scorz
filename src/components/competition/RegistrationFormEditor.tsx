@@ -24,6 +24,8 @@ import {
   Type, Mail, Phone, Hash, Link, Calendar, FileText,
   CheckSquare, AlignLeft, ListOrdered, Upload, PenTool,
   Shield, Layers, CalendarClock, Clock, Repeat, Heading, Pilcrow,
+  Palette, DollarSign, Star, ToggleLeft, EyeOff, Minus, FileCheck, FileEdit,
+  Grid3X3,
 } from "lucide-react";
 
 const FIELD_TYPES: { type: FieldType; label: string; icon: any; category: string }[] = [
@@ -33,14 +35,24 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: any; category: string
   { type: "number", label: "Number", icon: Hash, category: "Input" },
   { type: "url", label: "URL", icon: Link, category: "Input" },
   { type: "date", label: "Date", icon: Calendar, category: "Input" },
+  { type: "time", label: "Time", icon: Clock, category: "Input" },
   { type: "textarea", label: "Textarea", icon: AlignLeft, category: "Input" },
+  { type: "currency", label: "Currency", icon: DollarSign, category: "Input" },
+  { type: "color", label: "Color Picker", icon: Palette, category: "Input" },
   { type: "select", label: "Dropdown", icon: ListOrdered, category: "Choice" },
   { type: "radio", label: "Radio Buttons", icon: ListOrdered, category: "Choice" },
   { type: "checkbox", label: "Checkbox", icon: CheckSquare, category: "Choice" },
+  { type: "toggle", label: "Toggle (Yes/No)", icon: ToggleLeft, category: "Choice" },
+  { type: "rating", label: "Rating (1-5)", icon: Star, category: "Choice" },
+  { type: "consent", label: "Consent", icon: FileCheck, category: "Choice" },
   { type: "file", label: "File Upload", icon: Upload, category: "Media" },
+  { type: "signature", label: "Signature", icon: PenTool, category: "Media" },
   { type: "repeater", label: "Repeater", icon: Repeat, category: "Advanced" },
+  { type: "hidden", label: "Hidden Field", icon: EyeOff, category: "Advanced" },
   { type: "heading", label: "Heading", icon: Heading, category: "Layout" },
   { type: "paragraph", label: "Paragraph", icon: Pilcrow, category: "Layout" },
+  { type: "divider", label: "Divider", icon: Minus, category: "Layout" },
+  { type: "rich_text", label: "Rich Text", icon: FileEdit, category: "Advanced" },
 ];
 
 const BUILTIN_FIELDS: { key: string; label: string; type: FieldType; icon: any }[] = [
@@ -60,6 +72,8 @@ const BUILTIN_FIELDS: { key: string; label: string; type: FieldType; icon: any }
   { key: "__rules_acknowledgment", label: "Rules Acknowledgment", type: "rules_acknowledgment", icon: Shield },
   { key: "__contestant_signature", label: "Contestant Signature", type: "signature", icon: PenTool },
   { key: "__guardian_signature", label: "Guardian Signature", type: "signature", icon: PenTool },
+  { key: "__category_selector", label: "Category Selector", type: "category_selector", icon: Grid3X3 },
+  { key: "__subcategory_selector", label: "Sub-Category Selector", type: "subcategory_selector", icon: Grid3X3 },
 ];
 
 interface Props {
@@ -230,7 +244,7 @@ export function RegistrationFormEditor({ competitionId }: Props) {
       field.repeaterLabel = "Add Entry";
       field.columns = 2;
     }
-    if (type === "textarea" || type === "heading" || type === "paragraph") {
+    if (type === "textarea" || type === "heading" || type === "paragraph" || type === "divider" || type === "rich_text" || type === "consent" || type === "signature") {
       field.columns = 2;
     }
     addFieldToSection(sectionId, field);
@@ -350,7 +364,7 @@ export function RegistrationFormEditor({ competitionId }: Props) {
                     >
                       <f.icon className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="text-xs font-medium truncate flex-1">{f.label}</span>
-                      <Badge variant="secondary" className="text-[9px] shrink-0 ml-auto">{f.type}</Badge>
+                      
                     </button>
                   ))}
                   {BUILTIN_FIELDS.filter(f => !usedBuiltinKeys.has(f.key)).length === 0 && (
@@ -424,9 +438,7 @@ function FieldEditor({
             onChange={e => onUpdate({ label: e.target.value })}
             className="h-6 text-xs font-medium border-transparent hover:border-border focus:border-border px-1 flex-1"
           />
-          <Badge variant="outline" className="text-[9px] shrink-0">
-            {field.builtin ? "built-in" : field.type}
-          </Badge>
+          <span className="text-[9px] text-muted-foreground shrink-0">{field.builtin ? "built-in" : field.type}</span>
           {field.required && <Badge className="text-[9px] bg-primary/20 text-primary shrink-0">req</Badge>}
         </div>
 
@@ -590,17 +602,56 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
         </label>
       </div>
       {subFields.map((sf, i) => (
-        <div key={sf.id} className="flex items-center gap-1 bg-muted/20 rounded px-1.5 py-0.5">
-          <Input value={sf.label} onChange={e => updateSubField(i, { label: e.target.value })} className="h-5 text-[10px] flex-1 px-1 border-transparent" />
-          <Select value={sf.type} onValueChange={v => updateSubField(i, { type: v as FieldType })}>
-            <SelectTrigger className="h-5 text-[10px] w-16 px-1 border-transparent"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["text", "email", "number", "url", "select", "textarea"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeSubField(i)}><Trash2 className="h-2.5 w-2.5" /></Button>
+        <div key={sf.id} className="space-y-0.5">
+          <div className="flex items-center gap-1 bg-muted/20 rounded px-1.5 py-0.5">
+            <Input value={sf.label} onChange={e => updateSubField(i, { label: e.target.value })} className="h-5 text-[10px] flex-1 px-1 border-transparent" />
+            <Select value={sf.type} onValueChange={v => updateSubField(i, { type: v as FieldType })}>
+              <SelectTrigger className="h-5 text-[10px] w-16 px-1 border-transparent"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["text", "email", "number", "url", "phone", "date", "select", "textarea", "checkbox", "radio", "file", "toggle", "rating"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-0.5 text-[9px]">
+              <Switch className="scale-[0.6]" checked={sf.required} onCheckedChange={v => updateSubField(i, { required: v })} />
+              Req
+            </label>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeSubField(i)}><Trash2 className="h-2.5 w-2.5" /></Button>
+          </div>
+          {/* Options for select/radio sub-fields */}
+          {(sf.type === "select" || sf.type === "radio") && (
+            <div className="pl-3">
+              <OptionsEditor options={sf.options || []} onChange={opts => updateSubField(i, { options: opts })} />
+            </div>
+          )}
+          {/* Conditional visibility for sub-fields */}
+          <div className="pl-3 flex items-center gap-1">
+            <label className="flex items-center gap-0.5 text-[9px] text-muted-foreground cursor-pointer">
+              <Switch
+                className="scale-[0.6]"
+                checked={!!sf.showWhen}
+                onCheckedChange={v => {
+                  if (v) updateSubField(i, { showWhen: { fieldKey: "", equals: "" } });
+                  else updateSubField(i, { showWhen: undefined });
+                }}
+              />
+              Show when
+            </label>
+            {sf.showWhen && (
+              <>
+                <Select value={sf.showWhen.fieldKey} onValueChange={v => updateSubField(i, { showWhen: { ...sf.showWhen!, fieldKey: v } })}>
+                  <SelectTrigger className="h-4 text-[9px] w-20 px-1"><SelectValue placeholder="field" /></SelectTrigger>
+                  <SelectContent>
+                    {subFields.filter((_f, fi) => fi !== i).map(f => <SelectItem key={f.key} value={f.key} className="text-[10px]">{f.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-[9px]">=</span>
+                <Input value={sf.showWhen.equals} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, equals: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
+              </>
+            )}
+          </div>
         </div>
       ))}
+
       <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1" onClick={addSubField}>
         <Plus className="h-2.5 w-2.5 mr-0.5" /> Sub-Field
       </Button>
