@@ -1,0 +1,1 @@
+ALTER TABLE public.sub_events ADD COLUMN IF NOT EXISTS profile_details_visible boolean NOT NULL DEFAULT true;
