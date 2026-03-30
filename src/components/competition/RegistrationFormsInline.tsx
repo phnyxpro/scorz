@@ -419,7 +419,8 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                     className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 text-sm transition-colors text-left"
                   >
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span>{label}</span>
+                    <span className="flex-1">{label}</span>
+                    <Badge variant="secondary" className="text-[9px] shrink-0">{type.replace("_", " ")}</Badge>
                   </button>
                 );
               })}
