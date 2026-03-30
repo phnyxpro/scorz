@@ -16,7 +16,7 @@ import { SubEventAssignments } from "@/components/competition/SubEventAssignment
 // RegistrationFormsInline used inside RegistrationsPillLayout
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
-import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
+
 import { BrandingManager } from "@/components/competition/BrandingManager";
 import { EventChat } from "@/components/chat/EventChat";
 import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
@@ -454,16 +454,7 @@ export default function CompetitionDetail() {
           </TabsContent>
 
           <TabsContent value="scoring">
-            <div className="space-y-6">
-              {comp && (
-                <ActiveScoringManager
-                  competitionId={id!}
-                  activeLevelId={comp?.active_scoring_level_id}
-                  activeSubEventId={comp?.active_scoring_sub_event_id}
-                />
-              )}
               <ScoringSettingsManager competitionId={id!} />
-            </div>
           </TabsContent>
 
           <TabsContent value="sponsors">

@@ -1,20 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useAllSubEvents, useLevels, useCompetition } from "@/hooks/useCompetitions";
+import { useAllSubEvents, useLevels, useCompetition, useSubEvents, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard } from "lucide-react";
+import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard, Zap, X } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
 import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
 import { ScoreCardExportSection } from "./ScoreCardExportSection";
 
 const categories = {
+  active: { label: "Active Scoring", icon: Zap, description: "Set which level and sub-event judges should be scoring." },
   method: { label: "Scoring Method", icon: Calculator, description: "Choose how judge scores are aggregated into a contestant's final ranking." },
   sections: { label: "Judge Card Sections", icon: Settings, description: "Control which sections appear on judge scoring cards for each sub-event." },
   sheets: { label: "Score Sheets", icon: FileDown, description: "Download printable score sheets for offline judging." },
@@ -32,9 +35,20 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   const { data: competition } = useCompetition(competitionId);
   const qc = useQueryClient();
 
-  const [activeCategory, setActiveCategory] = useState<Category>("method");
+  const [activeCategory, setActiveCategory] = useState<Category>("active");
   const [scoringMethod, setScoringMethod] = useState<string>("olympic");
   const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean }>>({});
+
+  // Active scoring state
+  const updateActive = useUpdateActiveScoringConfig();
+  const [selectedLevelId, setSelectedLevelId] = useState(competition?.active_scoring_level_id || "");
+  const [selectedSubEventId, setSelectedSubEventId] = useState(competition?.active_scoring_sub_event_id || "");
+  const { data: activeLevelSubEvents } = useSubEvents(selectedLevelId || undefined);
+
+  useEffect(() => {
+    setSelectedLevelId(competition?.active_scoring_level_id || "");
+    setSelectedSubEventId(competition?.active_scoring_sub_event_id || "");
+  }, [competition?.active_scoring_level_id, competition?.active_scoring_sub_event_id]);
 
   useEffect(() => {
     if (competition?.scoring_method) {
@@ -93,12 +107,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
         .eq('id', subEventId);
 
       if (error) {
-        const errorMsg = error.message || '';
-        if (errorMsg.includes('schema cache') || errorMsg.includes('timer_visible') || errorMsg.includes('comments_visible')) {
-          toast({ title: "Database schema needs update", description: "Please run the migration SQL in your Supabase dashboard. Check MIGRATION_SQL.sql in the project root.", variant: "destructive" });
-        } else {
-          toast({ title: "Failed to update setting", description: error.message || "An error occurred", variant: "destructive" });
-        }
+        toast({ title: "Failed to update setting", description: error.message || "An error occurred", variant: "destructive" });
         setSubEventSettings(prev => ({
           ...prev,
           [subEventId]: { ...prev[subEventId], [field]: !value },
@@ -112,6 +121,15 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     } catch (error: any) {
       console.error('Error updating sub-event setting:', error);
     }
+  };
+
+  const handleActivateScoring = () => {
+    if (!selectedLevelId || !selectedSubEventId) return;
+    updateActive.mutate({ competitionId, levelId: selectedLevelId, subEventId: selectedSubEventId });
+  };
+
+  const handleDeactivateScoring = () => {
+    updateActive.mutate({ competitionId, levelId: null, subEventId: null });
   };
 
   const catKeys = Object.keys(categories) as Category[];
@@ -135,23 +153,25 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     subEvents: allSubEvents.filter(se => se.level_id === level.id),
   })).filter(group => group.subEvents.length > 0);
 
-  const ActiveIcon = categories[activeCategory].icon;
+  const isActive = competition?.active_scoring_level_id && competition?.active_scoring_sub_event_id;
+  const activeLevelName = levels?.find(l => l.id === competition?.active_scoring_level_id)?.name;
+  const activeSubEventName = activeLevelSubEvents?.find(se => se.id === competition?.active_scoring_sub_event_id)?.name;
 
   return (
     <div className="space-y-4">
       {/* Category pill bar */}
       <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
         <div className="flex gap-2 min-w-max">
-          {(Object.keys(categories) as Category[]).map((key) => {
+          {catKeys.map((key) => {
             const cat = categories[key];
             const Icon = cat.icon;
-            const isActive = activeCategory === key;
+            const isActiveTab = activeCategory === key;
             return (
               <button
                 key={key}
                 onClick={() => setActiveCategory(key)}
                 className={`inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium border transition-all ${
-                  isActive
+                  isActiveTab
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted-foreground border-border hover:border-primary/40"
                 }`}
@@ -167,13 +187,77 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       {/* Active category card */}
       <Card className="rounded-xl border-border/50 bg-card/80" {...swipeHandlers}>
         <CardContent className="p-3 sm:p-5 space-y-4">
-          <div className="space-y-2">
-            <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
-              <ActiveIcon className="h-3.5 w-3.5" />
-              {categories[activeCategory].label}
-            </Badge>
-            <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
-          </div>
+          <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
+
+          {/* Active Scoring Control */}
+          {activeCategory === "active" && (
+            <div className="space-y-4">
+              {isActive && (
+                <Alert className="border-green-500/50 bg-green-500/10">
+                  <Zap className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-700">
+                    <strong>Scoring Active:</strong> {activeLevelName} → {activeSubEventName}
+                    <br />
+                    <span className="text-xs">Judges will automatically load this level and sub-event</span>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Level</label>
+                  <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!!isActive}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {levels?.map(level => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Sub-Event</label>
+                  <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId} disabled={!selectedLevelId || !!isActive}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sub-event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeLevelSubEvents?.map(subEvent => (
+                        <SelectItem key={subEvent.id} value={subEvent.id}>
+                          {subEvent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleActivateScoring}
+                  disabled={!selectedLevelId || !selectedSubEventId || !!isActive || updateActive.isPending}
+                  className="flex-1"
+                >
+                  {updateActive.isPending ? "Activating..." : "Activate Scoring"}
+                </Button>
+                {isActive && (
+                  <Button
+                    onClick={handleDeactivateScoring}
+                    disabled={updateActive.isPending}
+                    variant="destructive"
+                    size="icon"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Scoring Method */}
           {activeCategory === "method" && (
