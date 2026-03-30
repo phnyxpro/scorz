@@ -228,6 +228,7 @@ export function usePromoteContestants() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["registrations"] });
       qc.invalidateQueries({ queryKey: ["level_master_sheet"] });
+      qc.invalidateQueries({ queryKey: ["promotion_completed"] });
       toast({
         title: "Contestants Promoted",
         description: `${result.promoted} contestant${result.promoted !== 1 ? "s" : ""} advanced to the next level.${result.skipped > 0 ? ` ${result.skipped} already registered.` : ""}`,
