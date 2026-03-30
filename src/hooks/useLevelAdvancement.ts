@@ -115,6 +115,83 @@ export function usePromotionCompleted(
 }
 
 /**
+ * Rollback a promotion by deleting registrations in the next level's first sub-event
+ * that have NO judge_scores (i.e. haven't been scored yet).
+ */
+export function useRollbackPromotion() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      competitionId,
+      nextLevelId,
+    }: {
+      competitionId: string;
+      nextLevelId: string;
+    }) => {
+      // Get first sub-event in next level
+      const { data: nextSubEvents } = await supabase
+        .from("sub_events")
+        .select("id")
+        .eq("level_id", nextLevelId)
+        .order("event_date")
+        .limit(1);
+
+      if (!nextSubEvents?.length) throw new Error("No sub-events in next level");
+      const nextSubEventId = nextSubEvents[0].id;
+
+      // Get promoted registrations
+      const { data: regs } = await supabase
+        .from("contestant_registrations")
+        .select("id")
+        .eq("competition_id", competitionId)
+        .eq("sub_event_id", nextSubEventId)
+        .eq("status", "approved");
+
+      if (!regs?.length) throw new Error("No promoted registrations found to rollback");
+
+      const regIds = regs.map((r) => r.id);
+
+      // Check for any scores on these registrations
+      const { count: scoreCount } = await supabase
+        .from("judge_scores")
+        .select("id", { count: "exact", head: true })
+        .in("contestant_registration_id", regIds);
+
+      if ((scoreCount ?? 0) > 0) {
+        throw new Error("Cannot rollback — some promoted contestants already have scores. Remove scores first.");
+      }
+
+      // Delete related data then registrations
+      for (const id of regIds) {
+        await supabase.from("performance_durations").delete().eq("contestant_registration_id", id);
+        await supabase.from("performance_timer_events").delete().eq("contestant_registration_id", id);
+        await supabase.from("audience_votes").delete().eq("contestant_registration_id", id);
+        await supabase.from("performance_slots").update({ contestant_registration_id: null, is_booked: false }).eq("contestant_registration_id", id);
+      }
+
+      const { error } = await supabase
+        .from("contestant_registrations")
+        .delete()
+        .in("id", regIds);
+
+      if (error) throw error;
+      return { removed: regIds.length };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+      qc.invalidateQueries({ queryKey: ["level_master_sheet"] });
+      qc.invalidateQueries({ queryKey: ["promotion_completed"] });
+      toast({
+        title: "Promotion Rolled Back",
+        description: `${result.removed} promoted registration${result.removed !== 1 ? "s" : ""} removed from the next level.`,
+      });
+    },
+    onError: (e: any) => toast({ title: "Rollback Failed", description: e.message, variant: "destructive" }),
+  });
+}
+
+/**
  * Promote advancing contestants from a completed level to the next level's first sub-event
  */
 export function usePromoteContestants() {
