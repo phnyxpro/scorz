@@ -267,40 +267,104 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
 
   // ─── Step 1: File Upload & Mapping ────────────────────
 
+  const parseCSVText = useCallback((text: string): Record<string, string>[] => {
+    const lines: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (inQuotes && text[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+        if (current.trim()) lines.push(current);
+        current = "";
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+      } else {
+        current += ch;
+      }
+    }
+    if (current.trim()) lines.push(current);
+    if (lines.length < 2) return [];
+
+    const splitRow = (line: string): string[] => {
+      const cols: string[] = [];
+      let cur = "";
+      let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+        else if (c === ',' && !q) { cols.push(cur.trim()); cur = ""; }
+        else cur += c;
+      }
+      cols.push(cur.trim());
+      return cols;
+    };
+
+    const hdrs = splitRow(lines[0]);
+    return lines.slice(1).map((line) => {
+      const vals = splitRow(line);
+      const obj: Record<string, string> = {};
+      hdrs.forEach((h, i) => { obj[h] = vals[i] || ""; });
+      return obj;
+    });
+  }, []);
+
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        try {
-          const data = evt.target?.result as ArrayBuffer;
-          const json = await readXLSXToJson<Record<string, string>>(data);
-          if (json.length === 0) {
-            toast({ title: "Empty file", variant: "destructive" });
-            return;
+      const isCSV = file.name.toLowerCase().endsWith(".csv");
+
+      if (isCSV) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            let text = evt.target?.result as string;
+            // Strip BOM
+            if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+            const json = parseCSVText(text);
+            if (json.length === 0) { toast({ title: "Empty file", variant: "destructive" }); return; }
+            const hdrs = Object.keys(json[0]);
+            setHeaders(hdrs);
+            setRawRows(json);
+            const autoMap: Record<string, string> = {};
+            const usedHeaders = new Set<string>();
+            hdrs.forEach((h) => {
+              const match = fuzzyMatch(h, dynamicFields);
+              if (match && !autoMap[match] && !usedHeaders.has(h)) { autoMap[match] = h; usedHeaders.add(h); }
+            });
+            setMapping(autoMap);
+          } catch {
+            toast({ title: "Could not parse CSV file", variant: "destructive" });
           }
-          const hdrs = Object.keys(json[0]);
-          setHeaders(hdrs);
-          setRawRows(json);
-          // Auto-map
-          const autoMap: Record<string, string> = {};
-          const usedHeaders = new Set<string>();
-          hdrs.forEach((h) => {
-            const match = fuzzyMatch(h, dynamicFields);
-            if (match && !autoMap[match] && !usedHeaders.has(h)) {
-              autoMap[match] = h;
-              usedHeaders.add(h);
-            }
-          });
-          setMapping(autoMap);
-        } catch {
-          toast({ title: "Could not parse file", variant: "destructive" });
-        }
-      };
-      reader.readAsArrayBuffer(file);
+        };
+        reader.readAsText(file, "UTF-8");
+      } else {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          try {
+            const data = evt.target?.result as ArrayBuffer;
+            const json = await readXLSXToJson<Record<string, string>>(data);
+            if (json.length === 0) { toast({ title: "Empty file", variant: "destructive" }); return; }
+            const hdrs = Object.keys(json[0]);
+            setHeaders(hdrs);
+            setRawRows(json);
+            const autoMap: Record<string, string> = {};
+            const usedHeaders = new Set<string>();
+            hdrs.forEach((h) => {
+              const match = fuzzyMatch(h, dynamicFields);
+              if (match && !autoMap[match] && !usedHeaders.has(h)) { autoMap[match] = h; usedHeaders.add(h); }
+            });
+            setMapping(autoMap);
+          } catch {
+            toast({ title: "Could not parse file", variant: "destructive" });
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
     },
-    [dynamicFields]
+    [dynamicFields, parseCSVText]
   );
 
   // ─── Step 2: Parse & Validate ─────────────────────────
