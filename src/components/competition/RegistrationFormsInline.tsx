@@ -365,7 +365,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                             isSelected={selectedFieldId === field.id}
                             onClick={() => setSelectedFieldId(field.id)}
                             onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                            onRemove={!field.is_builtin ? () => removeField(field.id) : undefined}
+                            onRemove={() => removeField(field.id)}
                             onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
                             onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
                           />
@@ -419,7 +419,8 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                     className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 text-sm transition-colors text-left"
                   >
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span>{label}</span>
+                    <span className="flex-1">{label}</span>
+                    <Badge variant="secondary" className="text-[9px] shrink-0">{type.replace("_", " ")}</Badge>
                   </button>
                 );
               })}
@@ -507,7 +508,7 @@ function FieldCard({
             : "border-border/20 bg-muted/20 opacity-50"
       }`}
     >
-      {!field.is_builtin && (onMoveUp || onMoveDown) && (
+      {(onMoveUp || onMoveDown) && (
         <div className="flex flex-col gap-0.5 shrink-0">
           {onMoveUp && (
             <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-muted-foreground hover:text-foreground">
@@ -607,7 +608,6 @@ function FieldPropertiesPanel({
           <Input
             value={field.label}
             onChange={(e) => onUpdate({ label: e.target.value })}
-            disabled={field.is_builtin}
             className="h-8 text-sm"
           />
         </div>
@@ -639,21 +639,19 @@ function FieldPropertiesPanel({
         <Separator />
 
         {/* Section assignment */}
-        {!field.is_builtin && (
-          <div className="space-y-1.5">
-            <Label className="text-xs">Section</Label>
-            <Select value={field.section || "custom"} onValueChange={(v) => onUpdate({ section: v })}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sections.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Section</Label>
+          <Select value={field.section || "custom"} onValueChange={(v) => onUpdate({ section: v })}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Required */}
         <div className="flex items-center justify-between">
