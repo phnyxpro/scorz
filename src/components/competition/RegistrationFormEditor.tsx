@@ -607,7 +607,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
           <Select value={sf.type} onValueChange={v => updateSubField(i, { type: v as FieldType })}>
             <SelectTrigger className="h-5 text-[10px] w-16 px-1 border-transparent"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {["text", "email", "number", "url", "select", "textarea"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+              {["text", "email", "number", "url", "phone", "date", "select", "textarea", "checkbox", "radio", "file", "toggle", "rating"].map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeSubField(i)}><Trash2 className="h-2.5 w-2.5" /></Button>
