@@ -1,28 +1,44 @@
 
 
-## Plan: Remove 8 Accidentally Promoted Registrations
+## Plan: Reassign Kwame Weekes' Semi-Final Scores to Alette Liz Williams
 
-### Problem
-You accidentally triggered promotion from Auditions to Semi-final in the National Poetry Slam 2026 competition, creating 8 duplicate registrations in the Semi-final level.
+### Summary of findings
 
-### Solution
-Run a single database migration to delete these 8 specific registration records by their IDs. These were all created at `2026-03-30 07:25:41-42` and are duplicates of contestants who already exist in the Semi-final.
+- **Sub-event**: Semi-final (`fdd01847-405e-4827-a7f1-c5860ea41041`) for National Poetry Slam 2026
+- **Kwame Weekes** has **18 judge scores** in this sub-event
+- **Chief Judge certification** was made by Jean Claude Cournand (not Kwame), so no certification change is needed
+- Both Kwame and Alette already have `sub_event_assignments` for this sub-event
+- Alette's profile name is currently "alettelwilliams" — should be updated to "Alette Liz Williams"
 
-### Records to Delete
+### Steps
 
-| # | Name | ID |
-|---|------|-----|
-| 1 | Ronaldo Mohammed | `c8c02d89-ffbb-4b3b-8091-ce2b8f898f7a` |
-| 2 | Shimiah Lewis | `4c6f46c9-4776-40ca-893d-5a252545ec64` |
-| 3 | Renaldo Briggs | `9b5505a5-3f15-4950-af8b-9e6868da193d` |
-| 4 | Jabari Collins | `89fc8cad-da61-447d-90ca-edf022b4854d` |
-| 5 | Miguel Jagarnath | `c4487819-59fb-4985-b9c3-5d03d3282d2d` |
-| 6 | Kyla Wilson | `cd69113c-64e0-4fea-9118-e3202d3fc0b6` |
-| 7 | Winston Trotman | `c12404c6-6452-4276-9586-6987c73f4590` |
-| 8 | Rickibah Isaac | `f7699435-f33a-4c49-b0e9-21df70306b41` |
+1. **Update 18 judge_scores**: Change `judge_id` from Kwame (`ace880a5-dcac-4049-a88b-9cf903c2b509`) to Alette (`ad92de5c-ffd0-4e96-8c1f-02114e26138d`) for all rows in the Semi-final sub-event.
 
-### Technical Details
-- Single SQL migration: `DELETE FROM contestant_registrations WHERE id IN (...)` targeting exactly these 8 IDs
-- No associated judge_scores exist for these records (they all show 0.00 scores)
-- The original Semi-final registrations for these contestants remain untouched
+2. **Update Alette's profile name**: Set `full_name` to "Alette Liz Williams" (currently "alettelwilliams").
+
+3. **Optionally remove Kwame's sub_event_assignment** for the Semi-final since he didn't judge it.
+
+### Technical details
+
+All changes are data updates via the database insert/update tool:
+
+```sql
+-- 1. Reassign scores
+UPDATE judge_scores
+SET judge_id = 'ad92de5c-ffd0-4e96-8c1f-02114e26138d'
+WHERE judge_id = 'ace880a5-dcac-4049-a88b-9cf903c2b509'
+  AND sub_event_id = 'fdd01847-405e-4827-a7f1-c5860ea41041';
+
+-- 2. Fix Alette's display name
+UPDATE profiles
+SET full_name = 'Alette Liz Williams'
+WHERE user_id = 'ad92de5c-ffd0-4e96-8c1f-02114e26138d';
+
+-- 3. Remove Kwame's assignment (optional)
+DELETE FROM sub_event_assignments
+WHERE user_id = 'ace880a5-dcac-4049-a88b-9cf903c2b509'
+  AND sub_event_id = 'fdd01847-405e-4827-a7f1-c5860ea41041';
+```
+
+No code changes needed — this is purely a data correction.
 
