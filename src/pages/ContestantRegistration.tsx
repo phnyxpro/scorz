@@ -75,7 +75,7 @@ export default function ContestantRegistration() {
       contestant_signed_at: builtinData.__contestant_signature ? new Date().toISOString() : undefined,
       guardian_signature: builtinData.__guardian_signature,
       guardian_signed_at: builtinData.__guardian_signature ? new Date().toISOString() : undefined,
-      custom_data: customData,
+      custom_field_values: customData,
     } as any, {
       onSuccess: async (createdReg: any) => {
         // Book time slot if selected
