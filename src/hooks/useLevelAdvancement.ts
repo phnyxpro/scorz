@@ -79,6 +79,42 @@ export function useNextLevel(competitionId: string | undefined, currentLevelSort
 }
 
 /**
+ * Check if promotion has already been completed for a level
+ * (i.e. advancing contestants already exist in the next level's first sub-event)
+ */
+export function usePromotionCompleted(
+  competitionId: string | undefined,
+  currentLevelId: string | null | undefined,
+  nextLevelId: string | null | undefined,
+  advancementCount: number | null | undefined,
+) {
+  return useQuery({
+    queryKey: ["promotion_completed", competitionId, currentLevelId, nextLevelId],
+    enabled: !!competitionId && !!currentLevelId && !!nextLevelId && advancementCount != null && advancementCount > 0,
+    queryFn: async () => {
+      // Get first sub-event of next level
+      const { data: nextSubEvents } = await supabase
+        .from("sub_events")
+        .select("id")
+        .eq("level_id", nextLevelId!)
+        .order("event_date")
+        .limit(1);
+      if (!nextSubEvents?.length) return false;
+
+      // Check if any approved registrations exist in that sub-event
+      const { count } = await supabase
+        .from("contestant_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("competition_id", competitionId!)
+        .eq("sub_event_id", nextSubEvents[0].id)
+        .eq("status", "approved");
+
+      return (count ?? 0) > 0;
+    },
+  });
+}
+
+/**
  * Promote advancing contestants from a completed level to the next level's first sub-event
  */
 export function usePromoteContestants() {
