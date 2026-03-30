@@ -177,11 +177,23 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                 const rawKey = f.key || f.id?.replace("builtin_", "") || f.id;
                 const mappedKey = f.is_builtin ? (builtinKeyMap[rawKey] || rawKey) : rawKey;
                 const isBuiltin = f.is_builtin && BUILTIN_KEYS.has(mappedKey);
+                // Override field type for special builtin selectors
+                const specialTypeMap: Record<string, FieldType> = {
+                  "__level_selector": "level_selector",
+                  "__subevent_selector": "subevent_selector",
+                  "__category_selector": "category_selector",
+                  "__subcategory_selector": "subcategory_selector",
+                  "__time_slot_selector": "time_slot_selector",
+                  "__rules_acknowledgment": "rules_acknowledgment",
+                  "__contestant_signature": "signature",
+                  "__guardian_signature": "signature",
+                };
+                const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
                 return {
                   id: f.id,
                   key: mappedKey,
                   label: f.label,
-                  type: fieldTypeMap[f.field_type] || "text",
+                  type: fieldType,
                   required: !!f.required,
                   placeholder: f.help_text || "",
                   description: f.help_text || "",
