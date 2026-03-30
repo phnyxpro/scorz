@@ -201,6 +201,11 @@ export default function LevelMasterSheet() {
         const avgFinal = certifiedScores.length > 0
           ? calculateMethodScore(scoringMethod, rawTotals, timePenalty)
           : 0;
+        // Get performance duration (use max across judge scores that have it recorded)
+        const durations = regScores
+          .map((s) => s.performance_duration_seconds)
+          .filter((d): d is number => d != null && d > 0);
+        const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
         return {
           regId: reg.id,
           name: reg.full_name,
@@ -212,6 +217,7 @@ export default function LevelMasterSheet() {
           avgFinal,
           certifiedCount: certifiedScores.length,
           totalJudges: regScores.length,
+          durationSeconds,
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
@@ -457,6 +463,7 @@ export default function LevelMasterSheet() {
                     <TableHead className="w-8">#</TableHead>
                     <TableHead>Contestant</TableHead>
                     <TableHead className="text-xs">Sub-Event</TableHead>
+                    <TableHead className="text-center text-xs">Duration</TableHead>
                     {judgeUserIds.map((jId) => (
                       <TableHead key={jId} className="text-center text-xs whitespace-nowrap">
                         {profileMap.get(jId) || "Judge"}
@@ -493,6 +500,11 @@ export default function LevelMasterSheet() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {subEventMap.get(r.subEventId || "") || "—"}
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {r.durationSeconds != null
+                            ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
+                            : "—"}
                         </TableCell>
                         {judgeUserIds.map((jId) => {
                           const js = r.judgeScores[jId];
