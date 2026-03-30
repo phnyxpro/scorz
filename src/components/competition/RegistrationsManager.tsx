@@ -1038,7 +1038,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
       {/* Bulk Advance Dialog */}
       <Dialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <ArrowRight className="h-4 w-4 text-primary" />
@@ -1120,7 +1120,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
       {/* Walk-in / Add Contestant Dialog — Full Registration Form */}
       <Dialog open={showWalkIn} onOpenChange={setShowWalkIn}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col pt-6 pb-2 px-2 sm:px-6">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col pt-6 pb-2 px-2 sm:px-6 overflow-hidden">
           <DialogHeader className="mb-2 px-4 sm:px-0 flex-shrink-0">
             <DialogTitle className="text-lg flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
@@ -1131,7 +1131,7 @@ export function RegistrationsManager({ competitionId }: Props) {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 px-4 sm:px-0">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-0">
             <DynamicRegistrationForm
               formSchema={formSchema}
               competitionId={competitionId}
@@ -1139,7 +1139,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               onSubmit={handleWalkInAdd}
               isSubmitting={createReg.isPending}
             />
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -460,10 +460,16 @@ function FieldRenderer({
       );
 
     case "level_selector":
-      return <LevelSelectorField competitionId={competitionId} value={values.__level_selector_value || values.selectedLevelId} onChange={v => { onChange(v); updateValue("selectedLevelId", v); updateValue("__level_selector_value", v); updateValue("__subevent_selector", ""); updateValue("selectedSubEventId", ""); }} error={error} field={field} />;
+      return <LevelSelectorField competitionId={competitionId} value={values.__level_selector_value || values.selectedLevelId} onChange={v => { onChange(v); updateValue("selectedLevelId", v); updateValue("__level_selector_value", v); updateValue("__subevent_selector", ""); updateValue("selectedSubEventId", ""); updateValue("__category_selector", ""); updateValue("selectedCategoryId", ""); updateValue("__subcategory_selector", ""); updateValue("selectedSubCategoryId", ""); }} error={error} field={field} />;
 
     case "subevent_selector":
       return <SubEventSelectorField competitionId={competitionId} levelId={values.__level_selector_value || values.selectedLevelId} value={value} onChange={v => { onChange(v); updateValue("selectedSubEventId", v); }} error={error} field={field} />;
+
+    case "category_selector":
+      return <CategorySelectorField competitionId={competitionId} levelId={values.__level_selector_value || values.selectedLevelId} value={values.__category_selector || values.selectedCategoryId} onChange={v => { onChange(v); updateValue("selectedCategoryId", v); updateValue("__category_selector", v); updateValue("__subcategory_selector", ""); updateValue("selectedSubCategoryId", ""); }} error={error} field={field} />;
+
+    case "subcategory_selector":
+      return <SubCategorySelectorField levelId={values.__level_selector_value || values.selectedLevelId} parentCategoryId={values.__category_selector || values.selectedCategoryId} value={values.__subcategory_selector || values.selectedSubCategoryId} onChange={v => { onChange(v); updateValue("selectedSubCategoryId", v); updateValue("__subcategory_selector", v); }} error={error} field={field} />;
 
     case "time_slot_selector":
       return <TimeSlotSelectorField subEventId={values.__subevent_selector || values.selectedSubEventId} value={value} onChange={v => { onChange(v); updateValue("selectedSlotId", v); }} error={error} field={field} />;
@@ -651,6 +657,110 @@ function SubEventSelectorField({ competitionId, levelId, value, onChange, error,
           </button>
         ))}
       </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+
+function CategorySelectorField({ competitionId, levelId, value, onChange, error, field }: {
+  competitionId: string; levelId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
+}) {
+  const { data: categories } = useQuery({
+    queryKey: ["competition_categories", levelId],
+    enabled: !!levelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", levelId!)
+        .is("parent_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!levelId) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">Select a level first.</p>
+      </div>
+    </div>
+  );
+
+  if (!categories || categories.length === 0) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">No categories available for this level.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+        <SelectContent>
+          {categories.map(cat => (
+            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function SubCategorySelectorField({ levelId, parentCategoryId, value, onChange, error, field }: {
+  levelId?: string; parentCategoryId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
+}) {
+  const { data: subCategories } = useQuery({
+    queryKey: ["competition_categories_children", parentCategoryId],
+    enabled: !!parentCategoryId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("parent_id", parentCategoryId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!parentCategoryId) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">Select a category first.</p>
+      </div>
+    </div>
+  );
+
+  if (!subCategories || subCategories.length === 0) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">No sub-categories available.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+        <SelectContent>
+          {subCategories.map(cat => (
+            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

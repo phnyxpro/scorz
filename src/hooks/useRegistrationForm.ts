@@ -9,6 +9,7 @@ export type FieldType =
   | "file" | "heading" | "paragraph"
   | "repeater"
   | "level_selector" | "subevent_selector" | "time_slot_selector"
+  | "category_selector" | "subcategory_selector"
   | "signature" | "rules_acknowledgment";
 
 export interface FormFieldOption {
