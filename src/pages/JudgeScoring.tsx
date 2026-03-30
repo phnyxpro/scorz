@@ -86,6 +86,7 @@ export default function JudgeScoring() {
   const selectedSubEvent = subEvents.find(se => se.id === selectedSubEventId);
   const timerVisible = selectedSubEvent?.timer_visible ?? true;
   const commentsVisible = selectedSubEvent?.comments_visible ?? true;
+  const profileDetailsVisible = (selectedSubEvent as any)?.profile_details_visible ?? true;
 
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
@@ -753,7 +754,7 @@ export default function JudgeScoring() {
               </Card>
 
               {/* Contestant Info — custom fields flagged for scorecard */}
-              {selectedContestantReg && (
+              {profileDetailsVisible && selectedContestantReg && (
                 <ContestantInfoCard
                   formConfig={(comp as any)?.registration_form_config}
                   customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
