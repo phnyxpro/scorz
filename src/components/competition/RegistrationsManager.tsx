@@ -836,7 +836,7 @@ export function RegistrationsManager({ competitionId }: Props) {
                 </Button>
               )}
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
-                <UserPlus className="h-3.5 w-3.5 mr-1" /> Walk-in Add
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Registration
               </Button>
             </div>
           </div>
@@ -1124,7 +1124,7 @@ export function RegistrationsManager({ competitionId }: Props) {
           <DialogHeader className="mb-2 px-4 sm:px-0 flex-shrink-0">
             <DialogTitle className="text-lg flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
-              Add Walk-in Contestant
+              Add Registration
             </DialogTitle>
             <DialogDescription>
               Complete the dynamically configured form for this competition.
