@@ -466,10 +466,17 @@ function FieldRenderer({
       return <SubEventSelectorField competitionId={competitionId} levelId={values.__level_selector_value || values.selectedLevelId} value={value} onChange={v => { onChange(v); updateValue("selectedSubEventId", v); }} error={error} field={field} />;
 
     case "category_selector":
-      return <CategorySelectorField competitionId={competitionId} levelId={values.__level_selector_value || values.selectedLevelId} value={values.__category_selector || values.selectedCategoryId} onChange={v => { onChange(v); updateValue("selectedCategoryId", v); updateValue("__category_selector", v); updateValue("__subcategory_selector", ""); updateValue("selectedSubCategoryId", ""); }} error={error} field={field} />;
+      return <CategoryTreeSelector
+        levelId={values.__level_selector_value || values.selectedLevelId}
+        values={values}
+        updateValue={updateValue}
+        error={error}
+        field={field}
+      />;
 
     case "subcategory_selector":
-      return <SubCategorySelectorField levelId={values.__level_selector_value || values.selectedLevelId} parentCategoryId={values.__category_selector || values.selectedCategoryId} value={values.__subcategory_selector || values.selectedSubCategoryId} onChange={v => { onChange(v); updateValue("selectedSubCategoryId", v); updateValue("__subcategory_selector", v); }} error={error} field={field} />;
+      // Handled by CategoryTreeSelector above — render nothing to avoid duplication
+      return (values.__level_selector_value || values.selectedLevelId) ? null : null;
 
     case "time_slot_selector":
       return <TimeSlotSelectorField subEventId={values.__subevent_selector || values.selectedSubEventId} value={value} onChange={v => { onChange(v); updateValue("selectedSlotId", v); }} error={error} field={field} />;
