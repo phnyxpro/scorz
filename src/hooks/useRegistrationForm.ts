@@ -118,16 +118,27 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
     enabled: !!competitionId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("registration_form_config" as any)
-        .select("*")
-        .eq("competition_id", competitionId!)
+        .from("competitions")
+        .select("id, registration_form_config")
+        .eq("id", competitionId!)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
+      const config = data.registration_form_config as any;
+      // Config might be stored as the schema array directly, or as an object with form_schema key
+      let schema: FormSchema | null = null;
+      if (Array.isArray(config) && config.length > 0) {
+        schema = config as FormSchema;
+      } else if (config && typeof config === "object" && Array.isArray((config as any).sections)) {
+        schema = (config as any).sections as FormSchema;
+      } else if (config && typeof config === "object" && Array.isArray((config as any).form_schema)) {
+        schema = (config as any).form_schema as FormSchema;
+      }
+      if (!schema || schema.length === 0) return null;
       return {
-        id: (data as any).id as string,
-        competition_id: (data as any).competition_id as string,
-        form_schema: (data as any).form_schema as FormSchema,
+        id: data.id,
+        competition_id: data.id,
+        form_schema: schema,
       };
     },
   });
@@ -138,11 +149,9 @@ export function useUpsertFormConfig() {
   return useMutation({
     mutationFn: async ({ competitionId, formSchema }: { competitionId: string; formSchema: FormSchema }) => {
       const { data, error } = await supabase
-        .from("registration_form_config" as any)
-        .upsert(
-          { competition_id: competitionId, form_schema: formSchema, updated_at: new Date().toISOString() } as any,
-          { onConflict: "competition_id" }
-        )
+        .from("competitions")
+        .update({ registration_form_config: formSchema as any, updated_at: new Date().toISOString() })
+        .eq("id", competitionId)
         .select()
         .single();
       if (error) throw error;
