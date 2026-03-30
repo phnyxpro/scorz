@@ -461,6 +461,9 @@ export default function CompetitionDetail() {
             <SponsorsManager competitionId={id!} />
           </TabsContent>
 
+          <TabsContent value="updates">
+            <UpdatesManager competitionId={id!} />
+          </TabsContent>
           <TabsContent value="branding">
             <BrandingManager competitionId={id!} competition={comp} />
           </TabsContent>
