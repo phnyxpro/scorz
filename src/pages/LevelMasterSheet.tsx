@@ -154,6 +154,7 @@ export default function LevelMasterSheet() {
   const { data: completion } = useLevelCompletion(levelId);
   const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
   const promote = usePromoteContestants();
+  const rollback = useRollbackPromotion();
   const { data: alreadyPromoted } = usePromotionCompleted(competitionId, levelId, nextLevel?.id, advancementCount);
 
   const judgeUserIds = useMemo(() => {
@@ -301,6 +302,11 @@ export default function LevelMasterSheet() {
     });
   };
 
+  const handleRollback = () => {
+    if (!competitionId || !nextLevel) return;
+    rollback.mutate({ competitionId, nextLevelId: nextLevel.id });
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Level complete banner */}
@@ -312,15 +318,42 @@ export default function LevelMasterSheet() {
           </div>
           {canPromote && nextLevel && advancementCount != null && advancementCount > 0 && (
             alreadyPromoted ? (
-              <Button
-                size="sm"
-                disabled
-                variant="outline"
-                className="gap-1.5 opacity-60 cursor-not-allowed"
-              >
-                <ArrowUp className="h-3.5 w-3.5" />
-                Promoted to {nextLevel.name}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled
+                  variant="outline"
+                  className="gap-1.5 opacity-60 cursor-not-allowed"
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                  Promoted to {nextLevel.name}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" disabled={rollback.isPending} className="gap-1.5">
+                      <Undo2 className="h-3.5 w-3.5" />
+                      {rollback.isPending ? "Rolling back…" : "Undo"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Undo Promotion
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove all promoted registrations from <span className="font-semibold text-foreground">{nextLevel.name}</span> that have not yet been scored. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRollback} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Yes, Rollback
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             ) : (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
