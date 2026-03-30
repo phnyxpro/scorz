@@ -24,6 +24,8 @@ import {
   Type, Mail, Phone, Hash, Link, Calendar, FileText,
   CheckSquare, AlignLeft, ListOrdered, Upload, PenTool,
   Shield, Layers, CalendarClock, Clock, Repeat, Heading, Pilcrow,
+  Palette, DollarSign, Star, ToggleLeft, EyeOff, Minus, FileCheck, FileEdit,
+  Grid3X3,
 } from "lucide-react";
 
 const FIELD_TYPES: { type: FieldType; label: string; icon: any; category: string }[] = [
