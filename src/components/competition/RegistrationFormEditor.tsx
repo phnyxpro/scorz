@@ -244,7 +244,7 @@ export function RegistrationFormEditor({ competitionId }: Props) {
       field.repeaterLabel = "Add Entry";
       field.columns = 2;
     }
-    if (type === "textarea" || type === "heading" || type === "paragraph") {
+    if (type === "textarea" || type === "heading" || type === "paragraph" || type === "divider" || type === "rich_text" || type === "consent" || type === "signature") {
       field.columns = 2;
     }
     addFieldToSection(sectionId, field);
