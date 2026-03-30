@@ -156,14 +156,8 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
           {/* Time Penalties */}
           {activeCategory === "time" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
-                    <ActiveIcon className="h-3.5 w-3.5" />
-                    {categories[activeCategory].label}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-muted-foreground pt-1">{categories[activeCategory].description}</p>
                 <Dialog open={timeDialogOpen} onOpenChange={setTimeDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="shrink-0 ml-3">
@@ -230,14 +224,8 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
           {/* General Penalties */}
           {activeCategory === "general" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
-                    <ActiveIcon className="h-3.5 w-3.5" />
-                    {categories[activeCategory].label}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-muted-foreground pt-1">{categories[activeCategory].description}</p>
                 <Dialog open={penDialogOpen} onOpenChange={setPenDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="shrink-0 ml-3">
@@ -286,14 +274,8 @@ export function PenaltyConfig({ competitionId }: { competitionId: string }) {
           {/* Disqualification Rules */}
           {activeCategory === "dq" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
-                    <ActiveIcon className="h-3.5 w-3.5" />
-                    {categories[activeCategory].label}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-muted-foreground pt-1">{categories[activeCategory].description}</p>
                 <Dialog open={dqDialogOpen} onOpenChange={setDqDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="shrink-0 ml-3">
