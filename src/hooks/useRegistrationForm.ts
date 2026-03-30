@@ -144,26 +144,52 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
           checkbox: "checkbox", radio: "radio", file: "file",
           signature: "signature", consent: "checkbox", section_header: "heading",
         };
+        // Map flat DB builtin keys → standard builtin keys used by DynamicRegistrationForm
+        const builtinKeyMap: Record<string, string> = {
+          firstName: "full_name",       // will be combined with lastName
+          lastName: "__lastName",        // helper key, merged into full_name
+          email: "email",
+          phone: "phone",
+          location: "location",
+          ageCategory: "age_category",
+          bio: "bio",
+          videoUrl: "performance_video_url",
+          guardianName: "guardian_name",
+          guardianEmail: "guardian_email",
+          guardianPhone: "guardian_phone",
+          level: "__level_selector",
+          category: "__category_selector",
+          subCategory: "__subcategory_selector",
+          subEvent: "__subevent_selector",
+          rulesAcknowledged: "__rules_acknowledgment",
+          contestantSignature: "__contestant_signature",
+          guardianSignature: "__guardian_signature",
+        };
         schema = config.sections
           .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((sec: any) => {
             const sectionFields = enabledFields
               .filter((f: any) => f.section === sec.id)
               .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-              .map((f: any) => ({
-                id: f.id,
-                key: f.key || f.id,
-                label: f.label,
-                type: fieldTypeMap[f.field_type] || "text",
-                required: !!f.required,
-                placeholder: f.help_text || "",
-                description: f.help_text || "",
-                builtin: !!f.is_builtin,
-                columns: f.width === "half" ? 1 : 2,
-                options: f.options?.map((o: any) => typeof o === "string" ? { label: o, value: o } : o),
-                show_on_profile: f.show_on_profile,
-                show_on_scorecard: f.show_on_scorecard,
-              } as FormField));
+              .map((f: any) => {
+                const rawKey = f.key || f.id?.replace("builtin_", "") || f.id;
+                const mappedKey = f.is_builtin ? (builtinKeyMap[rawKey] || rawKey) : rawKey;
+                const isBuiltin = f.is_builtin && BUILTIN_KEYS.has(mappedKey);
+                return {
+                  id: f.id,
+                  key: mappedKey,
+                  label: f.label,
+                  type: fieldTypeMap[f.field_type] || "text",
+                  required: !!f.required,
+                  placeholder: f.help_text || "",
+                  description: f.help_text || "",
+                  builtin: isBuiltin,
+                  columns: f.width === "half" ? 1 : 2,
+                  options: f.options?.map((o: any) => typeof o === "string" ? { label: o, value: o } : o),
+                  show_on_profile: f.show_on_profile,
+                  show_on_scorecard: f.show_on_scorecard,
+                } as FormField;
+              });
             return {
               id: sec.id,
               title: sec.label || sec.id,
