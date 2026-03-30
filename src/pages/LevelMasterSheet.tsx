@@ -501,6 +501,11 @@ export default function LevelMasterSheet() {
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {subEventMap.get(r.subEventId || "") || "—"}
                         </TableCell>
+                        <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {r.durationSeconds != null
+                            ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
+                            : "—"}
+                        </TableCell>
                         {judgeUserIds.map((jId) => {
                           const js = r.judgeScores[jId];
                           return (
