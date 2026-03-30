@@ -1038,7 +1038,7 @@ export function RegistrationsManager({ competitionId }: Props) {
 
       {/* Bulk Advance Dialog */}
       <Dialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <ArrowRight className="h-4 w-4 text-primary" />
