@@ -57,6 +57,7 @@ export const BUILTIN_KEYS = new Set([
   "bio", "performance_video_url", "profile_photo_url",
   "guardian_name", "guardian_email", "guardian_phone",
   "__level_selector", "__subevent_selector", "__time_slot_selector",
+  "__category_selector", "__subcategory_selector",
   "__rules_acknowledgment", "__contestant_signature", "__guardian_signature",
 ]);
 
