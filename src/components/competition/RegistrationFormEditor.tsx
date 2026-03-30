@@ -349,7 +349,8 @@ export function RegistrationFormEditor({ competitionId }: Props) {
                       className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
                     >
                       <f.icon className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="text-xs font-medium truncate">{f.label}</span>
+                      <span className="text-xs font-medium truncate flex-1">{f.label}</span>
+                      <Badge variant="secondary" className="text-[9px] shrink-0 ml-auto">{f.type}</Badge>
                     </button>
                   ))}
                   {BUILTIN_FIELDS.filter(f => !usedBuiltinKeys.has(f.key)).length === 0 && (
