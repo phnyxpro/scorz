@@ -200,17 +200,6 @@ export function GuidelinesPillLayout({
       {/* Penalties */}
       {activeCategory === "penalties" && (
         <div {...swipeHandlers}>
-          <Card className="rounded-xl border-border/50 bg-card/80 mb-4">
-            <CardContent className="p-3 sm:p-5">
-              <div className="space-y-2">
-                <Badge className="rounded-full gap-1.5 px-3 py-1 text-xs">
-                  <ActiveIcon className="h-3.5 w-3.5" />
-                  {categories[activeCategory].label}
-                </Badge>
-                <p className="text-sm text-muted-foreground">{categories[activeCategory].description}</p>
-              </div>
-            </CardContent>
-          </Card>
           <PenaltyConfig competitionId={competitionId} />
         </div>
       )}
