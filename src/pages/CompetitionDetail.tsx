@@ -12,7 +12,7 @@ import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
-import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
+// RegistrationFormsInline used inside RegistrationsPillLayout
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
@@ -26,7 +26,7 @@ import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { RegistrationsPillLayout } from "@/components/competition/RegistrationsPillLayout";
-import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
+// RegistrationsManager used inside RegistrationsPillLayout
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
