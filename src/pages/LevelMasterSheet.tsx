@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
-import { useLevelCompletion, useNextLevel, usePromoteContestants, usePromotionCompleted } from "@/hooks/useLevelAdvancement";
+import { useLevelCompletion, useNextLevel, usePromoteContestants, usePromotionCompleted, useRollbackPromotion } from "@/hooks/useLevelAdvancement";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { useAllSpecialAwardVotes } from "@/components/competition/SpecialAwardsVoting";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
