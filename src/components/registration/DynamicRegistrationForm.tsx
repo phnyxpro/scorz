@@ -48,7 +48,8 @@ export function DynamicRegistrationForm({
   // Validate a section's fields
   const validateSection = useCallback((section: FormSection): boolean => {
     const newErrors: Record<string, string> = {};
-    for (const field of section.fields) {
+    const fields = Array.isArray(section?.fields) ? section.fields : [];
+    for (const field of fields) {
       if (field.showWhen) {
         const depValue = values[field.showWhen.fieldKey];
         if (depValue !== field.showWhen.equals) continue;
