@@ -438,9 +438,7 @@ function FieldEditor({
             onChange={e => onUpdate({ label: e.target.value })}
             className="h-6 text-xs font-medium border-transparent hover:border-border focus:border-border px-1 flex-1"
           />
-          <Badge variant="outline" className="text-[9px] shrink-0">
-            {field.builtin ? "built-in" : field.type}
-          </Badge>
+          <span className="text-[9px] text-muted-foreground shrink-0">{field.builtin ? "built-in" : field.type}</span>
           {field.required && <Badge className="text-[9px] bg-primary/20 text-primary shrink-0">req</Badge>}
         </div>
 
