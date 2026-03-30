@@ -650,7 +650,10 @@ function RepeaterField({ field, value, onChange, error }: {
             )}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {field.repeaterFields?.map(subField => (
+            {field.repeaterFields?.filter(subField => {
+              if (!subField.showWhen) return true;
+              return row[subField.showWhen.fieldKey] === subField.showWhen.equals;
+            }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
                 {subField.type === "textarea" ? (
@@ -660,16 +663,32 @@ function RepeaterField({ field, value, onChange, error }: {
                     onChange={e => updateRow(idx, subField.key, e.target.value)}
                     className="min-h-[60px] resize-none text-sm"
                   />
-                ) : subField.type === "select" ? (
+                ) : subField.type === "select" || subField.type === "radio" ? (
                   <Select value={row[subField.key] || ""} onValueChange={v => updateRow(idx, subField.key, v)}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
                     <SelectContent>
                       {subField.options?.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                ) : subField.type === "checkbox" || subField.type === "toggle" ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Switch checked={!!row[subField.key]} onCheckedChange={v => updateRow(idx, subField.key, v)} />
+                  </div>
+                ) : subField.type === "rating" ? (
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} type="button" onClick={() => updateRow(idx, subField.key, n)}
+                        className={`h-7 w-7 rounded-full border text-xs font-medium transition-all ${
+                          row[subField.key] === n ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+                        }`}
+                      >{n}</button>
+                    ))}
+                  </div>
+                ) : subField.type === "file" ? (
+                  <Input type="file" accept={subField.accept} onChange={e => updateRow(idx, subField.key, e.target.files?.[0])} className="h-8 text-sm" />
                 ) : (
                   <Input
-                    type={subField.type === "number" ? "number" : subField.type === "email" ? "email" : "text"}
+                    type={subField.type === "number" ? "number" : subField.type === "email" ? "email" : subField.type === "phone" ? "tel" : subField.type === "url" ? "url" : subField.type === "date" ? "date" : "text"}
                     placeholder={subField.placeholder}
                     value={row[subField.key] || ""}
                     onChange={e => updateRow(idx, subField.key, e.target.value)}
