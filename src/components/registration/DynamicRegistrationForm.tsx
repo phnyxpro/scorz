@@ -662,6 +662,110 @@ function SubEventSelectorField({ competitionId, levelId, value, onChange, error,
   );
 }
 
+
+function CategorySelectorField({ competitionId, levelId, value, onChange, error, field }: {
+  competitionId: string; levelId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
+}) {
+  const { data: categories } = useQuery({
+    queryKey: ["competition_categories", levelId],
+    enabled: !!levelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", levelId!)
+        .is("parent_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!levelId) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">Select a level first.</p>
+      </div>
+    </div>
+  );
+
+  if (!categories || categories.length === 0) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">No categories available for this level.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+        <SelectContent>
+          {categories.map(cat => (
+            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function SubCategorySelectorField({ levelId, parentCategoryId, value, onChange, error, field }: {
+  levelId?: string; parentCategoryId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
+}) {
+  const { data: subCategories } = useQuery({
+    queryKey: ["competition_categories_children", parentCategoryId],
+    enabled: !!parentCategoryId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("parent_id", parentCategoryId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!parentCategoryId) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">Select a category first.</p>
+      </div>
+    </div>
+  );
+
+  if (!subCategories || subCategories.length === 0) return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}</Label>
+      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
+        <p className="text-xs text-muted-foreground">No sub-categories available.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+        <SelectContent>
+          {subCategories.map(cat => (
+            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 function TimeSlotSelectorField({ subEventId, value, onChange, error, field }: {
   subEventId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
 }) {
