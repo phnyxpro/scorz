@@ -97,6 +97,25 @@ export function DynamicRegistrationForm({
   };
 
   if (mode === "walkin") {
+    const handleWalkinSubmit = () => {
+      // Validate ALL sections, not just the current one
+      let hasErrors = false;
+      for (const section of formSchema) {
+        if (!validateSection(section)) hasErrors = true;
+      }
+      if (hasErrors) return;
+      // Split into builtin and custom
+      const builtinData: Record<string, any> = {};
+      const customData: Record<string, any> = {};
+      for (const [key, val] of Object.entries(values)) {
+        if (BUILTIN_KEYS.has(key)) {
+          builtinData[key] = val;
+        } else {
+          customData[key] = val;
+        }
+      }
+      onSubmit(builtinData, customData);
+    };
     return (
       <WalkinForm
         formSchema={formSchema}
@@ -104,9 +123,10 @@ export function DynamicRegistrationForm({
         values={values}
         errors={errors}
         updateValue={updateValue}
+        validateSection={validateSection}
         rubric={rubric}
         penalties={penalties}
-        onSubmit={handleSubmit}
+        onSubmit={handleWalkinSubmit}
         isSubmitting={isSubmitting}
       />
     );
@@ -184,7 +204,7 @@ export function DynamicRegistrationForm({
 
 // ─── Walkin mode: all sections in a single scrollable view ───
 function WalkinForm({
-  formSchema, competitionId, values, errors, updateValue,
+  formSchema, competitionId, values, errors, updateValue, validateSection,
   rubric, penalties, onSubmit, isSubmitting,
 }: {
   formSchema: FormSchema;
@@ -192,6 +212,7 @@ function WalkinForm({
   values: Record<string, any>;
   errors: Record<string, string>;
   updateValue: (k: string, v: any) => void;
+  validateSection: (section: FormSection) => boolean;
   rubric: any;
   penalties: any;
   onSubmit: () => void;
@@ -253,7 +274,7 @@ function WalkinForm({
           <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
         </Button>
         {currentStep < formSchema.length - 1 ? (
-          <Button type="button" size="sm" onClick={() => setCurrentStep(s => s + 1)}>
+          <Button type="button" size="sm" onClick={() => { if (validateSection(formSchema[currentStep])) setCurrentStep(s => s + 1); }}>
             Continue <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         ) : (

@@ -780,7 +780,7 @@ export function RegistrationsManager({ competitionId }: Props) {
         guardian_signature: builtinData.__guardian_signature,
         guardian_signed_at: builtinData.__guardian_signature ? new Date().toISOString() : undefined,
         status: "approved",
-        custom_data: customData,
+        custom_field_values: customData,
       } as any);
       setShowWalkIn(false);
     } catch (e: any) {
