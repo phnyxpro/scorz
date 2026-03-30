@@ -72,6 +72,8 @@ const BUILTIN_FIELDS: { key: string; label: string; type: FieldType; icon: any }
   { key: "__rules_acknowledgment", label: "Rules Acknowledgment", type: "rules_acknowledgment", icon: Shield },
   { key: "__contestant_signature", label: "Contestant Signature", type: "signature", icon: PenTool },
   { key: "__guardian_signature", label: "Guardian Signature", type: "signature", icon: PenTool },
+  { key: "__category_selector", label: "Category Selector", type: "category_selector", icon: Grid3X3 },
+  { key: "__subcategory_selector", label: "Sub-Category Selector", type: "subcategory_selector", icon: Grid3X3 },
 ];
 
 interface Props {
