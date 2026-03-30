@@ -759,7 +759,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
-        full_name: builtinData.full_name || [builtinData.full_name, builtinData.__lastName].filter(Boolean).join(" ") || builtinData.fullName || "",
+        full_name: (builtinData.__lastName ? [builtinData.full_name, builtinData.__lastName].filter(Boolean).join(" ") : builtinData.full_name) || builtinData.fullName || "",
         email: builtinData.email,
         phone: builtinData.phone,
         location: builtinData.location,
