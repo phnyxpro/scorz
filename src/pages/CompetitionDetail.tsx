@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
+import { GuidelinesPillLayout } from "@/components/competition/GuidelinesPillLayout";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 // RegistrationFormsInline used inside RegistrationsPillLayout
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
@@ -30,7 +31,7 @@ import { RegistrationsPillLayout } from "@/components/competition/RegistrationsP
 import { SlotsManager } from "@/components/competition/SlotsManager";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen, Loader2, ScanSearch, Lock, Check, Scale } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -308,9 +309,7 @@ export default function CompetitionDetail() {
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
             <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
             <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
-            <TabsTrigger value="rules" className="flex-shrink-0">Rules</TabsTrigger>
-            <TabsTrigger value="rubric" className="flex-shrink-0">Rubric</TabsTrigger>
-            <TabsTrigger value="penalties" className="flex-shrink-0">Penalties</TabsTrigger>
+            <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>
             <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
             <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
             <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>
@@ -414,131 +413,28 @@ export default function CompetitionDetail() {
             <LevelsManager competitionId={id!} />
           </TabsContent>
 
-          <TabsContent value="rules">
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base">Competition Rules</CardTitle>
-                </div>
-                <CardDescription>Add an external rules URL or upload a document (PDF, DOCX, TXT) that contestants and judges can reference.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 p-3 sm:p-6">
-                <div>
-                  <label className="text-xs text-muted-foreground">Competition Rules URL</label>
-                  <Input placeholder="https://..." value={rulesUrl} onChange={e => setRulesUrl(e.target.value)} />
-                </div>
-                <DocumentUpload
-                  currentUrl={rulesDocumentUrl || null}
-                  folder={`rules/${id}`}
-                  label="Rules Document"
-                  onUploaded={async (url) => {
-                    setRulesDocumentUrl(url);
-                    // Auto-save and scan
-                    await supabase.from("competitions").update({ rules_document_url: url } as any).eq("id", id!);
-                    scanDocument(url, "rules");
-                  }}
-                  onRemoved={() => setRulesDocumentUrl("")}
-                />
-
-                {/* Rich text editor for rules content */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="text-xs text-muted-foreground">Rules Content</label>
-                    {autoSaveStatus === "saving" && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving…</span>}
-                    {autoSaveStatus === "saved" && <span className="text-[10px] text-secondary flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
-                  </div>
-                  <RichTextEditor
-                    content={rulesContent}
-                    onChange={setRulesContent}
-                    placeholder="Scan a document or type rules content here..."
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleSave} disabled={update.isPending}>
-                    {update.isPending ? "Saving…" : "Save Changes"}
-                  </Button>
-                  {rulesDocumentUrl && (
-                    <Button
-                      variant="outline"
-                      onClick={() => scanDocument(rulesDocumentUrl, "rules")}
-                      disabled={scanningRules}
-                    >
-                      {scanningRules ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScanSearch className="h-4 w-4 mr-1" />}
-                      {scanningRules ? "Scanning…" : "Scan Document"}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rubric">
-            <div className="space-y-4">
-              <Card className="border-border/50 bg-card/80">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Scoring Rubric</CardTitle>
-                  </div>
-                  <CardDescription>Upload a rubric document (PDF, DOCX, TXT) or build scoring criteria below for judges to use during evaluation.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 p-3 sm:p-6">
-                  <DocumentUpload
-                    currentUrl={rubricDocumentUrl || null}
-                    folder={`rubric/${id}`}
-                    label="Rubric Document"
-                    onUploaded={async (url) => {
-                      setRubricDocumentUrl(url);
-                      await supabase.from("competitions").update({ rubric_document_url: url } as any).eq("id", id!);
-                      scanDocument(url, "rubric");
-                    }}
-                    onRemoved={() => setRubricDocumentUrl("")}
-                  />
-
-                  {/* Rich text editor for rubric content */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <label className="text-xs text-muted-foreground">Rubric Content</label>
-                      {autoSaveStatus === "saving" && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving…</span>}
-                      {autoSaveStatus === "saved" && <span className="text-[10px] text-secondary flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
-                    </div>
-                    <RichTextEditor
-                      content={rubricContent}
-                      onChange={setRubricContent}
-                      placeholder="Scan a document or type rubric content here..."
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleSave} disabled={update.isPending}>
-                      {update.isPending ? "Saving…" : "Save Changes"}
-                    </Button>
-                    {rubricDocumentUrl && (
-                      <Button
-                        variant="outline"
-                        onClick={() => scanDocument(rubricDocumentUrl, "rubric")}
-                        disabled={scanningRubric}
-                      >
-                        {scanningRubric ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScanSearch className="h-4 w-4 mr-1" />}
-                        {scanningRubric ? "Scanning…" : "Scan & Extract Criteria"}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              <RubricBuilder competitionId={id!} />
-              <RubricPreview
-                criteria={existingCriteria || []}
-                scaleLabels={(comp as any)?.rubric_scale_labels ?? { min: 1, max: 5, labels: {} }}
-                competitionName={comp?.name || "Competition"}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="penalties">
-            <PenaltyConfig competitionId={id!} />
+          <TabsContent value="guidelines">
+            <GuidelinesPillLayout
+              competitionId={id!}
+              comp={comp}
+              rulesUrl={rulesUrl}
+              setRulesUrl={setRulesUrl}
+              rulesDocumentUrl={rulesDocumentUrl}
+              setRulesDocumentUrl={setRulesDocumentUrl}
+              rulesContent={rulesContent}
+              setRulesContent={setRulesContent}
+              rubricDocumentUrl={rubricDocumentUrl}
+              setRubricDocumentUrl={setRubricDocumentUrl}
+              rubricContent={rubricContent}
+              setRubricContent={setRubricContent}
+              autoSaveStatus={autoSaveStatus}
+              handleSave={handleSave}
+              scanDocument={scanDocument}
+              scanningRules={scanningRules}
+              scanningRubric={scanningRubric}
+              existingCriteria={existingCriteria}
+              updateIsPending={update.isPending}
+            />
           </TabsContent>
 
           <TabsContent value="awards">
