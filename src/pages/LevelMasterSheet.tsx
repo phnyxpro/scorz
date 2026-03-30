@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
 import { calculateMethodScore } from "@/lib/scoring-methods";
-import { useLevelCompletion, useNextLevel, usePromoteContestants } from "@/hooks/useLevelAdvancement";
+import { useLevelCompletion, useNextLevel, usePromoteContestants, usePromotionCompleted } from "@/hooks/useLevelAdvancement";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { useAllSpecialAwardVotes } from "@/components/competition/SpecialAwardsVoting";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
@@ -153,6 +153,7 @@ export default function LevelMasterSheet() {
   const { data: completion } = useLevelCompletion(levelId);
   const { data: nextLevel } = useNextLevel(competitionId, levelSortOrder);
   const promote = usePromoteContestants();
+  const { data: alreadyPromoted } = usePromotionCompleted(competitionId, levelId, nextLevel?.id, advancementCount);
 
   const judgeUserIds = useMemo(() => {
     return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
@@ -309,9 +310,19 @@ export default function LevelMasterSheet() {
             Level Complete — All {completion.totalSubEvents} sub-event{completion.totalSubEvents !== 1 ? "s" : ""} certified
           </div>
           {canPromote && nextLevel && advancementCount != null && advancementCount > 0 && (
-            <Button size="sm" onClick={handlePromote} disabled={promote.isPending} className="gap-1.5">
+            <Button
+              size="sm"
+              onClick={handlePromote}
+              disabled={promote.isPending || !!alreadyPromoted}
+              variant={alreadyPromoted ? "outline" : "default"}
+              className={`gap-1.5 ${alreadyPromoted ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
               <ArrowUp className="h-3.5 w-3.5" />
-              {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+              {alreadyPromoted
+                ? `Promoted to ${nextLevel.name}`
+                : promote.isPending
+                  ? "Promoting…"
+                  : `Promote Top ${advancementCount} to ${nextLevel.name}`}
             </Button>
           )}
         </div>
