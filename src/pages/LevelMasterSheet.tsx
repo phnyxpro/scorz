@@ -10,7 +10,8 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff, Award } from "lucide-react";
+import { ArrowLeft, Trophy, CheckCircle, ArrowUp, Eye, EyeOff, Award, AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LevelSheetExportModal } from "@/components/level-sheet/LevelSheetExportModal";
@@ -310,20 +311,43 @@ export default function LevelMasterSheet() {
             Level Complete — All {completion.totalSubEvents} sub-event{completion.totalSubEvents !== 1 ? "s" : ""} certified
           </div>
           {canPromote && nextLevel && advancementCount != null && advancementCount > 0 && (
-            <Button
-              size="sm"
-              onClick={handlePromote}
-              disabled={promote.isPending || !!alreadyPromoted}
-              variant={alreadyPromoted ? "outline" : "default"}
-              className={`gap-1.5 ${alreadyPromoted ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              <ArrowUp className="h-3.5 w-3.5" />
-              {alreadyPromoted
-                ? `Promoted to ${nextLevel.name}`
-                : promote.isPending
-                  ? "Promoting…"
-                  : `Promote Top ${advancementCount} to ${nextLevel.name}`}
-            </Button>
+            alreadyPromoted ? (
+              <Button
+                size="sm"
+                disabled
+                variant="outline"
+                className="gap-1.5 opacity-60 cursor-not-allowed"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+                Promoted to {nextLevel.name}
+              </Button>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" disabled={promote.isPending} className="gap-1.5">
+                    <ArrowUp className="h-3.5 w-3.5" />
+                    {promote.isPending ? "Promoting…" : `Promote Top ${advancementCount} to ${nextLevel.name}`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      Confirm Promotion
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will promote the top {advancementCount} contestant{advancementCount !== 1 ? "s" : ""} to <span className="font-semibold text-foreground">{nextLevel.name}</span>. This action creates new registrations in the next level and cannot be easily undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handlePromote}>
+                      Yes, Promote
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
           )}
         </div>
       )}
