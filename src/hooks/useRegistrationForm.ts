@@ -149,11 +149,9 @@ export function useUpsertFormConfig() {
   return useMutation({
     mutationFn: async ({ competitionId, formSchema }: { competitionId: string; formSchema: FormSchema }) => {
       const { data, error } = await supabase
-        .from("registration_form_config" as any)
-        .upsert(
-          { competition_id: competitionId, form_schema: formSchema, updated_at: new Date().toISOString() } as any,
-          { onConflict: "competition_id" }
-        )
+        .from("competitions")
+        .update({ registration_form_config: formSchema as any, updated_at: new Date().toISOString() })
+        .eq("id", competitionId)
         .select()
         .single();
       if (error) throw error;
