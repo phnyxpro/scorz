@@ -463,6 +463,7 @@ export default function LevelMasterSheet() {
                     <TableHead className="w-8">#</TableHead>
                     <TableHead>Contestant</TableHead>
                     <TableHead className="text-xs">Sub-Event</TableHead>
+                    <TableHead className="text-center text-xs">Duration</TableHead>
                     {judgeUserIds.map((jId) => (
                       <TableHead key={jId} className="text-center text-xs whitespace-nowrap">
                         {profileMap.get(jId) || "Judge"}
