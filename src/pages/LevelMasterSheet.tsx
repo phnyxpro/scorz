@@ -201,6 +201,11 @@ export default function LevelMasterSheet() {
         const avgFinal = certifiedScores.length > 0
           ? calculateMethodScore(scoringMethod, rawTotals, timePenalty)
           : 0;
+        // Get performance duration (use max across judge scores that have it recorded)
+        const durations = regScores
+          .map((s) => s.performance_duration_seconds)
+          .filter((d): d is number => d != null && d > 0);
+        const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
         return {
           regId: reg.id,
           name: reg.full_name,
@@ -212,6 +217,7 @@ export default function LevelMasterSheet() {
           avgFinal,
           certifiedCount: certifiedScores.length,
           totalJudges: regScores.length,
+          durationSeconds,
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
