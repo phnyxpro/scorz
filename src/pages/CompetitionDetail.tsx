@@ -15,6 +15,7 @@ import { GuidelinesPillLayout } from "@/components/competition/GuidelinesPillLay
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 // RegistrationFormsInline used inside RegistrationsPillLayout
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
+import { UpdatesManager } from "@/components/competition/UpdatesManager";
 import { ScoringSettingsManager } from "@/components/competition/ScoringSettingsManager";
 
 import { BrandingManager } from "@/components/competition/BrandingManager";
