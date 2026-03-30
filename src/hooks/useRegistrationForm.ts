@@ -125,6 +125,8 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
       if (error) throw error;
       if (!data) return null;
       const config = data.registration_form_config as any;
+      console.log("[useRegistrationFormConfig] raw config type:", typeof config, "isArray:", Array.isArray(config));
+      console.log("[useRegistrationFormConfig] raw config:", JSON.stringify(config, null, 2)?.slice(0, 2000));
       // Config might be stored as the schema array directly, or as an object with form_schema key
       let schema: FormSchema | null = null;
       if (Array.isArray(config) && config.length > 0) {
@@ -134,6 +136,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
       } else if (config && typeof config === "object" && Array.isArray((config as any).form_schema)) {
         schema = (config as any).form_schema as FormSchema;
       }
+      console.log("[useRegistrationFormConfig] resolved schema sections:", schema?.length, "first section fields:", schema?.[0]?.fields?.length);
       if (!schema || schema.length === 0) return null;
       return {
         id: data.id,
