@@ -1,43 +1,58 @@
 
 
-## Plan: Dynamic Bulk Upload Wizard with Per-Competition CSV Template
+## Plan: Enhanced Form Builder with New Field Types + SPARK Schools Configuration
 
-### Summary
-Replace the current hardcoded bulk upload with a competition-aware wizard that reads the registration form config (`registration_form_config`) to dynamically generate column mappings and CSV templates. Each competition gets a downloadable CSV template matching its specific form fields.
+### What changes
 
-### Steps
+**1. Add new field types to the form builder**
 
-1. **Rewrite `BulkUploadDialog.tsx` as a 4-step wizard**
-   - **Step 0 (new): Download Template** — Generate and offer a CSV template based on the competition's `registration_form_config`. Template columns come from the form schema: builtin fields map to known column names (Full Name, Email, Phone, Location, Age Category, Guardian Name, Level, Sub-Event, Category, etc.), custom fields use their label. A "Download CSV Template" button triggers a client-side CSV download.
-   - **Step 1: Upload & Map Columns** — User uploads CSV/XLSX. Auto-map columns by fuzzy-matching against the dynamic field list (not the old hardcoded 7 fields). Show mapping dropdowns for each form field. Include level and sub-event selectors that pull from the competition's actual levels/sub-events hierarchy.
-   - **Step 2: Preview & Validate** — Parse rows using the dynamic mapping. Validate required fields from the form config. Show errors, warnings, duplicates. Allow row toggling.
-   - **Step 3: Import** — Insert registrations with both builtin column values and `custom_field_values` JSON for custom fields. Create performance slots if time data exists.
+Add these missing field types to `FIELD_TYPES` array in `RegistrationFormEditor.tsx` and to the `FieldType` union in `useRegistrationForm.ts`:
+- `time` — Time input
+- `color` — Color picker
+- `currency` — Currency/money input
+- `rating` — Star/numeric rating
+- `toggle` — Yes/No toggle switch
+- `hidden` — Hidden field (stores value without display)
+- `divider` — Visual separator line (layout)
+- `signature` — Signature pad (already exists as builtin, make available as custom too)
+- `consent` — Consent checkbox with label text
+- `rich_text` — Rich text / formatted long text
 
-2. **Add CSV template generation utility**
-   - New helper function `generateCsvTemplate(formSchema, levels, subEvents, categories)` in the component or a shared util.
-   - Iterates form sections/fields, skips non-data fields (signatures, rules acknowledgment, headings).
-   - Produces header row with field labels.
-   - Includes 1-2 example rows showing expected format (e.g., "adult" or "minor" for age category, level/sub-event names).
+Also add `category_selector` and `subcategory_selector` to the BUILTIN_FIELDS list so organisers can add category drill-down selectors.
 
-3. **Dynamic field mapping from form config**
-   - Use `useRegistrationFormConfig(competitionId)` to get the form schema.
-   - Build the `FIELD_OPTIONS` list dynamically from the schema instead of the hardcoded 7 fields.
-   - For builtin fields, map CSV values to DB columns directly.
-   - For custom fields, collect values into the `custom_field_values` JSON object on insert.
-   - For level/sub-event/category selectors, resolve names to IDs by matching against fetched levels/sub-events/categories.
+**2. Remove badges from field type buttons in Add Field dialog**
 
-4. **Wire up in RegistrationsManager**
-   - The existing `BulkUploadDialog` is already wired in. No routing changes needed.
-   - Pass the form config data to the dialog or let it fetch internally (it already has `competitionId`).
+In `RegistrationFormEditor.tsx`:
+- Remove the `<Badge>` showing field type next to built-in field buttons (line 353)
+- Remove the `<Badge>` showing "built-in" or type in the FieldEditor row (lines 427-429) — replace with a subtle text indicator or remove entirely
 
-### Technical Details
+**3. Add more sub-field types to the Repeater editor**
 
-- **Template generation**: Pure client-side. Build CSV string from form schema fields, create a Blob, trigger download via `URL.createObjectURL`.
-- **Name resolution**: When CSV contains level/sub-event/category names (strings), resolve them to UUIDs by matching against `competition_levels`, `sub_events`, and `competition_categories` tables.
-- **Custom field storage**: Non-builtin fields get stored in `custom_field_values` JSON column: `{ "field_key": "value", ... }`.
-- **Fallback**: If no form config exists, fall back to `createDefaultFormSchema()` to generate the template and mapping.
+In the `RepeaterFieldEditor` component, expand the allowed sub-field types dropdown to include: `text`, `email`, `number`, `url`, `select`, `textarea`, `phone`, `date`, `checkbox`, `radio`, `file`. Also allow sub-fields to have their own options (for select/radio sub-fields).
 
-### Files Modified
-- `src/components/competition/BulkUploadDialog.tsx` — Major rewrite with dynamic fields, template download, name-to-ID resolution
-- No new files, no DB changes needed
+**4. Add conditional logic support for repeater sub-fields**
+
+Allow repeater sub-fields to have `showWhen` targeting other sub-fields within the same repeater row (e.g., show "Student Name 2" when entry type = "duet"). This uses the existing `showWhen` mechanism scoped to the repeater row context.
+
+**5. Wire up rendering of new field types in DynamicRegistrationForm**
+
+Add rendering cases for `time`, `color`, `currency`, `rating`, `toggle`, `hidden`, `divider`, `consent`, `rich_text` in the `DynamicRegistrationForm` field renderer.
+
+### Files modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useRegistrationForm.ts` | Add new field types to `FieldType` union |
+| `src/components/competition/RegistrationFormEditor.tsx` | Add new FIELD_TYPES entries, remove badges, expand repeater sub-field types, add category/subcategory to BUILTIN_FIELDS |
+| `src/components/registration/DynamicRegistrationForm.tsx` | Add rendering for new field types |
+
+### Technical details
+
+- New `FieldType` values added: `"time" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text"`
+- The `consent` type renders as a checkbox with a configurable label (using `description` field)
+- The `divider` type renders as an `<hr>` separator, non-data
+- The `rating` type renders as a 1-5 number input or star selector
+- The `toggle` type renders as a Switch component
+- All new types are purely client-side form schema additions — no DB migration needed since custom field values are stored in the `custom_field_values` JSON column
+- After this is implemented, the SPARK Secondary Schools form can be configured in the form builder with: School Info section → Applicant Info section → Entries repeater (with category_selector sub-field + performance detail sub-fields + conditional student name fields)
 
