@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, User } from "lucide-react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { User } from "lucide-react";
 import { FormFieldConfig, FormBuilderConfig, getScorecardFields, migrateFormConfig } from "@/lib/form-builder-types";
 
 interface ContestantInfoCardProps {
@@ -10,7 +10,7 @@ interface ContestantInfoCardProps {
 }
 
 /**
- * Collapsible card showing contestant's custom field values
+ * Accordion card showing contestant's custom field values
  * that are flagged as show_on_scorecard in the form config.
  * Used in JudgeScoring and ScoreCard.
  */
@@ -30,27 +30,30 @@ export function ContestantInfoCard({ formConfig, customFieldValues }: Contestant
   if (entries.length === 0) return null;
 
   return (
-    <Collapsible defaultOpen>
-      <Card className="border-border/50 bg-card/80">
-        <CardContent className="pt-3 pb-3">
-          <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold text-foreground flex-1">Contestant Info</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform" />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="mt-2 space-y-1">
-              {entries.map((e, i) => (
-                <div key={i} className="flex justify-between items-baseline text-xs">
-                  <span className="text-muted-foreground">{e.label}</span>
-                  <span className="font-medium text-foreground">{e.value}</span>
-                </div>
-              ))}
-            </div>
-          </CollapsibleContent>
-        </CardContent>
-      </Card>
-    </Collapsible>
+    <Card className="border-border/50 bg-card/80">
+      <CardContent className="pt-0 pb-0">
+        <Accordion type="single" collapsible defaultValue="profile-details">
+          <AccordionItem value="profile-details" className="border-b-0">
+            <AccordionTrigger className="py-3 hover:no-underline">
+              <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                Profile Details
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1 pb-1">
+                {entries.map((e, i) => (
+                  <div key={i} className="flex justify-between items-baseline text-xs">
+                    <span className="text-muted-foreground">{e.label}</span>
+                    <span className="font-medium text-foreground">{e.value}</span>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </CardContent>
+    </Card>
   );
 }
 
