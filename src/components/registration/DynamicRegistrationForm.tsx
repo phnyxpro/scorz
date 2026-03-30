@@ -279,7 +279,8 @@ function SectionRenderer({
   penalties?: any[];
   compact?: boolean;
 }) {
-  const visibleFields = section.fields.filter(f => {
+  const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
+  const visibleFields = sectionFields.filter(f => {
     if (!f.showWhen) return true;
     return values[f.showWhen.fieldKey] === f.showWhen.equals;
   });
