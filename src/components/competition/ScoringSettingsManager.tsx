@@ -70,8 +70,6 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
       });
       setSubEventSettings(settings);
     }
-      setSubEventSettings(settings);
-    }
   }, [allSubEvents]);
 
   const updateScoringMethod = async (value: string) => {
