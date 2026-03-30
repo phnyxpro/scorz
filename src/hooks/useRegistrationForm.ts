@@ -125,18 +125,55 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
       if (error) throw error;
       if (!data) return null;
       const config = data.registration_form_config as any;
-      console.log("[useRegistrationFormConfig] raw config type:", typeof config, "isArray:", Array.isArray(config));
-      console.log("[useRegistrationFormConfig] raw config:", JSON.stringify(config, null, 2)?.slice(0, 2000));
-      // Config might be stored as the schema array directly, or as an object with form_schema key
       let schema: FormSchema | null = null;
-      if (Array.isArray(config) && config.length > 0) {
+
+      // Format A: Already an array of sections with embedded fields (FormSchema)
+      if (Array.isArray(config) && config.length > 0 && config[0].fields) {
         schema = config as FormSchema;
-      } else if (config && typeof config === "object" && Array.isArray((config as any).sections)) {
-        schema = (config as any).sections as FormSchema;
-      } else if (config && typeof config === "object" && Array.isArray((config as any).form_schema)) {
-        schema = (config as any).form_schema as FormSchema;
       }
-      console.log("[useRegistrationFormConfig] resolved schema sections:", schema?.length, "first section fields:", schema?.[0]?.fields?.length);
+      // Format B: { form_schema: FormSchema }
+      else if (config?.form_schema && Array.isArray(config.form_schema)) {
+        schema = config.form_schema as FormSchema;
+      }
+      // Format C: Flat format { sections: [{id, label}], fields: [{section, ...}] }
+      else if (config?.sections && Array.isArray(config.sections) && config?.fields && Array.isArray(config.fields)) {
+        const enabledFields = config.fields.filter((f: any) => f.enabled !== false);
+        const fieldTypeMap: Record<string, FieldType> = {
+          short_text: "text", long_text: "textarea", email: "email", phone: "phone",
+          number: "number", url: "url", date: "date", dropdown: "select",
+          checkbox: "checkbox", radio: "radio", file: "file",
+          signature: "signature", consent: "checkbox", section_header: "heading",
+        };
+        schema = config.sections
+          .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+          .map((sec: any) => {
+            const sectionFields = enabledFields
+              .filter((f: any) => f.section === sec.id)
+              .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              .map((f: any) => ({
+                id: f.id,
+                key: f.key || f.id,
+                label: f.label,
+                type: fieldTypeMap[f.field_type] || "text",
+                required: !!f.required,
+                placeholder: f.help_text || "",
+                description: f.help_text || "",
+                builtin: !!f.is_builtin,
+                columns: f.width === "half" ? 1 : 2,
+                options: f.options?.map((o: any) => typeof o === "string" ? { label: o, value: o } : o),
+                show_on_profile: f.show_on_profile,
+                show_on_scorecard: f.show_on_scorecard,
+              } as FormField));
+            return {
+              id: sec.id,
+              title: sec.label || sec.id,
+              description: sec.description || "",
+              fields: sectionFields,
+            } as FormSection;
+          })
+          .filter((s: FormSection) => s.fields.length > 0);
+      }
+
       if (!schema || schema.length === 0) return null;
       return {
         id: data.id,
