@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard, Zap, X } from "lucide-react";
+import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard, Zap, X, User } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
 import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
 import { ScoreCardExportSection } from "./ScoreCardExportSection";
@@ -37,7 +37,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   const [activeCategory, setActiveCategory] = useState<Category>("active");
   const [scoringMethod, setScoringMethod] = useState<string>("olympic");
-  const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean }>>({});
+  const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean }>>({});
 
   // Active scoring state
   const updateActive = useUpdateActiveScoringConfig();
@@ -60,11 +60,12 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   useEffect(() => {
     if (allSubEvents) {
-      const settings: Record<string, { timer_visible: boolean; comments_visible: boolean }> = {};
+      const settings: Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean }> = {};
       allSubEvents.forEach(se => {
         settings[se.id] = {
           timer_visible: se.timer_visible ?? true,
           comments_visible: se.comments_visible ?? true,
+          profile_details_visible: (se as any).profile_details_visible ?? true,
         };
       });
       setSubEventSettings(settings);
@@ -91,7 +92,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     }
   };
 
-  const updateSubEventSetting = async (subEventId: string, field: 'timer_visible' | 'comments_visible', value: boolean) => {
+  const updateSubEventSetting = async (subEventId: string, field: 'timer_visible' | 'comments_visible' | 'profile_details_visible', value: boolean) => {
     try {
       setSubEventSettings(prev => ({
         ...prev,
@@ -317,12 +318,12 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <Label htmlFor={`timer-${subEvent.id}`} className="text-sm font-medium">
-                              Timer Section
+                              Timer
                             </Label>
                           </div>
                           <Switch
@@ -336,9 +337,25 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
                         <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
                           <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={`profile-${subEvent.id}`} className="text-sm font-medium">
+                              Profile Details
+                            </Label>
+                          </div>
+                          <Switch
+                            id={`profile-${subEvent.id}`}
+                            checked={subEventSettings[subEvent.id]?.profile_details_visible ?? true}
+                            onCheckedChange={(checked) =>
+                              updateSubEventSetting(subEvent.id, 'profile_details_visible', checked)
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                          <div className="flex items-center gap-2">
                             <MessageSquare className="h-4 w-4 text-muted-foreground" />
                             <Label htmlFor={`comments-${subEvent.id}`} className="text-sm font-medium">
-                              Comments Section
+                              Comments
                             </Label>
                           </div>
                           <Switch

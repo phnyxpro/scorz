@@ -1624,6 +1624,7 @@ export type Database = {
           location: string | null
           max_tickets: number | null
           name: string
+          profile_details_visible: boolean
           start_time: string | null
           status: string
           ticket_price: number | null
@@ -1646,6 +1647,7 @@ export type Database = {
           location?: string | null
           max_tickets?: number | null
           name: string
+          profile_details_visible?: boolean
           start_time?: string | null
           status?: string
           ticket_price?: number | null
@@ -1668,6 +1670,7 @@ export type Database = {
           location?: string | null
           max_tickets?: number | null
           name?: string
+          profile_details_visible?: boolean
           start_time?: string | null
           status?: string
           ticket_price?: number | null
