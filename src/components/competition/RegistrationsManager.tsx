@@ -424,6 +424,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [filterLevelId, setFilterLevelId] = useState("all");
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
   const [filterAge, setFilterAge] = useState("all");
   const [sortField, setSortField] = useState<SortField>("sort_order");
