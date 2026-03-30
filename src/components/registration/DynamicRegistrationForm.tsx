@@ -48,7 +48,8 @@ export function DynamicRegistrationForm({
   // Validate a section's fields
   const validateSection = useCallback((section: FormSection): boolean => {
     const newErrors: Record<string, string> = {};
-    for (const field of section.fields) {
+    const fields = Array.isArray(section?.fields) ? section.fields : [];
+    for (const field of fields) {
       if (field.showWhen) {
         const depValue = values[field.showWhen.fieldKey];
         if (depValue !== field.showWhen.equals) continue;
@@ -279,7 +280,8 @@ function SectionRenderer({
   penalties?: any[];
   compact?: boolean;
 }) {
-  const visibleFields = section.fields.filter(f => {
+  const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
+  const visibleFields = sectionFields.filter(f => {
     if (!f.showWhen) return true;
     return values[f.showWhen.fieldKey] === f.showWhen.equals;
   });
