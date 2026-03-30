@@ -97,6 +97,25 @@ export function DynamicRegistrationForm({
   };
 
   if (mode === "walkin") {
+    const handleWalkinSubmit = () => {
+      // Validate ALL sections, not just the current one
+      let hasErrors = false;
+      for (const section of formSchema) {
+        if (!validateSection(section)) hasErrors = true;
+      }
+      if (hasErrors) return;
+      // Split into builtin and custom
+      const builtinData: Record<string, any> = {};
+      const customData: Record<string, any> = {};
+      for (const [key, val] of Object.entries(values)) {
+        if (BUILTIN_KEYS.has(key)) {
+          builtinData[key] = val;
+        } else {
+          customData[key] = val;
+        }
+      }
+      onSubmit(builtinData, customData);
+    };
     return (
       <WalkinForm
         formSchema={formSchema}
@@ -104,9 +123,10 @@ export function DynamicRegistrationForm({
         values={values}
         errors={errors}
         updateValue={updateValue}
+        validateSection={validateSection}
         rubric={rubric}
         penalties={penalties}
-        onSubmit={handleSubmit}
+        onSubmit={handleWalkinSubmit}
         isSubmitting={isSubmitting}
       />
     );
