@@ -670,24 +670,100 @@ function SubEventSelectorField({ competitionId, levelId, value, onChange, error,
 }
 
 
-function CategorySelectorField({ competitionId, levelId, value, onChange, error, field }: {
-  competitionId: string; levelId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
+// ─── Recursive Category Tree Selector ───────────────────
+// Drills down through arbitrary depth of competition_categories hierarchy
+
+function CategoryLevelPicker({ parentId, levelId, depth, values, updateValue }: {
+  parentId: string | null;
+  levelId: string;
+  depth: number;
+  values: Record<string, any>;
+  updateValue: (k: string, v: any) => void;
 }) {
-  const { data: categories } = useQuery({
-    queryKey: ["competition_categories", levelId],
+  const { data: children } = useQuery({
+    queryKey: ["competition_categories_children", parentId || `root_${levelId}`],
     enabled: !!levelId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("competition_categories")
         .select("*")
-        .eq("level_id", levelId!)
-        .is("parent_id", null)
+        .eq("level_id", levelId)
         .order("sort_order");
+      if (parentId) {
+        query = query.eq("parent_id", parentId);
+      } else {
+        query = query.is("parent_id", null);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
   });
 
+  if (!children || children.length === 0) return null;
+
+  const stateKey = `__cat_depth_${depth}`;
+  const selectedId = values[stateKey] || "";
+
+  const handleChange = (id: string) => {
+    updateValue(stateKey, id);
+    // Clear all deeper selections
+    for (let d = depth + 1; d < 10; d++) {
+      const key = `__cat_depth_${d}`;
+      if (values[key]) updateValue(key, "");
+      else break;
+    }
+    // Always update the canonical keys for submission
+    if (depth === 0) {
+      updateValue("__category_selector", id);
+      updateValue("selectedCategoryId", id);
+      updateValue("__subcategory_selector", "");
+      updateValue("selectedSubCategoryId", "");
+    } else if (depth === 1) {
+      updateValue("__subcategory_selector", id);
+      updateValue("selectedSubCategoryId", id);
+    }
+    // For deeper levels, store in a generic key
+    updateValue("__deepest_category_id", id);
+  };
+
+  // Determine label based on depth
+  const labels = ["Category", "Sub-Category", "Division", "Age Group", "Selection"];
+  const label = labels[depth] || `Level ${depth + 1}`;
+
+  return (
+    <>
+      <div className="space-y-1.5">
+        <Label className="text-xs">{label}</Label>
+        <Select value={selectedId} onValueChange={handleChange}>
+          <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+          <SelectContent>
+            {children.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {selectedId && (
+        <CategoryLevelPicker
+          parentId={selectedId}
+          levelId={levelId}
+          depth={depth + 1}
+          values={values}
+          updateValue={updateValue}
+        />
+      )}
+    </>
+  );
+}
+
+function CategoryTreeSelector({ levelId, values, updateValue, error, field }: {
+  levelId?: string;
+  values: Record<string, any>;
+  updateValue: (k: string, v: any) => void;
+  error?: string;
+  field: FormField;
+}) {
   if (!levelId) return (
     <div className="space-y-1.5">
       <Label className="text-xs">{field.label}</Label>
@@ -697,81 +773,20 @@ function CategorySelectorField({ competitionId, levelId, value, onChange, error,
     </div>
   );
 
-  if (!categories || categories.length === 0) return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{field.label}</Label>
-      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
-        <p className="text-xs text-muted-foreground">No categories available for this level.</p>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
-      <Select value={value || ""} onValueChange={onChange}>
-        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-        <SelectContent>
-          {categories.map(cat => (
-            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="space-y-3">
+      <CategoryLevelPicker
+        parentId={null}
+        levelId={levelId}
+        depth={0}
+        values={values}
+        updateValue={updateValue}
+      />
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
 
-function SubCategorySelectorField({ levelId, parentCategoryId, value, onChange, error, field }: {
-  levelId?: string; parentCategoryId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
-}) {
-  const { data: subCategories } = useQuery({
-    queryKey: ["competition_categories_children", parentCategoryId],
-    enabled: !!parentCategoryId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competition_categories")
-        .select("*")
-        .eq("parent_id", parentCategoryId!)
-        .order("sort_order");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  if (!parentCategoryId) return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{field.label}</Label>
-      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
-        <p className="text-xs text-muted-foreground">Select a category first.</p>
-      </div>
-    </div>
-  );
-
-  if (!subCategories || subCategories.length === 0) return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{field.label}</Label>
-      <div className="py-6 text-center bg-muted/20 rounded-lg border border-dashed border-border">
-        <p className="text-xs text-muted-foreground">No sub-categories available.</p>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{field.label}{field.required && " *"}</Label>
-      <Select value={value || ""} onValueChange={onChange}>
-        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-        <SelectContent>
-          {subCategories.map(cat => (
-            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 function TimeSlotSelectorField({ subEventId, value, onChange, error, field }: {
   subEventId?: string; value: any; onChange: (v: string) => void; error?: string; field: FormField;
