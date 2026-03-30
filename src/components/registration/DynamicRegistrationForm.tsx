@@ -212,6 +212,7 @@ function WalkinForm({
   values: Record<string, any>;
   errors: Record<string, string>;
   updateValue: (k: string, v: any) => void;
+  validateSection: (section: FormSection) => boolean;
   rubric: any;
   penalties: any;
   onSubmit: () => void;
