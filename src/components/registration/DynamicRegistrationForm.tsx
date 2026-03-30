@@ -515,6 +515,95 @@ function FieldRenderer({
         </div>
       );
 
+    case "time":
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+          <Input type="time" value={value || ""} onChange={e => onChange(e.target.value)} />
+          {field.description && <p className="text-[10px] text-muted-foreground italic">{field.description}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
+        </div>
+      );
+
+    case "color":
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+          <Input type="color" value={value || "#000000"} onChange={e => onChange(e.target.value)} className="h-10 w-16 p-1 cursor-pointer" />
+          {error && <p className="text-xs text-destructive">{error}</p>}
+        </div>
+      );
+
+    case "currency":
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+            <Input type="number" step="0.01" min={0} placeholder="0.00" value={value || ""} onChange={e => onChange(e.target.value)} className="pl-7" />
+          </div>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+        </div>
+      );
+
+    case "rating":
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} type="button" onClick={() => onChange(n)}
+                className={`h-8 w-8 rounded-full border text-sm font-medium transition-all ${
+                  value === n ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+                }`}
+              >{n}</button>
+            ))}
+          </div>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+        </div>
+      );
+
+    case "toggle":
+      return (
+        <div className="flex items-center gap-3 pt-1">
+          <Switch checked={!!value} onCheckedChange={v => onChange(v)} />
+          <Label className="text-xs cursor-pointer">{field.label}{field.required && " *"}</Label>
+          {error && <p className="text-xs text-destructive ml-2">{error}</p>}
+        </div>
+      );
+
+    case "hidden":
+      return null;
+
+    case "divider":
+      return <Separator className="my-2" />;
+
+    case "consent":
+      return (
+        <div className="flex items-start gap-2 pt-1">
+          <Checkbox id={field.id} checked={!!value} onCheckedChange={v => onChange(!!v)} />
+          <Label htmlFor={field.id} className="text-xs text-muted-foreground leading-snug cursor-pointer">
+            {field.description || field.label}{field.required && " *"}
+          </Label>
+          {error && <p className="text-xs text-destructive ml-6">{error}</p>}
+        </div>
+      );
+
+    case "rich_text":
+      return (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{field.label}{field.required && " *"}</Label>
+          <Textarea
+            placeholder={field.placeholder}
+            value={value || ""}
+            onChange={e => onChange(e.target.value)}
+            className="min-h-[120px]"
+          />
+          {field.description && <p className="text-[10px] text-muted-foreground italic">{field.description}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
+        </div>
+      );
+
     default:
       return <p className="text-xs text-muted-foreground">Unknown field type: {field.type}</p>;
   }
