@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LevelsManager } from "@/components/competition/LevelsManager";
 import { RubricBuilder } from "@/components/competition/RubricBuilder";
 import { PenaltyConfig } from "@/components/competition/PenaltyConfig";
+import { GuidelinesPillLayout } from "@/components/competition/GuidelinesPillLayout";
 import { SubEventAssignments } from "@/components/competition/SubEventAssignments";
 // RegistrationFormsInline used inside RegistrationsPillLayout
 import { SponsorsManager } from "@/components/competition/SponsorsManager";
