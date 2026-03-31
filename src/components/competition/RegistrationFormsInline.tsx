@@ -290,19 +290,32 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     }
   };
 
-  // Group fields by section
+  // Group fields by section (exclude repeater children — they render inside their parent)
   const fieldsBySection = useMemo(() => {
     const map: Record<string, FormFieldConfig[]> = {};
     for (const s of sections) {
       map[s.id] = [];
     }
     for (const f of config.fields) {
+      if (f.parent_repeater_id) continue; // skip children; they render nested
       const sec = f.section || "custom";
       if (!map[sec]) map[sec] = [];
       map[sec].push(f);
     }
     return map;
   }, [config.fields, sections]);
+
+  // Index repeater children by parent id
+  const childrenByRepeater = useMemo(() => {
+    const map: Record<string, FormFieldConfig[]> = {};
+    for (const f of config.fields) {
+      if (f.parent_repeater_id) {
+        if (!map[f.parent_repeater_id]) map[f.parent_repeater_id] = [];
+        map[f.parent_repeater_id].push(f);
+      }
+    }
+    return map;
+  }, [config.fields]);
 
   return (
     <div className="space-y-4">
