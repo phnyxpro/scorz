@@ -63,6 +63,8 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   divider: Minus,
   rich_text: FileText,
   repeater: Repeat,
+  category_selector: ListOrdered,
+  subcategory_selector: ListOrdered,
 };
 
 const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
