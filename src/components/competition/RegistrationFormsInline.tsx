@@ -15,14 +15,14 @@ import {
   User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
   RadioTower, CalendarDays, Edit2, Layers, Clock, Palette, DollarSign, Star, ToggleLeft, EyeOff,
-  Minus, FileText, Repeat,
+  Minus, FileText, Repeat, FileInput,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import {
   FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
-  FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections,
+  FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections, FORM_TEMPLATES,
 } from "@/lib/form-builder-types";
 
 // Re-export for backward compat with ContestantRegistration import
@@ -114,6 +114,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [editingSection, setEditingSection] = useState<SectionConfig | null>(null);
   const [sectionName, setSectionName] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   useEffect(() => {
     if (competition?.registration_form_config) {
@@ -305,6 +306,9 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           Configure sections and fields for the registration form.
         </p>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
+            <FileInput className="h-3 w-3" /> Load Template
+          </Button>
           <Button variant="outline" size="sm" onClick={handleAddSection} className="gap-1.5 text-xs h-7">
             <Plus className="h-3 w-3" /> Add Section
           </Button>
@@ -495,6 +499,40 @@ export function RegistrationFormsInline({ competitionId }: Props) {
             <Button variant="destructive" size="sm" onClick={() => deleteSectionId && handleDeleteSection(deleteSectionId)}>
               Delete Section
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Template Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Load Form Template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Choose a template to replace the current form configuration. You can customise it after loading.
+          </p>
+          <div className="space-y-2 mt-2">
+            {FORM_TEMPLATES.map(t => (
+              <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
+                onClick={() => {
+                  const built = t.build();
+                  setConfig(built);
+                  setDirty(true);
+                  setSelectedFieldId(null);
+                  setTemplateDialogOpen(false);
+                  toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                }}
+              >
+                <CardContent className="p-3">
+                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
