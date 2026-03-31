@@ -14,7 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
-  RadioTower, CalendarDays, Edit2, Layers,
+  RadioTower, CalendarDays, Edit2, Layers, Clock, Palette, DollarSign, Star, ToggleLeft, EyeOff,
+  Minus, FileText, Repeat,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +47,7 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   url: Link,
   number: Hash,
   date: CalendarDays,
+  time: Clock,
   dropdown: ListOrdered,
   radio: RadioTower,
   checkbox: CheckSquare,
@@ -53,6 +55,22 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   signature: PenLine,
   consent: FileCheck,
   section_header: Heading,
+  color: Palette,
+  currency: DollarSign,
+  rating: Star,
+  toggle: ToggleLeft,
+  hidden: EyeOff,
+  divider: Minus,
+  rich_text: FileText,
+  repeater: Repeat,
+};
+
+const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
+  Input: ["short_text", "long_text", "email", "phone", "url", "number", "date", "time", "currency"],
+  Choice: ["dropdown", "radio", "checkbox", "toggle", "rating"],
+  Media: ["file"],
+  Advanced: ["signature", "consent", "hidden", "repeater"],
+  Layout: ["section_header", "divider", "rich_text", "color"],
 };
 
 const SECTION_ICON_MAP: Record<string, React.ElementType> = {
@@ -402,29 +420,36 @@ export function RegistrationFormsInline({ competitionId }: Props) {
 
       {/* Add Field Dialog */}
       <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>Add Field</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-2 py-2">
-            {(Object.entries(FIELD_TYPE_LABELS) as [FormFieldConfig["field_type"], string][])
-              .filter(([t]) => !["signature", "consent"].includes(t))
-              .map(([type, label]) => {
-                const Icon = FIELD_TYPE_ICONS[type] || Type;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => addField(type, addFieldSection)}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 text-sm transition-colors text-left"
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="flex-1">{label}</span>
-                    <Badge variant="secondary" className="text-[9px] shrink-0">{type.replace("_", " ")}</Badge>
-                  </button>
-                );
-              })}
-          </div>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 pr-2">
+              {Object.entries(FIELD_TYPE_CATEGORIES).map(([category, types]) => (
+                <div key={category}>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{category}</h4>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {types.map((type) => {
+                      const label = FIELD_TYPE_LABELS[type as FormFieldConfig["field_type"]] || type;
+                      const Icon = FIELD_TYPE_ICONS[type] || Type;
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => addField(type as FormFieldConfig["field_type"], addFieldSection)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
+                        >
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 

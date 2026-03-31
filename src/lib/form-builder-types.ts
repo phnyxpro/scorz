@@ -3,7 +3,7 @@
 export interface FormFieldConfig {
   id: string;
   key?: string; // for built-in fields (e.g. "firstName", "email")
-  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header";
+  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "time" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "rich_text" | "repeater";
   label: string;
   placeholder?: string;
   help_text?: string;
@@ -130,6 +130,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   url: "URL",
   number: "Number",
   date: "Date",
+  time: "Time",
   dropdown: "Dropdown",
   radio: "Radio",
   checkbox: "Checkbox",
@@ -137,6 +138,14 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   signature: "Signature",
   consent: "Consent",
   section_header: "Section Header",
+  color: "Color Picker",
+  currency: "Currency",
+  rating: "Rating",
+  toggle: "Toggle",
+  hidden: "Hidden",
+  divider: "Divider",
+  rich_text: "Rich Text",
+  repeater: "Repeater",
 };
 
 export const SECTION_LABELS: Record<string, string> = {
