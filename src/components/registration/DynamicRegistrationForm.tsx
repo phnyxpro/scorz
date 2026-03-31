@@ -657,13 +657,20 @@ function RepeaterField({ field, value, onChange, error }: {
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
-                {subField.type === "category_selector" ? (
+                {subField.type === "level_selector" ? (
+                  <RepeaterLevelButtons
+                    row={row} idx={idx} subField={subField}
+                    competitionId={(field as any)._competitionId || ""}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "category_selector" ? (
                   <RepeaterCategoryButtons
                     row={row} idx={idx} subField={subField}
                     competitionId={(field as any)._competitionId || ""}
                     levelId={row.__level_id || ""}
                     updateRow={updateRow}
                   />
+                
                 ) : subField.type === "subcategory_selector" ? (
                   <RepeaterSubCategoryButtons
                     row={row} idx={idx} subField={subField}
