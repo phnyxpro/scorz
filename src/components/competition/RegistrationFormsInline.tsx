@@ -498,121 +498,37 @@ export function RegistrationFormsInline({ competitionId }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* Left: Sections & Fields Canvas */}
-        <div className="space-y-3">
-          {sections.map((section, sIdx) => {
-            const Icon = getSectionIcon(section);
-            const sectionFields = fieldsBySection[section.id] || [];
-
-            return (
-              <Collapsible key={section.id} defaultOpen>
-                <Card className="border-border/40 bg-muted/10">
-                  <CardContent className="p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center gap-2 w-full">
-                      <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
-                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
-                        <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
-                      </CollapsibleTrigger>
-
-                      {/* Section action buttons */}
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {sIdx > 0 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "up")}>
-                            <ChevronUp className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {sIdx < sections.length - 1 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "down")}>
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditSection(section)}>
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        {!section.is_builtin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteSectionId(section.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs gap-1"
-                          onClick={() => { setAddFieldSection(section.id); setAddFieldRepeaterId(null); setAddFieldOpen(true); }}
-                        >
-                          <Plus className="h-3 w-3" /> Field
-                        </Button>
-                      </div>
-                    </div>
-
-                    <CollapsibleContent className="space-y-1.5">
-                      {sectionFields.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic py-3 text-center">
-                          No fields in this section
-                        </p>
-                      ) : (
-                        sectionFields.map((field, idx) => (
-                          <div key={field.id}>
-                            <FieldCard
-                              field={field}
-                              isSelected={selectedFieldId === field.id}
-                              onClick={() => setSelectedFieldId(field.id)}
-                              onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                              onRemove={() => removeField(field.id)}
-                              onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                              onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                            />
-                            {/* Repeater children */}
-                            {field.field_type === "repeater" && (
-                              <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
-                                {(childrenByRepeater[field.id] || []).length === 0 ? (
-                                  <p className="text-[10px] text-muted-foreground italic py-1.5">
-                                    No fields inside this repeater — add fields that will repeat with each entry.
-                                  </p>
-                                ) : (
-                                  (childrenByRepeater[field.id] || []).map((child, cIdx) => (
-                                    <FieldCard
-                                      key={child.id}
-                                      field={child}
-                                      isSelected={selectedFieldId === child.id}
-                                      onClick={() => setSelectedFieldId(child.id)}
-                                      onToggleEnabled={(v) => updateField(child.id, { enabled: v })}
-                                      onRemove={() => removeField(child.id)}
-                                      onMoveUp={cIdx > 0 ? () => moveField(child.id, "up") : undefined}
-                                      onMoveDown={cIdx < (childrenByRepeater[field.id] || []).length - 1 ? () => moveField(child.id, "down") : undefined}
-                                    />
-                                  ))
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
-                                  onClick={() => {
-                                    setAddFieldSection(field.section || "custom");
-                                    setAddFieldRepeaterId(field.id);
-                                    setAddFieldOpen(true);
-                                  }}
-                                >
-                                  <Plus className="h-3 w-3" /> Add Field to Repeater
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </CollapsibleContent>
-                  </CardContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
-        </div>
+        <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleSectionDragEnd}>
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {sections.map((section) => {
+                const sectionFields = fieldsBySection[section.id] || [];
+                return (
+                  <SortableSectionCard
+                    key={section.id}
+                    section={section}
+                    sectionFields={sectionFields}
+                    childrenByRepeater={childrenByRepeater}
+                    selectedFieldId={selectedFieldId}
+                    dndSensors={dndSensors}
+                    onSelectField={setSelectedFieldId}
+                    onToggleField={(id, v) => updateField(id, { enabled: v })}
+                    onRemoveField={removeField}
+                    onEditSection={handleEditSection}
+                    onDeleteSection={setDeleteSectionId}
+                    onAddField={(sectionId, repeaterId) => {
+                      setAddFieldSection(sectionId);
+                      setAddFieldRepeaterId(repeaterId || null);
+                      setAddFieldOpen(true);
+                    }}
+                    onFieldDragEnd={(e) => handleFieldDragEnd(e, section.id)}
+                    onRepeaterChildDragEnd={(e, repeaterId) => handleFieldDragEnd(e, section.id, repeaterId)}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Right: Properties Panel */}
         <div className="lg:sticky lg:top-4 lg:self-start">
