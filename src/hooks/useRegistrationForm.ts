@@ -285,7 +285,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                     // Resolve the target field's mapped key using our pre-built lookup
                     const targetKey = idToKey.get(sw.field_id) || sw.field_id;
                     if (sw.operator === "equals" || sw.operator === "contains") {
-                      c.showWhen = { fieldKey: targetKey, equals: sw.value };
+                      c.showWhen = { fieldKey: targetKey, operator: sw.operator, value: sw.value };
                     }
                   }
                   return c;
