@@ -479,6 +479,7 @@ function FieldRenderer({
           value={value || []}
           onChange={onChange}
           error={error}
+          competitionId={competitionId}
         />
       );
 
