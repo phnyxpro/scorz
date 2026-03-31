@@ -243,6 +243,12 @@ function buildSparkTemplate(): FormBuilderConfig {
 
     // Repeater child fields
     {
+      id: "spark_entry_level", field_type: "level_selector", label: "Level",
+      enabled: true, required: true, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
       id: "spark_entry_category", field_type: "category_selector", label: "Category",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",

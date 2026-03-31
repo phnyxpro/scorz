@@ -657,13 +657,20 @@ function RepeaterField({ field, value, onChange, error }: {
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
-                {subField.type === "category_selector" ? (
+                {subField.type === "level_selector" ? (
+                  <RepeaterLevelButtons
+                    row={row} idx={idx} subField={subField}
+                    competitionId={(field as any)._competitionId || ""}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "category_selector" ? (
                   <RepeaterCategoryButtons
                     row={row} idx={idx} subField={subField}
                     competitionId={(field as any)._competitionId || ""}
                     levelId={row.__level_id || ""}
                     updateRow={updateRow}
                   />
+                
                 ) : subField.type === "subcategory_selector" ? (
                   <RepeaterSubCategoryButtons
                     row={row} idx={idx} subField={subField}
@@ -738,6 +745,44 @@ function RepeaterField({ field, value, onChange, error }: {
 }
 
 // ─── Repeater Sub-Components ────────────────────────────
+
+function RepeaterLevelButtons({ row, idx, subField, competitionId, updateRow }: {
+  row: Record<string, any>; idx: number; subField: FormField;
+  competitionId: string; updateRow: (idx: number, key: string, val: any) => void;
+}) {
+  const { data: levels } = useLevels(competitionId);
+
+  if (!levels || levels.length === 0) {
+    return <p className="text-[10px] text-muted-foreground">No levels configured.</p>;
+  }
+
+  const selected = row.__level_id || row[subField.key] || "";
+
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1">
+      {levels.map(l => (
+        <button
+          key={l.id}
+          type="button"
+          onClick={() => {
+            updateRow(idx, subField.key, l.id);
+            updateRow(idx, "__level_id", l.id);
+            // Clear dependent selectors when level changes
+            updateRow(idx, "spark_entry_category", "");
+            updateRow(idx, "spark_entry_sub_category", "");
+          }}
+          className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+            selected === l.id
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+          }`}
+        >
+          {l.name}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function RepeaterCategoryButtons({ row, idx, subField, competitionId, levelId, updateRow }: {
   row: Record<string, any>; idx: number; subField: FormField;
