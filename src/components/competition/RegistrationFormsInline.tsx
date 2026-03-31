@@ -478,35 +478,45 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       </div>
 
       {/* Add Field Dialog */}
-      <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
+      <Dialog open={addFieldOpen} onOpenChange={(open) => { setAddFieldOpen(open); if (!open) setAddFieldRepeaterId(null); }}>
         <DialogContent className="max-w-md max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle>Add Field</DialogTitle>
+            <DialogTitle>{addFieldRepeaterId ? "Add Field to Repeater" : "Add Field"}</DialogTitle>
+            {addFieldRepeaterId && (
+              <p className="text-xs text-muted-foreground">This field will repeat with each entry.</p>
+            )}
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 pr-2">
-              {Object.entries(FIELD_TYPE_CATEGORIES).map(([category, types]) => (
-                <div key={category}>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{category}</h4>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {types.map((type) => {
-                      const label = FIELD_TYPE_LABELS[type as FormFieldConfig["field_type"]] || type;
-                      const Icon = FIELD_TYPE_ICONS[type] || Type;
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => addField(type as FormFieldConfig["field_type"], addFieldSection)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-xs font-medium">{label}</span>
-                        </button>
-                      );
-                    })}
+              {Object.entries(FIELD_TYPE_CATEGORIES).map(([category, types]) => {
+                // Don't allow nested repeaters
+                const filteredTypes = addFieldRepeaterId
+                  ? types.filter(t => t !== "repeater" && t !== "section_header" && t !== "divider")
+                  : types;
+                if (filteredTypes.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{category}</h4>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {filteredTypes.map((type) => {
+                        const label = FIELD_TYPE_LABELS[type as FormFieldConfig["field_type"]] || type;
+                        const Icon = FIELD_TYPE_ICONS[type] || Type;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => addField(type as FormFieldConfig["field_type"], addFieldSection, addFieldRepeaterId)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </DialogContent>
