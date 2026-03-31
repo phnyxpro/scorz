@@ -662,7 +662,11 @@ function RepeaterField({ field, value, onChange, error, competitionId }: {
             {field.repeaterFields?.filter(subField => {
               if (!subField.showWhen) return true;
               const depVal = row[subField.showWhen.fieldKey] || "";
-              return depVal === subField.showWhen.equals || depVal.includes(subField.showWhen.equals);
+              const depNameVal = row[`${subField.showWhen.fieldKey}__name`] || "";
+              const target = subField.showWhen.equals;
+              return depVal === target || depNameVal === target ||
+                (typeof depVal === "string" && depVal.includes(target)) ||
+                (typeof depNameVal === "string" && depNameVal.includes(target));
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
@@ -826,6 +830,8 @@ function RepeaterCategoryButtons({ row, idx, subField, competitionId, levelId, u
           type="button"
           onClick={() => {
             updateRow(idx, subField.key, cat.id);
+            // Also store name so showWhen conditional logic can match by name
+            updateRow(idx, `${subField.key}__name`, cat.name);
             // Clear sub-category when category changes
             updateRow(idx, "spark_entry_sub_category", "");
           }}
