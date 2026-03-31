@@ -114,7 +114,8 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
     repeater: "repeater", category_selector: "category_selector",
     subcategory_selector: "subcategory_selector", rating: "rating",
     toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
-    time: "time", color: "color", currency: "currency",
+    time: "time", color: "color", currency: "currency", level_selector: "level_selector",
+    name_list: "name_list",
   };
   const builtinKeyMap: Record<string, string> = {
     firstName: "full_name", lastName: "__lastName", email: "email", phone: "phone",
