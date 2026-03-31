@@ -238,7 +238,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   "__guardian_signature": "signature",
                 };
                 const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
-                return {
+                const built: FormField = {
                   id: f.id,
                   key: mappedKey,
                   label: f.label,
@@ -252,6 +252,17 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   show_on_profile: f.show_on_profile,
                   show_on_scorecard: f.show_on_scorecard,
                 } as FormField;
+                // Map top-level conditional logic
+                if (f.logic?.show_when) {
+                  const sw = f.logic.show_when;
+                  const targetField = enabledFields.find((tf: any) => tf.id === sw.field_id);
+                  if (targetField) {
+                    const tRawKey = targetField.key || targetField.id?.replace("builtin_", "") || targetField.id;
+                    const tMappedKey = targetField.is_builtin ? (builtinKeyMap[tRawKey] || tRawKey) : tRawKey;
+                    built.showWhen = { fieldKey: tMappedKey, operator: sw.operator || "equals", value: sw.value };
+                  }
+                }
+                return built;
               });
             return {
               id: sec.id,

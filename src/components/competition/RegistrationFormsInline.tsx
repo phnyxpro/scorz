@@ -157,6 +157,15 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
             columns: f.width === "half" ? 1 : 2,
             options: f.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
           };
+          // Map top-level conditional logic
+          if (f.logic?.show_when) {
+            const sw = f.logic.show_when;
+            const target = enabledFields.find(tf => tf.id === sw.field_id);
+            if (target) {
+              const targetKey = target.key || target.id;
+              field.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
+            }
+          }
           // Attach repeater children
           if (f.field_type === "repeater") {
             const children = enabledFields
