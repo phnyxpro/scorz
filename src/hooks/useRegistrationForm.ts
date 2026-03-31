@@ -49,6 +49,11 @@ export interface FormField {
   showWhen?: ShowWhenCondition;
 }
 
+/** Normalize a string for fuzzy comparison: lowercase, trim, collapse whitespace, strip punctuation */
+function norm(s: string): string {
+  return s.toLowerCase().trim().replace(/[\s_\-/]+/g, " ").replace(/[^a-z0-9 ]/g, "");
+}
+
 /** Evaluate a showWhen condition against a values bag */
 export function evaluateShowWhen(
   condition: ShowWhenCondition | undefined,
@@ -59,24 +64,29 @@ export function evaluateShowWhen(
   const nameKey = `${condition.fieldKey}__name`;
   const nameVal = valuesBag[nameKey];
 
+  /** Check if any of the candidate values match the target (exact or normalized) */
+  const matches = (target: string): boolean => {
+    const nt = norm(target);
+    const candidates = [raw, nameVal];
+    for (const c of candidates) {
+      if (c === target) return true;
+      if (typeof c === "string" && (norm(c) === nt || norm(c).includes(nt) || nt.includes(norm(c)))) return true;
+      if (Array.isArray(c) && c.some(v => v === target || (typeof v === "string" && norm(v) === nt))) return true;
+    }
+    return false;
+  };
+
   switch (condition.operator) {
-    case "equals": {
-      const target = condition.value ?? "";
-      return raw === target ||
-        nameVal === target ||
-        (typeof raw === "string" && raw.includes(target)) ||
-        (typeof nameVal === "string" && nameVal.includes(target)) ||
-        (Array.isArray(raw) && raw.includes(target));
-    }
-    case "not_equals": {
-      const target = condition.value ?? "";
-      return raw !== target && nameVal !== target;
-    }
+    case "equals":
+      return matches(condition.value ?? "");
+    case "not_equals":
+      return !matches(condition.value ?? "");
     case "contains": {
       const target = condition.value ?? "";
-      return (typeof raw === "string" && raw.includes(target)) ||
-        (typeof nameVal === "string" && nameVal.includes(target)) ||
-        (Array.isArray(raw) && raw.includes(target));
+      const nt = norm(target);
+      return (typeof raw === "string" && norm(raw).includes(nt)) ||
+        (typeof nameVal === "string" && norm(nameVal).includes(nt)) ||
+        (Array.isArray(raw) && raw.some(v => typeof v === "string" && norm(v).includes(nt)));
     }
     case "not_empty":
       return raw !== undefined && raw !== null && raw !== "" && raw !== false;
