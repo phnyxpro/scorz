@@ -1,29 +1,74 @@
 
+Goal: make conditional logic actually work for every field that has it applied, in both the form-builder preview modal and the real registration / Add Registration forms.
 
-## Plan: Dynamic Category Selectors + Performers Repeater Fix
+1. Unify conditional logic mapping from builder config
+- Update both schema conversion paths:
+  - `src/components/competition/RegistrationFormsInline.tsx` (`builderConfigToFormSchema`)
+  - `src/hooks/useRegistrationForm.ts` (Format C flat-config conversion)
+- Today they only translate `logic.show_when` for repeater children.
+- I’ll extend them to also translate top-level field conditions into `showWhen`.
+- I’ll resolve `field_id` to the correct rendered key using the same built-in key mapping already used elsewhere, so dependencies work for both built-in and custom fields.
 
-### Problems identified
+2. Support all operators consistently
+- The builder currently allows:
+  - `equals`
+  - `not_equals`
+  - `contains`
+  - `not_empty`
+- But runtime `showWhen` only supports a simplified `{ fieldKey, equals }` behavior.
+- I’ll expand the runtime conditional model to preserve the operator, then update:
+  - top-level section filtering
+  - repeater sub-field filtering
+  - section validation
+- Result:
+  - hidden fields stay hidden by default
+  - fields only appear when their actual condition evaluates true
+  - required hidden fields won’t block submit
 
-1. **Category/Sub-Category selectors render as plain text inputs** — The Format C conversion in `useRegistrationForm.ts` doesn't map `category_selector` and `subcategory_selector` field types, so they fall through to `"text"`. Additionally, the `fieldTypeMap` is missing entries for `repeater`, `consent`, `rating`, `toggle`, `divider`, `hidden`, `rich_text`.
+3. Fix preview parity with live forms
+- The screenshot shows the preview modal still rendering all dance-style dropdowns.
+- That is because preview uses `builderConfigToFormSchema`, which currently drops most top-level logic.
+- After the mapping/runtime changes, the preview modal and the actual “Add Registration” dialog will use the same effective conditional behavior.
 
-2. **Repeater children not assembled into `repeaterFields`** — Format C conversion maps all fields flat into sections. Fields with `parent_repeater_id` are not grouped as `repeaterFields` on their parent repeater `FormField`, so they show as independent text fields.
+4. Protect dependent selector/value edge cases
+- For selectors like category / subcategory and dynamic repeaters, I’ll preserve the current ID + name matching approach where needed, but make it work through the new operator-aware condition evaluator.
+- This avoids regressions where a condition compares against either a stored id or a human-readable label.
 
-3. **Category selector uses Select dropdowns, not buttons** — The `CategoryLevelPicker` currently renders a `<Select>` dropdown. The user wants button-style selection (clickable option buttons).
+5. Keep save behavior aligned with your earlier request
+- No backend/schema changes are needed.
+- The existing save toast in `RegistrationFormsInline.tsx` already confirms the form is live for:
+  - Add Registration
+  - contestant sign-up
+- I’ll keep that message aligned while making the actual conditional logic now match that confirmation.
 
-4. **Performers field is a `long_text` instead of a repeater** — The SPARK template uses "Student Names (one per line)" as a textarea. The user wants a sub-repeater for adding performer names individually. Since nested repeaters aren't supported in the current model, I'll implement a special "name_list" rendering mode: an array of text inputs with Add/Remove buttons, stored as an array value.
+6. Files to update
+- `src/hooks/useRegistrationForm.ts`
+- `src/components/competition/RegistrationFormsInline.tsx`
+- `src/components/registration/DynamicRegistrationForm.tsx`
 
-### Files to change
+Technical details
+- Root cause:
+  - flat builder configs store conditions in `field.logic.show_when`
+  - runtime form rendering expects `field.showWhen`
+  - conversion currently maps repeater-child logic only, not normal fields
+- Secondary issue:
+  - runtime ignores `not_equals` and `not_empty`, even though the builder supports them
+- Proposed shape:
+```text
+showWhen: {
+  fieldKey: string
+  operator: "equals" | "not_equals" | "contains" | "not_empty"
+  value?: string
+}
+```
+- Evaluation will be centralized so preview, walk-in, and registration modes behave the same.
 
-| File | Change |
-|------|--------|
-| `src/hooks/useRegistrationForm.ts` | In Format C conversion: (a) add missing field types to `fieldTypeMap` including `repeater`, `category_selector`, `subcategory_selector`, `consent`, etc. (b) After mapping fields, group children with `parent_repeater_id` into their parent's `repeaterFields` array and remove them from the flat list. Map `showWhen` logic from `logic.show_when` format to the `showWhen` format used by FormField. |
-| `src/components/registration/DynamicRegistrationForm.tsx` | (a) Change `CategoryLevelPicker` to render selectable buttons instead of `<Select>` dropdowns. (b) In `RepeaterField`, add support for `category_selector` and `subcategory_selector` sub-field types that pull dynamic data. (c) Add a "name_list" sub-field type rendered as an array of text inputs with Add/Remove. |
-| `src/lib/form-builder-types.ts` | Update SPARK template: replace `spark_entry_student_names` (long_text) with a `repeater` type or a new `name_list` field type for group performer names. Replace `spark_entry_category`/`spark_entry_sub_category` `dropdown` types with `category_selector`/`subcategory_selector`. |
-
-### Technical details
-
-- The `fieldTypeMap` will be extended: `{ repeater: "repeater", category_selector: "category_selector", subcategory_selector: "subcategory_selector", consent: "checkbox", rating: "rating", toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text" }`
-- After mapping all fields in Format C, a post-processing step groups fields by `parent_repeater_id`, attaching them as `repeaterFields` on the repeater FormField and converting `logic.show_when` to `showWhen: { fieldKey, equals }`
-- `CategoryLevelPicker` will render a flex-wrap grid of buttons with selected state styling instead of a Select dropdown
-- For the performers list, a new approach: change the SPARK template fields for student names (solo, duet, group) to use a simple "name_list" field type — rendered as dynamic text inputs with Add/Remove buttons, stored as a string array
-
+Validation checklist after implementation
+- In form preview modal:
+  - no dance class selected -> all dance-style dropdowns hidden
+  - selecting a dance class -> only its matching dance-style dropdown appears
+- In “Add Registration” dialog:
+  - same behavior as preview
+- In contestant public registration:
+  - same behavior as preview
+- Hidden required conditional fields do not trigger validation errors until shown
