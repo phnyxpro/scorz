@@ -150,7 +150,7 @@ export function createDefaultFormSchema(): FormSchema {
       fields: [
         { id: crypto.randomUUID(), key: "__rules_acknowledgment", label: "Rules Acknowledgment", type: "rules_acknowledgment", required: true, builtin: true, columns: 2 },
         { id: crypto.randomUUID(), key: "__contestant_signature", label: "Contestant Signature", type: "signature", required: true, builtin: true, columns: 2 },
-        { id: crypto.randomUUID(), key: "__guardian_signature", label: "Guardian Signature", type: "signature", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" }, columns: 2 },
+        { id: crypto.randomUUID(), key: "__guardian_signature", label: "Guardian Signature", type: "signature", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" }, columns: 2 },
       ],
     },
   ];
