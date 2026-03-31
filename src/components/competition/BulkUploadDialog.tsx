@@ -958,6 +958,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
             )}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
