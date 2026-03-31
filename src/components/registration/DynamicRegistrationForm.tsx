@@ -301,15 +301,7 @@ function SectionRenderer({
   compact?: boolean;
 }) {
   const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
-  const visibleFields = sectionFields.filter(f => {
-    if (!f.showWhen) return true;
-    const depVal = values[f.showWhen.fieldKey];
-    if (depVal === undefined || depVal === null || depVal === "") return false;
-    if (depVal === f.showWhen.equals) return true;
-    if (typeof depVal === "string" && depVal.includes(f.showWhen.equals)) return true;
-    if (Array.isArray(depVal) && depVal.includes(f.showWhen.equals)) return true;
-    return false;
-  });
+  const visibleFields = sectionFields.filter(f => evaluateShowWhen(f.showWhen, values));
 
   const Wrapper = compact ? "div" : Card;
   const wrapperClass = compact ? "space-y-4" : "border-border/50 bg-card/80 backdrop-blur";
