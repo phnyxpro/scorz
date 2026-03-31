@@ -237,7 +237,9 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                     const sw = rawField.logic.show_when;
                     // Find the sibling field key by field_id
                     const targetField = config.fields.find((cf: any) => cf.id === sw.field_id);
-                    const targetKey = targetField ? (c as any)._siblingKey || targetField.id : sw.field_id;
+                    // Use the sibling's mapped key (not its raw id) so showWhen matches row values
+                    const siblingFormField = targetField ? children.find(ch => ch.id === targetField.id) || rep.repeaterFields?.find((rf: any) => rf.id === targetField.id) : null;
+                    const targetKey = (siblingFormField as any)?.key || (c as any)._siblingKey || (targetField ? targetField.id : sw.field_id);
                     if (sw.operator === "equals") {
                       c.showWhen = { fieldKey: targetKey, equals: sw.value };
                     } else if (sw.operator === "contains") {
