@@ -54,7 +54,10 @@ export function DynamicRegistrationForm({
     for (const field of fields) {
       if (field.showWhen) {
         const depValue = values[field.showWhen.fieldKey];
-        if (depValue !== field.showWhen.equals) continue;
+        const matches = depValue === field.showWhen.equals ||
+          (typeof depValue === "string" && depValue.includes(field.showWhen.equals)) ||
+          (Array.isArray(depValue) && depValue.includes(field.showWhen.equals));
+        if (!matches) continue;
       }
       if (field.required) {
         const val = values[field.key];
@@ -306,7 +309,12 @@ function SectionRenderer({
   const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
   const visibleFields = sectionFields.filter(f => {
     if (!f.showWhen) return true;
-    return values[f.showWhen.fieldKey] === f.showWhen.equals;
+    const depVal = values[f.showWhen.fieldKey];
+    if (depVal === undefined || depVal === null || depVal === "") return false;
+    if (depVal === f.showWhen.equals) return true;
+    if (typeof depVal === "string" && depVal.includes(f.showWhen.equals)) return true;
+    if (Array.isArray(depVal) && depVal.includes(f.showWhen.equals)) return true;
+    return false;
   });
 
   const Wrapper = compact ? "div" : Card;
