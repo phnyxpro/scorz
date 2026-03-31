@@ -26,7 +26,7 @@ import {
 } from "@/lib/form-builder-types";
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
-import type { FormSchema, FormField, FormSection, FieldType } from "@/hooks/useRegistrationForm";
+import type { FormSchema, FormField, FormSection, FieldType, ShowWhenCondition } from "@/hooks/useRegistrationForm";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   type DragEndEvent, type DragStartEvent, DragOverlay,
@@ -157,6 +157,15 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
             columns: f.width === "half" ? 1 : 2,
             options: f.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
           };
+          // Map top-level conditional logic
+          if (f.logic?.show_when) {
+            const sw = f.logic.show_when;
+            const target = enabledFields.find(tf => tf.id === sw.field_id);
+            if (target) {
+              const targetKey = target.key || target.id;
+              field.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
+            }
+          }
           // Attach repeater children
           if (f.field_type === "repeater") {
             const children = enabledFields
@@ -176,8 +185,9 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
                 if (cf.logic?.show_when) {
                   const sw = cf.logic.show_when;
                   const target = enabledFields.find(tf => tf.id === sw.field_id);
-                  if (target && (sw.operator === "equals" || sw.operator === "contains")) {
-                    child.showWhen = { fieldKey: target.key || target.id, equals: sw.value };
+                  if (target) {
+                    const targetKey = target.key || target.id;
+                    child.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
                   }
                 }
                 return child;

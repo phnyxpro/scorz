@@ -19,6 +19,12 @@ export interface FormFieldOption {
   value: string;
 }
 
+export interface ShowWhenCondition {
+  fieldKey: string;
+  operator: "equals" | "not_equals" | "contains" | "not_empty";
+  value?: string;
+}
+
 export interface FormField {
   id: string;
   key: string;
@@ -40,7 +46,43 @@ export interface FormField {
   repeaterMax?: number;
   repeaterLabel?: string;        // label for "Add" button e.g. "Add Team Member"
   // Conditional visibility
-  showWhen?: { fieldKey: string; equals: string };
+  showWhen?: ShowWhenCondition;
+}
+
+/** Evaluate a showWhen condition against a values bag */
+export function evaluateShowWhen(
+  condition: ShowWhenCondition | undefined,
+  valuesBag: Record<string, any>,
+): boolean {
+  if (!condition) return true;
+  const raw = valuesBag[condition.fieldKey];
+  const nameKey = `${condition.fieldKey}__name`;
+  const nameVal = valuesBag[nameKey];
+
+  switch (condition.operator) {
+    case "equals": {
+      const target = condition.value ?? "";
+      return raw === target ||
+        nameVal === target ||
+        (typeof raw === "string" && raw.includes(target)) ||
+        (typeof nameVal === "string" && nameVal.includes(target)) ||
+        (Array.isArray(raw) && raw.includes(target));
+    }
+    case "not_equals": {
+      const target = condition.value ?? "";
+      return raw !== target && nameVal !== target;
+    }
+    case "contains": {
+      const target = condition.value ?? "";
+      return (typeof raw === "string" && raw.includes(target)) ||
+        (typeof nameVal === "string" && nameVal.includes(target)) ||
+        (Array.isArray(raw) && raw.includes(target));
+    }
+    case "not_empty":
+      return raw !== undefined && raw !== null && raw !== "" && raw !== false;
+    default:
+      return true;
+  }
 }
 
 export interface FormSection {
@@ -77,9 +119,9 @@ export function createDefaultFormSchema(): FormSchema {
         { id: crypto.randomUUID(), key: "phone", label: "Phone", type: "phone", required: false, placeholder: "+1...", builtin: true },
         { id: crypto.randomUUID(), key: "location", label: "Location", type: "text", required: false, placeholder: "City, State", builtin: true },
         { id: crypto.randomUUID(), key: "age_category", label: "Age Category", type: "select", required: true, builtin: true, options: [{ label: "Adult (18+)", value: "adult" }, { label: "Minor (Under 18)", value: "minor" }] },
-        { id: crypto.randomUUID(), key: "guardian_name", label: "Guardian Name", type: "text", required: false, placeholder: "Full Name", builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
-        { id: crypto.randomUUID(), key: "guardian_email", label: "Guardian Email", type: "email", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
-        { id: crypto.randomUUID(), key: "guardian_phone", label: "Guardian Phone", type: "phone", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_name", label: "Guardian Name", type: "text", required: false, placeholder: "Full Name", builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_email", label: "Guardian Email", type: "email", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_phone", label: "Guardian Phone", type: "phone", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
       ],
     },
     {
@@ -108,7 +150,7 @@ export function createDefaultFormSchema(): FormSchema {
       fields: [
         { id: crypto.randomUUID(), key: "__rules_acknowledgment", label: "Rules Acknowledgment", type: "rules_acknowledgment", required: true, builtin: true, columns: 2 },
         { id: crypto.randomUUID(), key: "__contestant_signature", label: "Contestant Signature", type: "signature", required: true, builtin: true, columns: 2 },
-        { id: crypto.randomUUID(), key: "__guardian_signature", label: "Guardian Signature", type: "signature", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" }, columns: 2 },
+        { id: crypto.randomUUID(), key: "__guardian_signature", label: "Guardian Signature", type: "signature", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" }, columns: 2 },
       ],
     },
   ];
@@ -196,7 +238,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   "__guardian_signature": "signature",
                 };
                 const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
-                return {
+                const built: FormField = {
                   id: f.id,
                   key: mappedKey,
                   label: f.label,
@@ -210,6 +252,17 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   show_on_profile: f.show_on_profile,
                   show_on_scorecard: f.show_on_scorecard,
                 } as FormField;
+                // Map top-level conditional logic
+                if (f.logic?.show_when) {
+                  const sw = f.logic.show_when;
+                  const targetField = enabledFields.find((tf: any) => tf.id === sw.field_id);
+                  if (targetField) {
+                    const tRawKey = targetField.key || targetField.id?.replace("builtin_", "") || targetField.id;
+                    const tMappedKey = targetField.is_builtin ? (builtinKeyMap[tRawKey] || tRawKey) : tRawKey;
+                    built.showWhen = { fieldKey: tMappedKey, operator: sw.operator || "equals", value: sw.value };
+                  }
+                }
+                return built;
               });
             return {
               id: sec.id,
@@ -243,7 +296,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                     // Resolve the target field's mapped key using our pre-built lookup
                     const targetKey = idToKey.get(sw.field_id) || sw.field_id;
                     if (sw.operator === "equals" || sw.operator === "contains") {
-                      c.showWhen = { fieldKey: targetKey, equals: sw.value };
+                      c.showWhen = { fieldKey: targetKey, operator: sw.operator, value: sw.value };
                     }
                   }
                   return c;

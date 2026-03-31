@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, CheckCircle, Plus, Trash2, ArrowRight, ArrowLeft } from "lucide-react";
 import type { FormSchema, FormField, FormSection } from "@/hooks/useRegistrationForm";
-import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
+import { BUILTIN_KEYS, evaluateShowWhen } from "@/hooks/useRegistrationForm";
 
 interface DynamicRegistrationFormProps {
   formSchema: FormSchema;
@@ -52,13 +52,7 @@ export function DynamicRegistrationForm({
     const newErrors: Record<string, string> = {};
     const fields = Array.isArray(section?.fields) ? section.fields : [];
     for (const field of fields) {
-      if (field.showWhen) {
-        const depValue = values[field.showWhen.fieldKey];
-        const matches = depValue === field.showWhen.equals ||
-          (typeof depValue === "string" && depValue.includes(field.showWhen.equals)) ||
-          (Array.isArray(depValue) && depValue.includes(field.showWhen.equals));
-        if (!matches) continue;
-      }
+      if (!evaluateShowWhen(field.showWhen, values)) continue;
       if (field.required) {
         const val = values[field.key];
         if (val === undefined || val === null || val === "" || val === false) {
@@ -307,15 +301,7 @@ function SectionRenderer({
   compact?: boolean;
 }) {
   const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
-  const visibleFields = sectionFields.filter(f => {
-    if (!f.showWhen) return true;
-    const depVal = values[f.showWhen.fieldKey];
-    if (depVal === undefined || depVal === null || depVal === "") return false;
-    if (depVal === f.showWhen.equals) return true;
-    if (typeof depVal === "string" && depVal.includes(f.showWhen.equals)) return true;
-    if (Array.isArray(depVal) && depVal.includes(f.showWhen.equals)) return true;
-    return false;
-  });
+  const visibleFields = sectionFields.filter(f => evaluateShowWhen(f.showWhen, values));
 
   const Wrapper = compact ? "div" : Card;
   const wrapperClass = compact ? "space-y-4" : "border-border/50 bg-card/80 backdrop-blur";
@@ -661,12 +647,7 @@ function RepeaterField({ field, value, onChange, error, competitionId }: {
           <div className="grid grid-cols-2 gap-2">
             {field.repeaterFields?.filter(subField => {
               if (!subField.showWhen) return true;
-              const depVal = row[subField.showWhen.fieldKey] || "";
-              const depNameVal = row[`${subField.showWhen.fieldKey}__name`] || "";
-              const target = subField.showWhen.equals;
-              return depVal === target || depNameVal === target ||
-                (typeof depVal === "string" && depVal.includes(target)) ||
-                (typeof depNameVal === "string" && depNameVal.includes(target));
+              return evaluateShowWhen(subField.showWhen, row);
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
