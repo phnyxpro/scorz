@@ -661,7 +661,7 @@ function RepeaterField({ field, value, onChange, error, competitionId }: {
                 {subField.type === "level_selector" ? (
                   <RepeaterLevelButtons
                     row={row} idx={idx} subField={subField}
-                    competitionId={(field as any)._competitionId || ""}
+                    competitionId={competitionId}
                     updateRow={updateRow}
                   />
                 ) : subField.type === "category_selector" ? (
