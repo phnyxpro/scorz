@@ -728,6 +728,33 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   );
 }
 
+function FormPreviewContent({ config, competitionId }: { config: FormBuilderConfig; competitionId: string }) {
+  const previewSchema = useMemo(() => builderConfigToFormSchema(config), [config]);
+
+  if (previewSchema.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-sm">No enabled fields to preview.</p>
+        <p className="text-xs mt-1">Add fields and enable them to see the form.</p>
+      </div>
+    );
+  }
+
+  return (
+    <DynamicRegistrationForm
+      formSchema={previewSchema}
+      competitionId={competitionId}
+      mode="walkin"
+      onSubmit={() => {
+        toast({ title: "Preview only", description: "This is a preview — no data was submitted." });
+      }}
+      isSubmitting={false}
+    />
+  );
+}
+  );
+}
+
 function FieldCard({
   field,
   isSelected,
