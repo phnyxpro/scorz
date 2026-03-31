@@ -752,8 +752,6 @@ function FormPreviewContent({ config, competitionId }: { config: FormBuilderConf
     />
   );
 }
-  );
-}
 
 function FieldCard({
   field,
