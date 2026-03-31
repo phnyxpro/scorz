@@ -114,6 +114,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [editingSection, setEditingSection] = useState<SectionConfig | null>(null);
   const [sectionName, setSectionName] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   useEffect(() => {
     if (competition?.registration_form_config) {
