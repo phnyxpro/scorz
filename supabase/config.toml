@@ -37,3 +37,5 @@ project_id = "dwcdxofvxsmpbziosvbo"
     verify_jwt = false
   [functions.verify-ticket-payment]
     verify_jwt = false
+  [functions.parse-registration-csv]
+    verify_jwt = false

@@ -1155,6 +1155,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       </Dialog>
 
       <BulkUploadDialog competitionId={competitionId} open={showBulkUpload} onOpenChange={setShowBulkUpload} />
+      <AIUploadDialog competitionId={competitionId} open={showAIUpload} onOpenChange={setShowAIUpload} />
     </div>
   );
 }
