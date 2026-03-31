@@ -11,7 +11,8 @@ export type FieldType =
   | "level_selector" | "subevent_selector" | "time_slot_selector"
   | "category_selector" | "subcategory_selector"
   | "signature" | "rules_acknowledgment"
-  | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text";
+  | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text"
+  | "name_list";
 
 export interface FormFieldOption {
   label: string;
