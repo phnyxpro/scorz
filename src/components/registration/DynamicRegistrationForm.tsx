@@ -784,6 +784,7 @@ function RepeaterLevelButtons({ row, idx, subField, competitionId, updateRow }: 
   );
 }
 
+function RepeaterCategoryButtons({ row, idx, subField, competitionId, levelId, updateRow }: {
   row: Record<string, any>; idx: number; subField: FormField;
   competitionId: string; levelId: string; updateRow: (idx: number, key: string, val: any) => void;
 }) {
