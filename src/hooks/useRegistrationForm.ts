@@ -217,6 +217,42 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
             } as FormSection;
           })
           .filter((s: FormSection) => s.fields.length > 0);
+
+        // Post-process: group children with parent_repeater_id into parent's repeaterFields
+        if (schema) {
+          for (const section of schema) {
+            const repeaters = section.fields.filter(f => f.type === "repeater");
+            for (const rep of repeaters) {
+              const children = section.fields.filter(f => {
+                const raw = config.fields.find((cf: any) => cf.id === f.id);
+                return raw?.parent_repeater_id === config.fields.find((cf: any) => cf.id === rep.id)?.id;
+              });
+              if (children.length > 0) {
+                rep.repeaterFields = children.map(c => {
+                  // Convert logic.show_when to showWhen format
+                  const rawField = config.fields.find((cf: any) => cf.id === c.id);
+                  if (rawField?.logic?.show_when) {
+                    const sw = rawField.logic.show_when;
+                    // Find the sibling field key by field_id
+                    const targetField = config.fields.find((cf: any) => cf.id === sw.field_id);
+                    const targetKey = targetField ? (c as any)._siblingKey || targetField.id : sw.field_id;
+                    if (sw.operator === "equals") {
+                      c.showWhen = { fieldKey: targetKey, equals: sw.value };
+                    } else if (sw.operator === "contains") {
+                      // "contains" means the value includes the target string — map to equals for group/student_choreography
+                      c.showWhen = { fieldKey: targetKey, equals: sw.value };
+                    }
+                  }
+                  return c;
+                });
+                rep.repeaterLabel = rep.placeholder || "Add Entry";
+                // Remove children from section's flat list
+                const childIds = new Set(children.map(c => c.id));
+                section.fields = section.fields.filter(f => !childIds.has(f.id));
+              }
+            }
+          }
+        }
       }
 
       if (!schema || schema.length === 0) return null;

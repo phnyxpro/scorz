@@ -892,14 +892,22 @@ function CategoryLevelPicker({ parentId, levelId, depth, values, updateValue }: 
     <>
       <div className="space-y-1.5">
         <Label className="text-xs">{label}</Label>
-        <Select value={selectedId} onValueChange={handleChange}>
-          <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-          <SelectContent>
-            {children.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-1.5">
+          {children.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => handleChange(cat.id)}
+              className={`px-3 py-1.5 rounded-md border text-sm transition-all ${
+                selectedId === cat.id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
       </div>
       {selectedId && (
         <CategoryLevelPicker
