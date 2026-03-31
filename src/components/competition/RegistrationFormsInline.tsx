@@ -781,6 +781,28 @@ function FieldPropertiesPanel({
           </Select>
         </div>
 
+        {/* Parent Repeater assignment */}
+        {field.field_type !== "repeater" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Inside Repeater</Label>
+            <Select
+              value={field.parent_repeater_id || "__none__"}
+              onValueChange={(v) => onUpdate({ parent_repeater_id: v === "__none__" ? undefined : v })}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="None (standalone)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None (standalone)</SelectItem>
+                {allFields.filter(f => f.field_type === "repeater").map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.label || "Untitled Repeater"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground">Place this field inside a repeater so it repeats with each entry.</p>
+          </div>
+        )}
+
         {/* Required */}
         <div className="flex items-center justify-between">
           <Label className="text-xs">Required</Label>
