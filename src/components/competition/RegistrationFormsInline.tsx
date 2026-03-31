@@ -306,6 +306,9 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           Configure sections and fields for the registration form.
         </p>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
+            <FileInput className="h-3 w-3" /> Load Template
+          </Button>
           <Button variant="outline" size="sm" onClick={handleAddSection} className="gap-1.5 text-xs h-7">
             <Plus className="h-3 w-3" /> Add Section
           </Button>
