@@ -540,6 +540,9 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-xs h-7">
             <Eye className="h-3 w-3" /> Preview
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(true)} className="gap-1.5 text-xs h-7">
+            <BookmarkPlus className="h-3 w-3" /> Save Template
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
             <FileInput className="h-3 w-3" /> Load Template
           </Button>
