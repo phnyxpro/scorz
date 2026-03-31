@@ -27,7 +27,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRegistrationFormConfig, createDefaultFormSchema, useCreateAdvancement } from "@/hooks/useRegistrationForm";
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BulkUploadDialog } from "./BulkUploadDialog";
-import { Upload } from "lucide-react";
+import { AIUploadDialog } from "./AIUploadDialog";
+import { Upload, Sparkles as SparklesIcon } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
