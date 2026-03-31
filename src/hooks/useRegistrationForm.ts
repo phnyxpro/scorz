@@ -19,6 +19,12 @@ export interface FormFieldOption {
   value: string;
 }
 
+export interface ShowWhenCondition {
+  fieldKey: string;
+  operator: "equals" | "not_equals" | "contains" | "not_empty";
+  value?: string;
+}
+
 export interface FormField {
   id: string;
   key: string;
@@ -40,7 +46,43 @@ export interface FormField {
   repeaterMax?: number;
   repeaterLabel?: string;        // label for "Add" button e.g. "Add Team Member"
   // Conditional visibility
-  showWhen?: { fieldKey: string; equals: string };
+  showWhen?: ShowWhenCondition;
+}
+
+/** Evaluate a showWhen condition against a values bag */
+export function evaluateShowWhen(
+  condition: ShowWhenCondition | undefined,
+  valuesBag: Record<string, any>,
+): boolean {
+  if (!condition) return true;
+  const raw = valuesBag[condition.fieldKey];
+  const nameKey = `${condition.fieldKey}__name`;
+  const nameVal = valuesBag[nameKey];
+
+  switch (condition.operator) {
+    case "equals": {
+      const target = condition.value ?? "";
+      return raw === target ||
+        nameVal === target ||
+        (typeof raw === "string" && raw.includes(target)) ||
+        (typeof nameVal === "string" && nameVal.includes(target)) ||
+        (Array.isArray(raw) && raw.includes(target));
+    }
+    case "not_equals": {
+      const target = condition.value ?? "";
+      return raw !== target && nameVal !== target;
+    }
+    case "contains": {
+      const target = condition.value ?? "";
+      return (typeof raw === "string" && raw.includes(target)) ||
+        (typeof nameVal === "string" && nameVal.includes(target)) ||
+        (Array.isArray(raw) && raw.includes(target));
+    }
+    case "not_empty":
+      return raw !== undefined && raw !== null && raw !== "" && raw !== false;
+    default:
+      return true;
+  }
 }
 
 export interface FormSection {

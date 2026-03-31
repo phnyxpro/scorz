@@ -26,7 +26,7 @@ import {
 } from "@/lib/form-builder-types";
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
-import type { FormSchema, FormField, FormSection, FieldType } from "@/hooks/useRegistrationForm";
+import type { FormSchema, FormField, FormSection, FieldType, ShowWhenCondition } from "@/hooks/useRegistrationForm";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   type DragEndEvent, type DragStartEvent, DragOverlay,
