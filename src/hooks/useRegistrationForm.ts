@@ -150,7 +150,8 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
           repeater: "repeater", category_selector: "category_selector",
           subcategory_selector: "subcategory_selector", rating: "rating",
           toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
-          time: "time", color: "color", currency: "currency",
+          time: "time", color: "color", currency: "currency", level_selector: "level_selector",
+          name_list: "name_list",
         };
         // Map flat DB builtin keys → standard builtin keys used by DynamicRegistrationForm
         const builtinKeyMap: Record<string, string> = {
