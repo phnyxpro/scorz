@@ -52,13 +52,7 @@ export function DynamicRegistrationForm({
     const newErrors: Record<string, string> = {};
     const fields = Array.isArray(section?.fields) ? section.fields : [];
     for (const field of fields) {
-      if (field.showWhen) {
-        const depValue = values[field.showWhen.fieldKey];
-        const matches = depValue === field.showWhen.equals ||
-          (typeof depValue === "string" && depValue.includes(field.showWhen.equals)) ||
-          (Array.isArray(depValue) && depValue.includes(field.showWhen.equals));
-        if (!matches) continue;
-      }
+      if (!evaluateShowWhen(field.showWhen, values)) continue;
       if (field.required) {
         const val = values[field.key];
         if (val === undefined || val === null || val === "" || val === false) {
