@@ -27,7 +27,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRegistrationFormConfig, createDefaultFormSchema, useCreateAdvancement } from "@/hooks/useRegistrationForm";
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BulkUploadDialog } from "./BulkUploadDialog";
-import { Upload } from "lucide-react";
+import { AIUploadDialog } from "./AIUploadDialog";
+import { Upload, Sparkles as SparklesIcon } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -425,6 +426,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [filterSubEvent, setFilterSubEvent] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showAIUpload, setShowAIUpload] = useState(false);
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
   const [filterAge, setFilterAge] = useState("all");
   const [sortField, setSortField] = useState<SortField>("sort_order");
@@ -841,6 +843,9 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
                 <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowAIUpload(true)}>
+                <SparklesIcon className="h-3.5 w-3.5 mr-1" /> Upload with AI
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Registration
               </Button>
@@ -1150,6 +1155,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       </Dialog>
 
       <BulkUploadDialog competitionId={competitionId} open={showBulkUpload} onOpenChange={setShowBulkUpload} />
+      <AIUploadDialog competitionId={competitionId} open={showAIUpload} onOpenChange={setShowAIUpload} />
     </div>
   );
 }
