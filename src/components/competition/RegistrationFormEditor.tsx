@@ -492,7 +492,7 @@ function FieldEditor({
                 checked={!!field.showWhen}
                 onCheckedChange={v => {
                   if (v) {
-                    onUpdate({ showWhen: { fieldKey: "", equals: "" } });
+                    onUpdate({ showWhen: { fieldKey: "", operator: "equals", value: "" } });
                   } else {
                     onUpdate({ showWhen: undefined });
                   }
