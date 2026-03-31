@@ -22,7 +22,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import {
   FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
-  FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections,
+  FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections, FORM_TEMPLATES,
 } from "@/lib/form-builder-types";
 
 // Re-export for backward compat with ContestantRegistration import
