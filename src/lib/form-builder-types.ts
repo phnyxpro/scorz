@@ -150,6 +150,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   repeater: "Repeater",
   category_selector: "Category Selector",
   subcategory_selector: "Sub-Category Selector",
+  level_selector: "Level Selector",
 };
 
 export const SECTION_LABELS: Record<string, string> = {
