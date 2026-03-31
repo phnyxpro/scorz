@@ -1,58 +1,47 @@
 
 
-## Plan: Enhanced Form Builder with New Field Types + SPARK Schools Configuration
+## Plan: Configure SPARK Secondary Schools Registration Form
 
-### What changes
+### Approach
 
-**1. Add new field types to the form builder**
+Write the SPARK form config directly to the competition's `registration_form_config` column using an edge function call or a one-time script. Since the form builder uses the `FormBuilderConfig` format (`{ sections, fields, version }`), I'll craft the exact JSON config and update it via a Supabase query in the save handler pattern already used by the form builder.
 
-Add these missing field types to `FIELD_TYPES` array in `RegistrationFormEditor.tsx` and to the `FieldType` union in `useRegistrationForm.ts`:
-- `time` — Time input
-- `color` — Color picker
-- `currency` — Currency/money input
-- `rating` — Star/numeric rating
-- `toggle` — Yes/No toggle switch
-- `hidden` — Hidden field (stores value without display)
-- `divider` — Visual separator line (layout)
-- `signature` — Signature pad (already exists as builtin, make available as custom too)
-- `consent` — Consent checkbox with label text
-- `rich_text` — Rich text / formatted long text
+The most practical approach: **add a "Load Template" feature** to `RegistrationFormsInline.tsx` that lets organisers pick a preset (starting with "SPARK Secondary Schools"), which populates the form builder with the correct sections and fields. This way the config is reusable and the organiser can still customize it.
 
-Also add `category_selector` and `subcategory_selector` to the BUILTIN_FIELDS list so organisers can add category drill-down selectors.
+### Template: SPARK Secondary Schools
 
-**2. Remove badges from field type buttons in Add Field dialog**
+**Sections:**
+1. **School Information** — Name of School (short_text), School Phone Number (phone)
+2. **Applicant Information** — Name of Applicant (short_text), Applicant Email (email), Applicant Phone (phone)
+3. **Competition Entries** — A single **repeater** field ("Add Entry") with sub-fields:
+   - Category (dropdown — Solo, Duet, Group, Student Choreography)
+   - Sub-Category (dropdown)
+   - Division (dropdown)
+   - Performance Video URL (url)
+   - Choreographer Name (short_text)
+   - Dance Style (short_text)
+   - Synopsis (long_text)
+   - Number of Dancers (number)
+   - Student Name (short_text) — shown when category = Solo
+   - Student Name 1 (short_text) — shown when category = Duet
+   - Student Name 2 (short_text) — shown when category = Duet
+   - Group Name (short_text) — shown when category = Group or Student Choreography
+   - Group Members (repeater-like, but since nested repeaters aren't supported, use a long_text "Student Names — one per line") — shown when category = Group or Student Choreography
+4. **Legal & Consent** — Rules Acknowledgment (consent), Signature (signature)
 
-In `RegistrationFormEditor.tsx`:
-- Remove the `<Badge>` showing field type next to built-in field buttons (line 353)
-- Remove the `<Badge>` showing "built-in" or type in the FieldEditor row (lines 427-429) — replace with a subtle text indicator or remove entirely
-
-**3. Add more sub-field types to the Repeater editor**
-
-In the `RepeaterFieldEditor` component, expand the allowed sub-field types dropdown to include: `text`, `email`, `number`, `url`, `select`, `textarea`, `phone`, `date`, `checkbox`, `radio`, `file`. Also allow sub-fields to have their own options (for select/radio sub-fields).
-
-**4. Add conditional logic support for repeater sub-fields**
-
-Allow repeater sub-fields to have `showWhen` targeting other sub-fields within the same repeater row (e.g., show "Student Name 2" when entry type = "duet"). This uses the existing `showWhen` mechanism scoped to the repeater row context.
-
-**5. Wire up rendering of new field types in DynamicRegistrationForm**
-
-Add rendering cases for `time`, `color`, `currency`, `rating`, `toggle`, `hidden`, `divider`, `consent`, `rich_text` in the `DynamicRegistrationForm` field renderer.
-
-### Files modified
+### Files to change
 
 | File | Change |
 |------|--------|
-| `src/hooks/useRegistrationForm.ts` | Add new field types to `FieldType` union |
-| `src/components/competition/RegistrationFormEditor.tsx` | Add new FIELD_TYPES entries, remove badges, expand repeater sub-field types, add category/subcategory to BUILTIN_FIELDS |
-| `src/components/registration/DynamicRegistrationForm.tsx` | Add rendering for new field types |
+| `src/components/competition/RegistrationFormsInline.tsx` | Add a "Load Template" button + dialog with SPARK preset; when selected, replace current config with the predefined `FormBuilderConfig` |
+| `src/lib/form-builder-types.ts` | Add `SPARK_TEMPLATE` constant with the full `FormBuilderConfig` JSON, and a `FORM_TEMPLATES` array for future presets |
 
 ### Technical details
 
-- New `FieldType` values added: `"time" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text"`
-- The `consent` type renders as a checkbox with a configurable label (using `description` field)
-- The `divider` type renders as an `<hr>` separator, non-data
-- The `rating` type renders as a 1-5 number input or star selector
-- The `toggle` type renders as a Switch component
-- All new types are purely client-side form schema additions — no DB migration needed since custom field values are stored in the `custom_field_values` JSON column
-- After this is implemented, the SPARK Secondary Schools form can be configured in the form builder with: School Info section → Applicant Info section → Entries repeater (with category_selector sub-field + performance detail sub-fields + conditional student name fields)
+- The template is a static `FormBuilderConfig` object with pre-generated UUIDs (using `crypto.randomUUID()` at load time)
+- The "Load Template" button appears next to the Save button; clicking it opens a dialog with available templates
+- Selecting a template replaces the entire form config and marks the form as dirty so the organiser must click Save to persist
+- The repeater field's sub-fields use `showWhen` with `fieldKey` targeting the category dropdown within the same repeater row
+- For Group/Student Choreography student names: use a `long_text` sub-field labeled "Student Names (one per line)" since nested repeaters aren't supported
+- No database migration needed — this writes to the existing `registration_form_config` JSON column
 
