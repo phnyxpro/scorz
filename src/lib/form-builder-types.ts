@@ -130,6 +130,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   url: "URL",
   number: "Number",
   date: "Date",
+  time: "Time",
   dropdown: "Dropdown",
   radio: "Radio",
   checkbox: "Checkbox",
@@ -137,6 +138,14 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   signature: "Signature",
   consent: "Consent",
   section_header: "Section Header",
+  color: "Color Picker",
+  currency: "Currency",
+  rating: "Rating",
+  toggle: "Toggle",
+  hidden: "Hidden",
+  divider: "Divider",
+  rich_text: "Rich Text",
+  repeater: "Repeater",
 };
 
 export const SECTION_LABELS: Record<string, string> = {
