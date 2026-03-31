@@ -27,6 +27,16 @@ import {
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
 import type { FormSchema, FormField, FormSection, FieldType } from "@/hooks/useRegistrationForm";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent, type DragStartEvent, DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 // Re-export for backward compat with ContestantRegistration import
 export type CustomFieldDef = {
@@ -296,6 +306,53 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
+  // DnD: reorder fields within a section (or repeater children)
+  const handleFieldDragEnd = (event: DragEndEvent, sectionId: string, repeaterId?: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const fieldList = repeaterId
+        ? prev.fields.filter(f => f.parent_repeater_id === repeaterId)
+        : prev.fields.filter(f => (f.section || "custom") === sectionId && !f.parent_repeater_id);
+
+      const oldIdx = fieldList.findIndex(f => f.id === active.id);
+      const newIdx = fieldList.findIndex(f => f.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+
+      const reordered = arrayMove(fieldList, oldIdx, newIdx);
+      const reorderedIds = new Set(reordered.map(f => f.id));
+      const otherFields = prev.fields.filter(f => !reorderedIds.has(f.id));
+
+      // Reassign sort_order
+      let sortCounter = 0;
+      const allFields = [...otherFields, ...reordered.map(f => ({ ...f, sort_order: sortCounter++ }))];
+
+      return { ...prev, fields: allFields };
+    });
+    setDirty(true);
+  };
+
+  // DnD: reorder sections
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const secs = [...(prev.sections || DEFAULT_SECTIONS)].sort((a, b) => a.sort_order - b.sort_order);
+      const oldIdx = secs.findIndex(s => s.id === active.id);
+      const newIdx = secs.findIndex(s => s.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const reordered = arrayMove(secs, oldIdx, newIdx).map((s, i) => ({ ...s, sort_order: i }));
+      return { ...prev, sections: reordered };
+    });
+    setDirty(true);
+  };
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
   // --- Section CRUD ---
   const handleAddSection = () => {
     setEditingSection(null);
@@ -441,121 +498,37 @@ export function RegistrationFormsInline({ competitionId }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* Left: Sections & Fields Canvas */}
-        <div className="space-y-3">
-          {sections.map((section, sIdx) => {
-            const Icon = getSectionIcon(section);
-            const sectionFields = fieldsBySection[section.id] || [];
-
-            return (
-              <Collapsible key={section.id} defaultOpen>
-                <Card className="border-border/40 bg-muted/10">
-                  <CardContent className="p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center gap-2 w-full">
-                      <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
-                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
-                        <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
-                      </CollapsibleTrigger>
-
-                      {/* Section action buttons */}
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {sIdx > 0 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "up")}>
-                            <ChevronUp className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {sIdx < sections.length - 1 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "down")}>
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditSection(section)}>
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        {!section.is_builtin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteSectionId(section.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs gap-1"
-                          onClick={() => { setAddFieldSection(section.id); setAddFieldRepeaterId(null); setAddFieldOpen(true); }}
-                        >
-                          <Plus className="h-3 w-3" /> Field
-                        </Button>
-                      </div>
-                    </div>
-
-                    <CollapsibleContent className="space-y-1.5">
-                      {sectionFields.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic py-3 text-center">
-                          No fields in this section
-                        </p>
-                      ) : (
-                        sectionFields.map((field, idx) => (
-                          <div key={field.id}>
-                            <FieldCard
-                              field={field}
-                              isSelected={selectedFieldId === field.id}
-                              onClick={() => setSelectedFieldId(field.id)}
-                              onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                              onRemove={() => removeField(field.id)}
-                              onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                              onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                            />
-                            {/* Repeater children */}
-                            {field.field_type === "repeater" && (
-                              <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
-                                {(childrenByRepeater[field.id] || []).length === 0 ? (
-                                  <p className="text-[10px] text-muted-foreground italic py-1.5">
-                                    No fields inside this repeater — add fields that will repeat with each entry.
-                                  </p>
-                                ) : (
-                                  (childrenByRepeater[field.id] || []).map((child, cIdx) => (
-                                    <FieldCard
-                                      key={child.id}
-                                      field={child}
-                                      isSelected={selectedFieldId === child.id}
-                                      onClick={() => setSelectedFieldId(child.id)}
-                                      onToggleEnabled={(v) => updateField(child.id, { enabled: v })}
-                                      onRemove={() => removeField(child.id)}
-                                      onMoveUp={cIdx > 0 ? () => moveField(child.id, "up") : undefined}
-                                      onMoveDown={cIdx < (childrenByRepeater[field.id] || []).length - 1 ? () => moveField(child.id, "down") : undefined}
-                                    />
-                                  ))
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
-                                  onClick={() => {
-                                    setAddFieldSection(field.section || "custom");
-                                    setAddFieldRepeaterId(field.id);
-                                    setAddFieldOpen(true);
-                                  }}
-                                >
-                                  <Plus className="h-3 w-3" /> Add Field to Repeater
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </CollapsibleContent>
-                  </CardContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
-        </div>
+        <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleSectionDragEnd}>
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {sections.map((section) => {
+                const sectionFields = fieldsBySection[section.id] || [];
+                return (
+                  <SortableSectionCard
+                    key={section.id}
+                    section={section}
+                    sectionFields={sectionFields}
+                    childrenByRepeater={childrenByRepeater}
+                    selectedFieldId={selectedFieldId}
+                    dndSensors={dndSensors}
+                    onSelectField={setSelectedFieldId}
+                    onToggleField={(id, v) => updateField(id, { enabled: v })}
+                    onRemoveField={removeField}
+                    onEditSection={handleEditSection}
+                    onDeleteSection={setDeleteSectionId}
+                    onAddField={(sectionId, repeaterId) => {
+                      setAddFieldSection(sectionId);
+                      setAddFieldRepeaterId(repeaterId || null);
+                      setAddFieldOpen(true);
+                    }}
+                    onFieldDragEnd={(e) => handleFieldDragEnd(e, section.id)}
+                    onRepeaterChildDragEnd={(e, repeaterId) => handleFieldDragEnd(e, section.id, repeaterId)}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Right: Properties Panel */}
         <div className="lg:sticky lg:top-4 lg:self-start">
@@ -754,28 +727,140 @@ function FormPreviewContent({ config, competitionId }: { config: FormBuilderConf
   );
 }
 
-function FieldCard({
-  field,
-  isSelected,
-  onClick,
-  onToggleEnabled,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
+// ─── Sortable Section Card ──────────────────────────────
+
+function SortableSectionCard({
+  section, sectionFields, childrenByRepeater, selectedFieldId, dndSensors,
+  onSelectField, onToggleField, onRemoveField, onEditSection, onDeleteSection, onAddField,
+  onFieldDragEnd, onRepeaterChildDragEnd,
+}: {
+  section: SectionConfig;
+  sectionFields: FormFieldConfig[];
+  childrenByRepeater: Record<string, FormFieldConfig[]>;
+  selectedFieldId: string | null;
+  dndSensors: ReturnType<typeof useSensors>;
+  onSelectField: (id: string) => void;
+  onToggleField: (id: string, v: boolean) => void;
+  onRemoveField: (id: string) => void;
+  onEditSection: (s: SectionConfig) => void;
+  onDeleteSection: (id: string) => void;
+  onAddField: (sectionId: string, repeaterId?: string) => void;
+  onFieldDragEnd: (e: DragEndEvent) => void;
+  onRepeaterChildDragEnd: (e: DragEndEvent, repeaterId: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const Icon = getSectionIcon(section);
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Collapsible defaultOpen>
+        <Card className="border-border/40 bg-muted/10">
+          <CardContent className="p-3 sm:p-4 space-y-2">
+            <div className="flex items-center gap-2 w-full">
+              <button
+                type="button"
+                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+              <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
+                <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
+                <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
+              </CollapsibleTrigger>
+
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditSection(section)}>
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+                {!section.is_builtin && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDeleteSection(section.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => onAddField(section.id)}>
+                  <Plus className="h-3 w-3" /> Field
+                </Button>
+              </div>
+            </div>
+
+            <CollapsibleContent className="space-y-1.5">
+              {sectionFields.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-3 text-center">No fields in this section</p>
+              ) : (
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={onFieldDragEnd}>
+                  <SortableContext items={sectionFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    {sectionFields.map((field) => (
+                      <div key={field.id}>
+                        <SortableFieldCard
+                          field={field}
+                          isSelected={selectedFieldId === field.id}
+                          onClick={() => onSelectField(field.id)}
+                          onToggleEnabled={(v) => onToggleField(field.id, v)}
+                          onRemove={() => onRemoveField(field.id)}
+                        />
+                        {field.field_type === "repeater" && (
+                          <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
+                            {(childrenByRepeater[field.id] || []).length === 0 ? (
+                              <p className="text-[10px] text-muted-foreground italic py-1.5">No fields inside this repeater.</p>
+                            ) : (
+                              <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={(e) => onRepeaterChildDragEnd(e, field.id)}>
+                                <SortableContext items={(childrenByRepeater[field.id] || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                  {(childrenByRepeater[field.id] || []).map((child) => (
+                                    <SortableFieldCard
+                                      key={child.id}
+                                      field={child}
+                                      isSelected={selectedFieldId === child.id}
+                                      onClick={() => onSelectField(child.id)}
+                                      onToggleEnabled={(v) => onToggleField(child.id, v)}
+                                      onRemove={() => onRemoveField(child.id)}
+                                    />
+                                  ))}
+                                </SortableContext>
+                              </DndContext>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary" onClick={() => onAddField(field.section || "custom", field.id)}>
+                              <Plus className="h-3 w-3" /> Add Field to Repeater
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
+    </div>
+  );
+}
+
+// ─── Sortable Field Card ────────────────────────────────
+
+function SortableFieldCard({
+  field, isSelected, onClick, onToggleEnabled, onRemove,
 }: {
   field: FormFieldConfig;
   isSelected: boolean;
   onClick: () => void;
   onToggleEnabled: (v: boolean) => void;
   onRemove?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   const locked = field.is_builtin && field.key && LOCKED_KEYS.has(field.key);
   const Icon = FIELD_TYPE_ICONS[field.field_type] || Type;
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       onClick={onClick}
       className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors cursor-pointer ${
         isSelected
@@ -785,20 +870,15 @@ function FieldCard({
             : "border-border/20 bg-muted/20 opacity-50"
       }`}
     >
-      {(onMoveUp || onMoveDown) && (
-        <div className="flex flex-col gap-0.5 shrink-0">
-          {onMoveUp && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-muted-foreground hover:text-foreground">
-              <ChevronUp className="h-3 w-3" />
-            </button>
-          )}
-          {onMoveDown && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-muted-foreground hover:text-foreground">
-              <ChevronDown className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-      )}
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+        onClick={(e) => e.stopPropagation()}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
 
       <Switch
         checked={field.enabled}
