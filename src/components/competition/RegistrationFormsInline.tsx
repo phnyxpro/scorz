@@ -147,7 +147,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
-  const addField = (type: FormFieldConfig["field_type"], sectionId: string) => {
+  const addField = (type: FormFieldConfig["field_type"], sectionId: string, repeaterId?: string | null) => {
     const newField: FormFieldConfig = {
       id: `cf_${Date.now()}`,
       field_type: type,
@@ -160,6 +160,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       show_on_scorecard: false,
       is_builtin: false,
       section: sectionId,
+      parent_repeater_id: repeaterId || undefined,
     };
     if (type === "dropdown" || type === "radio" || type === "checkbox") {
       newField.options = [{ label: "Option 1", value: "option_1" }];
@@ -170,6 +171,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     }));
     setSelectedFieldId(newField.id);
     setAddFieldOpen(false);
+    setAddFieldRepeaterId(null);
     setDirty(true);
   };
 
