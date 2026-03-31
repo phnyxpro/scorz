@@ -386,7 +386,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs gap-1"
-                          onClick={() => { setAddFieldSection(section.id); setAddFieldOpen(true); }}
+                          onClick={() => { setAddFieldSection(section.id); setAddFieldRepeaterId(null); setAddFieldOpen(true); }}
                         >
                           <Plus className="h-3 w-3" /> Field
                         </Button>
