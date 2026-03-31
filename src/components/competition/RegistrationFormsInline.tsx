@@ -400,16 +400,52 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                         </p>
                       ) : (
                         sectionFields.map((field, idx) => (
-                          <FieldCard
-                            key={field.id}
-                            field={field}
-                            isSelected={selectedFieldId === field.id}
-                            onClick={() => setSelectedFieldId(field.id)}
-                            onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                            onRemove={() => removeField(field.id)}
-                            onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                            onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                          />
+                          <div key={field.id}>
+                            <FieldCard
+                              field={field}
+                              isSelected={selectedFieldId === field.id}
+                              onClick={() => setSelectedFieldId(field.id)}
+                              onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
+                              onRemove={() => removeField(field.id)}
+                              onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
+                              onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
+                            />
+                            {/* Repeater children */}
+                            {field.field_type === "repeater" && (
+                              <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
+                                {(childrenByRepeater[field.id] || []).length === 0 ? (
+                                  <p className="text-[10px] text-muted-foreground italic py-1.5">
+                                    No fields inside this repeater — add fields that will repeat with each entry.
+                                  </p>
+                                ) : (
+                                  (childrenByRepeater[field.id] || []).map((child, cIdx) => (
+                                    <FieldCard
+                                      key={child.id}
+                                      field={child}
+                                      isSelected={selectedFieldId === child.id}
+                                      onClick={() => setSelectedFieldId(child.id)}
+                                      onToggleEnabled={(v) => updateField(child.id, { enabled: v })}
+                                      onRemove={() => removeField(child.id)}
+                                      onMoveUp={cIdx > 0 ? () => moveField(child.id, "up") : undefined}
+                                      onMoveDown={cIdx < (childrenByRepeater[field.id] || []).length - 1 ? () => moveField(child.id, "down") : undefined}
+                                    />
+                                  ))
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
+                                  onClick={() => {
+                                    setAddFieldSection(field.section || "custom");
+                                    setAddFieldRepeaterId(field.id);
+                                    setAddFieldOpen(true);
+                                  }}
+                                >
+                                  <Plus className="h-3 w-3" /> Add Field to Repeater
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         ))
                       )}
                     </CollapsibleContent>
