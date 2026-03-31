@@ -18,6 +18,8 @@ export interface FormFieldConfig {
   show_on_scorecard: boolean;
   is_builtin: boolean;
   section?: string;
+  /** If set, this field is a child of the repeater with this ID */
+  parent_repeater_id?: string;
 }
 
 export interface SectionConfig {
