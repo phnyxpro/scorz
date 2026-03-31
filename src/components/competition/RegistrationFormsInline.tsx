@@ -68,13 +68,14 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   repeater: Repeat,
   category_selector: ListOrdered,
   subcategory_selector: ListOrdered,
+  level_selector: Layers,
 };
 
 const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
   Input: ["short_text", "long_text", "email", "phone", "url", "number", "date", "time", "currency"],
   Choice: ["dropdown", "radio", "checkbox", "toggle", "rating"],
   Media: ["file"],
-  Advanced: ["signature", "consent", "hidden", "repeater", "category_selector", "subcategory_selector"],
+  Advanced: ["signature", "consent", "hidden", "repeater", "category_selector", "subcategory_selector", "level_selector"],
   Layout: ["section_header", "divider", "rich_text", "color"],
 };
 

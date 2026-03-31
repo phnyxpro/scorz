@@ -3,7 +3,7 @@
 export interface FormFieldConfig {
   id: string;
   key?: string; // for built-in fields (e.g. "firstName", "email")
-  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "time" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "rich_text" | "repeater" | "category_selector" | "subcategory_selector";
+  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "time" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "rich_text" | "repeater" | "category_selector" | "subcategory_selector" | "level_selector";
   label: string;
   placeholder?: string;
   help_text?: string;
@@ -150,6 +150,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   repeater: "Repeater",
   category_selector: "Category Selector",
   subcategory_selector: "Sub-Category Selector",
+  level_selector: "Level Selector",
 };
 
 export const SECTION_LABELS: Record<string, string> = {
