@@ -15,10 +15,11 @@ import {
   User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
   RadioTower, CalendarDays, Edit2, Layers, Clock, Palette, DollarSign, Star, ToggleLeft, EyeOff,
-  Minus, FileText, Repeat, FileInput,
+  Minus, FileText, Repeat, FileInput, BookmarkPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import {
   FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
@@ -237,6 +238,51 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [sectionName, setSectionName] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDesc, setTemplateDesc] = useState("");
+
+  const { user } = useAuth();
+
+  // Fetch user-saved templates
+  const { data: userTemplates = [], refetch: refetchTemplates } = useQuery({
+    queryKey: ["form_templates", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("form_templates" as any)
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const saveTemplateMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      const { error } = await supabase
+        .from("form_templates" as any)
+        .insert({ user_id: user!.id, name, description: description || null, config: config as any } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchTemplates();
+      setSaveTemplateOpen(false);
+      setTemplateName("");
+      setTemplateDesc("");
+      toast({ title: "Template saved", description: "You can reuse this template in other competitions." });
+    },
+    onError: (err: any) => toast({ title: "Failed to save template", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("form_templates" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => refetchTemplates(),
+  });
 
   useEffect(() => {
     if (competition?.registration_form_config) {
@@ -494,6 +540,9 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-xs h-7">
             <Eye className="h-3 w-3" /> Preview
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(true)} className="gap-1.5 text-xs h-7">
+            <BookmarkPlus className="h-3 w-3" /> Save Template
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
             <FileInput className="h-3 w-3" /> Load Template
           </Button>
@@ -653,34 +702,115 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Save Template Dialog */}
+      <Dialog open={saveTemplateOpen} onOpenChange={setSaveTemplateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Save the current form configuration as a reusable template for other competitions.
+          </p>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs">Template Name *</Label>
+              <Input
+                placeholder="e.g. Dance Competition Form"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                placeholder="Brief description of this template..."
+                value={templateDesc}
+                onChange={e => setTemplateDesc(e.target.value)}
+                className="mt-1 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!templateName.trim() || saveTemplateMutation.isPending}
+              onClick={() => saveTemplateMutation.mutate({ name: templateName.trim(), description: templateDesc.trim() })}
+            >
+              {saveTemplateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Load Template Dialog */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Load Form Template</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Choose a template to replace the current form configuration. You can customise it after loading.
           </p>
-          <div className="space-y-2 mt-2">
-            {FORM_TEMPLATES.map(t => (
-              <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => {
-                  const built = t.build();
-                  setConfig(built);
-                  setDirty(true);
-                  setSelectedFieldId(null);
-                  setTemplateDialogOpen(false);
-                  toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
-                }}
-              >
-                <CardContent className="p-3">
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="flex-1 min-h-0 mt-2">
+            <div className="space-y-2 pr-3">
+              {/* User-saved templates */}
+              {userTemplates.length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">My Templates</p>
+                  {userTemplates.map((t: any) => (
+                    <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer relative group">
+                      <CardContent className="p-3" onClick={() => {
+                        const loaded = migrateFormConfig(t.config);
+                        if (!loaded.sections || loaded.sections.length === 0) loaded.sections = DEFAULT_SECTIONS;
+                        setConfig(loaded);
+                        setDirty(true);
+                        setSelectedFieldId(null);
+                        setTemplateDialogOpen(false);
+                        toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                      }}>
+                        <p className="text-sm font-medium">{t.name}</p>
+                        {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          Saved {new Date(t.created_at).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                        onClick={(e) => { e.stopPropagation(); deleteTemplateMutation.mutate(t.id); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </Card>
+                  ))}
+                  <Separator className="my-2" />
+                </>
+              )}
+
+              {/* Built-in templates */}
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Presets</p>
+              {FORM_TEMPLATES.map(t => (
+                <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
+                  onClick={() => {
+                    const built = t.build();
+                    setConfig(built);
+                    setDirty(true);
+                    setSelectedFieldId(null);
+                    setTemplateDialogOpen(false);
+                    toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                  }}
+                >
+                  <CardContent className="p-3">
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
           </DialogFooter>
