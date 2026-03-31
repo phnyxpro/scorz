@@ -216,7 +216,7 @@ export function RegistrationFormEditor({ competitionId }: Props) {
       field.options = [{ label: "Adult (18+)", value: "adult" }, { label: "Minor (Under 18)", value: "minor" }];
     }
     if (key === "guardian_name" || key === "guardian_email" || key === "guardian_phone" || key === "__guardian_signature") {
-      field.showWhen = { fieldKey: "age_category", equals: "minor" };
+      field.showWhen = { fieldKey: "age_category", operator: "equals", value: "minor" };
     }
     if (key === "__level_selector" || key === "__subevent_selector" || key === "__time_slot_selector" || key === "__rules_acknowledgment" || key === "__contestant_signature" || key === "__guardian_signature" || key === "bio" || key === "performance_video_url") {
       field.columns = 2;
