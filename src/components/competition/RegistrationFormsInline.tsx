@@ -110,6 +110,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [dirty, setDirty] = useState(false);
   const [addFieldOpen, setAddFieldOpen] = useState(false);
   const [addFieldSection, setAddFieldSection] = useState<string>("custom");
+  const [addFieldRepeaterId, setAddFieldRepeaterId] = useState<string | null>(null);
 
   // Section management state
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
@@ -146,7 +147,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
-  const addField = (type: FormFieldConfig["field_type"], sectionId: string) => {
+  const addField = (type: FormFieldConfig["field_type"], sectionId: string, repeaterId?: string | null) => {
     const newField: FormFieldConfig = {
       id: `cf_${Date.now()}`,
       field_type: type,
@@ -159,6 +160,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       show_on_scorecard: false,
       is_builtin: false,
       section: sectionId,
+      parent_repeater_id: repeaterId || undefined,
     };
     if (type === "dropdown" || type === "radio" || type === "checkbox") {
       newField.options = [{ label: "Option 1", value: "option_1" }];
@@ -169,13 +171,15 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     }));
     setSelectedFieldId(newField.id);
     setAddFieldOpen(false);
+    setAddFieldRepeaterId(null);
     setDirty(true);
   };
 
   const removeField = (id: string) => {
     setConfig(prev => ({
       ...prev,
-      fields: prev.fields.filter(f => f.id !== id),
+      // Remove the field and any children if it's a repeater
+      fields: prev.fields.filter(f => f.id !== id && f.parent_repeater_id !== id),
     }));
     if (selectedFieldId === id) setSelectedFieldId(null);
     setDirty(true);
@@ -286,19 +290,32 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     }
   };
 
-  // Group fields by section
+  // Group fields by section (exclude repeater children — they render inside their parent)
   const fieldsBySection = useMemo(() => {
     const map: Record<string, FormFieldConfig[]> = {};
     for (const s of sections) {
       map[s.id] = [];
     }
     for (const f of config.fields) {
+      if (f.parent_repeater_id) continue; // skip children; they render nested
       const sec = f.section || "custom";
       if (!map[sec]) map[sec] = [];
       map[sec].push(f);
     }
     return map;
   }, [config.fields, sections]);
+
+  // Index repeater children by parent id
+  const childrenByRepeater = useMemo(() => {
+    const map: Record<string, FormFieldConfig[]> = {};
+    for (const f of config.fields) {
+      if (f.parent_repeater_id) {
+        if (!map[f.parent_repeater_id]) map[f.parent_repeater_id] = [];
+        map[f.parent_repeater_id].push(f);
+      }
+    }
+    return map;
+  }, [config.fields]);
 
   return (
     <div className="space-y-4">
@@ -369,7 +386,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs gap-1"
-                          onClick={() => { setAddFieldSection(section.id); setAddFieldOpen(true); }}
+                          onClick={() => { setAddFieldSection(section.id); setAddFieldRepeaterId(null); setAddFieldOpen(true); }}
                         >
                           <Plus className="h-3 w-3" /> Field
                         </Button>
@@ -383,16 +400,52 @@ export function RegistrationFormsInline({ competitionId }: Props) {
                         </p>
                       ) : (
                         sectionFields.map((field, idx) => (
-                          <FieldCard
-                            key={field.id}
-                            field={field}
-                            isSelected={selectedFieldId === field.id}
-                            onClick={() => setSelectedFieldId(field.id)}
-                            onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                            onRemove={() => removeField(field.id)}
-                            onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                            onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                          />
+                          <div key={field.id}>
+                            <FieldCard
+                              field={field}
+                              isSelected={selectedFieldId === field.id}
+                              onClick={() => setSelectedFieldId(field.id)}
+                              onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
+                              onRemove={() => removeField(field.id)}
+                              onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
+                              onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
+                            />
+                            {/* Repeater children */}
+                            {field.field_type === "repeater" && (
+                              <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
+                                {(childrenByRepeater[field.id] || []).length === 0 ? (
+                                  <p className="text-[10px] text-muted-foreground italic py-1.5">
+                                    No fields inside this repeater — add fields that will repeat with each entry.
+                                  </p>
+                                ) : (
+                                  (childrenByRepeater[field.id] || []).map((child, cIdx) => (
+                                    <FieldCard
+                                      key={child.id}
+                                      field={child}
+                                      isSelected={selectedFieldId === child.id}
+                                      onClick={() => setSelectedFieldId(child.id)}
+                                      onToggleEnabled={(v) => updateField(child.id, { enabled: v })}
+                                      onRemove={() => removeField(child.id)}
+                                      onMoveUp={cIdx > 0 ? () => moveField(child.id, "up") : undefined}
+                                      onMoveDown={cIdx < (childrenByRepeater[field.id] || []).length - 1 ? () => moveField(child.id, "down") : undefined}
+                                    />
+                                  ))
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
+                                  onClick={() => {
+                                    setAddFieldSection(field.section || "custom");
+                                    setAddFieldRepeaterId(field.id);
+                                    setAddFieldOpen(true);
+                                  }}
+                                >
+                                  <Plus className="h-3 w-3" /> Add Field to Repeater
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         ))
                       )}
                     </CollapsibleContent>
@@ -425,35 +478,45 @@ export function RegistrationFormsInline({ competitionId }: Props) {
       </div>
 
       {/* Add Field Dialog */}
-      <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
+      <Dialog open={addFieldOpen} onOpenChange={(open) => { setAddFieldOpen(open); if (!open) setAddFieldRepeaterId(null); }}>
         <DialogContent className="max-w-md max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle>Add Field</DialogTitle>
+            <DialogTitle>{addFieldRepeaterId ? "Add Field to Repeater" : "Add Field"}</DialogTitle>
+            {addFieldRepeaterId && (
+              <p className="text-xs text-muted-foreground">This field will repeat with each entry.</p>
+            )}
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 pr-2">
-              {Object.entries(FIELD_TYPE_CATEGORIES).map(([category, types]) => (
-                <div key={category}>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{category}</h4>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {types.map((type) => {
-                      const label = FIELD_TYPE_LABELS[type as FormFieldConfig["field_type"]] || type;
-                      const Icon = FIELD_TYPE_ICONS[type] || Type;
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => addField(type as FormFieldConfig["field_type"], addFieldSection)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-xs font-medium">{label}</span>
-                        </button>
-                      );
-                    })}
+              {Object.entries(FIELD_TYPE_CATEGORIES).map(([category, types]) => {
+                // Don't allow nested repeaters
+                const filteredTypes = addFieldRepeaterId
+                  ? types.filter(t => t !== "repeater" && t !== "section_header" && t !== "divider")
+                  : types;
+                if (filteredTypes.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{category}</h4>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {filteredTypes.map((type) => {
+                        const label = FIELD_TYPE_LABELS[type as FormFieldConfig["field_type"]] || type;
+                        const Icon = FIELD_TYPE_ICONS[type] || Type;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => addField(type as FormFieldConfig["field_type"], addFieldSection, addFieldRepeaterId)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 hover:bg-muted/50 text-left transition-colors"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </DialogContent>
@@ -717,6 +780,28 @@ function FieldPropertiesPanel({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Parent Repeater assignment */}
+        {field.field_type !== "repeater" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Inside Repeater</Label>
+            <Select
+              value={field.parent_repeater_id || "__none__"}
+              onValueChange={(v) => onUpdate({ parent_repeater_id: v === "__none__" ? undefined : v })}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="None (standalone)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None (standalone)</SelectItem>
+                {allFields.filter(f => f.field_type === "repeater").map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.label || "Untitled Repeater"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground">Place this field inside a repeater so it repeats with each entry.</p>
+          </div>
+        )}
 
         {/* Required */}
         <div className="flex items-center justify-between">

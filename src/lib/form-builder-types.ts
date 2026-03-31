@@ -18,6 +18,8 @@ export interface FormFieldConfig {
   show_on_scorecard: boolean;
   is_builtin: boolean;
   section?: string;
+  /** If set, this field is a child of the repeater with this ID */
+  parent_repeater_id?: string;
 }
 
 export interface SectionConfig {
@@ -192,6 +194,7 @@ export interface FormTemplate {
 
 function buildSparkTemplate(): FormBuilderConfig {
   let order = 0;
+  const repeaterId = "spark_entries_repeater";
   const sections: SectionConfig[] = [
     { id: "school", label: "School Information", icon: "layers", is_builtin: false, sort_order: 0 },
     { id: "applicant", label: "Applicant Information", icon: "user", is_builtin: false, sort_order: 1 },
@@ -202,76 +205,150 @@ function buildSparkTemplate(): FormBuilderConfig {
   const fields: FormFieldConfig[] = [
     // School Info
     {
-      id: `spark_school_name`, key: undefined, field_type: "short_text", label: "Name of School",
+      id: `spark_school_name`, field_type: "short_text", label: "Name of School",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "school",
     },
     {
-      id: `spark_school_phone`, key: undefined, field_type: "phone", label: "School's Phone Number",
+      id: `spark_school_phone`, field_type: "phone", label: "School's Phone Number",
       enabled: true, required: false, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "school",
     },
 
     // Applicant Info
     {
-      id: `spark_applicant_name`, key: undefined, field_type: "short_text", label: "Name of Applicant",
+      id: `spark_applicant_name`, field_type: "short_text", label: "Name of Applicant",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "applicant",
     },
     {
-      id: `spark_applicant_email`, key: undefined, field_type: "email", label: "Applicant's Email",
+      id: `spark_applicant_email`, field_type: "email", label: "Applicant's Email",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "applicant",
     },
     {
-      id: `spark_applicant_phone`, key: undefined, field_type: "phone", label: "Applicant's Phone Number",
+      id: `spark_applicant_phone`, field_type: "phone", label: "Applicant's Phone Number",
       enabled: true, required: false, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "applicant",
     },
 
-    // Competition Entries (repeater)
+    // Competition Entries repeater container
     {
-      id: `spark_entries_repeater`, key: undefined, field_type: "repeater", label: "Competition Entries",
+      id: repeaterId, field_type: "repeater", label: "Competition Entries",
       placeholder: "Add Entry", help_text: "Add each performance entry with its category, details, and performer information.",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
-      options: undefined,
-      validation: undefined,
-      // Sub-fields stored in a custom property — the repeater renderer reads this
-      sub_fields: [
-        { key: "category", label: "Category", type: "select", required: true, options: ["Solo", "Duet", "Group", "Student Choreography"] },
-        { key: "sub_category", label: "Sub-Category", type: "select", required: false, options: [] },
-        { key: "division", label: "Division", type: "select", required: false, options: [] },
-        { key: "dance_style", label: "Dance Style", type: "text", required: false },
-        { key: "song_title", label: "Song Title", type: "text", required: false },
-        { key: "choreographer", label: "Choreographer Name", type: "text", required: false },
-        { key: "synopsis", label: "Synopsis / Description", type: "textarea", required: false },
-        { key: "video_url", label: "Performance Video URL", type: "url", required: false },
-        // Conditional: Solo
-        { key: "student_name", label: "Student Name", type: "text", required: true, showWhen: { fieldKey: "category", operator: "equals", value: "Solo" } },
-        // Conditional: Duet
-        { key: "student_name_1", label: "Student Name 1", type: "text", required: true, showWhen: { fieldKey: "category", operator: "equals", value: "Duet" } },
-        { key: "student_name_2", label: "Student Name 2", type: "text", required: true, showWhen: { fieldKey: "category", operator: "equals", value: "Duet" } },
-        // Conditional: Group / Student Choreography
-        { key: "group_name", label: "Group Name", type: "text", required: true, showWhen: { fieldKey: "category", operator: "contains", value: "Group" } },
-        { key: "number_of_dancers", label: "Number of Dancers", type: "number", required: false, showWhen: { fieldKey: "category", operator: "contains", value: "Group" } },
-        { key: "student_names", label: "Student Names (one per line)", type: "textarea", required: true, showWhen: { fieldKey: "category", operator: "contains", value: "Group" } },
-        // Student Choreography also shows group fields (contains "Group" won't match "Student Choreography"), so add explicit entries
-        { key: "group_name_sc", label: "Group Name", type: "text", required: true, showWhen: { fieldKey: "category", operator: "equals", value: "Student Choreography" } },
-        { key: "number_of_dancers_sc", label: "Number of Dancers", type: "number", required: false, showWhen: { fieldKey: "category", operator: "equals", value: "Student Choreography" } },
-        { key: "student_names_sc", label: "Student Names (one per line)", type: "textarea", required: true, showWhen: { fieldKey: "category", operator: "equals", value: "Student Choreography" } },
+    },
+
+    // Repeater child fields
+    {
+      id: "spark_entry_category", field_type: "dropdown", label: "Category",
+      options: [
+        { label: "Solo", value: "solo" },
+        { label: "Duet", value: "duet" },
+        { label: "Group", value: "group" },
+        { label: "Student Choreography", value: "student_choreography" },
       ],
-    } as any,
+      enabled: true, required: true, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_sub_category", field_type: "dropdown", label: "Sub-Category",
+      options: [],
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_division", field_type: "dropdown", label: "Division",
+      options: [],
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_dance_style", field_type: "short_text", label: "Dance Style",
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_song_title", field_type: "short_text", label: "Song Title",
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_choreographer", field_type: "short_text", label: "Choreographer Name",
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_synopsis", field_type: "long_text", label: "Synopsis / Description",
+      enabled: true, required: false, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_video_url", field_type: "url", label: "Performance Video URL",
+      enabled: true, required: false, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_student_name", field_type: "short_text", label: "Student Name",
+      enabled: true, required: true, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "equals", value: "solo" } },
+    },
+    {
+      id: "spark_entry_student_name_1", field_type: "short_text", label: "Student Name 1",
+      enabled: true, required: true, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "equals", value: "duet" } },
+    },
+    {
+      id: "spark_entry_student_name_2", field_type: "short_text", label: "Student Name 2",
+      enabled: true, required: true, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "equals", value: "duet" } },
+    },
+    {
+      id: "spark_entry_group_name", field_type: "short_text", label: "Group Name",
+      enabled: true, required: true, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "contains", value: "group" } },
+    },
+    {
+      id: "spark_entry_num_dancers", field_type: "number", label: "Number of Dancers",
+      enabled: true, required: false, sort_order: order++, width: "half",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "contains", value: "group" } },
+    },
+    {
+      id: "spark_entry_student_names", field_type: "long_text", label: "Student Names (one per line)",
+      enabled: true, required: true, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+      logic: { show_when: { field_id: "spark_entry_category", operator: "contains", value: "group" } },
+    },
 
     // Legal & Consent
     {
-      id: `spark_rules_consent`, key: undefined, field_type: "consent",
+      id: `spark_rules_consent`, field_type: "consent",
       label: "I acknowledge and agree to the competition rules and regulations",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "legal",
     },
     {
-      id: `spark_signature`, key: undefined, field_type: "signature", label: "Applicant Signature",
+      id: `spark_signature`, field_type: "signature", label: "Applicant Signature",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "legal",
     },
