@@ -826,6 +826,8 @@ function RepeaterCategoryButtons({ row, idx, subField, competitionId, levelId, u
           type="button"
           onClick={() => {
             updateRow(idx, subField.key, cat.id);
+            // Also store name so showWhen conditional logic can match by name
+            updateRow(idx, `${subField.key}__name`, cat.name);
             // Clear sub-category when category changes
             updateRow(idx, "spark_entry_sub_category", "");
           }}
