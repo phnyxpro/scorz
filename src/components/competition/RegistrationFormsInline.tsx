@@ -306,6 +306,53 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     setDirty(true);
   };
 
+  // DnD: reorder fields within a section (or repeater children)
+  const handleFieldDragEnd = (event: DragEndEvent, sectionId: string, repeaterId?: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const fieldList = repeaterId
+        ? prev.fields.filter(f => f.parent_repeater_id === repeaterId)
+        : prev.fields.filter(f => (f.section || "custom") === sectionId && !f.parent_repeater_id);
+
+      const oldIdx = fieldList.findIndex(f => f.id === active.id);
+      const newIdx = fieldList.findIndex(f => f.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+
+      const reordered = arrayMove(fieldList, oldIdx, newIdx);
+      const reorderedIds = new Set(reordered.map(f => f.id));
+      const otherFields = prev.fields.filter(f => !reorderedIds.has(f.id));
+
+      // Reassign sort_order
+      let sortCounter = 0;
+      const allFields = [...otherFields, ...reordered.map(f => ({ ...f, sort_order: sortCounter++ }))];
+
+      return { ...prev, fields: allFields };
+    });
+    setDirty(true);
+  };
+
+  // DnD: reorder sections
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const secs = [...(prev.sections || DEFAULT_SECTIONS)].sort((a, b) => a.sort_order - b.sort_order);
+      const oldIdx = secs.findIndex(s => s.id === active.id);
+      const newIdx = secs.findIndex(s => s.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const reordered = arrayMove(secs, oldIdx, newIdx).map((s, i) => ({ ...s, sort_order: i }));
+      return { ...prev, sections: reordered };
+    });
+    setDirty(true);
+  };
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
   // --- Section CRUD ---
   const handleAddSection = () => {
     setEditingSection(null);
