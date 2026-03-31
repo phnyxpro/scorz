@@ -377,7 +377,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         .update({ registration_form_config: config as any })
         .eq("id", competitionId);
       if (error) throw error;
-      toast({ title: "Form configuration saved" });
+      toast({ title: "Form configuration saved", description: "Changes are now live for Add Registration and contestant sign-up." });
       setDirty(false);
       qc.invalidateQueries({ queryKey: ["competition_form_config", competitionId] });
     } catch (err: any) {
