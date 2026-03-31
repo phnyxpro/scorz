@@ -230,20 +230,19 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                 return raw?.parent_repeater_id === config.fields.find((cf: any) => cf.id === rep.id)?.id;
               });
               if (children.length > 0) {
+                // Build a lookup from raw field id → mapped key so showWhen can reference siblings
+                const idToKey = new Map<string, string>();
+                for (const c of children) {
+                  idToKey.set(c.id, c.key);
+                }
+
                 rep.repeaterFields = children.map(c => {
-                  // Convert logic.show_when to showWhen format
                   const rawField = config.fields.find((cf: any) => cf.id === c.id);
                   if (rawField?.logic?.show_when) {
                     const sw = rawField.logic.show_when;
-                    // Find the sibling field key by field_id
-                    const targetField = config.fields.find((cf: any) => cf.id === sw.field_id);
-                    // Use the sibling's mapped key (not its raw id) so showWhen matches row values
-                    const siblingFormField = targetField ? children.find(ch => ch.id === targetField.id) || rep.repeaterFields?.find((rf: any) => rf.id === targetField.id) : null;
-                    const targetKey = (siblingFormField as any)?.key || (c as any)._siblingKey || (targetField ? targetField.id : sw.field_id);
-                    if (sw.operator === "equals") {
-                      c.showWhen = { fieldKey: targetKey, equals: sw.value };
-                    } else if (sw.operator === "contains") {
-                      // "contains" means the value includes the target string — map to equals for group/student_choreography
+                    // Resolve the target field's mapped key using our pre-built lookup
+                    const targetKey = idToKey.get(sw.field_id) || sw.field_id;
+                    if (sw.operator === "equals" || sw.operator === "contains") {
                       c.showWhen = { fieldKey: targetKey, equals: sw.value };
                     }
                   }
