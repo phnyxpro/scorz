@@ -238,6 +238,51 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [sectionName, setSectionName] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDesc, setTemplateDesc] = useState("");
+
+  const { user } = useAuth();
+
+  // Fetch user-saved templates
+  const { data: userTemplates = [], refetch: refetchTemplates } = useQuery({
+    queryKey: ["form_templates", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("form_templates" as any)
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const saveTemplateMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      const { error } = await supabase
+        .from("form_templates" as any)
+        .insert({ user_id: user!.id, name, description: description || null, config: config as any } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchTemplates();
+      setSaveTemplateOpen(false);
+      setTemplateName("");
+      setTemplateDesc("");
+      toast({ title: "Template saved", description: "You can reuse this template in other competitions." });
+    },
+    onError: (err: any) => toast({ title: "Failed to save template", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("form_templates" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => refetchTemplates(),
+  });
 
   useEffect(() => {
     if (competition?.registration_form_config) {
