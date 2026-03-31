@@ -146,6 +146,8 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   divider: "Divider",
   rich_text: "Rich Text",
   repeater: "Repeater",
+  category_selector: "Category Selector",
+  subcategory_selector: "Sub-Category Selector",
 };
 
 export const SECTION_LABELS: Record<string, string> = {

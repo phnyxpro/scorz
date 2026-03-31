@@ -71,7 +71,7 @@ const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
   Input: ["short_text", "long_text", "email", "phone", "url", "number", "date", "time", "currency"],
   Choice: ["dropdown", "radio", "checkbox", "toggle", "rating"],
   Media: ["file"],
-  Advanced: ["signature", "consent", "hidden", "repeater"],
+  Advanced: ["signature", "consent", "hidden", "repeater", "category_selector", "subcategory_selector"],
   Layout: ["section_header", "divider", "rich_text", "color"],
 };
 
