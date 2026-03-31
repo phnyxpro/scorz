@@ -511,8 +511,8 @@ function FieldEditor({
                 />
                 <span className="text-[10px]">=</span>
                 <Input
-                  value={field.showWhen.equals}
-                  onChange={e => onUpdate({ showWhen: { ...field.showWhen!, equals: e.target.value } })}
+                  value={field.showWhen.value || ""}
+                  onChange={e => onUpdate({ showWhen: { ...field.showWhen!, value: e.target.value } })}
                   placeholder="value"
                   className="h-5 text-[10px] w-20 px-1"
                 />
