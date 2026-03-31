@@ -701,6 +701,29 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Form Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Form Preview
+            </DialogTitle>
+            <DialogDescription>
+              This is how the registration form will appear to contestants.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {previewOpen && (
+              <FormPreviewContent config={config} competitionId={competitionId} />
+            )}
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setPreviewOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
