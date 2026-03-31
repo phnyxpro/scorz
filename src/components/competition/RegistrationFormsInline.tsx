@@ -502,6 +502,40 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Load Template Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Load Form Template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Choose a template to replace the current form configuration. You can customise it after loading.
+          </p>
+          <div className="space-y-2 mt-2">
+            {FORM_TEMPLATES.map(t => (
+              <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
+                onClick={() => {
+                  const built = t.build();
+                  setConfig(built);
+                  setDirty(true);
+                  setSelectedFieldId(null);
+                  setTemplateDialogOpen(false);
+                  toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                }}
+              >
+                <CardContent className="p-3">
+                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
