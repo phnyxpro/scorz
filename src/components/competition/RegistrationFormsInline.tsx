@@ -702,34 +702,115 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Save Template Dialog */}
+      <Dialog open={saveTemplateOpen} onOpenChange={setSaveTemplateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Save the current form configuration as a reusable template for other competitions.
+          </p>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs">Template Name *</Label>
+              <Input
+                placeholder="e.g. Dance Competition Form"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                placeholder="Brief description of this template..."
+                value={templateDesc}
+                onChange={e => setTemplateDesc(e.target.value)}
+                className="mt-1 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!templateName.trim() || saveTemplateMutation.isPending}
+              onClick={() => saveTemplateMutation.mutate({ name: templateName.trim(), description: templateDesc.trim() })}
+            >
+              {saveTemplateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Load Template Dialog */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Load Form Template</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Choose a template to replace the current form configuration. You can customise it after loading.
           </p>
-          <div className="space-y-2 mt-2">
-            {FORM_TEMPLATES.map(t => (
-              <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => {
-                  const built = t.build();
-                  setConfig(built);
-                  setDirty(true);
-                  setSelectedFieldId(null);
-                  setTemplateDialogOpen(false);
-                  toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
-                }}
-              >
-                <CardContent className="p-3">
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="flex-1 min-h-0 mt-2">
+            <div className="space-y-2 pr-3">
+              {/* User-saved templates */}
+              {userTemplates.length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">My Templates</p>
+                  {userTemplates.map((t: any) => (
+                    <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer relative group">
+                      <CardContent className="p-3" onClick={() => {
+                        const loaded = migrateFormConfig(t.config);
+                        if (!loaded.sections || loaded.sections.length === 0) loaded.sections = DEFAULT_SECTIONS;
+                        setConfig(loaded);
+                        setDirty(true);
+                        setSelectedFieldId(null);
+                        setTemplateDialogOpen(false);
+                        toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                      }}>
+                        <p className="text-sm font-medium">{t.name}</p>
+                        {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          Saved {new Date(t.created_at).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                        onClick={(e) => { e.stopPropagation(); deleteTemplateMutation.mutate(t.id); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </Card>
+                  ))}
+                  <Separator className="my-2" />
+                </>
+              )}
+
+              {/* Built-in templates */}
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Presets</p>
+              {FORM_TEMPLATES.map(t => (
+                <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
+                  onClick={() => {
+                    const built = t.build();
+                    setConfig(built);
+                    setDirty(true);
+                    setSelectedFieldId(null);
+                    setTemplateDialogOpen(false);
+                    toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                  }}
+                >
+                  <CardContent className="p-3">
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
           </DialogFooter>
