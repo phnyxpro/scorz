@@ -652,11 +652,32 @@ function RepeaterField({ field, value, onChange, error }: {
           <div className="grid grid-cols-2 gap-2">
             {field.repeaterFields?.filter(subField => {
               if (!subField.showWhen) return true;
-              return row[subField.showWhen.fieldKey] === subField.showWhen.equals;
+              const depVal = row[subField.showWhen.fieldKey] || "";
+              return depVal === subField.showWhen.equals || depVal.includes(subField.showWhen.equals);
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
-                {subField.type === "textarea" ? (
+                {subField.type === "category_selector" ? (
+                  <RepeaterCategoryButtons
+                    row={row} idx={idx} subField={subField}
+                    competitionId={(field as any)._competitionId || ""}
+                    levelId={row.__level_id || ""}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "subcategory_selector" ? (
+                  <RepeaterSubCategoryButtons
+                    row={row} idx={idx} subField={subField}
+                    levelId={row.__level_id || ""}
+                    parentCategoryId={row[subField.key.replace("sub_category", "category")] || row["spark_entry_category"] || ""}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "name_list" ? (
+                  <NameListField
+                    value={row[subField.key] || []}
+                    onChange={(v) => updateRow(idx, subField.key, v)}
+                    placeholder={subField.placeholder}
+                  />
+                ) : subField.type === "textarea" ? (
                   <Textarea
                     placeholder={subField.placeholder}
                     value={row[subField.key] || ""}
@@ -673,6 +694,11 @@ function RepeaterField({ field, value, onChange, error }: {
                 ) : subField.type === "checkbox" || subField.type === "toggle" ? (
                   <div className="flex items-center gap-2 pt-1">
                     <Switch checked={!!row[subField.key]} onCheckedChange={v => updateRow(idx, subField.key, v)} />
+                  </div>
+                ) : subField.type === "consent" ? (
+                  <div className="flex items-start gap-2 pt-1">
+                    <Checkbox checked={!!row[subField.key]} onCheckedChange={v => updateRow(idx, subField.key, !!v)} />
+                    <span className="text-xs text-muted-foreground">{subField.description || subField.label}</span>
                   </div>
                 ) : subField.type === "rating" ? (
                   <div className="flex gap-1">
