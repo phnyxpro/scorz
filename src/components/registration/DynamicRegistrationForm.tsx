@@ -479,6 +479,7 @@ function FieldRenderer({
           value={value || []}
           onChange={onChange}
           error={error}
+          competitionId={competitionId}
         />
       );
 
@@ -611,8 +612,8 @@ function FieldRenderer({
 
 // ─── Repeater Field ─────────────────────────────────────
 
-function RepeaterField({ field, value, onChange, error }: {
-  field: FormField; value: any[]; onChange: (v: any[]) => void; error?: string;
+function RepeaterField({ field, value, onChange, error, competitionId }: {
+  field: FormField; value: any[]; onChange: (v: any[]) => void; error?: string; competitionId: string;
 }) {
   const rows = Array.isArray(value) ? value : [];
   const canAdd = !field.repeaterMax || rows.length < field.repeaterMax;
@@ -660,13 +661,13 @@ function RepeaterField({ field, value, onChange, error }: {
                 {subField.type === "level_selector" ? (
                   <RepeaterLevelButtons
                     row={row} idx={idx} subField={subField}
-                    competitionId={(field as any)._competitionId || ""}
+                    competitionId={competitionId}
                     updateRow={updateRow}
                   />
                 ) : subField.type === "category_selector" ? (
                   <RepeaterCategoryButtons
                     row={row} idx={idx} subField={subField}
-                    competitionId={(field as any)._competitionId || ""}
+                    competitionId={competitionId}
                     levelId={row.__level_id || ""}
                     updateRow={updateRow}
                   />
