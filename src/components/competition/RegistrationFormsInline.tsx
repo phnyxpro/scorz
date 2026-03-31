@@ -178,7 +178,8 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const removeField = (id: string) => {
     setConfig(prev => ({
       ...prev,
-      fields: prev.fields.filter(f => f.id !== id),
+      // Remove the field and any children if it's a repeater
+      fields: prev.fields.filter(f => f.id !== id && f.parent_repeater_id !== id),
     }));
     if (selectedFieldId === id) setSelectedFieldId(null);
     setDirty(true);
