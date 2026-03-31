@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, CheckCircle, Plus, Trash2, ArrowRight, ArrowLeft } from "lucide-react";
 import type { FormSchema, FormField, FormSection } from "@/hooks/useRegistrationForm";
-import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
+import { BUILTIN_KEYS, evaluateShowWhen } from "@/hooks/useRegistrationForm";
 
 interface DynamicRegistrationFormProps {
   formSchema: FormSchema;
