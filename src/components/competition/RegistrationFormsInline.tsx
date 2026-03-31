@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,6 +24,9 @@ import {
   FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
   FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections, FORM_TEMPLATES,
 } from "@/lib/form-builder-types";
+import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
+import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
+import type { FormSchema, FormField, FormSection, FieldType } from "@/hooks/useRegistrationForm";
 
 // Re-export for backward compat with ContestantRegistration import
 export type CustomFieldDef = {
@@ -88,6 +91,99 @@ function getSectionIcon(section: SectionConfig): React.ElementType {
   return SECTION_ICON_MAP[section.icon || "layers"] || Layers;
 }
 
+// Convert current builder config to FormSchema for preview
+function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
+  const sections = getConfigSections(config);
+  const enabledFields = config.fields.filter(f => f.enabled !== false);
+  const fieldTypeMap: Record<string, FieldType> = {
+    short_text: "text", long_text: "textarea", email: "email", phone: "phone",
+    number: "number", url: "url", date: "date", dropdown: "select",
+    checkbox: "checkbox", radio: "radio", file: "file",
+    signature: "signature", consent: "consent", section_header: "heading",
+    repeater: "repeater", category_selector: "category_selector",
+    subcategory_selector: "subcategory_selector", rating: "rating",
+    toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
+    time: "time", color: "color", currency: "currency",
+  };
+  const builtinKeyMap: Record<string, string> = {
+    firstName: "full_name", lastName: "__lastName", email: "email", phone: "phone",
+    location: "location", ageCategory: "age_category", bio: "bio",
+    videoUrl: "performance_video_url", guardianName: "guardian_name",
+    guardianEmail: "guardian_email", guardianPhone: "guardian_phone",
+    level: "__level_selector", category: "__category_selector",
+    subCategory: "__subcategory_selector", subEvent: "__subevent_selector",
+    rulesAcknowledged: "__rules_acknowledgment",
+    contestantSignature: "__contestant_signature", guardianSignature: "__guardian_signature",
+  };
+  const specialTypeMap: Record<string, FieldType> = {
+    "__level_selector": "level_selector", "__subevent_selector": "subevent_selector",
+    "__category_selector": "category_selector", "__subcategory_selector": "subcategory_selector",
+    "__time_slot_selector": "time_slot_selector", "__rules_acknowledgment": "rules_acknowledgment",
+    "__contestant_signature": "signature", "__guardian_signature": "signature",
+  };
+
+  let schema: FormSchema = sections
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(sec => {
+      const sectionFields = enabledFields
+        .filter(f => f.section === sec.id && !f.parent_repeater_id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map(f => {
+          const rawKey = f.key || f.id?.replace("builtin_", "") || f.id;
+          const mappedKey = f.is_builtin ? (builtinKeyMap[rawKey] || rawKey) : rawKey;
+          const isBuiltin = f.is_builtin && BUILTIN_KEYS.has(mappedKey);
+          const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
+          const field: FormField = {
+            id: f.id,
+            key: mappedKey,
+            label: f.label,
+            type: fieldType,
+            required: !!f.required,
+            placeholder: f.help_text || "",
+            description: f.help_text || "",
+            builtin: isBuiltin,
+            columns: f.width === "half" ? 1 : 2,
+            options: f.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
+          };
+          // Attach repeater children
+          if (f.field_type === "repeater") {
+            const children = enabledFields
+              .filter(cf => cf.parent_repeater_id === f.id)
+              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              .map(cf => {
+                const ck = cf.key || cf.id;
+                const cmk = cf.is_builtin ? (builtinKeyMap[ck] || ck) : ck;
+                const cType = specialTypeMap[cmk] || fieldTypeMap[cf.field_type] || "text";
+                const child: FormField = {
+                  id: cf.id, key: cmk, label: cf.label, type: cType,
+                  required: !!cf.required, placeholder: cf.help_text || "",
+                  description: cf.help_text || "", builtin: false,
+                  columns: cf.width === "half" ? 1 : 2,
+                  options: cf.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
+                };
+                if (cf.logic?.show_when) {
+                  const sw = cf.logic.show_when;
+                  const target = enabledFields.find(tf => tf.id === sw.field_id);
+                  if (target && (sw.operator === "equals" || sw.operator === "contains")) {
+                    child.showWhen = { fieldKey: target.key || target.id, equals: sw.value };
+                  }
+                }
+                return child;
+              });
+            if (children.length > 0) {
+              field.repeaterFields = children;
+              field.repeaterLabel = f.help_text || "Add Entry";
+            }
+          }
+          return field;
+        });
+      return { id: sec.id, title: sec.label || sec.id, description: "", fields: sectionFields } as FormSection;
+    })
+    .filter(s => s.fields.length > 0);
+
+  return schema;
+}
+
 export function RegistrationFormsInline({ competitionId }: Props) {
   const qc = useQueryClient();
 
@@ -111,6 +207,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [addFieldOpen, setAddFieldOpen] = useState(false);
   const [addFieldSection, setAddFieldSection] = useState<string>("custom");
   const [addFieldRepeaterId, setAddFieldRepeaterId] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Section management state
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
@@ -280,7 +377,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         .update({ registration_form_config: config as any })
         .eq("id", competitionId);
       if (error) throw error;
-      toast({ title: "Form configuration saved" });
+      toast({ title: "Form configuration saved", description: "Changes are now live for Add Registration and contestant sign-up." });
       setDirty(false);
       qc.invalidateQueries({ queryKey: ["competition_form_config", competitionId] });
     } catch (err: any) {
@@ -325,6 +422,9 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           Configure sections and fields for the registration form.
         </p>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-xs h-7">
+            <Eye className="h-3 w-3" /> Preview
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
             <FileInput className="h-3 w-3" /> Load Template
           </Button>
@@ -601,7 +701,55 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Form Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Form Preview
+            </DialogTitle>
+            <DialogDescription>
+              This is how the registration form will appear to contestants.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {previewOpen && (
+              <FormPreviewContent config={config} competitionId={competitionId} />
+            )}
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setPreviewOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function FormPreviewContent({ config, competitionId }: { config: FormBuilderConfig; competitionId: string }) {
+  const previewSchema = useMemo(() => builderConfigToFormSchema(config), [config]);
+
+  if (previewSchema.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-sm">No enabled fields to preview.</p>
+        <p className="text-xs mt-1">Add fields and enable them to see the form.</p>
+      </div>
+    );
+  }
+
+  return (
+    <DynamicRegistrationForm
+      formSchema={previewSchema}
+      competitionId={competitionId}
+      mode="walkin"
+      onSubmit={() => {
+        toast({ title: "Preview only", description: "This is a preview — no data was submitted." });
+      }}
+      isSubmitting={false}
+    />
   );
 }
 
