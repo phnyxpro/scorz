@@ -119,9 +119,9 @@ export function createDefaultFormSchema(): FormSchema {
         { id: crypto.randomUUID(), key: "phone", label: "Phone", type: "phone", required: false, placeholder: "+1...", builtin: true },
         { id: crypto.randomUUID(), key: "location", label: "Location", type: "text", required: false, placeholder: "City, State", builtin: true },
         { id: crypto.randomUUID(), key: "age_category", label: "Age Category", type: "select", required: true, builtin: true, options: [{ label: "Adult (18+)", value: "adult" }, { label: "Minor (Under 18)", value: "minor" }] },
-        { id: crypto.randomUUID(), key: "guardian_name", label: "Guardian Name", type: "text", required: false, placeholder: "Full Name", builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
-        { id: crypto.randomUUID(), key: "guardian_email", label: "Guardian Email", type: "email", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
-        { id: crypto.randomUUID(), key: "guardian_phone", label: "Guardian Phone", type: "phone", required: false, builtin: true, showWhen: { fieldKey: "age_category", equals: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_name", label: "Guardian Name", type: "text", required: false, placeholder: "Full Name", builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_email", label: "Guardian Email", type: "email", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
+        { id: crypto.randomUUID(), key: "guardian_phone", label: "Guardian Phone", type: "phone", required: false, builtin: true, showWhen: { fieldKey: "age_category", operator: "equals", value: "minor" } },
       ],
     },
     {
