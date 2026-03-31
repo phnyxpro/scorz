@@ -15,7 +15,7 @@ import {
   User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
   RadioTower, CalendarDays, Edit2, Layers, Clock, Palette, DollarSign, Star, ToggleLeft, EyeOff,
-  Minus, FileText, Repeat,
+  Minus, FileText, Repeat, FileInput,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
