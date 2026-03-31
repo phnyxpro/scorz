@@ -27,6 +27,16 @@ import {
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
 import type { FormSchema, FormField, FormSection, FieldType } from "@/hooks/useRegistrationForm";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent, type DragStartEvent, DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 // Re-export for backward compat with ContestantRegistration import
 export type CustomFieldDef = {
