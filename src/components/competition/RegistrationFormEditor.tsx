@@ -630,7 +630,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
                 className="scale-[0.6]"
                 checked={!!sf.showWhen}
                 onCheckedChange={v => {
-                  if (v) updateSubField(i, { showWhen: { fieldKey: "", equals: "" } });
+                  if (v) updateSubField(i, { showWhen: { fieldKey: "", operator: "equals", value: "" } });
                   else updateSubField(i, { showWhen: undefined });
                 }}
               />
