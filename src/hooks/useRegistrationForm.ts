@@ -145,7 +145,11 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
           short_text: "text", long_text: "textarea", email: "email", phone: "phone",
           number: "number", url: "url", date: "date", dropdown: "select",
           checkbox: "checkbox", radio: "radio", file: "file",
-          signature: "signature", consent: "checkbox", section_header: "heading",
+          signature: "signature", consent: "consent", section_header: "heading",
+          repeater: "repeater", category_selector: "category_selector",
+          subcategory_selector: "subcategory_selector", rating: "rating",
+          toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
+          time: "time", color: "color", currency: "currency",
         };
         // Map flat DB builtin keys → standard builtin keys used by DynamicRegistrationForm
         const builtinKeyMap: Record<string, string> = {
