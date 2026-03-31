@@ -110,6 +110,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [dirty, setDirty] = useState(false);
   const [addFieldOpen, setAddFieldOpen] = useState(false);
   const [addFieldSection, setAddFieldSection] = useState<string>("custom");
+  const [addFieldRepeaterId, setAddFieldRepeaterId] = useState<string | null>(null);
 
   // Section management state
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
