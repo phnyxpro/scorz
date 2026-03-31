@@ -47,6 +47,7 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   url: Link,
   number: Hash,
   date: CalendarDays,
+  time: Clock,
   dropdown: ListOrdered,
   radio: RadioTower,
   checkbox: CheckSquare,
@@ -54,6 +55,22 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   signature: PenLine,
   consent: FileCheck,
   section_header: Heading,
+  color: Palette,
+  currency: DollarSign,
+  rating: Star,
+  toggle: ToggleLeft,
+  hidden: EyeOff,
+  divider: Minus,
+  rich_text: FileText,
+  repeater: Repeat,
+};
+
+const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
+  Input: ["short_text", "long_text", "email", "phone", "url", "number", "date", "time", "currency"],
+  Choice: ["dropdown", "radio", "checkbox", "toggle", "rating"],
+  Media: ["file"],
+  Advanced: ["signature", "consent", "hidden", "repeater"],
+  Layout: ["section_header", "divider", "rich_text", "color"],
 };
 
 const SECTION_ICON_MAP: Record<string, React.ElementType> = {
