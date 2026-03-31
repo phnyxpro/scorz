@@ -306,7 +306,12 @@ function SectionRenderer({
   const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
   const visibleFields = sectionFields.filter(f => {
     if (!f.showWhen) return true;
-    return values[f.showWhen.fieldKey] === f.showWhen.equals;
+    const depVal = values[f.showWhen.fieldKey];
+    if (depVal === undefined || depVal === null || depVal === "") return false;
+    if (depVal === f.showWhen.equals) return true;
+    if (typeof depVal === "string" && depVal.includes(f.showWhen.equals)) return true;
+    if (Array.isArray(depVal) && depVal.includes(f.showWhen.equals)) return true;
+    return false;
   });
 
   const Wrapper = compact ? "div" : Card;
