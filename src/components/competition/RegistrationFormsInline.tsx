@@ -176,8 +176,9 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
                 if (cf.logic?.show_when) {
                   const sw = cf.logic.show_when;
                   const target = enabledFields.find(tf => tf.id === sw.field_id);
-                  if (target && (sw.operator === "equals" || sw.operator === "contains")) {
-                    child.showWhen = { fieldKey: target.key || target.id, equals: sw.value };
+                  if (target) {
+                    const targetKey = target.key || target.id;
+                    child.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
                   }
                 }
                 return child;

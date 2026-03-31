@@ -647,12 +647,7 @@ function RepeaterField({ field, value, onChange, error, competitionId }: {
           <div className="grid grid-cols-2 gap-2">
             {field.repeaterFields?.filter(subField => {
               if (!subField.showWhen) return true;
-              const depVal = row[subField.showWhen.fieldKey] || "";
-              const depNameVal = row[`${subField.showWhen.fieldKey}__name`] || "";
-              const target = subField.showWhen.equals;
-              return depVal === target || depNameVal === target ||
-                (typeof depVal === "string" && depVal.includes(target)) ||
-                (typeof depNameVal === "string" && depNameVal.includes(target));
+              return evaluateShowWhen(subField.showWhen, row);
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>

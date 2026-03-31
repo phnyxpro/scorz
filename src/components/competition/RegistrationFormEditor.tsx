@@ -645,7 +645,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
                   </SelectContent>
                 </Select>
                 <span className="text-[9px]">=</span>
-                <Input value={sf.showWhen.equals} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, equals: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
+                <Input value={sf.showWhen.value || ""} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, value: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
               </>
             )}
           </div>
