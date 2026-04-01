@@ -29,6 +29,8 @@ import { useRegistrationFormConfig, createDefaultFormSchema, useCreateAdvancemen
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BulkUploadDialog } from "./BulkUploadDialog";
 import { AIUploadDialog } from "./AIUploadDialog";
+import { RegistrationsSheetEditor } from "./RegistrationsSheetEditor";
+import { LayoutGrid } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -455,6 +457,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showAIUpload, setShowAIUpload] = useState(false);
+  const [showSheetEditor, setShowSheetEditor] = useState(false);
   const [activeSubEventTab, setActiveSubEventTab] = useState("all");
   const [filterAge, setFilterAge] = useState("all");
   const [sortField, setSortField] = useState<SortField>("sort_order");
@@ -952,6 +955,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                   Advance Selected ({selectedIds.size})
                 </Button>
               )}
+               <Button size="sm" variant="outline" onClick={() => setShowSheetEditor(true)} className="bg-primary/5 border-primary/20 hover:bg-primary/10 text-primary">
+                <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Edit as Sheet
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowBulkUpload(true)}>
                 <Upload className="h-3.5 w-3.5 mr-1" /> Bulk Upload
               </Button>
@@ -1311,6 +1317,18 @@ export function RegistrationsManager({ competitionId }: Props) {
 
       <BulkUploadDialog competitionId={competitionId} open={showBulkUpload} onOpenChange={setShowBulkUpload} />
       <AIUploadDialog competitionId={competitionId} open={showAIUpload} onOpenChange={setShowAIUpload} />
+      {registrations && (
+        <RegistrationsSheetEditor
+          competitionId={competitionId}
+          registrations={registrations}
+          formSchema={formSchema}
+          open={showSheetEditor}
+          onOpenChange={setShowSheetEditor}
+          levels={allData?.levels}
+          subEvents={allData?.subEvents}
+          categories={allData?.categories}
+        />
+      )}
     </div>
   );
 }
