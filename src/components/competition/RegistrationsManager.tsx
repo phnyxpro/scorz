@@ -719,7 +719,23 @@ export function RegistrationsManager({ competitionId }: Props) {
   };
 
   const handleWalkInAdd = async (builtinData: Record<string, any>, customData: Record<string, any>) => {
-    if (!builtinData.email || !user) return;
+    // When form uses custom field IDs (not builtin), email/name may be in customData
+    // Search all values for email-like and name-like fields as fallback
+    const allValues = { ...customData, ...builtinData };
+    const findValue = (keys: string[], typeHint?: string) => {
+      // Check builtinData first
+      for (const k of keys) if (builtinData[k]) return builtinData[k];
+      // Then search all values by key pattern
+      if (typeHint) {
+        for (const [k, v] of Object.entries(allValues)) {
+          if (v && typeof v === "string" && k.toLowerCase().includes(typeHint)) return v;
+        }
+      }
+      return undefined;
+    };
+    const resolvedEmail = findValue(["email"], "email");
+    const resolvedName = findValue(["full_name", "fullName"], "name");
+    if (!resolvedEmail || !user) return;
     try {
       const { data: existingProfile } = await supabase
         .from("profiles")
