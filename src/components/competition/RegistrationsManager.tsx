@@ -953,7 +953,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
