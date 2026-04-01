@@ -196,6 +196,24 @@ export function ContestantDetailSheet({ registration, open, onOpenChange, onAppr
             </Section>
           )}
 
+          {/* Custom Fields */}
+          {reg.custom_field_values && Object.keys(reg.custom_field_values as Record<string, any>).filter(k => !k.startsWith("__")).length > 0 && (
+            <Section title="Custom Fields">
+              <div className="space-y-1.5">
+                {Object.entries(reg.custom_field_values as Record<string, any>)
+                  .filter(([key]) => !key.startsWith("__"))
+                  .map(([key, value]) => (
+                  <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm py-1 border-b border-border/10 last:border-0 gap-1 sm:gap-4">
+                    <span className="text-muted-foreground w-1/3 break-words capitalize">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-foreground font-medium flex-1 sm:text-right break-words">
+                      {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
           <Separator />
 
           {/* Compliance */}

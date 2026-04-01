@@ -856,6 +856,16 @@ function CategoryLevelPicker({ parentId, levelId, depth, values, updateValue }: 
     }
     // For deeper levels, store in a generic key
     updateValue("__deepest_category_id", id);
+
+    // If this category is linked to a sub-event (usually leaf nodes)
+    const cat = children.find(c => c.id === id);
+    if (cat?.sub_event_id) {
+      updateValue("__subevent_selector", cat.sub_event_id);
+      updateValue("selectedSubEventId", cat.sub_event_id);
+    } else {
+      updateValue("__subevent_selector", "");
+      updateValue("selectedSubEventId", "");
+    }
   };
 
   // Determine label based on depth

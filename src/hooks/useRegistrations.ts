@@ -30,6 +30,7 @@ export interface ContestantRegistration {
   status: string;
   special_entry_type: string | null;
   sort_order: number;
+  custom_field_values: Record<string, any> | null;
   created_at: string;
   updated_at: string;
 }

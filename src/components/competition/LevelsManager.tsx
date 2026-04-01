@@ -18,6 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays, parseISO } from "date-fns";
@@ -665,36 +666,78 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
 function StructureToggle({ level, competitionId }: { level: any; competitionId: string }) {
   const qc = useQueryClient();
   const structureType: string = level.structure_type || "sub_events";
+  const [clearing, setClearing] = useState(false);
 
   const handleToggle = async (newType: string) => {
     await supabase.from("competition_levels").update({ structure_type: newType } as any).eq("id", level.id);
     qc.invalidateQueries({ queryKey: ["levels", competitionId] });
   };
 
+  const handleClearLayout = async () => {
+    setClearing(true);
+    try {
+      await supabase.from("competition_categories").delete().eq("level_id", level.id);
+      await supabase.from("sub_events").delete().eq("level_id", level.id);
+      
+      qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+      qc.invalidateQueries({ queryKey: ["sub_events", level.id] });
+      qc.invalidateQueries({ queryKey: ["competition_categories", level.id] });
+      toast({ title: "Layout cleared", description: "All categories and sub-events for this level have been removed." });
+    } catch(e: any) {
+      toast({ title: "Error clearing layout", description: e.message, variant: "destructive" });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
-        <span className="text-xs text-muted-foreground">Structure:</span>
-        <div className="flex gap-1">
-          {([
-            { value: "sub_events", label: "Sub-Events", icon: List },
-            { value: "categories", label: "Categories", icon: FolderTree },
-          ] as const).map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => handleToggle(value)}
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                structureType === value
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-              }`}
-            >
-              <Icon className="h-3 w-3" />
-              {label}
-            </button>
-          ))}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Structure:</span>
+          <div className="flex gap-1">
+            {([
+              { value: "sub_events", label: "Sub-Events", icon: List },
+              { value: "categories", label: "Categories", icon: FolderTree },
+            ] as const).map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => handleToggle(value)}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  structureType === value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-3 w-3 mr-1" /> Clear Layout
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear Level Layout?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all Sub-Events and Categories associated with this level. Existing registrations tied to them might lose their specific event routing. Are you sure?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearLayout} disabled={clearing} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {clearing ? "Clearing..." : "Yes, clear layout"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       {structureType === "sub_events" ? (
         <SubEventsPanel levelId={level.id} />
