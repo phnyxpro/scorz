@@ -780,8 +780,8 @@ export function RegistrationsManager({ competitionId }: Props) {
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
-        full_name: (builtinData.__lastName ? [builtinData.full_name, builtinData.__lastName].filter(Boolean).join(" ") : builtinData.full_name) || builtinData.fullName || "",
-        email: builtinData.email,
+        full_name: resolvedName || (builtinData.__lastName ? [builtinData.full_name, builtinData.__lastName].filter(Boolean).join(" ") : builtinData.full_name) || "",
+        email: resolvedEmail,
         phone: builtinData.phone,
         location: builtinData.location,
         age_category: builtinData.age_category || builtinData.ageCategory || "adult",
