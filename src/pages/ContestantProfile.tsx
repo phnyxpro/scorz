@@ -415,7 +415,46 @@ export default function ContestantProfile() {
                       </div>
                     )}
 
-                    {/* Custom fields section placeholder */}
+                    {/* Custom field values */}
+                    {(() => {
+                      const cfv = reg.custom_field_values || {};
+                      const builtinKeys = new Set([
+                        "full_name", "email", "phone", "location", "age_category", "bio",
+                        "performance_video_url", "profile_photo_url", "guardian_name",
+                        "guardian_email", "guardian_phone", "__level_selector",
+                        "__category_selector", "__subcategory_selector", "__subevent_selector",
+                        "__time_slot_selector", "__rules_acknowledgment", "__contestant_signature",
+                        "__guardian_signature", "sub_event_id", "selectedSubEventId",
+                        "selectedCategoryId", "selectedSubCategoryId", "__deepest_category_id",
+                        "rules_acknowledged", "contestant_signature", "guardian_signature",
+                      ]);
+                      const customEntries = Object.entries(cfv).filter(
+                        ([k, v]) => !builtinKeys.has(k) && v !== null && v !== undefined && v !== ""
+                      );
+                      if (customEntries.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-2 border-t border-border/30">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Registration Details
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {customEntries.map(([key, value]) => {
+                              const label = key
+                                .replace(/^spark_/, "")
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase());
+                              const display = typeof value === "object" ? JSON.stringify(value) : String(value);
+                              return (
+                                <div key={key} className="space-y-0.5">
+                                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                                  <p className="text-sm text-foreground">{display}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()
 
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
