@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ContestantMediaGallery } from "@/components/contestant/MediaGallery";
 import { migrateFormConfig, getProfileFields } from "@/lib/form-builder-types";
+import { RegistrationFormDetails } from "@/components/competition/RegistrationFormDetails";
+import { useRegistrationFormConfig } from "@/hooks/useRegistrationForm";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -192,9 +194,31 @@ export default function ContestantProfile() {
               <div className="flex-1 space-y-3">
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight text-foreground">{latestReg?.full_name}</h1>
-                  <Badge className={statusColor[latestReg?.age_category || "adult"] || "bg-muted text-muted-foreground"}>
-                    {latestReg?.age_category === "minor" ? "Minor" : "Adult"}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <Badge className={statusColor[latestReg?.age_category || "adult"] || "bg-muted text-muted-foreground"}>
+                      {latestReg?.age_category === "minor" ? "Minor" : "Adult"}
+                    </Badge>
+                    {latestReg && compMap[latestReg.competition_id] && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        · {compMap[latestReg.competition_id].name}
+                        {(() => {
+                           const cfv = latestReg.custom_field_values || {};
+                           const path = [
+                             cfv.__level_selector && categoryNames?.[cfv.__level_selector],
+                             cfv.__category_selector && categoryNames?.[cfv.__category_selector],
+                             cfv.__subcategory_selector && categoryNames?.[cfv.__subcategory_selector]
+                           ].filter(Boolean).join(" > ");
+                           if (!path) return null;
+                           return (
+                             <>
+                               <ChevronRight className="h-3 w-3 opacity-50" />
+                               <span className="font-semibold text-primary">{path}</span>
+                             </>
+                           );
+                        })()}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {latestReg?.bio && (
@@ -320,161 +344,10 @@ export default function ContestantProfile() {
         <TabsContent value="details">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {(registrations || []).map((reg) => {
-              const comp = compMap[reg.competition_id];
-              const sub = reg.sub_event_id ? subEventMap[reg.sub_event_id] : null;
-              const socialHandles = reg.social_handles as Record<string, string> | null;
-
               return (
-                <Card key={reg.id} className="border-border/50 bg-card/80">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{comp?.name || "Unknown Competition"}</CardTitle>
-                      <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>{reg.status}</Badge>
-                    </div>
-                    {sub && <CardDescription>{sub.name}{sub.event_date ? ` · ${sub.event_date}` : ""}</CardDescription>}
-                    {/* Show category hierarchy from custom_field_values */}
-                    {(() => {
-                      const cfv = reg.custom_field_values || {};
-                      const levelName = cfv.__level_selector && categoryNames?.[cfv.__level_selector];
-                      const catName = cfv.__category_selector && categoryNames?.[cfv.__category_selector];
-                      const subCatName = cfv.__subcategory_selector && categoryNames?.[cfv.__subcategory_selector];
-                      const parts = [levelName, catName, subCatName].filter(Boolean);
-                      if (parts.length === 0) return null;
-                      return (
-                        <CardDescription className="flex items-center gap-1 flex-wrap">
-                          {parts.map((p, i) => (
-                            <span key={i} className="flex items-center gap-1">
-                              {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-                              <Badge variant="outline" className="text-[10px]">{p}</Badge>
-                            </span>
-                          ))}
-                        </CardDescription>
-                      );
-                    })()}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Personal Info */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <DetailField icon={User} label="Full Name" value={reg.full_name} />
-                      <DetailField icon={Mail} label="Email" value={reg.email} />
-                      <DetailField icon={Phone} label="Phone" value={reg.phone} />
-                      <DetailField icon={MapPin} label="Location" value={reg.location} />
-                      <DetailField icon={Calendar} label="Age Category" value={reg.age_category === "minor" ? "Minor" : "Adult"} />
-                      <DetailField icon={Calendar} label="Registered" value={new Date(reg.created_at).toLocaleDateString()} />
-                    </div>
-
-                    {/* Bio */}
-                    {reg.bio && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bio</p>
-                        <p className="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-3 border border-border/30">{reg.bio}</p>
-                      </div>
-                    )}
-
-                    {/* Social Handles */}
-                    {socialHandles && Object.keys(socialHandles).length > 0 && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <Globe className="h-3 w-3" /> Social Handles
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(socialHandles).filter(([, v]) => v).map(([platform, handle]) => (
-                            <Badge key={platform} variant="outline" className="text-xs font-mono">
-                              {platform}: {handle}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Media */}
-                    <div className="flex flex-wrap gap-3">
-                      {reg.profile_photo_url && (
-                        <a href={reg.profile_photo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
-                          <User className="h-3 w-3" /> Profile Photo <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
-                      {reg.performance_video_url && (
-                        <a href={reg.performance_video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
-                          <Video className="h-3 w-3" /> Performance Video <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Guardian Info (minors) */}
-                    {reg.age_category === "minor" && (reg.guardian_name || reg.guardian_email) && (
-                      <div className="space-y-1.5 pt-2 border-t border-border/30">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <Shield className="h-3 w-3" /> Guardian Information
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <DetailField icon={User} label="Guardian Name" value={reg.guardian_name} />
-                          <DetailField icon={Mail} label="Guardian Email" value={reg.guardian_email} />
-                          <DetailField icon={Phone} label="Guardian Phone" value={reg.guardian_phone} />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom field values */}
-                    {(() => {
-                      const cfv = reg.custom_field_values || {};
-                      const builtinKeys = new Set([
-                        "full_name", "email", "phone", "location", "age_category", "bio",
-                        "performance_video_url", "profile_photo_url", "guardian_name",
-                        "guardian_email", "guardian_phone", "__level_selector",
-                        "__category_selector", "__subcategory_selector", "__subevent_selector",
-                        "__time_slot_selector", "__rules_acknowledgment", "__contestant_signature",
-                        "__guardian_signature", "sub_event_id", "selectedSubEventId",
-                        "selectedCategoryId", "selectedSubCategoryId", "__deepest_category_id",
-                        "rules_acknowledged", "contestant_signature", "guardian_signature",
-                      ]);
-                      const customEntries = Object.entries(cfv).filter(
-                        ([k, v]) => !builtinKeys.has(k) && v !== null && v !== undefined && v !== ""
-                      );
-                      if (customEntries.length === 0) return null;
-                      return (
-                        <div className="space-y-1.5 pt-2 border-t border-border/30">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                            <Info className="h-3 w-3" /> Registration Details
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {customEntries.map(([key, value]) => {
-                              const label = key
-                                .replace(/^spark_/, "")
-                                .replace(/_/g, " ")
-                                .replace(/\b\w/g, (c) => c.toUpperCase());
-                              const display = typeof value === "object" ? JSON.stringify(value) : String(value);
-                              return (
-                                <div key={key} className="space-y-0.5">
-                                  <p className="text-[10px] text-muted-foreground">{label}</p>
-                                  <p className="text-sm text-foreground">{display}</p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Compliance */}
-                    <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
-                      <Badge variant={reg.rules_acknowledged ? "default" : "outline"} className="text-[10px]">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Rules {reg.rules_acknowledged ? "Acknowledged" : "Not Acknowledged"}
-                      </Badge>
-                      {reg.contestant_signed_at && (
-                        <Badge variant="outline" className="text-[10px]">
-                          Signed {new Date(reg.contestant_signed_at).toLocaleDateString()}
-                        </Badge>
-                      )}
-                      {reg.guardian_signed_at && (
-                        <Badge variant="outline" className="text-[10px]">
-                          Guardian Signed {new Date(reg.guardian_signed_at).toLocaleDateString()}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <RegistrationCardWrapper key={reg.id} registration={reg} compMap={compMap} categoryNames={categoryNames}>
+                   <DynamicDetails registration={reg} />
+                </RegistrationCardWrapper>
               );
             })}
           </motion.div>
@@ -786,5 +659,62 @@ function DetailField({ icon: Icon, label, value }: { icon: any; label: string; v
         <p className="text-sm text-foreground">{value}</p>
       </div>
     </div>
+  );
+}
+
+function RegistrationCardWrapper({ registration, compMap, categoryNames, children }: { 
+  registration: any; compMap: any; categoryNames: any; children: React.ReactNode 
+}) {
+  const comp = compMap[registration.competition_id];
+  const cfv = registration.custom_field_values || {};
+  const levelName = cfv.__level_selector && categoryNames?.[cfv.__level_selector];
+  const catName = cfv.__category_selector && categoryNames?.[cfv.__category_selector];
+  const subCatName = cfv.__subcategory_selector && categoryNames?.[cfv.__subcategory_selector];
+  const parts = [levelName, catName, subCatName].filter(Boolean);
+
+  return (
+    <Card className="border-border/50 bg-card/80">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">{comp?.name || "Unknown Competition"}</CardTitle>
+          <Badge variant="outline" className={`text-[10px] ${statusColor[registration.status] || ""}`}>{registration.status}</Badge>
+        </div>
+        {parts.length > 0 && (
+          <CardDescription className="flex items-center gap-1 flex-wrap mt-1">
+            {parts.map((p, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground opacity-50" />}
+                <Badge variant="outline" className="text-[10px]">{p}</Badge>
+              </span>
+            ))}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DynamicDetails({ registration }: { registration: any }) {
+  const { data: formConfig } = useRegistrationFormConfig(registration.competition_id);
+  const formSchema = formConfig?.form_schema;
+
+  if (!formSchema) {
+    return (
+      <div className="py-6 text-center text-muted-foreground italic text-xs">
+        Form schema not found for this competition.
+      </div>
+    );
+  }
+
+  return (
+    <RegistrationFormDetails
+      competitionId={registration.competition_id}
+      registration={registration}
+      formSchema={formSchema}
+      isPublic={true}
+    />
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,11 +22,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Video, ExternalLink,
-  UserX, Ban, LogOut, RotateCcw, X, Image as ImageIcon,
+  UserX, Ban, LogOut, RotateCcw, X, Image as ImageIcon, ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRegistrationFormConfig } from "@/hooks/useRegistrationForm";
+import { RegistrationFormDetails } from "@/components/competition/RegistrationFormDetails";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -85,6 +87,38 @@ export default function ContestantRegistrationProfile() {
       return data;
     },
   });
+
+  const categoryIds = useMemo(() => {
+    if (!reg?.custom_field_values) return [];
+    const cv = reg.custom_field_values as any;
+    return [cv.__level_selector, cv.__category_selector, cv.__subcategory_selector].filter(Boolean);
+  }, [reg]);
+
+  const { data: categoryNames } = useQuery({
+    queryKey: ["category-names-admin-profile", categoryIds],
+    enabled: categoryIds.length > 0,
+    queryFn: async () => {
+      const { data: levels } = await supabase.from("competition_levels").select("id, name").in("id", categoryIds);
+      const { data: cats } = await supabase.from("competition_categories").select("id, name").in("id", categoryIds);
+      const map: Record<string, string> = {};
+      levels?.forEach(l => map[l.id] = l.name);
+      cats?.forEach(c => map[c.id] = c.name);
+      return map;
+    },
+  });
+
+  const { data: formConfig } = useRegistrationFormConfig(competitionId);
+  const formSchema = formConfig?.form_schema;
+
+  const categoryPath = useMemo(() => {
+    if (!categoryNames || !reg?.custom_field_values) return "";
+    const cv = reg.custom_field_values as any;
+    return [
+      categoryNames[cv.__level_selector],
+      categoryNames[cv.__category_selector],
+      categoryNames[cv.__subcategory_selector]
+    ].filter(Boolean).join(" > ");
+  }, [categoryNames, reg]);
 
   const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
 
@@ -164,12 +198,11 @@ export default function ContestantRegistrationProfile() {
         </Avatar>
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">{reg.full_name}</h1>
-          {competition && <p className="text-sm text-muted-foreground mt-0.5">{competition.name}</p>}
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="outline" className={statusColor[reg.status] || ""}>
               {statusLabel[reg.status] || reg.status}
             </Badge>
-            <Badge variant="outline">{reg.age_category}</Badge>
+            <Badge variant="outline">{reg.age_category || "Adult"}</Badge>
             {reg.special_entry_type && <Badge variant="secondary">{reg.special_entry_type}</Badge>}
           </div>
         </div>
@@ -230,95 +263,21 @@ export default function ContestantRegistrationProfile() {
 
       <Separator />
 
-      {/* Contact */}
-      <Section title="Contact Information">
-        <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={reg.email} />
-        {reg.phone && <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={reg.phone} />}
-        {reg.location && <InfoRow icon={<MapPin className="h-4 w-4" />} label="Location" value={reg.location} />}
-      </Section>
-
-      {/* Bio */}
-      {reg.bio && (
-        <Section title="Bio">
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{reg.bio}</p>
-        </Section>
-      )}
-
-      {/* Socials */}
-      {hasSocials && (
-        <Section title="Social Handles">
-          <div className="space-y-1.5">
-            {Object.entries(socialHandles!).map(([platform, handle]) => (
-              <div key={platform} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground capitalize">{platform}</span>
-                <span className="font-mono text-xs text-foreground">{handle}</span>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Performance Video */}
-      {reg.performance_video_url && (
-        <Section title="Performance Video">
-          <a href={reg.performance_video_url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
-            <Video className="h-4 w-4" /> Watch Video <ExternalLink className="h-3 w-3" />
-          </a>
-        </Section>
-      )}
-
-      {/* Media Gallery */}
-      {mediaFiles && mediaFiles.length > 0 && (
-        <Section title="Performance Photos">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {mediaFiles.map((file) => (
-              <motion.div key={file.name}
-                className="aspect-square rounded-lg overflow-hidden border border-border/30 cursor-pointer bg-muted"
-                whileHover={{ scale: 1.03 }}
-                onClick={() => setLightboxUrl(file.url)}>
-                <img src={file.url} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
-              </motion.div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Guardian */}
-      {isMinor && (
-        <Section title="Guardian Information">
-          {reg.guardian_name && <InfoRow label="Name" value={reg.guardian_name} />}
-          {reg.guardian_email && <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={reg.guardian_email} />}
-          {reg.guardian_phone && <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={reg.guardian_phone} />}
-          <SignatureStatus label="Guardian Signature" signed={!!reg.guardian_signature} timestamp={reg.guardian_signed_at} />
-        </Section>
-      )}
-
-      {/* Custom Fields */}
-      {reg.custom_field_values && Object.keys(reg.custom_field_values as Record<string, any>).filter(k => !k.startsWith("__")).length > 0 && (
-        <Section title="Custom Fields">
-          <div className="space-y-1.5 mt-2">
-            {Object.entries(reg.custom_field_values as Record<string, any>)
-              .filter(([key]) => !key.startsWith("__"))
-              .map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between text-sm py-1 border-b border-border/10 last:border-0">
-                <span className="text-muted-foreground w-1/3 break-words capitalize">{key.replace(/_/g, ' ')}</span>
-                <span className="text-foreground font-medium flex-1 text-right break-words">
-                  {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Section>
+      {/* Dynamic Form Content */}
+      {formSchema ? (
+        <RegistrationFormDetails
+          competitionId={competitionId!}
+          registration={reg}
+          formSchema={formSchema}
+          isPublic={false}
+        />
+      ) : (
+        <div className="py-12 text-center text-muted-foreground italic text-sm">
+          No form configuration found for this competition.
+        </div>
       )}
 
       <Separator />
-
-      {/* Compliance */}
-      <Section title="Compliance & Signatures">
-        <SignatureStatus label="Rules Acknowledged" signed={reg.rules_acknowledged} timestamp={reg.rules_acknowledged_at} />
-        <SignatureStatus label="Contestant Signature" signed={!!reg.contestant_signature} timestamp={reg.contestant_signed_at} />
-      </Section>
 
       {/* Metadata */}
       <Section title="Registration Info">
