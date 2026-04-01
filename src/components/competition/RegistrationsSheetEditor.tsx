@@ -110,7 +110,14 @@ export function RegistrationsSheetEditor({
               fieldOptions = levels?.map(l => ({ label: l.name, value: l.id }));
             } else if (field.type === "subevent_selector") {
               fieldOptions = subEvents?.map(se => ({ label: se.name, value: se.id }));
-            } else if (field.type === "category_selector" || field.type === "subcategory_selector") {
+            } else if (
+              field.type === "category_selector" || 
+              field.type === "subcategory_selector" ||
+              field.key.includes("category") ||
+              field.label.toLowerCase().includes("category") ||
+              field.label.toLowerCase().includes("division") ||
+              field.label.toLowerCase().includes("age group")
+            ) {
               fieldOptions = categories?.map(c => ({ label: c.name, value: c.id }));
             } else if (field.type === "time_slot_selector") {
               fieldOptions = timeSlots?.map(s => ({ label: `${s.start_time} - ${s.end_time}`, value: s.id }));
