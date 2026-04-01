@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, CheckCircle, Plus, Trash2, ArrowRight, ArrowLeft } from "lucide-react";
 import type { FormSchema, FormField, FormSection } from "@/hooks/useRegistrationForm";
-import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
+import { BUILTIN_KEYS, evaluateShowWhen } from "@/hooks/useRegistrationForm";
 
 interface DynamicRegistrationFormProps {
   formSchema: FormSchema;
@@ -52,10 +52,7 @@ export function DynamicRegistrationForm({
     const newErrors: Record<string, string> = {};
     const fields = Array.isArray(section?.fields) ? section.fields : [];
     for (const field of fields) {
-      if (field.showWhen) {
-        const depValue = values[field.showWhen.fieldKey];
-        if (depValue !== field.showWhen.equals) continue;
-      }
+      if (!evaluateShowWhen(field.showWhen, values)) continue;
       if (field.required) {
         const val = values[field.key];
         if (val === undefined || val === null || val === "" || val === false) {
@@ -304,10 +301,7 @@ function SectionRenderer({
   compact?: boolean;
 }) {
   const sectionFields = Array.isArray(section?.fields) ? section.fields : [];
-  const visibleFields = sectionFields.filter(f => {
-    if (!f.showWhen) return true;
-    return values[f.showWhen.fieldKey] === f.showWhen.equals;
-  });
+  const visibleFields = sectionFields.filter(f => evaluateShowWhen(f.showWhen, values));
 
   const Wrapper = compact ? "div" : Card;
   const wrapperClass = compact ? "space-y-4" : "border-border/50 bg-card/80 backdrop-blur";
@@ -479,6 +473,7 @@ function FieldRenderer({
           value={value || []}
           onChange={onChange}
           error={error}
+          competitionId={competitionId}
         />
       );
 
@@ -611,8 +606,8 @@ function FieldRenderer({
 
 // ─── Repeater Field ─────────────────────────────────────
 
-function RepeaterField({ field, value, onChange, error }: {
-  field: FormField; value: any[]; onChange: (v: any[]) => void; error?: string;
+function RepeaterField({ field, value, onChange, error, competitionId }: {
+  field: FormField; value: any[]; onChange: (v: any[]) => void; error?: string; competitionId: string;
 }) {
   const rows = Array.isArray(value) ? value : [];
   const canAdd = !field.repeaterMax || rows.length < field.repeaterMax;
@@ -652,11 +647,38 @@ function RepeaterField({ field, value, onChange, error }: {
           <div className="grid grid-cols-2 gap-2">
             {field.repeaterFields?.filter(subField => {
               if (!subField.showWhen) return true;
-              return row[subField.showWhen.fieldKey] === subField.showWhen.equals;
+              return evaluateShowWhen(subField.showWhen, row);
             }).map(subField => (
               <div key={subField.key} style={{ gridColumn: subField.columns === 2 ? "1 / -1" : undefined }}>
                 <Label className="text-[10px]">{subField.label}</Label>
-                {subField.type === "textarea" ? (
+                {subField.type === "level_selector" ? (
+                  <RepeaterLevelButtons
+                    row={row} idx={idx} subField={subField}
+                    competitionId={competitionId}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "category_selector" ? (
+                  <RepeaterCategoryButtons
+                    row={row} idx={idx} subField={subField}
+                    competitionId={competitionId}
+                    levelId={row.__level_id || ""}
+                    updateRow={updateRow}
+                  />
+                
+                ) : subField.type === "subcategory_selector" ? (
+                  <RepeaterSubCategoryButtons
+                    row={row} idx={idx} subField={subField}
+                    levelId={row.__level_id || ""}
+                    parentCategoryId={row[subField.key.replace("sub_category", "category")] || row["spark_entry_category"] || ""}
+                    updateRow={updateRow}
+                  />
+                ) : subField.type === "name_list" ? (
+                  <NameListField
+                    value={row[subField.key] || []}
+                    onChange={(v) => updateRow(idx, subField.key, v)}
+                    placeholder={subField.placeholder}
+                  />
+                ) : subField.type === "textarea" ? (
                   <Textarea
                     placeholder={subField.placeholder}
                     value={row[subField.key] || ""}
@@ -673,6 +695,11 @@ function RepeaterField({ field, value, onChange, error }: {
                 ) : subField.type === "checkbox" || subField.type === "toggle" ? (
                   <div className="flex items-center gap-2 pt-1">
                     <Switch checked={!!row[subField.key]} onCheckedChange={v => updateRow(idx, subField.key, v)} />
+                  </div>
+                ) : subField.type === "consent" ? (
+                  <div className="flex items-start gap-2 pt-1">
+                    <Checkbox checked={!!row[subField.key]} onCheckedChange={v => updateRow(idx, subField.key, !!v)} />
+                    <span className="text-xs text-muted-foreground">{subField.description || subField.label}</span>
                   </div>
                 ) : subField.type === "rating" ? (
                   <div className="flex gap-1">
@@ -707,6 +734,176 @@ function RepeaterField({ field, value, onChange, error }: {
         </Button>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ─── Repeater Sub-Components ────────────────────────────
+
+function RepeaterLevelButtons({ row, idx, subField, competitionId, updateRow }: {
+  row: Record<string, any>; idx: number; subField: FormField;
+  competitionId: string; updateRow: (idx: number, key: string, val: any) => void;
+}) {
+  const { data: levels } = useLevels(competitionId);
+
+  if (!levels || levels.length === 0) {
+    return <p className="text-[10px] text-muted-foreground">No levels configured.</p>;
+  }
+
+  const selected = row.__level_id || row[subField.key] || "";
+
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1">
+      {levels.map(l => (
+        <button
+          key={l.id}
+          type="button"
+          onClick={() => {
+            updateRow(idx, subField.key, l.id);
+            updateRow(idx, "__level_id", l.id);
+            // Clear dependent selectors when level changes
+            updateRow(idx, "spark_entry_category", "");
+            updateRow(idx, "spark_entry_sub_category", "");
+          }}
+          className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+            selected === l.id
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+          }`}
+        >
+          {l.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RepeaterCategoryButtons({ row, idx, subField, competitionId, levelId, updateRow }: {
+  row: Record<string, any>; idx: number; subField: FormField;
+  competitionId: string; levelId: string; updateRow: (idx: number, key: string, val: any) => void;
+}) {
+  const { data: categories } = useQuery({
+    queryKey: ["competition_categories_children", `root_${levelId}`],
+    enabled: !!levelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", levelId)
+        .is("parent_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!categories || categories.length === 0) {
+    return <p className="text-[10px] text-muted-foreground">No categories configured.</p>;
+  }
+
+  const selected = row[subField.key] || "";
+
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1">
+      {categories.map(cat => (
+        <button
+          key={cat.id}
+          type="button"
+          onClick={() => {
+            updateRow(idx, subField.key, cat.id);
+            // Also store name so showWhen conditional logic can match by name
+            updateRow(idx, `${subField.key}__name`, cat.name);
+            // Clear sub-category when category changes
+            updateRow(idx, "spark_entry_sub_category", "");
+          }}
+          className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+            selected === cat.id
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+          }`}
+        >
+          {cat.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RepeaterSubCategoryButtons({ row, idx, subField, levelId, parentCategoryId, updateRow }: {
+  row: Record<string, any>; idx: number; subField: FormField;
+  levelId: string; parentCategoryId: string; updateRow: (idx: number, key: string, val: any) => void;
+}) {
+  const { data: subcategories } = useQuery({
+    queryKey: ["competition_categories_children", parentCategoryId],
+    enabled: !!parentCategoryId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("level_id", levelId)
+        .eq("parent_id", parentCategoryId)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!parentCategoryId) return <p className="text-[10px] text-muted-foreground">Select a category first.</p>;
+  if (!subcategories || subcategories.length === 0) return null;
+
+  const selected = row[subField.key] || "";
+
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1">
+      {subcategories.map(cat => (
+        <button
+          key={cat.id}
+          type="button"
+          onClick={() => updateRow(idx, subField.key, cat.id)}
+          className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+            selected === cat.id
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+          }`}
+        >
+          {cat.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function NameListField({ value, onChange, placeholder }: {
+  value: string[]; onChange: (v: string[]) => void; placeholder?: string;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  const addItem = () => onChange([...items, ""]);
+  const updateItem = (i: number, v: string) => {
+    const next = [...items];
+    next[i] = v;
+    onChange(next);
+  };
+  const removeItem = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item, i) => (
+        <div key={i} className="flex gap-1.5">
+          <Input
+            placeholder={placeholder || `Name ${i + 1}`}
+            value={item}
+            onChange={e => updateItem(i, e.target.value)}
+            className="h-8 text-sm"
+          />
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive" onClick={() => removeItem(i)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" onClick={addItem} className="w-full border-dashed h-7 text-xs">
+        <Plus className="h-3 w-3 mr-1" /> Add Name
+      </Button>
     </div>
   );
 }
@@ -876,14 +1073,22 @@ function CategoryLevelPicker({ parentId, levelId, depth, values, updateValue }: 
     <>
       <div className="space-y-1.5">
         <Label className="text-xs">{label}</Label>
-        <Select value={selectedId} onValueChange={handleChange}>
-          <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-          <SelectContent>
-            {children.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-1.5">
+          {children.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => handleChange(cat.id)}
+              className={`px-3 py-1.5 rounded-md border text-sm transition-all ${
+                selectedId === cat.id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
       </div>
       {selectedId && (
         <CategoryLevelPicker

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,15 +15,29 @@ import {
   User, Info, Calendar, PenTool, Save, Loader2, Plus, Trash2, GripVertical, Eye, ChevronDown, ChevronUp,
   Type, Hash, Mail, Phone, Link, ListOrdered, CheckSquare, Upload, PenLine, FileCheck, Heading,
   RadioTower, CalendarDays, Edit2, Layers, Clock, Palette, DollarSign, Star, ToggleLeft, EyeOff,
-  Minus, FileText, Repeat, FileInput,
+  Minus, FileText, Repeat, FileInput, BookmarkPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import {
   FormFieldConfig, FormBuilderConfig, SectionConfig, migrateFormConfig, LOCKED_KEYS,
   FIELD_TYPE_LABELS, DEFAULT_SECTIONS, getConfigSections, FORM_TEMPLATES,
 } from "@/lib/form-builder-types";
+import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
+import { BUILTIN_KEYS } from "@/hooks/useRegistrationForm";
+import type { FormSchema, FormField, FormSection, FieldType, ShowWhenCondition } from "@/hooks/useRegistrationForm";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent, type DragStartEvent, DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 // Re-export for backward compat with ContestantRegistration import
 export type CustomFieldDef = {
@@ -65,13 +79,14 @@ const FIELD_TYPE_ICONS: Record<string, React.ElementType> = {
   repeater: Repeat,
   category_selector: ListOrdered,
   subcategory_selector: ListOrdered,
+  level_selector: Layers,
 };
 
 const FIELD_TYPE_CATEGORIES: Record<string, string[]> = {
   Input: ["short_text", "long_text", "email", "phone", "url", "number", "date", "time", "currency"],
   Choice: ["dropdown", "radio", "checkbox", "toggle", "rating"],
   Media: ["file"],
-  Advanced: ["signature", "consent", "hidden", "repeater", "category_selector", "subcategory_selector"],
+  Advanced: ["signature", "consent", "hidden", "repeater", "category_selector", "subcategory_selector", "level_selector"],
   Layout: ["section_header", "divider", "rich_text", "color"],
 };
 
@@ -86,6 +101,110 @@ const SECTION_ICON_MAP: Record<string, React.ElementType> = {
 
 function getSectionIcon(section: SectionConfig): React.ElementType {
   return SECTION_ICON_MAP[section.icon || "layers"] || Layers;
+}
+
+// Convert current builder config to FormSchema for preview
+function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
+  const sections = getConfigSections(config);
+  const enabledFields = config.fields.filter(f => f.enabled !== false);
+  const fieldTypeMap: Record<string, FieldType> = {
+    short_text: "text", long_text: "textarea", email: "email", phone: "phone",
+    number: "number", url: "url", date: "date", dropdown: "select",
+    checkbox: "checkbox", radio: "radio", file: "file",
+    signature: "signature", consent: "consent", section_header: "heading",
+    repeater: "repeater", category_selector: "category_selector",
+    subcategory_selector: "subcategory_selector", rating: "rating",
+    toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
+    time: "time", color: "color", currency: "currency", level_selector: "level_selector",
+    name_list: "name_list",
+  };
+  const builtinKeyMap: Record<string, string> = {
+    firstName: "full_name", lastName: "__lastName", email: "email", phone: "phone",
+    location: "location", ageCategory: "age_category", bio: "bio",
+    videoUrl: "performance_video_url", guardianName: "guardian_name",
+    guardianEmail: "guardian_email", guardianPhone: "guardian_phone",
+    level: "__level_selector", category: "__category_selector",
+    subCategory: "__subcategory_selector", subEvent: "__subevent_selector",
+    rulesAcknowledged: "__rules_acknowledgment",
+    contestantSignature: "__contestant_signature", guardianSignature: "__guardian_signature",
+  };
+  const specialTypeMap: Record<string, FieldType> = {
+    "__level_selector": "level_selector", "__subevent_selector": "subevent_selector",
+    "__category_selector": "category_selector", "__subcategory_selector": "subcategory_selector",
+    "__time_slot_selector": "time_slot_selector", "__rules_acknowledgment": "rules_acknowledgment",
+    "__contestant_signature": "signature", "__guardian_signature": "signature",
+  };
+
+  let schema: FormSchema = sections
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(sec => {
+      const sectionFields = enabledFields
+        .filter(f => f.section === sec.id && !f.parent_repeater_id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map(f => {
+          const rawKey = f.key || f.id?.replace("builtin_", "") || f.id;
+          const mappedKey = f.is_builtin ? (builtinKeyMap[rawKey] || rawKey) : rawKey;
+          const isBuiltin = f.is_builtin && BUILTIN_KEYS.has(mappedKey);
+          const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
+          const field: FormField = {
+            id: f.id,
+            key: mappedKey,
+            label: f.label,
+            type: fieldType,
+            required: !!f.required,
+            placeholder: f.help_text || "",
+            description: f.help_text || "",
+            builtin: isBuiltin,
+            columns: f.width === "half" ? 1 : 2,
+            options: f.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
+          };
+          // Map top-level conditional logic
+          if (f.logic?.show_when) {
+            const sw = f.logic.show_when;
+            const target = enabledFields.find(tf => tf.id === sw.field_id);
+            if (target) {
+              const targetKey = target.key || target.id;
+              field.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
+            }
+          }
+          // Attach repeater children
+          if (f.field_type === "repeater") {
+            const children = enabledFields
+              .filter(cf => cf.parent_repeater_id === f.id)
+              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              .map(cf => {
+                const ck = cf.key || cf.id;
+                const cmk = cf.is_builtin ? (builtinKeyMap[ck] || ck) : ck;
+                const cType = specialTypeMap[cmk] || fieldTypeMap[cf.field_type] || "text";
+                const child: FormField = {
+                  id: cf.id, key: cmk, label: cf.label, type: cType,
+                  required: !!cf.required, placeholder: cf.help_text || "",
+                  description: cf.help_text || "", builtin: false,
+                  columns: cf.width === "half" ? 1 : 2,
+                  options: cf.options?.map(o => typeof o === "string" ? { label: o, value: o } : o),
+                };
+                if (cf.logic?.show_when) {
+                  const sw = cf.logic.show_when;
+                  const target = enabledFields.find(tf => tf.id === sw.field_id);
+                  if (target) {
+                    const targetKey = target.key || target.id;
+                    child.showWhen = { fieldKey: targetKey, operator: sw.operator || "equals", value: sw.value };
+                  }
+                }
+                return child;
+              });
+            if (children.length > 0) {
+              field.repeaterFields = children;
+              field.repeaterLabel = f.help_text || "Add Entry";
+            }
+          }
+          return field;
+        });
+      return { id: sec.id, title: sec.label || sec.id, description: "", fields: sectionFields } as FormSection;
+    })
+    .filter(s => s.fields.length > 0);
+
+  return schema;
 }
 
 export function RegistrationFormsInline({ competitionId }: Props) {
@@ -111,6 +230,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [addFieldOpen, setAddFieldOpen] = useState(false);
   const [addFieldSection, setAddFieldSection] = useState<string>("custom");
   const [addFieldRepeaterId, setAddFieldRepeaterId] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Section management state
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
@@ -118,6 +238,51 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   const [sectionName, setSectionName] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDesc, setTemplateDesc] = useState("");
+
+  const { user } = useAuth();
+
+  // Fetch user-saved templates
+  const { data: userTemplates = [], refetch: refetchTemplates } = useQuery({
+    queryKey: ["form_templates", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("form_templates" as any)
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const saveTemplateMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      const { error } = await supabase
+        .from("form_templates" as any)
+        .insert({ user_id: user!.id, name, description: description || null, config: config as any } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchTemplates();
+      setSaveTemplateOpen(false);
+      setTemplateName("");
+      setTemplateDesc("");
+      toast({ title: "Template saved", description: "You can reuse this template in other competitions." });
+    },
+    onError: (err: any) => toast({ title: "Failed to save template", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("form_templates" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => refetchTemplates(),
+  });
 
   useEffect(() => {
     if (competition?.registration_form_config) {
@@ -197,6 +362,53 @@ export function RegistrationFormsInline({ competitionId }: Props) {
     });
     setDirty(true);
   };
+
+  // DnD: reorder fields within a section (or repeater children)
+  const handleFieldDragEnd = (event: DragEndEvent, sectionId: string, repeaterId?: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const fieldList = repeaterId
+        ? prev.fields.filter(f => f.parent_repeater_id === repeaterId)
+        : prev.fields.filter(f => (f.section || "custom") === sectionId && !f.parent_repeater_id);
+
+      const oldIdx = fieldList.findIndex(f => f.id === active.id);
+      const newIdx = fieldList.findIndex(f => f.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+
+      const reordered = arrayMove(fieldList, oldIdx, newIdx);
+      const reorderedIds = new Set(reordered.map(f => f.id));
+      const otherFields = prev.fields.filter(f => !reorderedIds.has(f.id));
+
+      // Reassign sort_order
+      let sortCounter = 0;
+      const allFields = [...otherFields, ...reordered.map(f => ({ ...f, sort_order: sortCounter++ }))];
+
+      return { ...prev, fields: allFields };
+    });
+    setDirty(true);
+  };
+
+  // DnD: reorder sections
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setConfig(prev => {
+      const secs = [...(prev.sections || DEFAULT_SECTIONS)].sort((a, b) => a.sort_order - b.sort_order);
+      const oldIdx = secs.findIndex(s => s.id === active.id);
+      const newIdx = secs.findIndex(s => s.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const reordered = arrayMove(secs, oldIdx, newIdx).map((s, i) => ({ ...s, sort_order: i }));
+      return { ...prev, sections: reordered };
+    });
+    setDirty(true);
+  };
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   // --- Section CRUD ---
   const handleAddSection = () => {
@@ -280,7 +492,7 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         .update({ registration_form_config: config as any })
         .eq("id", competitionId);
       if (error) throw error;
-      toast({ title: "Form configuration saved" });
+      toast({ title: "Form configuration saved", description: "Changes are now live for Add Registration and contestant sign-up." });
       setDirty(false);
       qc.invalidateQueries({ queryKey: ["competition_form_config", competitionId] });
     } catch (err: any) {
@@ -325,6 +537,12 @@ export function RegistrationFormsInline({ competitionId }: Props) {
           Configure sections and fields for the registration form.
         </p>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} className="gap-1.5 text-xs h-7">
+            <Eye className="h-3 w-3" /> Preview
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(true)} className="gap-1.5 text-xs h-7">
+            <BookmarkPlus className="h-3 w-3" /> Save Template
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-1.5 text-xs h-7">
             <FileInput className="h-3 w-3" /> Load Template
           </Button>
@@ -340,121 +558,37 @@ export function RegistrationFormsInline({ competitionId }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* Left: Sections & Fields Canvas */}
-        <div className="space-y-3">
-          {sections.map((section, sIdx) => {
-            const Icon = getSectionIcon(section);
-            const sectionFields = fieldsBySection[section.id] || [];
-
-            return (
-              <Collapsible key={section.id} defaultOpen>
-                <Card className="border-border/40 bg-muted/10">
-                  <CardContent className="p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center gap-2 w-full">
-                      <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
-                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
-                        <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
-                      </CollapsibleTrigger>
-
-                      {/* Section action buttons */}
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {sIdx > 0 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "up")}>
-                            <ChevronUp className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {sIdx < sections.length - 1 && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSectionOrder(section.id, "down")}>
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditSection(section)}>
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        {!section.is_builtin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteSectionId(section.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs gap-1"
-                          onClick={() => { setAddFieldSection(section.id); setAddFieldRepeaterId(null); setAddFieldOpen(true); }}
-                        >
-                          <Plus className="h-3 w-3" /> Field
-                        </Button>
-                      </div>
-                    </div>
-
-                    <CollapsibleContent className="space-y-1.5">
-                      {sectionFields.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic py-3 text-center">
-                          No fields in this section
-                        </p>
-                      ) : (
-                        sectionFields.map((field, idx) => (
-                          <div key={field.id}>
-                            <FieldCard
-                              field={field}
-                              isSelected={selectedFieldId === field.id}
-                              onClick={() => setSelectedFieldId(field.id)}
-                              onToggleEnabled={(v) => updateField(field.id, { enabled: v })}
-                              onRemove={() => removeField(field.id)}
-                              onMoveUp={idx > 0 ? () => moveField(field.id, "up") : undefined}
-                              onMoveDown={idx < sectionFields.length - 1 ? () => moveField(field.id, "down") : undefined}
-                            />
-                            {/* Repeater children */}
-                            {field.field_type === "repeater" && (
-                              <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
-                                {(childrenByRepeater[field.id] || []).length === 0 ? (
-                                  <p className="text-[10px] text-muted-foreground italic py-1.5">
-                                    No fields inside this repeater — add fields that will repeat with each entry.
-                                  </p>
-                                ) : (
-                                  (childrenByRepeater[field.id] || []).map((child, cIdx) => (
-                                    <FieldCard
-                                      key={child.id}
-                                      field={child}
-                                      isSelected={selectedFieldId === child.id}
-                                      onClick={() => setSelectedFieldId(child.id)}
-                                      onToggleEnabled={(v) => updateField(child.id, { enabled: v })}
-                                      onRemove={() => removeField(child.id)}
-                                      onMoveUp={cIdx > 0 ? () => moveField(child.id, "up") : undefined}
-                                      onMoveDown={cIdx < (childrenByRepeater[field.id] || []).length - 1 ? () => moveField(child.id, "down") : undefined}
-                                    />
-                                  ))
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
-                                  onClick={() => {
-                                    setAddFieldSection(field.section || "custom");
-                                    setAddFieldRepeaterId(field.id);
-                                    setAddFieldOpen(true);
-                                  }}
-                                >
-                                  <Plus className="h-3 w-3" /> Add Field to Repeater
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </CollapsibleContent>
-                  </CardContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
-        </div>
+        <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleSectionDragEnd}>
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {sections.map((section) => {
+                const sectionFields = fieldsBySection[section.id] || [];
+                return (
+                  <SortableSectionCard
+                    key={section.id}
+                    section={section}
+                    sectionFields={sectionFields}
+                    childrenByRepeater={childrenByRepeater}
+                    selectedFieldId={selectedFieldId}
+                    dndSensors={dndSensors}
+                    onSelectField={setSelectedFieldId}
+                    onToggleField={(id, v) => updateField(id, { enabled: v })}
+                    onRemoveField={removeField}
+                    onEditSection={handleEditSection}
+                    onDeleteSection={setDeleteSectionId}
+                    onAddField={(sectionId, repeaterId) => {
+                      setAddFieldSection(sectionId);
+                      setAddFieldRepeaterId(repeaterId || null);
+                      setAddFieldOpen(true);
+                    }}
+                    onFieldDragEnd={(e) => handleFieldDragEnd(e, section.id)}
+                    onRepeaterChildDragEnd={(e, repeaterId) => handleFieldDragEnd(e, section.id, repeaterId)}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Right: Properties Panel */}
         <div className="lg:sticky lg:top-4 lg:self-start">
@@ -568,36 +702,140 @@ export function RegistrationFormsInline({ competitionId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Save Template Dialog */}
+      <Dialog open={saveTemplateOpen} onOpenChange={setSaveTemplateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Save the current form configuration as a reusable template for other competitions.
+          </p>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs">Template Name *</Label>
+              <Input
+                placeholder="e.g. Dance Competition Form"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                placeholder="Brief description of this template..."
+                value={templateDesc}
+                onChange={e => setTemplateDesc(e.target.value)}
+                className="mt-1 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setSaveTemplateOpen(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!templateName.trim() || saveTemplateMutation.isPending}
+              onClick={() => saveTemplateMutation.mutate({ name: templateName.trim(), description: templateDesc.trim() })}
+            >
+              {saveTemplateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Load Template Dialog */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Load Form Template</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Choose a template to replace the current form configuration. You can customise it after loading.
           </p>
-          <div className="space-y-2 mt-2">
-            {FORM_TEMPLATES.map(t => (
-              <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => {
-                  const built = t.build();
-                  setConfig(built);
-                  setDirty(true);
-                  setSelectedFieldId(null);
-                  setTemplateDialogOpen(false);
-                  toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
-                }}
-              >
-                <CardContent className="p-3">
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="flex-1 min-h-0 mt-2">
+            <div className="space-y-2 pr-3">
+              {/* User-saved templates */}
+              {userTemplates.length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">My Templates</p>
+                  {userTemplates.map((t: any) => (
+                    <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer relative group">
+                      <CardContent className="p-3" onClick={() => {
+                        const loaded = migrateFormConfig(t.config);
+                        if (!loaded.sections || loaded.sections.length === 0) loaded.sections = DEFAULT_SECTIONS;
+                        setConfig(loaded);
+                        setDirty(true);
+                        setSelectedFieldId(null);
+                        setTemplateDialogOpen(false);
+                        toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                      }}>
+                        <p className="text-sm font-medium">{t.name}</p>
+                        {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          Saved {new Date(t.created_at).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                        onClick={(e) => { e.stopPropagation(); deleteTemplateMutation.mutate(t.id); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </Card>
+                  ))}
+                  <Separator className="my-2" />
+                </>
+              )}
+
+              {/* Built-in templates */}
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Presets</p>
+              {FORM_TEMPLATES.map(t => (
+                <Card key={t.id} className="border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
+                  onClick={() => {
+                    const built = t.build();
+                    setConfig(built);
+                    setDirty(true);
+                    setSelectedFieldId(null);
+                    setTemplateDialogOpen(false);
+                    toast({ title: `"${t.name}" template loaded`, description: "Review and click Save to persist." });
+                  }}
+                >
+                  <CardContent className="p-3">
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Form Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Form Preview
+            </DialogTitle>
+            <DialogDescription>
+              This is how the registration form will appear to contestants.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {previewOpen && (
+              <FormPreviewContent config={config} competitionId={competitionId} />
+            )}
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setPreviewOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -605,28 +843,165 @@ export function RegistrationFormsInline({ competitionId }: Props) {
   );
 }
 
-function FieldCard({
-  field,
-  isSelected,
-  onClick,
-  onToggleEnabled,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
+function FormPreviewContent({ config, competitionId }: { config: FormBuilderConfig; competitionId: string }) {
+  const previewSchema = useMemo(() => builderConfigToFormSchema(config), [config]);
+
+  if (previewSchema.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-sm">No enabled fields to preview.</p>
+        <p className="text-xs mt-1">Add fields and enable them to see the form.</p>
+      </div>
+    );
+  }
+
+  return (
+    <DynamicRegistrationForm
+      formSchema={previewSchema}
+      competitionId={competitionId}
+      mode="walkin"
+      onSubmit={() => {
+        toast({ title: "Preview only", description: "This is a preview — no data was submitted." });
+      }}
+      isSubmitting={false}
+    />
+  );
+}
+
+// ─── Sortable Section Card ──────────────────────────────
+
+function SortableSectionCard({
+  section, sectionFields, childrenByRepeater, selectedFieldId, dndSensors,
+  onSelectField, onToggleField, onRemoveField, onEditSection, onDeleteSection, onAddField,
+  onFieldDragEnd, onRepeaterChildDragEnd,
+}: {
+  section: SectionConfig;
+  sectionFields: FormFieldConfig[];
+  childrenByRepeater: Record<string, FormFieldConfig[]>;
+  selectedFieldId: string | null;
+  dndSensors: ReturnType<typeof useSensors>;
+  onSelectField: (id: string) => void;
+  onToggleField: (id: string, v: boolean) => void;
+  onRemoveField: (id: string) => void;
+  onEditSection: (s: SectionConfig) => void;
+  onDeleteSection: (id: string) => void;
+  onAddField: (sectionId: string, repeaterId?: string) => void;
+  onFieldDragEnd: (e: DragEndEvent) => void;
+  onRepeaterChildDragEnd: (e: DragEndEvent, repeaterId: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const Icon = getSectionIcon(section);
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Collapsible defaultOpen>
+        <Card className="border-border/40 bg-muted/10">
+          <CardContent className="p-3 sm:p-4 space-y-2">
+            <div className="flex items-center gap-2 w-full">
+              <button
+                type="button"
+                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+              <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left min-w-0">
+                <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h3 className="text-sm font-medium text-foreground flex-1 truncate">{section.label}</h3>
+                <Badge variant="secondary" className="text-[10px] shrink-0">{sectionFields.length}</Badge>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform shrink-0" />
+              </CollapsibleTrigger>
+
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditSection(section)}>
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+                {!section.is_builtin && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDeleteSection(section.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => onAddField(section.id)}>
+                  <Plus className="h-3 w-3" /> Field
+                </Button>
+              </div>
+            </div>
+
+            <CollapsibleContent className="space-y-1.5">
+              {sectionFields.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-3 text-center">No fields in this section</p>
+              ) : (
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={onFieldDragEnd}>
+                  <SortableContext items={sectionFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    {sectionFields.map((field) => (
+                      <div key={field.id}>
+                        <SortableFieldCard
+                          field={field}
+                          isSelected={selectedFieldId === field.id}
+                          onClick={() => onSelectField(field.id)}
+                          onToggleEnabled={(v) => onToggleField(field.id, v)}
+                          onRemove={() => onRemoveField(field.id)}
+                        />
+                        {field.field_type === "repeater" && (
+                          <div className="ml-6 mt-1 mb-1 pl-3 border-l-2 border-primary/20 space-y-1">
+                            {(childrenByRepeater[field.id] || []).length === 0 ? (
+                              <p className="text-[10px] text-muted-foreground italic py-1.5">No fields inside this repeater.</p>
+                            ) : (
+                              <DndContext sensors={dndSensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={(e) => onRepeaterChildDragEnd(e, field.id)}>
+                                <SortableContext items={(childrenByRepeater[field.id] || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                  {(childrenByRepeater[field.id] || []).map((child) => (
+                                    <SortableFieldCard
+                                      key={child.id}
+                                      field={child}
+                                      isSelected={selectedFieldId === child.id}
+                                      onClick={() => onSelectField(child.id)}
+                                      onToggleEnabled={(v) => onToggleField(child.id, v)}
+                                      onRemove={() => onRemoveField(child.id)}
+                                    />
+                                  ))}
+                                </SortableContext>
+                              </DndContext>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary" onClick={() => onAddField(field.section || "custom", field.id)}>
+                              <Plus className="h-3 w-3" /> Add Field to Repeater
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
+    </div>
+  );
+}
+
+// ─── Sortable Field Card ────────────────────────────────
+
+function SortableFieldCard({
+  field, isSelected, onClick, onToggleEnabled, onRemove,
 }: {
   field: FormFieldConfig;
   isSelected: boolean;
   onClick: () => void;
   onToggleEnabled: (v: boolean) => void;
   onRemove?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   const locked = field.is_builtin && field.key && LOCKED_KEYS.has(field.key);
   const Icon = FIELD_TYPE_ICONS[field.field_type] || Type;
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       onClick={onClick}
       className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors cursor-pointer ${
         isSelected
@@ -636,20 +1011,15 @@ function FieldCard({
             : "border-border/20 bg-muted/20 opacity-50"
       }`}
     >
-      {(onMoveUp || onMoveDown) && (
-        <div className="flex flex-col gap-0.5 shrink-0">
-          {onMoveUp && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-muted-foreground hover:text-foreground">
-              <ChevronUp className="h-3 w-3" />
-            </button>
-          )}
-          {onMoveDown && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-muted-foreground hover:text-foreground">
-              <ChevronDown className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-      )}
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+        onClick={(e) => e.stopPropagation()}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
 
       <Switch
         checked={field.enabled}

@@ -596,13 +596,11 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
   };
 
   // Check if required fields are mapped
-  const requiredFieldsMapped = useMemo(() => {
-    const requiredKeys = dynamicFields
-      .filter((f) => f.required && f.key === "full_name" || f.key === "email")
-      .map((f) => f.key);
-    // At minimum need full_name and email
-    return !!mapping["full_name"] && !!mapping["email"];
+  const unmappedRequiredFields = useMemo(() => {
+    return dynamicFields.filter((f) => f.required && !mapping[f.key]);
   }, [mapping, dynamicFields]);
+
+  const requiredFieldsMapped = unmappedRequiredFields.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -632,6 +630,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
           </div>
         </DialogHeader>
 
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
         {/* ─── Step 0: Download Template ─── */}
         {step === 0 && (
           <div className="space-y-4">
@@ -669,7 +668,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
 
         {/* ─── Step 1: Upload & Map ─── */}
         {step === 1 && (
-          <div className="space-y-4 overflow-y-auto">
+          <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-1">
             <div>
               <Label className="text-sm">Upload CSV or Excel File</Label>
               <Input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileChange} className="mt-1" />
@@ -683,39 +682,48 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
 
                 <div className="space-y-3">
                   <p className="text-sm font-medium">Map Columns to Fields</p>
-                  <ScrollArea className="max-h-[40vh]">
+                  <ScrollArea className="h-[40vh] border rounded-md p-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-3">
-                      {dynamicFields.map((field) => (
-                        <div key={field.key} className="flex items-center gap-2">
-                          <Label className="text-xs w-32 shrink-0 truncate" title={field.label}>
-                            {field.label}
-                            {field.required && <span className="text-destructive ml-0.5">*</span>}
-                          </Label>
-                          <Select
-                            value={mapping[field.key] || "__none__"}
-                            onValueChange={(v) =>
-                              setMapping((m) => ({
-                                ...m,
-                                [field.key]: v === "__none__" ? "" : v,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-xs flex-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Skip —</SelectItem>
-                              {headers.map((h) => (
-                                <SelectItem key={h} value={h}>
-                                  {h}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
+                      {dynamicFields.map((field) => {
+                        const isMissing = field.required && !mapping[field.key];
+                        return (
+                          <div key={field.key} className={`flex items-center gap-2 rounded-md px-1 py-0.5 ${isMissing ? "ring-1 ring-destructive bg-destructive/5" : ""}`}>
+                            <Label className={`text-xs w-32 shrink-0 truncate ${isMissing ? "text-destructive font-semibold" : ""}`} title={field.label}>
+                              {field.label}
+                              {field.required && <span className="text-destructive ml-0.5">*</span>}
+                            </Label>
+                            <Select
+                              value={mapping[field.key] || "__none__"}
+                              onValueChange={(v) =>
+                                setMapping((m) => ({
+                                  ...m,
+                                  [field.key]: v === "__none__" ? "" : v,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className={`h-8 text-xs flex-1 ${isMissing ? "border-destructive" : ""}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">— Skip —</SelectItem>
+                                {headers.map((h) => (
+                                  <SelectItem key={h} value={h}>
+                                    {h}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
+                  {unmappedRequiredFields.length > 0 && (
+                    <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Required fields not mapped: {unmappedRequiredFields.map(f => f.label).join(", ")}
+                    </p>
+                  )}
                 </div>
 
                 {subEvents.length > 0 && (
@@ -957,6 +965,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
             )}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

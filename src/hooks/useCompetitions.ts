@@ -22,6 +22,7 @@ export interface CompetitionLevel {
   competition_id: string;
   name: string;
   sort_order: number;
+  structure_type: string;
 }
 
 export interface SubEvent {

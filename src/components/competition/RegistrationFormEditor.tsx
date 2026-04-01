@@ -216,7 +216,7 @@ export function RegistrationFormEditor({ competitionId }: Props) {
       field.options = [{ label: "Adult (18+)", value: "adult" }, { label: "Minor (Under 18)", value: "minor" }];
     }
     if (key === "guardian_name" || key === "guardian_email" || key === "guardian_phone" || key === "__guardian_signature") {
-      field.showWhen = { fieldKey: "age_category", equals: "minor" };
+      field.showWhen = { fieldKey: "age_category", operator: "equals", value: "minor" };
     }
     if (key === "__level_selector" || key === "__subevent_selector" || key === "__time_slot_selector" || key === "__rules_acknowledgment" || key === "__contestant_signature" || key === "__guardian_signature" || key === "bio" || key === "performance_video_url") {
       field.columns = 2;
@@ -492,7 +492,7 @@ function FieldEditor({
                 checked={!!field.showWhen}
                 onCheckedChange={v => {
                   if (v) {
-                    onUpdate({ showWhen: { fieldKey: "", equals: "" } });
+                    onUpdate({ showWhen: { fieldKey: "", operator: "equals", value: "" } });
                   } else {
                     onUpdate({ showWhen: undefined });
                   }
@@ -511,8 +511,8 @@ function FieldEditor({
                 />
                 <span className="text-[10px]">=</span>
                 <Input
-                  value={field.showWhen.equals}
-                  onChange={e => onUpdate({ showWhen: { ...field.showWhen!, equals: e.target.value } })}
+                  value={field.showWhen.value || ""}
+                  onChange={e => onUpdate({ showWhen: { ...field.showWhen!, value: e.target.value } })}
                   placeholder="value"
                   className="h-5 text-[10px] w-20 px-1"
                 />
@@ -630,7 +630,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
                 className="scale-[0.6]"
                 checked={!!sf.showWhen}
                 onCheckedChange={v => {
-                  if (v) updateSubField(i, { showWhen: { fieldKey: "", equals: "" } });
+                  if (v) updateSubField(i, { showWhen: { fieldKey: "", operator: "equals", value: "" } });
                   else updateSubField(i, { showWhen: undefined });
                 }}
               />
@@ -645,7 +645,7 @@ function RepeaterFieldEditor({ field, onUpdate }: { field: FormField; onUpdate: 
                   </SelectContent>
                 </Select>
                 <span className="text-[9px]">=</span>
-                <Input value={sf.showWhen.equals} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, equals: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
+                <Input value={sf.showWhen.value || ""} onChange={e => updateSubField(i, { showWhen: { ...sf.showWhen!, value: e.target.value } })} placeholder="value" className="h-4 text-[9px] w-16 px-1" />
               </>
             )}
           </div>

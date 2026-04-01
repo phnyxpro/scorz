@@ -3,7 +3,7 @@
 export interface FormFieldConfig {
   id: string;
   key?: string; // for built-in fields (e.g. "firstName", "email")
-  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "time" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "rich_text" | "repeater" | "category_selector" | "subcategory_selector";
+  field_type: "short_text" | "long_text" | "email" | "phone" | "url" | "number" | "date" | "time" | "dropdown" | "radio" | "checkbox" | "file" | "signature" | "consent" | "section_header" | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "rich_text" | "repeater" | "category_selector" | "subcategory_selector" | "level_selector";
   label: string;
   placeholder?: string;
   help_text?: string;
@@ -150,6 +150,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldConfig["field_type"], string> = 
   repeater: "Repeater",
   category_selector: "Category Selector",
   subcategory_selector: "Sub-Category Selector",
+  level_selector: "Level Selector",
 };
 
 export const SECTION_LABELS: Record<string, string> = {
@@ -242,20 +243,19 @@ function buildSparkTemplate(): FormBuilderConfig {
 
     // Repeater child fields
     {
-      id: "spark_entry_category", field_type: "dropdown", label: "Category",
-      options: [
-        { label: "Solo", value: "solo" },
-        { label: "Duet", value: "duet" },
-        { label: "Group", value: "group" },
-        { label: "Student Choreography", value: "student_choreography" },
-      ],
+      id: "spark_entry_level", field_type: "level_selector", label: "Level",
       enabled: true, required: true, sort_order: order++, width: "full",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
       parent_repeater_id: repeaterId,
     },
     {
-      id: "spark_entry_sub_category", field_type: "dropdown", label: "Sub-Category",
-      options: [],
+      id: "spark_entry_category", field_type: "category_selector", label: "Category",
+      enabled: true, required: true, sort_order: order++, width: "full",
+      show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
+      parent_repeater_id: repeaterId,
+    },
+    {
+      id: "spark_entry_sub_category", field_type: "subcategory_selector", label: "Sub-Category",
       enabled: true, required: false, sort_order: order++, width: "half",
       show_on_profile: false, show_on_scorecard: false, is_builtin: false, section: "entries",
       parent_repeater_id: repeaterId,

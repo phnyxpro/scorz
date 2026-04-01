@@ -11,11 +11,18 @@ export type FieldType =
   | "level_selector" | "subevent_selector" | "time_slot_selector"
   | "category_selector" | "subcategory_selector"
   | "signature" | "rules_acknowledgment"
-  | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text";
+  | "color" | "currency" | "rating" | "toggle" | "hidden" | "divider" | "consent" | "rich_text"
+  | "name_list";
 
 export interface FormFieldOption {
   label: string;
   value: string;
+}
+
+export interface ShowWhenCondition {
+  fieldKey: string;
+  operator: "equals" | "not_equals" | "contains" | "not_empty";
+  value?: string;
 }
 
 export interface FormField {
@@ -39,7 +46,53 @@ export interface FormField {
   repeaterMax?: number;
   repeaterLabel?: string;        // label for "Add" button e.g. "Add Team Member"
   // Conditional visibility
-  showWhen?: { fieldKey: string; equals: string };
+  showWhen?: ShowWhenCondition;
+}
+
+/** Normalize a string for fuzzy comparison: lowercase, trim, collapse whitespace, strip punctuation */
+function norm(s: string): string {
+  return s.toLowerCase().trim().replace(/[\s_\-/]+/g, " ").replace(/[^a-z0-9 ]/g, "");
+}
+
+/** Evaluate a showWhen condition against a values bag */
+export function evaluateShowWhen(
+  condition: ShowWhenCondition | undefined,
+  valuesBag: Record<string, any>,
+): boolean {
+  if (!condition) return true;
+  const raw = valuesBag[condition.fieldKey];
+  const nameKey = `${condition.fieldKey}__name`;
+  const nameVal = valuesBag[nameKey];
+
+  /** Check if any of the candidate values match the target (exact or normalized) */
+  const matches = (target: string): boolean => {
+    const nt = norm(target);
+    const candidates = [raw, nameVal];
+    for (const c of candidates) {
+      if (c === target) return true;
+      if (typeof c === "string" && (norm(c) === nt || norm(c).includes(nt) || nt.includes(norm(c)))) return true;
+      if (Array.isArray(c) && c.some(v => v === target || (typeof v === "string" && norm(v) === nt))) return true;
+    }
+    return false;
+  };
+
+  switch (condition.operator) {
+    case "equals":
+      return matches(condition.value ?? "");
+    case "not_equals":
+      return !matches(condition.value ?? "");
+    case "contains": {
+      const target = condition.value ?? "";
+      const nt = norm(target);
+      return (typeof raw === "string" && norm(raw).includes(nt)) ||
+        (typeof nameVal === "string" && norm(nameVal).includes(nt)) ||
+        (Array.isArray(raw) && raw.some(v => typeof v === "string" && norm(v).includes(nt)));
+    }
+    case "not_empty":
+      return raw !== undefined && raw !== null && raw !== "" && raw !== false;
+    default:
+      return true;
+  }
 }
 
 export interface FormSection {
@@ -130,7 +183,12 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
           short_text: "text", long_text: "textarea", email: "email", phone: "phone",
           number: "number", url: "url", date: "date", dropdown: "select",
           checkbox: "checkbox", radio: "radio", file: "file",
-          signature: "signature", consent: "checkbox", section_header: "heading",
+          signature: "signature", consent: "consent", section_header: "heading",
+          repeater: "repeater", category_selector: "category_selector",
+          subcategory_selector: "subcategory_selector", rating: "rating",
+          toggle: "toggle", divider: "divider", hidden: "hidden", rich_text: "rich_text",
+          time: "time", color: "color", currency: "currency", level_selector: "level_selector",
+          name_list: "name_list",
         };
         // Map flat DB builtin keys → standard builtin keys used by DynamicRegistrationForm
         const builtinKeyMap: Record<string, string> = {
@@ -175,7 +233,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   "__guardian_signature": "signature",
                 };
                 const fieldType = specialTypeMap[mappedKey] || fieldTypeMap[f.field_type] || "text";
-                return {
+                const built: FormField = {
                   id: f.id,
                   key: mappedKey,
                   label: f.label,
@@ -189,6 +247,17 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   show_on_profile: f.show_on_profile,
                   show_on_scorecard: f.show_on_scorecard,
                 } as FormField;
+                // Map top-level conditional logic
+                if (f.logic?.show_when) {
+                  const sw = f.logic.show_when;
+                  const targetField = enabledFields.find((tf: any) => tf.id === sw.field_id);
+                  if (targetField) {
+                    const tRawKey = targetField.key || targetField.id?.replace("builtin_", "") || targetField.id;
+                    const tMappedKey = targetField.is_builtin ? (builtinKeyMap[tRawKey] || tRawKey) : tRawKey;
+                    built.showWhen = { fieldKey: tMappedKey, operator: sw.operator || "equals", value: sw.value };
+                  }
+                }
+                return built;
               });
             return {
               id: sec.id,
@@ -198,6 +267,43 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
             } as FormSection;
           })
           .filter((s: FormSection) => s.fields.length > 0);
+
+        // Post-process: group children with parent_repeater_id into parent's repeaterFields
+        if (schema) {
+          for (const section of schema) {
+            const repeaters = section.fields.filter(f => f.type === "repeater");
+            for (const rep of repeaters) {
+              const children = section.fields.filter(f => {
+                const raw = config.fields.find((cf: any) => cf.id === f.id);
+                return raw?.parent_repeater_id === config.fields.find((cf: any) => cf.id === rep.id)?.id;
+              });
+              if (children.length > 0) {
+                // Build a lookup from raw field id → mapped key so showWhen can reference siblings
+                const idToKey = new Map<string, string>();
+                for (const c of children) {
+                  idToKey.set(c.id, c.key);
+                }
+
+                rep.repeaterFields = children.map(c => {
+                  const rawField = config.fields.find((cf: any) => cf.id === c.id);
+                  if (rawField?.logic?.show_when) {
+                    const sw = rawField.logic.show_when;
+                    // Resolve the target field's mapped key using our pre-built lookup
+                    const targetKey = idToKey.get(sw.field_id) || sw.field_id;
+                    if (sw.operator === "equals" || sw.operator === "contains") {
+                      c.showWhen = { fieldKey: targetKey, operator: sw.operator, value: sw.value };
+                    }
+                  }
+                  return c;
+                });
+                rep.repeaterLabel = rep.placeholder || "Add Entry";
+                // Remove children from section's flat list
+                const childIds = new Set(children.map(c => c.id));
+                section.fields = section.fields.filter(f => !childIds.has(f.id));
+              }
+            }
+          }
+        }
       }
 
       if (!schema || schema.length === 0) return null;
