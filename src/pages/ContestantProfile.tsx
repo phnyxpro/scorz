@@ -454,7 +454,7 @@ export default function ContestantProfile() {
                           </div>
                         </div>
                       );
-                    })()
+                    })()}
 
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
