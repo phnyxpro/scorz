@@ -743,9 +743,22 @@ export function RegistrationsManager({ competitionId }: Props) {
     const resolvedGuardianPhone = findVal(["guardian_phone"], ["guardian_phone"]);
     const resolvedSignature = findVal(["__contestant_signature", "contestant_signature"], ["signature"]);
     const resolvedRulesAck = findVal(["__rules_acknowledgment", "rules_acknowledged"], ["rules", "consent"]);
-    const resolvedSubEvent = builtinData.__subevent_selector || builtinData.selectedSubEventId;
+    let resolvedSubEvent = builtinData.__subevent_selector || builtinData.selectedSubEventId || allValues.__subevent_selector || allValues.selectedSubEventId;
 
     if (!resolvedEmail || !user) return;
+
+    // If no direct sub_event selected, resolve from deepest category
+    if (!resolvedSubEvent) {
+      const deepestCatId = allValues.__deepest_category_id || allValues.__subcategory_selector || allValues.selectedSubCategoryId || allValues.__category_selector || allValues.selectedCategoryId;
+      if (deepestCatId) {
+        const { data: cat } = await supabase
+          .from("competition_categories")
+          .select("sub_event_id")
+          .eq("id", deepestCatId)
+          .maybeSingle();
+        if (cat?.sub_event_id) resolvedSubEvent = cat.sub_event_id;
+      }
+    }
     try {
       const { data: existingProfile } = await supabase
         .from("profiles")
