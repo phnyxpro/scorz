@@ -115,6 +115,24 @@ export function useUpdateRegistration() {
   });
 }
 
+export function useDeleteRegistration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("contestant_registrations")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+      toast({ title: "Registration deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
 export function useRegistrationsRealtime(competitionId: string | undefined) {
   const qc = useQueryClient();
   useEffect(() => {

@@ -476,6 +476,8 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInPosition, setWalkInPosition] = useState("");
   const [walkInAfterLastTimed, setWalkInAfterLastTimed] = useState(false);
   const [visibleCustomColumns, setVisibleCustomColumns] = useState<Set<string>>(new Set());
+  const [editingReg, setEditingReg] = useState<ContestantRegistration | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Slots query
   const { data: slotsData } = useQuery({
@@ -703,6 +705,36 @@ export function RegistrationsManager({ competitionId }: Props) {
   const handleApprove = (id: string) => {
     updateReg.mutate({ id, status: "approved" } as any, { onSuccess: () => sendNotification(id, "approved") });
   };
+
+  const handleEditSave = async (builtin: any, custom: any) => {
+    if (!editingReg) return;
+    setIsUpdating(true);
+    try {
+      await updateReg.mutateAsync({
+        id: editingReg.id,
+        ...builtin,
+        custom_field_values: custom
+      });
+      setEditingReg(null);
+      toast({ title: "Registration updated" });
+    } catch (e: any) {
+      toast({ title: "Error updating registration", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEdit = (reg: ContestantRegistration) => {
+    setEditingReg(reg);
+  };
+
+  const flattenedInitialValues = useMemo(() => {
+    if (!editingReg) return {};
+    return {
+      ...editingReg,
+      ...((editingReg.custom_field_values as any) || {})
+    };
+  }, [editingReg]);
 
   const handleReject = (id: string) => {
     updateReg.mutate({ id, status: "rejected" } as any, { onSuccess: () => sendNotification(id, "rejected") });
@@ -1140,7 +1172,12 @@ export function RegistrationsManager({ competitionId }: Props) {
                             }
 
                             if (typeof val === "boolean") return val ? "Yes" : "No";
-                            if (Array.isArray(val)) return val.join(", ");
+                            if (Array.isArray(val)) {
+                              if (val.length > 0 && typeof val[0] === "object") {
+                                return val.map(item => Object.values(item).filter(v => v).join(" - ")).join(", ");
+                              }
+                              return val.join(", ");
+                            }
                             if (typeof val === "object") return JSON.stringify(val);
                             return String(val);
                           })()}
@@ -1217,6 +1254,15 @@ export function RegistrationsManager({ competitionId }: Props) {
                               Revoke
                             </Button>
                           )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={() => handleEdit(reg)}
+                            title="Edit Registration"
+                          >
+                            <PenTool className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1350,6 +1396,33 @@ export function RegistrationsManager({ competitionId }: Props) {
           timeSlots={slotsData}
         />
       )}
+
+      <Dialog open={!!editingReg} onOpenChange={(o) => !o && setEditingReg(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <PenTool className="h-5 w-5 text-primary" />
+              Edit Registration: {editingReg?.full_name}
+            </DialogTitle>
+            <DialogDescription>
+              Update the registration details for this contestant.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            {editingReg && (
+              <DynamicRegistrationForm
+                competitionId={competitionId}
+                formSchema={formSchema}
+                mode="walkin"
+                initialValues={flattenedInitialValues}
+                onSubmit={handleEditSave}
+                isSubmitting={isUpdating}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

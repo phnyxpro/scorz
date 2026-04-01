@@ -627,6 +627,20 @@ function SortableTableRow({
                 ))}
               </SelectContent>
             </Select>
+          ) : Array.isArray(row[col.key]) ? (
+            <div 
+              className="h-8 flex items-center px-2 text-xs text-muted-foreground truncate border-transparent bg-transparent cursor-not-allowed"
+              title="Complex fields must be edited in the form"
+              onMouseDown={() => {
+                setFocusedCell({ rowIndex: rIdx, colKey: col.key });
+                onCellMouseDown(rIdx, cIdx);
+              }}
+              onMouseOver={() => onCellMouseOver(rIdx, cIdx)}
+            >
+              {row[col.key].length > 0 && typeof row[col.key][0] === "object"
+                ? row[col.key].map((item: any) => Object.values(item).filter(v => v).join(" - ")).join(", ")
+                : row[col.key].join(", ")}
+            </div>
           ) : (
             <Input
               value={String(row[col.key] || "")}
