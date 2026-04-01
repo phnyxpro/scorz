@@ -332,6 +332,25 @@ export default function ContestantProfile() {
                       <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>{reg.status}</Badge>
                     </div>
                     {sub && <CardDescription>{sub.name}{sub.event_date ? ` · ${sub.event_date}` : ""}</CardDescription>}
+                    {/* Show category hierarchy from custom_field_values */}
+                    {(() => {
+                      const cfv = reg.custom_field_values || {};
+                      const levelName = cfv.__level_selector && categoryNames?.[cfv.__level_selector];
+                      const catName = cfv.__category_selector && categoryNames?.[cfv.__category_selector];
+                      const subCatName = cfv.__subcategory_selector && categoryNames?.[cfv.__subcategory_selector];
+                      const parts = [levelName, catName, subCatName].filter(Boolean);
+                      if (parts.length === 0) return null;
+                      return (
+                        <CardDescription className="flex items-center gap-1 flex-wrap">
+                          {parts.map((p, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                              <Badge variant="outline" className="text-[10px]">{p}</Badge>
+                            </span>
+                          ))}
+                        </CardDescription>
+                      );
+                    })()}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Personal Info */}
