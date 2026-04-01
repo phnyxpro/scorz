@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
