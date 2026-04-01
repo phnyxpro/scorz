@@ -81,14 +81,22 @@ export function RegistrationsSheetEditor({
 
   // Define columns based on form schema and builtin fields
   const columns = useMemo(() => {
+    const isCategoryEvent = levels?.some((l: any) => l.structure_type === "categories");
     const cols: { key: string; label: string; type: string; options?: any[] }[] = [
       { key: "full_name", label: "Full Name", type: "text" },
       { key: "email", label: "Email", type: "email" },
       { key: "phone", label: "Phone", type: "phone" },
-      { key: "age_category", label: "Age Category", type: "select", options: [{ label: "Adult", value: "adult" }, { label: "Minor", value: "minor" }] },
-      { key: "status", label: "Status", type: "select", options: ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"].map(s => ({ label: s, value: s })) },
-      { key: "sub_event_id", label: "Sub-Event", type: "select", options: subEvents?.map(se => ({ label: se.name, value: se.id })) || [] },
     ];
+    
+    if (!isCategoryEvent) {
+      cols.push({ key: "age_category", label: "Age Category", type: "select", options: [{ label: "Adult", value: "adult" }, { label: "Minor", value: "minor" }] });
+    }
+
+    cols.push({ key: "status", label: "Status", type: "select", options: ["approved", "pending", "rejected", "no_show", "disqualified", "drop_out"].map(s => ({ label: s, value: s })) });
+
+    if (!isCategoryEvent) {
+      cols.push({ key: "sub_event_id", label: "Sub-Event", type: "select", options: subEvents?.map(se => ({ label: se.name, value: se.id })) || [] });
+    }
 
     const skipKeys = new Set(["full_name", "email", "phone", "__subevent_selector"]);
     formSchema.forEach(section => {
@@ -332,9 +340,14 @@ export function RegistrationsSheetEditor({
             // Resolve name to ID if it's a select column
             if (col.type === "select" && col.options) {
               const matchedOption = col.options.find(
-                opt => opt.label.toLowerCase() === trimmed.toLowerCase() || opt.value === trimmed
+                opt => opt.label.toLowerCase() === trimmed.toLowerCase() || String(opt.value).toLowerCase() === trimmed.toLowerCase()
               );
-              if (matchedOption) finalValue = matchedOption.value;
+              if (matchedOption) {
+                finalValue = matchedOption.value;
+              } else {
+                // If it doesn't strictly match and the user wants to paste arbitrary values, we allow it.
+                finalValue = trimmed;
+              }
             }
 
             next[targetRowIdx] = { ...next[targetRowIdx], [col.key]: finalValue };
@@ -609,6 +622,14 @@ function SortableTableRow({
           className={`p-0 border-r border-border/50 last:border-0 relative ${isCellSelected(rIdx, cIdx) ? "bg-primary/10" : ""}`}
           onMouseDown={() => onCellMouseDown(rIdx, cIdx)}
           onMouseOver={() => onCellMouseOver(rIdx, cIdx)}
+          tabIndex={0}
+          onPaste={(e) => handlePaste(e, rIdx, col.key)}
+          onFocus={() => {
+            if (col.type === "select" || Array.isArray(row[col.key])) {
+              setFocusedCell({ rowIndex: rIdx, colKey: col.key });
+              onCellMouseDown(rIdx, cIdx);
+            }
+          }}
         >
           {isCellSelected(rIdx, cIdx) && (
             <div className="absolute inset-0 border-2 border-primary pointer-events-none z-10" />
@@ -618,13 +639,16 @@ function SortableTableRow({
               value={String(row[col.key] || "")} 
               onValueChange={(v) => handleValueChange(rIdx, col.key, v)}
             >
-              <SelectTrigger className="h-8 border-transparent bg-transparent hover:bg-muted/50 focus:bg-background focus:border-border text-xs px-2 shadow-none focus:ring-0 transition-none">
+              <SelectTrigger className="h-8 border-transparent bg-transparent hover:bg-muted/50 focus:bg-background focus:border-border text-xs px-2 shadow-none focus:ring-0 transition-none w-full outline-none">
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
                 {col.options?.map(opt => (
                   <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
                 ))}
+                {row[col.key] && (!col.options || !col.options.some(o => String(o.value) === String(row[col.key]) || String(o.label) === String(row[col.key]))) && (
+                  <SelectItem key={row[col.key]} value={row[col.key]} className="text-xs">{row[col.key]}</SelectItem>
+                )}
               </SelectContent>
             </Select>
           ) : Array.isArray(row[col.key]) ? (
