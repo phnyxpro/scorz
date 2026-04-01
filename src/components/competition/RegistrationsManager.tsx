@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown, ExternalLink, Settings2, Upload, Sparkles as SparklesIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
@@ -29,7 +29,6 @@ import { useRegistrationFormConfig, createDefaultFormSchema, useCreateAdvancemen
 import { DynamicRegistrationForm } from "@/components/registration/DynamicRegistrationForm";
 import { BulkUploadDialog } from "./BulkUploadDialog";
 import { AIUploadDialog } from "./AIUploadDialog";
-import { Upload, Sparkles as SparklesIcon } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   approved: "bg-secondary/20 text-secondary border-secondary/30",
@@ -266,7 +265,11 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
               onClick={() => onSelect(reg)}
               onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
             >
-              {(reg.custom_field_values as any)?.spark_school_name || reg.full_name}
+              {(() => {
+                const cv = (reg.custom_field_values as any) || {};
+                const applicantName = Object.entries(cv).find(([k]) => k.toLowerCase().includes("applicant") && k.toLowerCase().includes("name"))?.[1] as string;
+                return applicantName || reg.full_name;
+              })()}
             </button>
           )}
           {(reg as any).special_entry_type && (
@@ -279,7 +282,13 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           )}
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground capitalize">{((reg.custom_field_values as any)?.cf_1774990613141 || reg.email || "").replace(/_/g, " ")}</TableCell>
+      <TableCell className="text-sm text-muted-foreground capitalize">
+        {(() => {
+          const cv = (reg.custom_field_values as any) || {};
+          const applicantEmail = Object.entries(cv).find(([k]) => k.toLowerCase().includes("applicant") && k.toLowerCase().includes("email"))?.[1] as string;
+          return applicantEmail || reg.email || "";
+        })()}
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px]">
@@ -379,12 +388,18 @@ interface Props {
   competitionId: string;
 }
 
-/** Fetch ALL sub-events across all levels for this competition */
+interface CompetitionStructure {
+  levels: any[];
+  subEvents: any[];
+  categories: any[];
+}
+
+/** Fetch ALL structure components across all levels for this competition */
 function useAllSubEvents(competitionId: string) {
   return useQuery({
     queryKey: ["all_sub_events_for_comp", competitionId],
     enabled: !!competitionId,
-    queryFn: async () => {
+    queryFn: async (): Promise<CompetitionStructure> => {
       // Get all levels
       const { data: levels, error: le } = await supabase
         .from("competition_levels")
@@ -394,7 +409,7 @@ function useAllSubEvents(competitionId: string) {
       if (le) throw le;
 
       const levelIds = (levels || []).map(l => l.id);
-      if (!levelIds.length) return { levels: levels || [], subEvents: [] };
+      if (!levelIds.length) return { levels: levels || [], subEvents: [], categories: [] };
 
       const { data: subEvents, error: se } = await supabase
         .from("sub_events")
@@ -403,7 +418,18 @@ function useAllSubEvents(competitionId: string) {
         .order("event_date");
       if (se) throw se;
 
-      return { levels: levels || [], subEvents: subEvents || [] };
+      const { data: categories, error: ce } = (await supabase
+        .from("competition_categories")
+        .select("*")
+        .eq("competition_id", competitionId)) as { data: any[] | null; error: any };
+      if (ce) throw ce;
+
+      const result: CompetitionStructure = { 
+        levels: levels || [], 
+        subEvents: subEvents || [], 
+        categories: categories || [] 
+      };
+      return result;
     },
   });
 }
@@ -412,7 +438,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   const navigate = useNavigate();
   const { data: registrations, isLoading } = useRegistrations(competitionId);
   const { data: levels } = useLevels(competitionId);
-  const { data: allData } = useAllSubEvents(competitionId);
+  const { data: allData } = useAllSubEvents(competitionId) as any;
   const updateReg = useUpdateRegistration();
   const createReg = useCreateRegistration();
   const { user } = useAuth();
@@ -436,15 +462,16 @@ export function RegistrationsManager({ competitionId }: Props) {
   const [walkInSubEvent, setWalkInSubEvent] = useState("");
   const [walkInPosition, setWalkInPosition] = useState("");
   const [walkInAfterLastTimed, setWalkInAfterLastTimed] = useState(false);
+  const [visibleCustomColumns, setVisibleCustomColumns] = useState<Set<string>>(new Set());
 
   // Slots query
   const { data: slotsData } = useQuery({
     queryKey: ["performance_slots_for_regs", competitionId],
     enabled: !!competitionId,
     queryFn: async () => {
-      const levelIds = (allData?.levels || []).map(l => l.id);
+      const levelIds = (allData?.levels || []).map((l: any) => l.id);
       if (!levelIds.length) return [];
-      const seIds = (allData?.subEvents || []).map(se => se.id);
+      const seIds = (allData?.subEvents || []).map((se: any) => se.id);
       if (!seIds.length) return [];
       const { data, error } = await supabase
         .from("performance_slots")
@@ -488,6 +515,53 @@ export function RegistrationsManager({ competitionId }: Props) {
     return createDefaultFormSchema();
   }, [formConfig]);
 
+  const tableFields = useMemo(() => {
+    const fields: { key: string; label: string; type: string }[] = [];
+    // Skip basic personal info already shown in standard columns + signatures/rules
+    const skipKeys = new Set([
+      "full_name", "email", "phone", "__lastName", 
+      "__rules_acknowledgment", "__contestant_signature", "__guardian_signature"
+    ]);
+
+    formSchema.forEach(section => {
+      section.fields.forEach(field => {
+        if (!skipKeys.has(field.key)) {
+          fields.push({ key: field.key, label: field.label, type: field.type });
+          skipKeys.add(field.key); // prevent duplicates across sections
+        }
+      });
+    });
+    return fields;
+  }, [formSchema]);
+
+  // Sync visible columns with important ones initially
+  useMemo(() => {
+    if (tableFields.length > 0 && visibleCustomColumns.size === 0) {
+      setVisibleCustomColumns(new Set(tableFields.map(f => f.key)));
+    }
+  }, [tableFields]);
+
+  const activeTableFields = useMemo(() => {
+    return tableFields.filter(f => visibleCustomColumns.has(f.key));
+  }, [tableFields, visibleCustomColumns]);
+
+  const toggleColumn = (key: string) => {
+    setVisibleCustomColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // Build category lookup map
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!allData?.categories) return m;
+    allData.categories.forEach(c => m.set(c.id, c.name));
+    return m;
+  }, [allData]);
+
   // Bulk advance state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
@@ -498,9 +572,9 @@ export function RegistrationsManager({ competitionId }: Props) {
   // Build sub-event lookup map
   const subEventMap = useMemo(() => {
     const m = new Map<string, { name: string; levelName: string; levelId: string }>();
-    if (!allData) return m;
-    const levelMap = new Map(allData.levels.map(l => [l.id, l.name]));
-    for (const se of allData.subEvents) {
+    if (!allData?.subEvents || !allData?.levels) return m;
+    const levelMap = new Map((allData.levels as any[]).map(l => [l.id, l.name]));
+    for (const se of (allData.subEvents as any[])) {
       m.set(se.id, { name: se.name, levelName: levelMap.get(se.level_id) || "Unknown", levelId: se.level_id });
     }
     return m;
@@ -733,9 +807,9 @@ export function RegistrationsManager({ competitionId }: Props) {
       }
       return undefined;
     };
-    const resolvedEmail = findVal(["email"], ["email"]);
-    const resolvedName = findVal(["full_name", "fullName"], ["name", "applicant"]);
-    const resolvedPhone = findVal(["phone"], ["phone"]);
+    const resolvedEmail = findVal(["email"], ["applicant", "email"]);
+    const resolvedName = findVal(["full_name", "fullName"], ["applicant", "name"]);
+    const resolvedPhone = findVal(["phone"], ["applicant", "phone"]);
     const resolvedLocation = findVal(["location"], ["location", "city", "address"]);
     const resolvedAge = findVal(["age_category", "ageCategory"], ["age"]) || "adult";
     const resolvedBio = findVal(["bio"], ["bio"]);
@@ -887,6 +961,30 @@ export function RegistrationsManager({ competitionId }: Props) {
               <Button size="sm" variant="outline" onClick={() => setShowWalkIn(true)}>
                 <UserPlus className="h-3.5 w-3.5 mr-1" /> Add Registration
               </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-2">
+                    <Settings2 className="h-3.5 w-3.5" /> Columns
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3" align="end">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold">Toggles Columns</p>
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                      {tableFields.map(f => (
+                        <div key={f.key} className="flex items-center gap-2">
+                          <Checkbox 
+                            id={`col-${f.key}`} 
+                            checked={visibleCustomColumns.has(f.key)} 
+                            onCheckedChange={() => toggleColumn(f.key)} 
+                          />
+                          <Label htmlFor={`col-${f.key}`} className="text-xs truncate cursor-pointer">{f.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>
@@ -943,17 +1041,21 @@ export function RegistrationsManager({ competitionId }: Props) {
                   </TableHead>
                   <TableHead className="text-xs w-[40px]">#</TableHead>
                   <TableHead className="text-xs">ID</TableHead>
-                  <TableHead className="text-xs">School Name</TableHead>
-                  <TableHead className="text-xs hidden md:table-cell">Dance Class</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Order</TableHead>
-                  <TableHead className="text-xs">Actions</TableHead>
+                   <TableHead className="text-xs">Name</TableHead>
+                   <TableHead className="text-xs hidden md:table-cell">Email</TableHead>
+                   <TableHead className="text-xs hidden lg:table-cell">Phone</TableHead>
+                   {activeTableFields.map(f => (
+                     <TableHead key={f.key} className="text-xs">{f.label}</TableHead>
+                   ))}
+                   <TableHead className="text-xs">Status</TableHead>
+                   <TableHead className="text-xs">Order</TableHead>
+                   <TableHead className="text-xs">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={9 + activeTableFields.length} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
@@ -979,8 +1081,45 @@ export function RegistrationsManager({ competitionId }: Props) {
                           {reg.id.slice(0, 8)}…
                         </button>
                       </TableCell>
-                      <TableCell className="text-sm font-medium">{reg.full_name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground font-mono hidden md:table-cell">{reg.email}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {(() => {
+                          const cv = (reg.custom_field_values as any) || {};
+                          const applicantName = Object.entries(cv).find(([k]) => k.toLowerCase().includes("applicant") && k.toLowerCase().includes("name"))?.[1] as string;
+                          return applicantName || reg.full_name;
+                        })()}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono hidden md:table-cell">
+                        {(() => {
+                          const cv = (reg.custom_field_values as any) || {};
+                          const applicantEmail = Object.entries(cv).find(([k]) => k.toLowerCase().includes("applicant") && k.toLowerCase().includes("email"))?.[1] as string;
+                          return applicantEmail || reg.email || "";
+                        })()}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono hidden lg:table-cell">
+                        {(() => {
+                          const cv = (reg.custom_field_values as any) || {};
+                          const applicantPhone = Object.entries(cv).find(([k]) => k.toLowerCase().includes("applicant") && k.toLowerCase().includes("phone"))?.[1] as string;
+                          return applicantPhone || reg.phone || "";
+                        })()}
+                      </TableCell>
+                      {activeTableFields.map(f => (
+                        <TableCell key={f.key} className="text-xs text-muted-foreground max-w-[150px] truncate">
+                          {(() => {
+                            const val = (reg.custom_field_values as any)?.[f.key];
+                            if (val === undefined || val === null) return "—";
+                            
+                            // Resolve IDs for selectors
+                            if (f.type === "level_selector") return (allData as any)?.levels.find((l: any) => l.id === val)?.name || val;
+                            if (f.type === "subevent_selector") return subEventMap.get(val)?.name || val;
+                            if (f.type === "category_selector" || f.type === "subcategory_selector") return categoryMap.get(val) || val;
+
+                            if (typeof val === "boolean") return val ? "Yes" : "No";
+                            if (Array.isArray(val)) return val.join(", ");
+                            if (typeof val === "object") return JSON.stringify(val);
+                            return String(val);
+                          })()}
+                        </TableCell>
+                      ))}
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
                           {reg.status}

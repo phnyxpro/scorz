@@ -45,8 +45,11 @@ export interface FormField {
   repeaterMin?: number;
   repeaterMax?: number;
   repeaterLabel?: string;        // label for "Add" button e.g. "Add Team Member"
-  // Conditional visibility
+  // Visibility
   showWhen?: ShowWhenCondition;
+  show_on_table?: boolean;
+  show_on_profile?: boolean;
+  show_on_scorecard?: boolean;
 }
 
 /** Normalize a string for fuzzy comparison: lowercase, trim, collapse whitespace, strip punctuation */
@@ -244,6 +247,7 @@ export function useRegistrationFormConfig(competitionId: string | undefined) {
                   builtin: isBuiltin,
                   columns: f.width === "half" ? 1 : 2,
                   options: f.options?.map((o: any) => typeof o === "string" ? { label: o, value: o } : o),
+                  show_on_table: f.show_on_table,
                   show_on_profile: f.show_on_profile,
                   show_on_scorecard: f.show_on_scorecard,
                 } as FormField;
