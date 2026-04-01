@@ -596,13 +596,11 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
   };
 
   // Check if required fields are mapped
-  const requiredFieldsMapped = useMemo(() => {
-    const requiredKeys = dynamicFields
-      .filter((f) => f.required && f.key === "full_name" || f.key === "email")
-      .map((f) => f.key);
-    // At minimum need full_name and email
-    return !!mapping["full_name"] && !!mapping["email"];
+  const unmappedRequiredFields = useMemo(() => {
+    return dynamicFields.filter((f) => f.required && !mapping[f.key]);
   }, [mapping, dynamicFields]);
+
+  const requiredFieldsMapped = unmappedRequiredFields.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -687,8 +685,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
                   <ScrollArea className="h-[40vh] border rounded-md p-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-3">
                       {dynamicFields.map((field) => {
-                        const isRequired = field.key === "full_name" || field.key === "email";
-                        const isMissing = isRequired && !mapping[field.key];
+                        const isMissing = field.required && !mapping[field.key];
                         return (
                           <div key={field.key} className={`flex items-center gap-2 rounded-md px-1 py-0.5 ${isMissing ? "ring-1 ring-destructive bg-destructive/5" : ""}`}>
                             <Label className={`text-xs w-32 shrink-0 truncate ${isMissing ? "text-destructive font-semibold" : ""}`} title={field.label}>
@@ -721,10 +718,10 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
                       })}
                     </div>
                   </ScrollArea>
-                  {!requiredFieldsMapped && (
+                  {unmappedRequiredFields.length > 0 && (
                     <p className="text-xs text-destructive flex items-center gap-1 mt-1">
                       <AlertTriangle className="h-3 w-3" />
-                      Full Name and Email must be mapped to continue.
+                      Required fields not mapped: {unmappedRequiredFields.map(f => f.label).join(", ")}
                     </p>
                   )}
                 </div>
