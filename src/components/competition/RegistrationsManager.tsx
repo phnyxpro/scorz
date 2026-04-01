@@ -942,9 +942,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                     />
                   </TableHead>
                   <TableHead className="text-xs w-[40px]">#</TableHead>
+                  <TableHead className="text-xs">ID</TableHead>
                   <TableHead className="text-xs">Name</TableHead>
                   <TableHead className="text-xs hidden md:table-cell">Email</TableHead>
-                  <TableHead className="text-xs">Sub-Event</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Order</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
