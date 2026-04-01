@@ -59,6 +59,38 @@ export default function ContestantProfile() {
     () => [...new Set((registrations || []).filter((r) => r.sub_event_id).map((r) => r.sub_event_id!))],
     [registrations]
   );
+  // Collect category IDs from custom_field_values for resolution
+  const categoryIds = useMemo(() => {
+    const ids = new Set<string>();
+    (registrations || []).forEach((r) => {
+      const cfv = r.custom_field_values || {};
+      ["__level_selector", "__category_selector", "__subcategory_selector"].forEach((k) => {
+        if (cfv[k] && typeof cfv[k] === "string") ids.add(cfv[k]);
+      });
+    });
+    return [...ids];
+  }, [registrations]);
+
+  const { data: categoryNames } = useQuery({
+    queryKey: ["category-names-for-profile", categoryIds],
+    enabled: categoryIds.length > 0,
+    queryFn: async () => {
+      // Resolve levels
+      const { data: levelsData } = await supabase
+        .from("competition_levels")
+        .select("id, name")
+        .in("id", categoryIds);
+      // Resolve categories
+      const { data: catsData } = await supabase
+        .from("competition_categories")
+        .select("id, name")
+        .in("id", categoryIds);
+      const map: Record<string, string> = {};
+      levelsData?.forEach((l) => (map[l.id] = l.name));
+      catsData?.forEach((c) => (map[c.id] = c.name));
+      return map;
+    },
+  });
 
   const { data: competitions } = useCompetitionNames(competitionIds);
   const { data: scores } = useContestantScores(registrationIds);
@@ -300,6 +332,25 @@ export default function ContestantProfile() {
                       <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>{reg.status}</Badge>
                     </div>
                     {sub && <CardDescription>{sub.name}{sub.event_date ? ` · ${sub.event_date}` : ""}</CardDescription>}
+                    {/* Show category hierarchy from custom_field_values */}
+                    {(() => {
+                      const cfv = reg.custom_field_values || {};
+                      const levelName = cfv.__level_selector && categoryNames?.[cfv.__level_selector];
+                      const catName = cfv.__category_selector && categoryNames?.[cfv.__category_selector];
+                      const subCatName = cfv.__subcategory_selector && categoryNames?.[cfv.__subcategory_selector];
+                      const parts = [levelName, catName, subCatName].filter(Boolean);
+                      if (parts.length === 0) return null;
+                      return (
+                        <CardDescription className="flex items-center gap-1 flex-wrap">
+                          {parts.map((p, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                              <Badge variant="outline" className="text-[10px]">{p}</Badge>
+                            </span>
+                          ))}
+                        </CardDescription>
+                      );
+                    })()}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Personal Info */}
@@ -364,7 +415,46 @@ export default function ContestantProfile() {
                       </div>
                     )}
 
-                    {/* Custom fields section placeholder */}
+                    {/* Custom field values */}
+                    {(() => {
+                      const cfv = reg.custom_field_values || {};
+                      const builtinKeys = new Set([
+                        "full_name", "email", "phone", "location", "age_category", "bio",
+                        "performance_video_url", "profile_photo_url", "guardian_name",
+                        "guardian_email", "guardian_phone", "__level_selector",
+                        "__category_selector", "__subcategory_selector", "__subevent_selector",
+                        "__time_slot_selector", "__rules_acknowledgment", "__contestant_signature",
+                        "__guardian_signature", "sub_event_id", "selectedSubEventId",
+                        "selectedCategoryId", "selectedSubCategoryId", "__deepest_category_id",
+                        "rules_acknowledged", "contestant_signature", "guardian_signature",
+                      ]);
+                      const customEntries = Object.entries(cfv).filter(
+                        ([k, v]) => !builtinKeys.has(k) && v !== null && v !== undefined && v !== ""
+                      );
+                      if (customEntries.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-2 border-t border-border/30">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Registration Details
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {customEntries.map(([key, value]) => {
+                              const label = key
+                                .replace(/^spark_/, "")
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase());
+                              const display = typeof value === "object" ? JSON.stringify(value) : String(value);
+                              return (
+                                <div key={key} className="space-y-0.5">
+                                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                                  <p className="text-sm text-foreground">{display}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Compliance */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border/30">
