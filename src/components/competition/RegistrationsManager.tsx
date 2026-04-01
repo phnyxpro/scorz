@@ -719,22 +719,32 @@ export function RegistrationsManager({ competitionId }: Props) {
   };
 
   const handleWalkInAdd = async (builtinData: Record<string, any>, customData: Record<string, any>) => {
-    // When form uses custom field IDs (not builtin), email/name may be in customData
-    // Search all values for email-like and name-like fields as fallback
+    // When form uses custom field IDs (not builtin), values may be in customData
+    // Merge all values and search by key pattern / field type hints
     const allValues = { ...customData, ...builtinData };
-    const findValue = (keys: string[], typeHint?: string) => {
-      // Check builtinData first
-      for (const k of keys) if (builtinData[k]) return builtinData[k];
-      // Then search all values by key pattern
-      if (typeHint) {
+    const findVal = (builtinKeys: string[], hints: string[]) => {
+      for (const k of builtinKeys) if (builtinData[k]) return builtinData[k];
+      for (const hint of hints) {
         for (const [k, v] of Object.entries(allValues)) {
-          if (v && typeof v === "string" && k.toLowerCase().includes(typeHint)) return v;
+          if (v && k.toLowerCase().includes(hint)) return v;
         }
       }
       return undefined;
     };
-    const resolvedEmail = findValue(["email"], "email");
-    const resolvedName = findValue(["full_name", "fullName"], "name");
+    const resolvedEmail = findVal(["email"], ["email"]);
+    const resolvedName = findVal(["full_name", "fullName"], ["name", "applicant"]);
+    const resolvedPhone = findVal(["phone"], ["phone"]);
+    const resolvedLocation = findVal(["location"], ["location", "city", "address"]);
+    const resolvedAge = findVal(["age_category", "ageCategory"], ["age"]) || "adult";
+    const resolvedBio = findVal(["bio"], ["bio"]);
+    const resolvedVideo = findVal(["performance_video_url", "videoUrl"], ["video"]);
+    const resolvedGuardianName = findVal(["guardian_name"], ["guardian_name", "guardian"]);
+    const resolvedGuardianEmail = findVal(["guardian_email"], ["guardian_email"]);
+    const resolvedGuardianPhone = findVal(["guardian_phone"], ["guardian_phone"]);
+    const resolvedSignature = findVal(["__contestant_signature", "contestant_signature"], ["signature"]);
+    const resolvedRulesAck = findVal(["__rules_acknowledgment", "rules_acknowledged"], ["rules", "consent"]);
+    const resolvedSubEvent = builtinData.__subevent_selector || builtinData.selectedSubEventId;
+
     if (!resolvedEmail || !user) return;
     try {
       const { data: existingProfile } = await supabase
@@ -750,7 +760,6 @@ export function RegistrationsManager({ competitionId }: Props) {
       const targetSubEvent = walkInSubEvent || undefined;
       if (walkInPosition && parseInt(walkInPosition, 10) > 0) {
         sortOrder = parseInt(walkInPosition, 10);
-        // Shift existing contestants at or after this position
         const toShift = registrations?.filter(r =>
           (targetSubEvent ? r.sub_event_id === targetSubEvent : true) &&
           ((r as any).sort_order || 0) >= sortOrder
@@ -759,20 +768,17 @@ export function RegistrationsManager({ competitionId }: Props) {
           await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
         }
       } else if (walkInAfterLastTimed && targetSubEvent) {
-        // Find last timed contestant position
         const { data: durs } = await supabase.from("performance_durations").select("contestant_registration_id").eq("sub_event_id", targetSubEvent);
         const timedIds = new Set(durs?.map(d => d.contestant_registration_id) || []);
         const subRegs = registrations?.filter(r => r.sub_event_id === targetSubEvent).sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0)) || [];
         let lastTimedOrder = 0;
         subRegs.forEach(r => { if (timedIds.has(r.id)) lastTimedOrder = (r as any).sort_order || 0; });
         sortOrder = lastTimedOrder + 1;
-        // Shift
         const toShift = subRegs.filter(r => ((r as any).sort_order || 0) >= sortOrder);
         for (const r of toShift) {
           await supabase.from("contestant_registrations").update({ sort_order: ((r as any).sort_order || 0) + 1 } as any).eq("id", r.id);
         }
       } else {
-        // Default: end of list
         const maxOrder = registrations?.reduce((max, r) => Math.max(max, (r as any).sort_order || 0), 0) || 0;
         sortOrder = maxOrder + 1;
       }
@@ -780,25 +786,26 @@ export function RegistrationsManager({ competitionId }: Props) {
       await createReg.mutateAsync({
         user_id: userId,
         competition_id: competitionId,
-        full_name: resolvedName || (builtinData.__lastName ? [builtinData.full_name, builtinData.__lastName].filter(Boolean).join(" ") : builtinData.full_name) || "",
+        full_name: resolvedName || "",
         email: resolvedEmail,
-        phone: builtinData.phone,
-        location: builtinData.location,
-        age_category: builtinData.age_category || builtinData.ageCategory || "adult",
-        bio: builtinData.bio,
-        performance_video_url: builtinData.performance_video_url || builtinData.videoUrl,
-        guardian_name: builtinData.guardian_name,
-        guardian_email: builtinData.guardian_email,
-        guardian_phone: builtinData.guardian_phone,
-        sub_event_id: builtinData.__subevent_selector || builtinData.selectedSubEventId,
-        rules_acknowledged: builtinData.__rules_acknowledgment,
-        rules_acknowledged_at: builtinData.__rules_acknowledgment ? new Date().toISOString() : undefined,
-        contestant_signature: builtinData.__contestant_signature,
-        contestant_signed_at: builtinData.__contestant_signature ? new Date().toISOString() : undefined,
+        phone: resolvedPhone,
+        location: resolvedLocation,
+        age_category: resolvedAge,
+        bio: resolvedBio,
+        performance_video_url: resolvedVideo,
+        guardian_name: resolvedGuardianName,
+        guardian_email: resolvedGuardianEmail,
+        guardian_phone: resolvedGuardianPhone,
+        sub_event_id: resolvedSubEvent,
+        rules_acknowledged: !!resolvedRulesAck,
+        rules_acknowledged_at: resolvedRulesAck ? new Date().toISOString() : undefined,
+        contestant_signature: resolvedSignature,
+        contestant_signed_at: resolvedSignature ? new Date().toISOString() : undefined,
         guardian_signature: builtinData.__guardian_signature,
         guardian_signed_at: builtinData.__guardian_signature ? new Date().toISOString() : undefined,
         status: "approved",
-        custom_field_values: customData,
+        sort_order: sortOrder,
+        custom_field_values: allValues,
       } as any);
       setShowWalkIn(false);
     } catch (e: any) {
