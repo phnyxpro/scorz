@@ -420,16 +420,26 @@ function useAllSubEvents(competitionId: string) {
         .order("event_date");
       if (se) throw se;
 
-      const { data: categories, error: ce } = (await supabase
-        .from("competition_categories")
-        .select("*")
-        .eq("competition_id", competitionId)) as { data: any[] | null; error: any };
-      if (ce) throw ce;
+      // 2. Categories (Resolution for Category/Sub-category selectors)
+      // competition_categories uses level_id, not direct competition_id
+      let fetchedCategories: any[] = [];
+      if (levels && levels.length > 0) {
+        const { data: cats, error: ce } = await supabase
+          .from("competition_categories")
+          .select("*")
+          .in("level_id", levels.map(l => l.id));
+        
+        if (ce) {
+          console.error("Error fetching categories:", ce);
+        } else {
+          fetchedCategories = cats || [];
+        }
+      }
 
       const result: CompetitionStructure = { 
         levels: levels || [], 
         subEvents: subEvents || [], 
-        categories: categories || [] 
+        categories: fetchedCategories 
       };
       return result;
     },
@@ -519,7 +529,7 @@ export function RegistrationsManager({ competitionId }: Props) {
   }, [formConfig]);
 
   const tableFields = useMemo(() => {
-    const fields: { key: string; label: string; type: string }[] = [];
+    const fields: { key: string; label: string; type: string; options?: any[] }[] = [];
     // Skip basic personal info already shown in standard columns + signatures/rules
     const skipKeys = new Set([
       "full_name", "email", "phone", "__lastName", 
@@ -529,7 +539,7 @@ export function RegistrationsManager({ competitionId }: Props) {
     formSchema.forEach(section => {
       section.fields.forEach(field => {
         if (!skipKeys.has(field.key)) {
-          fields.push({ key: field.key, label: field.label, type: field.type });
+          fields.push({ key: field.key, label: field.label, type: field.type, options: field.options });
           skipKeys.add(field.key); // prevent duplicates across sections
         }
       });
@@ -1114,10 +1124,20 @@ export function RegistrationsManager({ competitionId }: Props) {
                             const val = (reg.custom_field_values as any)?.[f.key];
                             if (val === undefined || val === null) return "—";
                             
-                            // Resolve IDs for selectors
+                            // 1. Resolve Dynamic Selectors
                             if (f.type === "level_selector") return (allData as any)?.levels.find((l: any) => l.id === val)?.name || val;
                             if (f.type === "subevent_selector") return subEventMap.get(val)?.name || val;
                             if (f.type === "category_selector" || f.type === "subcategory_selector") return categoryMap.get(val) || val;
+                            if (f.type === "time_slot_selector") {
+                              const slot = slotsData?.find(s => s.id === val);
+                              if (slot) return `${slot.start_time} - ${slot.end_time}`;
+                            }
+
+                            // 2. Resolve Custom Select/Options
+                            if (f.options && f.options.length > 0) {
+                              const found = f.options.find(o => o.value === val);
+                              if (found) return found.label;
+                            }
 
                             if (typeof val === "boolean") return val ? "Yes" : "No";
                             if (Array.isArray(val)) return val.join(", ");
@@ -1327,6 +1347,7 @@ export function RegistrationsManager({ competitionId }: Props) {
           levels={allData?.levels}
           subEvents={allData?.subEvents}
           categories={allData?.categories}
+          timeSlots={slotsData}
         />
       )}
     </div>

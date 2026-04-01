@@ -22,6 +22,7 @@ interface RegistrationsSheetEditorProps {
   levels?: any[];
   subEvents?: any[];
   categories?: any[];
+  timeSlots?: any[];
 }
 
 export function RegistrationsSheetEditor({
@@ -32,7 +33,8 @@ export function RegistrationsSheetEditor({
   onOpenChange,
   levels,
   subEvents,
-  categories
+  categories,
+  timeSlots
 }: RegistrationsSheetEditorProps) {
   const qc = useQueryClient();
   const [data, setData] = useState<any[]>([]);
@@ -54,11 +56,26 @@ export function RegistrationsSheetEditor({
     formSchema.forEach(section => {
       section.fields.forEach(field => {
         if (!skipKeys.has(field.key)) {
+          let fieldOptions = field.options?.map(o => ({ label: o.label, value: o.value }));
+          
+          // Populate dynamic selector options
+          if (!fieldOptions || fieldOptions.length === 0) {
+            if (field.type === "level_selector") {
+              fieldOptions = levels?.map(l => ({ label: l.name, value: l.id }));
+            } else if (field.type === "subevent_selector") {
+              fieldOptions = subEvents?.map(se => ({ label: se.name, value: se.id }));
+            } else if (field.type === "category_selector" || field.type === "subcategory_selector") {
+              fieldOptions = categories?.map(c => ({ label: c.name, value: c.id }));
+            } else if (field.type === "time_slot_selector") {
+              fieldOptions = timeSlots?.map(s => ({ label: `${s.start_time} - ${s.end_time}`, value: s.id }));
+            }
+          }
+
           cols.push({ 
             key: field.key, 
             label: field.label, 
-            type: field.type, 
-            options: field.options?.map(o => ({ label: o.label, value: o.value })) 
+            type: (field.type.includes("_selector") || (fieldOptions && fieldOptions.length > 0)) ? "select" : field.type, 
+            options: fieldOptions
           });
           skipKeys.add(field.key);
         }
@@ -66,7 +83,7 @@ export function RegistrationsSheetEditor({
     });
 
     return cols;
-  }, [formSchema, subEvents]);
+  }, [formSchema, levels, subEvents, categories, timeSlots]);
 
   // Sync initial data when dialog opens
   useEffect(() => {
@@ -146,7 +163,18 @@ export function RegistrationsSheetEditor({
           const targetColIdx = startColIdx + cIdx;
           if (targetColIdx < columns.length) {
             const col = columns[targetColIdx];
-            next[targetRowIdx] = { ...next[targetRowIdx], [col.key]: cell.trim() };
+            const trimmed = cell.trim();
+            let finalValue = trimmed;
+
+            // Resolve name to ID if it's a select column
+            if (col.type === "select" && col.options) {
+              const matchedOption = col.options.find(
+                opt => opt.label.toLowerCase() === trimmed.toLowerCase() || opt.value === trimmed
+              );
+              if (matchedOption) finalValue = matchedOption.value;
+            }
+
+            next[targetRowIdx] = { ...next[targetRowIdx], [col.key]: finalValue };
           }
         });
       });
