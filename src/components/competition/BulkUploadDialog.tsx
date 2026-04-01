@@ -718,10 +718,10 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
                       })}
                     </div>
                   </ScrollArea>
-                  {!requiredFieldsMapped && (
+                  {unmappedRequiredFields.length > 0 && (
                     <p className="text-xs text-destructive flex items-center gap-1 mt-1">
                       <AlertTriangle className="h-3 w-3" />
-                      Full Name and Email must be mapped to continue.
+                      Required fields not mapped: {unmappedRequiredFields.map(f => f.label).join(", ")}
                     </p>
                   )}
                 </div>
