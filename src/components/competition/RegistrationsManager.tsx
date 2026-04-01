@@ -409,6 +409,7 @@ function useAllSubEvents(competitionId: string) {
 }
 
 export function RegistrationsManager({ competitionId }: Props) {
+  const navigate = useNavigate();
   const { data: registrations, isLoading } = useRegistrations(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: allData } = useAllSubEvents(competitionId);
