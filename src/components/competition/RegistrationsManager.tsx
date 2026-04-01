@@ -266,7 +266,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
               onClick={() => onSelect(reg)}
               onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
             >
-              {reg.full_name}
+              {(reg.custom_field_values as any)?.spark_school_name || reg.full_name}
             </button>
           )}
           {(reg as any).special_entry_type && (
@@ -279,7 +279,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           )}
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
+      <TableCell className="text-sm text-muted-foreground capitalize">{((reg.custom_field_values as any)?.cf_1774990613141 || reg.email || "").replace(/_/g, " ")}</TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px]">
