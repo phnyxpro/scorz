@@ -55,27 +55,39 @@ export default function ContestantRegistration() {
   const handleDynamicSubmit = async (builtinData: Record<string, any>, customData: Record<string, any>) => {
     if (!user || !competitionId) return;
 
+    // When form uses custom field IDs, values may be in customData
+    const allValues = { ...customData, ...builtinData };
+    const findVal = (builtinKeys: string[], hints: string[]) => {
+      for (const k of builtinKeys) if (builtinData[k]) return builtinData[k];
+      for (const hint of hints) {
+        for (const [k, v] of Object.entries(allValues)) {
+          if (v && k.toLowerCase().includes(hint)) return v;
+        }
+      }
+      return undefined;
+    };
+
     createReg.mutate({
       user_id: user.id,
       competition_id: competitionId,
-      full_name: builtinData.full_name || builtinData.fullName || user.user_metadata?.full_name || "",
-      email: builtinData.email || user.email || "",
-      phone: builtinData.phone,
-      location: builtinData.location,
-      age_category: builtinData.age_category || "adult",
-      bio: builtinData.bio,
-      performance_video_url: builtinData.performance_video_url || builtinData.videoUrl,
-      guardian_name: builtinData.guardian_name,
-      guardian_email: builtinData.guardian_email,
-      guardian_phone: builtinData.guardian_phone,
+      full_name: findVal(["full_name", "fullName"], ["name", "applicant"]) || user.user_metadata?.full_name || "",
+      email: findVal(["email"], ["email"]) || user.email || "",
+      phone: findVal(["phone"], ["phone"]),
+      location: findVal(["location"], ["location", "city"]),
+      age_category: findVal(["age_category"], ["age"]) || "adult",
+      bio: findVal(["bio"], ["bio"]),
+      performance_video_url: findVal(["performance_video_url", "videoUrl"], ["video"]),
+      guardian_name: findVal(["guardian_name"], ["guardian_name"]),
+      guardian_email: findVal(["guardian_email"], ["guardian_email"]),
+      guardian_phone: findVal(["guardian_phone"], ["guardian_phone"]),
       sub_event_id: builtinData.__subevent_selector || builtinData.selectedSubEventId,
-      rules_acknowledged: builtinData.__rules_acknowledgment,
-      rules_acknowledged_at: builtinData.__rules_acknowledgment ? new Date().toISOString() : undefined,
-      contestant_signature: builtinData.__contestant_signature,
-      contestant_signed_at: builtinData.__contestant_signature ? new Date().toISOString() : undefined,
+      rules_acknowledged: !!(findVal(["__rules_acknowledgment", "rules_acknowledged"], ["rules", "consent"])),
+      rules_acknowledged_at: findVal(["__rules_acknowledgment"], ["rules", "consent"]) ? new Date().toISOString() : undefined,
+      contestant_signature: findVal(["__contestant_signature", "contestant_signature"], ["signature"]),
+      contestant_signed_at: findVal(["__contestant_signature", "contestant_signature"], ["signature"]) ? new Date().toISOString() : undefined,
       guardian_signature: builtinData.__guardian_signature,
       guardian_signed_at: builtinData.__guardian_signature ? new Date().toISOString() : undefined,
-      custom_field_values: customData,
+      custom_field_values: allValues,
     } as any, {
       onSuccess: async (createdReg: any) => {
         // Book time slot if selected
