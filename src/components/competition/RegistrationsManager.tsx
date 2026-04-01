@@ -279,7 +279,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
           )}
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground font-mono">{reg.email}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">{(reg.custom_field_values as any)?.cf_1774990613141 || reg.email}</TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px]">
