@@ -67,6 +67,20 @@ export default function ContestantRegistration() {
       return undefined;
     };
 
+    // Resolve sub_event_id: direct selector first, then from deepest category
+    let resolvedSubEvent = builtinData.__subevent_selector || builtinData.selectedSubEventId || allValues.__subevent_selector || allValues.selectedSubEventId;
+    if (!resolvedSubEvent) {
+      const deepestCatId = allValues.__deepest_category_id || allValues.__subcategory_selector || allValues.selectedSubCategoryId || allValues.__category_selector || allValues.selectedCategoryId;
+      if (deepestCatId) {
+        const { data: cat } = await supabase
+          .from("competition_categories")
+          .select("sub_event_id")
+          .eq("id", deepestCatId)
+          .maybeSingle();
+        if (cat?.sub_event_id) resolvedSubEvent = cat.sub_event_id;
+      }
+    }
+
     createReg.mutate({
       user_id: user.id,
       competition_id: competitionId,
@@ -80,7 +94,7 @@ export default function ContestantRegistration() {
       guardian_name: findVal(["guardian_name"], ["guardian_name"]),
       guardian_email: findVal(["guardian_email"], ["guardian_email"]),
       guardian_phone: findVal(["guardian_phone"], ["guardian_phone"]),
-      sub_event_id: builtinData.__subevent_selector || builtinData.selectedSubEventId,
+      sub_event_id: resolvedSubEvent || null,
       rules_acknowledged: !!(findVal(["__rules_acknowledgment", "rules_acknowledged"], ["rules", "consent"])),
       rules_acknowledged_at: findVal(["__rules_acknowledgment"], ["rules", "consent"]) ? new Date().toISOString() : undefined,
       contestant_signature: findVal(["__contestant_signature", "contestant_signature"], ["signature"]),
