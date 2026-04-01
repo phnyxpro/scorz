@@ -686,37 +686,47 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
                   <p className="text-sm font-medium">Map Columns to Fields</p>
                   <ScrollArea className="h-[40vh] border rounded-md p-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-3">
-                      {dynamicFields.map((field) => (
-                        <div key={field.key} className="flex items-center gap-2">
-                          <Label className="text-xs w-32 shrink-0 truncate" title={field.label}>
-                            {field.label}
-                            {field.required && <span className="text-destructive ml-0.5">*</span>}
-                          </Label>
-                          <Select
-                            value={mapping[field.key] || "__none__"}
-                            onValueChange={(v) =>
-                              setMapping((m) => ({
-                                ...m,
-                                [field.key]: v === "__none__" ? "" : v,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-xs flex-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Skip —</SelectItem>
-                              {headers.map((h) => (
-                                <SelectItem key={h} value={h}>
-                                  {h}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
+                      {dynamicFields.map((field) => {
+                        const isRequired = field.key === "full_name" || field.key === "email";
+                        const isMissing = isRequired && !mapping[field.key];
+                        return (
+                          <div key={field.key} className={`flex items-center gap-2 rounded-md px-1 py-0.5 ${isMissing ? "ring-1 ring-destructive bg-destructive/5" : ""}`}>
+                            <Label className={`text-xs w-32 shrink-0 truncate ${isMissing ? "text-destructive font-semibold" : ""}`} title={field.label}>
+                              {field.label}
+                              {field.required && <span className="text-destructive ml-0.5">*</span>}
+                            </Label>
+                            <Select
+                              value={mapping[field.key] || "__none__"}
+                              onValueChange={(v) =>
+                                setMapping((m) => ({
+                                  ...m,
+                                  [field.key]: v === "__none__" ? "" : v,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className={`h-8 text-xs flex-1 ${isMissing ? "border-destructive" : ""}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">— Skip —</SelectItem>
+                                {headers.map((h) => (
+                                  <SelectItem key={h} value={h}>
+                                    {h}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
+                  {!requiredFieldsMapped && (
+                    <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Full Name and Email must be mapped to continue.
+                    </p>
+                  )}
                 </div>
 
                 {subEvents.length > 0 && (
