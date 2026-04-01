@@ -670,7 +670,7 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
 
         {/* ─── Step 1: Upload & Map ─── */}
         {step === 1 && (
-          <div className="space-y-4 overflow-y-auto">
+          <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-1">
             <div>
               <Label className="text-sm">Upload CSV or Excel File</Label>
               <Input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileChange} className="mt-1" />
