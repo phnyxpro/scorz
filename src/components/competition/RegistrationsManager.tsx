@@ -740,7 +740,7 @@ export function RegistrationsManager({ competitionId }: Props) {
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("user_id")
-        .eq("email", builtinData.email)
+        .eq("email", resolvedEmail)
         .maybeSingle();
 
       const userId = existingProfile?.user_id || user.id;
