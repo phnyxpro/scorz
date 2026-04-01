@@ -17,6 +17,7 @@ export default function AudienceEvents() {
         .from("competitions")
         .select("*")
         .in("status", ["active", "completed"])
+        .neq("name", "FCNPS National Poetry Slam 2025")
         .order("start_date", { ascending: true });
       if (error) throw error;
       return data;
