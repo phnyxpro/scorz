@@ -266,7 +266,7 @@ function SortableRow({ reg, idx, totalCount, slot, allSlots, onSlotAssign, onSlo
               onClick={() => onSelect(reg)}
               onDoubleClick={(e) => { e.preventDefault(); setEditName(reg.full_name); setEditingName(true); }}
             >
-              {reg.full_name}
+              {(reg.custom_field_values as any)?.spark_school_name || reg.full_name}
             </button>
           )}
           {(reg as any).special_entry_type && (
