@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown } from "lucide-react";
+import { CheckCircle, XCircle, ArrowUp, ArrowDown, UserPlus, Search, ArrowRight, ArrowLeft, Users, ChevronRight, ChevronUp, ChevronDown, User, Info, Calendar, PenTool, Link as LinkIcon, Clock, GripVertical, ShieldAlert, ArrowUpDown, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContestantDetailSheet } from "./ContestantDetailSheet";
 import { ContestantRegistration } from "@/hooks/useRegistrations";
@@ -408,6 +409,7 @@ function useAllSubEvents(competitionId: string) {
 }
 
 export function RegistrationsManager({ competitionId }: Props) {
+  const navigate = useNavigate();
   const { data: registrations, isLoading } = useRegistrations(competitionId);
   const { data: levels } = useLevels(competitionId);
   const { data: allData } = useAllSubEvents(competitionId);
@@ -940,9 +942,9 @@ export function RegistrationsManager({ competitionId }: Props) {
                     />
                   </TableHead>
                   <TableHead className="text-xs w-[40px]">#</TableHead>
+                  <TableHead className="text-xs">ID</TableHead>
                   <TableHead className="text-xs">Name</TableHead>
                   <TableHead className="text-xs hidden md:table-cell">Email</TableHead>
-                  <TableHead className="text-xs">Sub-Event</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Order</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
@@ -951,7 +953,7 @@ export function RegistrationsManager({ competitionId }: Props) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
                       No registrations found.
                     </TableCell>
                   </TableRow>
@@ -968,39 +970,17 @@ export function RegistrationsManager({ competitionId }: Props) {
                         />
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+                      <TableCell>
+                        <button
+                          className="text-xs font-mono text-primary hover:underline cursor-pointer"
+                          onClick={() => navigate(`/profile/${reg.user_id}`)}
+                          title={`View profile – ${reg.id}`}
+                        >
+                          {reg.id.slice(0, 8)}…
+                        </button>
+                      </TableCell>
                       <TableCell className="text-sm font-medium">{reg.full_name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground font-mono hidden md:table-cell">{reg.email}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={reg.sub_event_id || "none"}
-                          onValueChange={(v) => handleReassign(reg.id, v === "none" ? null : v)}
-                        >
-                          <SelectTrigger className="h-7 text-[11px] w-[160px] border-dashed">
-                            <SelectValue placeholder="Unassigned" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">
-                              <span className="text-muted-foreground italic">Unassigned</span>
-                            </SelectItem>
-                            {allData?.levels.map(level => {
-                              const levelSubs = allData.subEvents.filter(se => se.level_id === level.id);
-                              if (levelSubs.length === 0) return null;
-                              return (
-                                <div key={level.id}>
-                                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                    {level.name}
-                                  </div>
-                                  {levelSubs.map(se => (
-                                    <SelectItem key={se.id} value={se.id} className="pl-4">
-                                      {se.name}
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] ${statusColor[reg.status] || ""}`}>
                           {reg.status}
