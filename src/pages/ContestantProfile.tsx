@@ -59,6 +59,38 @@ export default function ContestantProfile() {
     () => [...new Set((registrations || []).filter((r) => r.sub_event_id).map((r) => r.sub_event_id!))],
     [registrations]
   );
+  // Collect category IDs from custom_field_values for resolution
+  const categoryIds = useMemo(() => {
+    const ids = new Set<string>();
+    (registrations || []).forEach((r) => {
+      const cfv = r.custom_field_values || {};
+      ["__level_selector", "__category_selector", "__subcategory_selector"].forEach((k) => {
+        if (cfv[k] && typeof cfv[k] === "string") ids.add(cfv[k]);
+      });
+    });
+    return [...ids];
+  }, [registrations]);
+
+  const { data: categoryNames } = useQuery({
+    queryKey: ["category-names-for-profile", categoryIds],
+    enabled: categoryIds.length > 0,
+    queryFn: async () => {
+      // Resolve levels
+      const { data: levelsData } = await supabase
+        .from("competition_levels")
+        .select("id, name")
+        .in("id", categoryIds);
+      // Resolve categories
+      const { data: catsData } = await supabase
+        .from("competition_categories")
+        .select("id, name")
+        .in("id", categoryIds);
+      const map: Record<string, string> = {};
+      levelsData?.forEach((l) => (map[l.id] = l.name));
+      catsData?.forEach((c) => (map[c.id] = c.name));
+      return map;
+    },
+  });
 
   const { data: competitions } = useCompetitionNames(competitionIds);
   const { data: scores } = useContestantScores(registrationIds);
