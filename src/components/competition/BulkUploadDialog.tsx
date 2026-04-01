@@ -596,13 +596,11 @@ export function BulkUploadDialog({ competitionId, open, onOpenChange }: Props) {
   };
 
   // Check if required fields are mapped
-  const requiredFieldsMapped = useMemo(() => {
-    const requiredKeys = dynamicFields
-      .filter((f) => f.required && f.key === "full_name" || f.key === "email")
-      .map((f) => f.key);
-    // At minimum need full_name and email
-    return !!mapping["full_name"] && !!mapping["email"];
+  const unmappedRequiredFields = useMemo(() => {
+    return dynamicFields.filter((f) => f.required && !mapping[f.key]);
   }, [mapping, dynamicFields]);
+
+  const requiredFieldsMapped = unmappedRequiredFields.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
