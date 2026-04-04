@@ -86,15 +86,33 @@ export interface Infraction {
 }
 
 export function useCompetitions() {
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
+  const isOrganizer = hasRole("organizer");
+
   return useQuery({
-    queryKey: ["competitions"],
+    queryKey: ["competitions", user?.id, isAdmin, isOrganizer],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competitions")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Competition[];
+      const all = data as Competition[];
+
+      // Admins see everything; non-organisers are already filtered by RLS
+      if (isAdmin || !isOrganizer) return all;
+
+      // Organiser-only: show competitions they created OR are invited/assigned to
+      const { data: invites } = await supabase
+        .from("staff_invitations")
+        .select("competition_id")
+        .ilike("email", user!.email!)
+        .eq("role", "organizer");
+
+      const invitedCompIds = new Set(invites?.map(i => i.competition_id) || []);
+
+      return all.filter(c => c.created_by === user!.id || invitedCompIds.has(c.id));
     },
   });
 }
