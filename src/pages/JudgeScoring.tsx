@@ -714,6 +714,14 @@ export default function JudgeScoring() {
                 );
               })()}
 
+              {/* Profile details — right below video */}
+              {profileDetailsVisible && selectedContestantReg && (
+                <ContestantInfoCard
+                  formConfig={(comp as any)?.registration_form_config}
+                  customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
+                />
+              )}
+
               {timerVisible && subEventId && (
                 <ReadOnlyTimer
                   subEventId={subEventId}
@@ -820,13 +828,7 @@ export default function JudgeScoring() {
                 </CardContent>
               </Card>
 
-              {/* Contestant Info — custom fields flagged for scorecard */}
-              {profileDetailsVisible && selectedContestantReg && (
-                <ContestantInfoCard
-                  formConfig={(comp as any)?.registration_form_config}
-                  customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
-                />
-              )}
+              {/* ContestantInfoCard moved above timer, after video embed */}
 
               {commentsVisible && (
                 <Card className="border-border/50 bg-card/80">
