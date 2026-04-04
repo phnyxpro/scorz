@@ -176,17 +176,33 @@ export default function JudgeScoring() {
   // For category-type levels, compute grouped contestants by Category field
   const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
 
-  // Fetch categories for the selected level to resolve UUIDs to names
+  // Fetch ALL categories for the selected level (including nested subcategories) to resolve UUIDs to names
   const { data: levelCategories } = useQuery({
-    queryKey: ["competition_categories", selectedLevelId],
+    queryKey: ["competition_categories_all", selectedLevelId],
     enabled: !!selectedLevelId && isCategoryLevel,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get top-level categories for this level
+      const { data: topLevel, error: e1 } = await supabase
         .from("competition_categories")
-        .select("id, name")
+        .select("id, name, parent_id")
         .eq("level_id", selectedLevelId);
-      if (error) throw error;
-      return data as { id: string; name: string }[];
+      if (e1) throw e1;
+      if (!topLevel?.length) return [] as { id: string; name: string }[];
+
+      // Recursively fetch children up to 3 levels deep
+      let allCats = [...topLevel];
+      let parentIds = topLevel.map(c => c.id);
+      for (let depth = 0; depth < 3 && parentIds.length > 0; depth++) {
+        const { data: children, error: e2 } = await supabase
+          .from("competition_categories")
+          .select("id, name, parent_id")
+          .in("parent_id", parentIds);
+        if (e2) throw e2;
+        if (!children?.length) break;
+        allCats = [...allCats, ...children];
+        parentIds = children.map(c => c.id);
+      }
+      return allCats as { id: string; name: string }[];
     },
   });
 
