@@ -317,13 +317,66 @@ export function RegistrationsSheetEditor({
     setData(prev => prev.filter((_, i) => i !== idx));
   };
 
+  // Parse TSV/CSV text respecting quoted fields that may contain newlines
+  const parseTSV = (text: string): string[][] => {
+    const rows: string[][] = [];
+    let current: string[] = [];
+    let cell = "";
+    let inQuotes = false;
+    let i = 0;
+    while (i < text.length) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"' && text[i + 1] === '"') {
+          cell += '"';
+          i += 2;
+        } else if (ch === '"') {
+          inQuotes = false;
+          i++;
+        } else {
+          cell += ch;
+          i++;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+          i++;
+        } else if (ch === '\t') {
+          current.push(cell);
+          cell = "";
+          i++;
+        } else if (ch === '\r' && text[i + 1] === '\n') {
+          current.push(cell);
+          cell = "";
+          rows.push(current);
+          current = [];
+          i += 2;
+        } else if (ch === '\n') {
+          current.push(cell);
+          cell = "";
+          rows.push(current);
+          current = [];
+          i++;
+        } else {
+          cell += ch;
+          i++;
+        }
+      }
+    }
+    if (cell || current.length > 0) {
+      current.push(cell);
+      rows.push(current);
+    }
+    return rows.filter(r => r.some(c => c.length > 0));
+  };
+
   const handlePaste = async (e: React.ClipboardEvent, rowIndex: number, colKey: string) => {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
     if (!text) return;
 
     recordChange(data);
-    const rows = text.split(/\r?\n/).filter(r => r.length > 0).map(r => r.split("\t"));
+    const rows = parseTSV(text);
     const startColIdx = columns.findIndex(c => c.key === colKey);
     
     if (startColIdx === -1) return;
