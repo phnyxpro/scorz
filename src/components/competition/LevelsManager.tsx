@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays, parseISO } from "date-fns";
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { CategoriesPanel } from "@/components/competition/CategoriesPanel";
+import { ImportFromEventDialog } from "@/components/competition/ImportFromEventDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import {
