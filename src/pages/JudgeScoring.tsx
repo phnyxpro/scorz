@@ -665,6 +665,36 @@ export default function JudgeScoring() {
                 </Card>
               )}
 
+              {/* Video link from custom fields */}
+              {(() => {
+                const cfg = migrateFormConfig((comp as any)?.registration_form_config);
+                const urlFields = getScorecardFields(cfg).filter(f => f.field_type === "url");
+                const cfv = (selectedContestantReg as any)?.custom_field_values || {};
+                const videoUrl = urlFields.map(f => cfv[f.id]).find(v => v && String(v).trim());
+                if (!videoUrl) return null;
+                const url = String(videoUrl).trim();
+                const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+                if (ytMatch) {
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-card/80">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                        className="w-full aspect-video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Performance Video"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card/80 text-primary hover:bg-primary/5 transition-colors text-sm">
+                    <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">▶</span>
+                    <span className="truncate">Watch Performance</span>
+                  </a>
+                );
+              })()}
+
               {timerVisible && subEventId && (
                 <ReadOnlyTimer
                   subEventId={subEventId}
