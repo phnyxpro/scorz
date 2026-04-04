@@ -672,6 +672,8 @@ export default function JudgeScoring() {
                 const videoUrl = urlFields.map(f => cfv[f.id]).find(v => v && String(v).trim());
                 if (!videoUrl) return null;
                 const url = String(videoUrl).trim();
+
+                // YouTube embed
                 const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
                 if (ytMatch) {
                   return (
@@ -686,6 +688,24 @@ export default function JudgeScoring() {
                     </div>
                   );
                 }
+
+                // Google Drive embed — extract file ID and use preview URL
+                const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (driveMatch) {
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-card/80">
+                      <iframe
+                        src={`https://drive.google.com/file/d/${driveMatch[1]}/preview`}
+                        className="w-full aspect-video"
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                        title="Performance Video"
+                      />
+                    </div>
+                  );
+                }
+
+                // Fallback — clickable link
                 return (
                   <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card/80 text-primary hover:bg-primary/5 transition-colors text-sm">
                     <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">▶</span>
