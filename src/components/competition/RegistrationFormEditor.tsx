@@ -445,6 +445,16 @@ export function RegistrationFormEditor({ competitionId }: Props) {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <ImportFromEventDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        currentCompetitionId={competitionId}
+        title="Import Registration Form"
+        description="Select an event to copy its registration form configuration into this competition."
+        onSelect={handleImportForm}
+        loading={importLoading}
+      />
     </div>
   );
 }
