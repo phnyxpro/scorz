@@ -4,6 +4,8 @@ import { FormFieldConfig, FormBuilderConfig, getScorecardFields, getScorecardLay
 interface ContestantInfoCardProps {
   formConfig: any;
   customFieldValues: Record<string, any>;
+  /** Optional map of raw value → human-readable label for resolving IDs/codes */
+  valueResolver?: Map<string, string>;
 }
 
 /**
@@ -11,12 +13,24 @@ interface ContestantInfoCardProps {
  * that are flagged as show_on_scorecard in the form config.
  * Uses scorecard_layout config for card grouping if available.
  */
-export function ContestantInfoCard({ formConfig, customFieldValues }: ContestantInfoCardProps) {
+export function ContestantInfoCard({ formConfig, customFieldValues, valueResolver }: ContestantInfoCardProps) {
   const config = migrateFormConfig(formConfig);
   const scorecardFields = getScorecardFields(config);
   const cards = getScorecardLayout(config);
 
   if (scorecardFields.length === 0 || !customFieldValues) return null;
+
+  const resolve = (field: FormFieldConfig, raw: any): string => {
+    const str = String(raw);
+    // Try the external resolver first (covers category UUIDs, level UUIDs, dropdown codes)
+    if (valueResolver?.has(str)) return valueResolver.get(str)!;
+    // Try the field's own options (dropdown/radio)
+    if (field.options?.length) {
+      const match = field.options.find(o => o.value === str);
+      if (match) return match.label;
+    }
+    return str;
+  };
 
   // Build lookup
   const fieldMap = new Map(scorecardFields.map(f => [f.id, f]));
@@ -27,7 +41,7 @@ export function ContestantInfoCard({ formConfig, customFieldValues }: Contestant
       .map(id => fieldMap.get(id))
       .filter((f): f is FormFieldConfig => !!f && f.field_type !== "url")
       .filter(f => customFieldValues[f.id] != null && customFieldValues[f.id] !== "")
-      .map(f => ({ label: f.label, value: String(customFieldValues[f.id]) }));
+      .map(f => ({ label: f.label, value: resolve(f, customFieldValues[f.id]) }));
 
   // If no layout config, show all fields distributed across auto-generated cards
   const renderedCards = cards.map(card => ({
@@ -39,7 +53,7 @@ export function ContestantInfoCard({ formConfig, customFieldValues }: Contestant
   if (renderedCards.length === 0) {
     const allEntries = scorecardFields
       .filter(f => f.field_type !== "url" && customFieldValues[f.id] != null && customFieldValues[f.id] !== "")
-      .map(f => ({ label: f.label, value: String(customFieldValues[f.id]) }));
+      .map(f => ({ label: f.label, value: resolve(f, customFieldValues[f.id]) }));
     if (allEntries.length === 0) return null;
     return (
       <div className="rounded-lg border border-border/50 bg-card/80 px-4 py-3">
