@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useAllSubEvents, useLevels, useCompetition, useSubEvents, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,18 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard, Zap, X, User } from "lucide-react";
+import { Clock, MessageSquare, Settings, Calculator, FileDown, CreditCard, Zap, X, User, Video, GripVertical, Plus, Trash2, LayoutGrid } from "lucide-react";
 import { SCORING_METHODS } from "@/lib/scoring-methods";
 import { ScoreSheetDownloads } from "./ScoreSheetDownloads";
 import { ScoreCardExportSection } from "./ScoreCardExportSection";
+import { migrateFormConfig, getScorecardFields, ScorecardCard } from "@/lib/form-builder-types";
 
 const categories = {
   active: { label: "Active Scoring", icon: Zap, description: "Set which level and sub-event judges should be scoring." },
   method: { label: "Scoring Method", icon: Calculator, description: "Choose how judge scores are aggregated into a contestant's final ranking." },
   sections: { label: "Judge Card Sections", icon: Settings, description: "Control which sections appear on judge scoring cards for each sub-event." },
+  layout: { label: "Scorecard Layout", icon: LayoutGrid, description: "Configure how contestant details are grouped into sub-cards on the judge scorecard." },
   sheets: { label: "Score Sheets", icon: FileDown, description: "Download printable score sheets for offline judging." },
   export: { label: "Score Cards", icon: CreditCard, description: "Export PDF score cards for contestants and records." },
 } as const;
