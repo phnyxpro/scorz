@@ -842,7 +842,7 @@ export default function JudgeScoring() {
               )}
 
               {/* Video link from custom fields */}
-              {(() => {
+              {videoVisible && (() => {
                 const cfg = migrateFormConfig((comp as any)?.registration_form_config);
                 const urlFields = getScorecardFields(cfg).filter(f => f.field_type === "url");
                 const cfv = (selectedContestantReg as any)?.custom_field_values || {};
@@ -891,7 +891,7 @@ export default function JudgeScoring() {
                 );
               })()}
 
-              {/* Profile details — right below video */}
+              {/* Profile details — 3-column sub-cards below video */}
               {profileDetailsVisible && selectedContestantReg && (
                 <ContestantInfoCard
                   formConfig={(comp as any)?.registration_form_config}
