@@ -54,13 +54,13 @@ export function RegistrationFormDetails({ registration, formSchema, isPublic, co
         supabase.from("competition_levels").select("id, name").in("id", allIds),
         supabase.from("competition_categories").select("id, name").in("id", allIds),
         supabase.from("sub_events").select("id, name").in("id", allIds),
-        supabase.from("time_slots").select("id, start_time").in("id", allIds),
+        supabase.from("performance_slots").select("id, start_time").in("id", allIds),
       ]);
       
       levels.data?.forEach(l => map[l.id] = l.name);
       cats.data?.forEach(c => map[c.id] = c.name);
       subs.data?.forEach(s => map[s.id] = s.name);
-      slots.data?.forEach(sl => map[sl.id] = sl.start_time);
+      slots.data?.forEach((sl: any) => map[sl.id] = sl.start_time);
       return map;
     },
   });
