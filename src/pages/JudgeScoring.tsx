@@ -37,7 +37,7 @@ import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
-import { migrateFormConfig, getScorecardFields } from "@/lib/form-builder-types";
+import { migrateFormConfig, getScorecardFields, getScorecardLayout } from "@/lib/form-builder-types";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -102,6 +102,7 @@ export default function JudgeScoring() {
   const timerVisible = selectedSubEvent?.timer_visible ?? true;
   const commentsVisible = selectedSubEvent?.comments_visible ?? true;
   const profileDetailsVisible = (selectedSubEvent as any)?.profile_details_visible ?? true;
+  const videoVisible = (selectedSubEvent as any)?.video_visible ?? true;
 
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
@@ -841,7 +842,7 @@ export default function JudgeScoring() {
               )}
 
               {/* Video link from custom fields */}
-              {(() => {
+              {videoVisible && (() => {
                 const cfg = migrateFormConfig((comp as any)?.registration_form_config);
                 const urlFields = getScorecardFields(cfg).filter(f => f.field_type === "url");
                 const cfv = (selectedContestantReg as any)?.custom_field_values || {};
@@ -890,7 +891,7 @@ export default function JudgeScoring() {
                 );
               })()}
 
-              {/* Profile details — right below video */}
+              {/* Profile details — 3-column sub-cards below video */}
               {profileDetailsVisible && selectedContestantReg && (
                 <ContestantInfoCard
                   formConfig={(comp as any)?.registration_form_config}

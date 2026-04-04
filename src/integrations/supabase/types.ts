@@ -1662,6 +1662,7 @@ export type Database = {
           timer_visible: boolean
           updated_at: string
           use_time_slots: boolean
+          video_visible: boolean
           voting_enabled: boolean
         }
         Insert: {
@@ -1685,6 +1686,7 @@ export type Database = {
           timer_visible?: boolean
           updated_at?: string
           use_time_slots?: boolean
+          video_visible?: boolean
           voting_enabled?: boolean
         }
         Update: {
@@ -1708,6 +1710,7 @@ export type Database = {
           timer_visible?: boolean
           updated_at?: string
           use_time_slots?: boolean
+          video_visible?: boolean
           voting_enabled?: boolean
         }
         Relationships: [

@@ -30,10 +30,36 @@ export interface SectionConfig {
   sort_order: number;
 }
 
+export interface ScorecardCard {
+  id: string;
+  title: string;
+  field_ids: string[];
+}
+
+export interface ScorecardLayoutConfig {
+  cards: ScorecardCard[];
+}
+
 export interface FormBuilderConfig {
   fields: FormFieldConfig[];
   sections?: SectionConfig[];
+  scorecard_layout?: ScorecardLayoutConfig;
   version: number; // schema version for forward compat
+}
+
+/** Get the scorecard layout, or generate a default 3-card layout from scorecard fields */
+export function getScorecardLayout(config: FormBuilderConfig): ScorecardCard[] {
+  if (config.scorecard_layout?.cards?.length) return config.scorecard_layout.cards;
+  // Default: all scorecard fields in a single card
+  const fields = getScorecardFields(config);
+  if (!fields.length) return [];
+  // Split into 3 roughly equal groups
+  const third = Math.ceil(fields.length / 3);
+  return [
+    { id: "card1", title: "Info", field_ids: fields.slice(0, third).map(f => f.id) },
+    { id: "card2", title: "Performance", field_ids: fields.slice(third, third * 2).map(f => f.id) },
+    { id: "card3", title: "Details", field_ids: fields.slice(third * 2).map(f => f.id) },
+  ].filter(c => c.field_ids.length > 0);
 }
 
 export const DEFAULT_SECTIONS: SectionConfig[] = [
