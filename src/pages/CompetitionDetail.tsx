@@ -339,16 +339,16 @@ export default function CompetitionDetail() {
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="space-y-4">
+        <Tabs defaultValue={isProductionOrganiser ? "levels" : "general"} className="space-y-4">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-            <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>
+            {!isProductionOrganiser && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
             <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
             <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>
-            <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>
+            {!isProductionOrganiser && <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>}
             <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
-            <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>
-            <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>
-            <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>
+            {!isProductionOrganiser && <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>}
+            {!isProductionOrganiser && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
+            {!isProductionOrganiser && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
             <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
           </TabsList>
 
