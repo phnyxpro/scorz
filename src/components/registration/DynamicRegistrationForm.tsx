@@ -394,7 +394,7 @@ function FieldRenderer({
             placeholder={field.placeholder}
             value={value || ""}
             onChange={e => onChange(e.target.value)}
-            className="min-h-[80px] resize-none"
+            className="min-h-[120px] resize-y"
             maxLength={field.maxLength}
           />
           {field.description && <p className="text-[10px] text-muted-foreground italic">{field.description}</p>}
