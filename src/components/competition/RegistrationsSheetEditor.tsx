@@ -697,7 +697,7 @@ export function RegistrationsSheetEditor({
                             {columns.map(col => <SelectItem key={col.key} value={col.key} className="text-xs">{col.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        {uploadMapping[h] && <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                        {uploadMapping[h] && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                       </div>
                     ))}
                   </div>
