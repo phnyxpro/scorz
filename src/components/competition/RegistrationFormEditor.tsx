@@ -87,7 +87,46 @@ export function RegistrationFormEditor({ competitionId }: Props) {
   const upsertConfig = useUpsertFormConfig();
   const [schema, setSchema] = useState<FormSchema>([]);
   const [dirty, setDirty] = useState(false);
-  const [showAddField, setShowAddField] = useState<string | null>(null);  // section id
+  const [showAddField, setShowAddField] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+
+  const handleImportForm = async (sourceCompId: string, sourceName: string) => {
+    setImportLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("registration_form_config")
+        .eq("id", sourceCompId)
+        .maybeSingle();
+      if (error) throw error;
+      const cfg = data?.registration_form_config as any;
+      let imported: FormSchema | null = null;
+      if (Array.isArray(cfg) && cfg.length > 0 && cfg[0].fields) {
+        imported = cfg as FormSchema;
+      } else if (cfg?.form_schema && Array.isArray(cfg.form_schema)) {
+        imported = cfg.form_schema as FormSchema;
+      }
+      if (!imported?.length) {
+        toast({ title: "Nothing to import", description: `"${sourceName}" has no registration form configured.`, variant: "destructive" });
+        return;
+      }
+      // Regenerate IDs to avoid conflicts
+      const cloned: FormSchema = imported.map(s => ({
+        ...s,
+        id: crypto.randomUUID(),
+        fields: s.fields.map(f => ({ ...f, id: crypto.randomUUID() })),
+      }));
+      setSchema(cloned);
+      setDirty(true);
+      setImportOpen(false);
+      toast({ title: "Form imported", description: `Registration form imported from "${sourceName}". Save to apply.` });
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   // Initialize schema
   useEffect(() => {
