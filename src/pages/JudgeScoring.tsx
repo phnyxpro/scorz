@@ -275,10 +275,10 @@ export default function JudgeScoring() {
     const cfv = r.custom_field_values || {};
     // Find first non-empty dance style value
     for (const dsId of hierarchyFieldIds.danceStyleIds) {
-      if (cfv[dsId]) return String(cfv[dsId]);
+      if (cfv[dsId]) return resolveValue(String(cfv[dsId]));
     }
     return null;
-  }, [isCategoryLevel, hierarchyFieldIds.danceStyleIds]);
+  }, [isCategoryLevel, hierarchyFieldIds.danceStyleIds, resolveValue]);
 
   // Track collapsed state per group path
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
