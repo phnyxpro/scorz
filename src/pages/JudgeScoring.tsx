@@ -66,13 +66,26 @@ export default function JudgeScoring() {
   const [showChatModal, setShowChatModal] = useState(false);
   const unreadCount = useChatUnreadCount(competitionId);
 
-  // Use active scoring config if available
+  // Use active scoring config if available — for category levels, auto-select the umbrella sub-event
   useEffect(() => {
-    if (comp?.active_scoring_level_id && comp?.active_scoring_sub_event_id && !searchParams.get("sub_event")) {
+    if (!comp || searchParams.get("sub_event")) return;
+    if (comp.active_scoring_level_id) {
       setSelectedLevelId(comp.active_scoring_level_id);
-      setSelectedSubEventId(comp.active_scoring_sub_event_id);
+      if (comp.active_scoring_sub_event_id) {
+        setSelectedSubEventId(comp.active_scoring_sub_event_id);
+      }
     }
   }, [comp?.active_scoring_level_id, comp?.active_scoring_sub_event_id, searchParams]);
+
+  // For category-type levels, auto-select the single umbrella sub-event
+  const isCategoryLevel = selectedLevel?.structure_type === "categories";
+  useEffect(() => {
+    if (isCategoryLevel && allSubEvents?.length && !selectedSubEventId) {
+      // Pick the first (and likely only) sub-event for this level
+      const umbrella = allSubEvents[0];
+      if (umbrella) setSelectedSubEventId(umbrella.id);
+    }
+  }, [isCategoryLevel, allSubEvents, selectedSubEventId]);
 
   if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
 
