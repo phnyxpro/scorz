@@ -63,12 +63,13 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   useEffect(() => {
     if (allSubEvents) {
-      const settings: Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean }> = {};
+      const settings: Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean; video_visible: boolean }> = {};
       allSubEvents.forEach(se => {
         settings[se.id] = {
           timer_visible: se.timer_visible ?? true,
           comments_visible: se.comments_visible ?? true,
           profile_details_visible: (se as any).profile_details_visible ?? true,
+          video_visible: (se as any).video_visible ?? true,
         };
       });
       setSubEventSettings(settings);
