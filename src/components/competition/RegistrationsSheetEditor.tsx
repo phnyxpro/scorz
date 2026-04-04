@@ -65,6 +65,16 @@ export function RegistrationsSheetEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ rowIndex: number; colKey: string } | null>(null);
 
+  // Upload wizard state
+  const [showUploadPanel, setShowUploadPanel] = useState(false);
+  const [uploadStep, setUploadStep] = useState<1 | 2 | 3>(1);
+  const [uploadHeaders, setUploadHeaders] = useState<string[]>([]);
+  const [uploadRows, setUploadRows] = useState<Record<string, any>[]>([]);
+  const [uploadMapping, setUploadMapping] = useState<Record<string, string>>({});
+  const [uploadSubEventId, setUploadSubEventId] = useState<string>("");
+  const [uploadLevelId, setUploadLevelId] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Multi-cell selection state
   const [selectionStart, setSelectionStart] = useState<{ r: number; c: number } | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<{ r: number; c: number } | null>(null);
