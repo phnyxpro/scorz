@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
+import { useCompetition, useLevels, useSubEvents, useRubricCriteria, usePenaltyRules, useCategories as useCompCategories } from "@/hooks/useCompetitions";
 import { useRegistrations, useRegistrationsRealtime } from "@/hooks/useRegistrations";
 import { useMyScores, useMyScoreForContestant, useUpsertScore, useCertifyScore, useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { useMyAssignedSubEvents } from "@/hooks/useSubEventAssignments";
