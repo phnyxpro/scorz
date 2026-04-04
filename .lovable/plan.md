@@ -1,59 +1,72 @@
 
 
-## Upload with AI Parsing
+# Plan: Update SPARK Secondary Schools Registrations from CSV
 
-### Goal
-Add an "Upload with AI" button alongside the existing "Bulk Upload" in the Registrations Manager. This creates a new dialog that uses AI (Lovable AI via edge function) to intelligently parse uploaded CSV/XLSX files — handling messy data like multi-line performer lists, fuzzy dance style matching, and non-standard column names.
+## Overview
+Delete all existing 46 registrations for SPARK Secondary Schools and re-import from the updated CSV (138 lines, ~55-60 entries after parsing multi-line rows). This is a data operation — no code changes needed.
 
-### How it works
+## Steps
 
-1. **User uploads a CSV/XLSX** (like the SPARK file) without needing a template
-2. **AI parses the file** — the edge function receives the raw CSV rows + the competition's form schema (field names, dropdown options, hierarchy names) and returns structured registration data
-3. **Preview & validate** — same pattern as bulk upload: show matched rows, flag issues
-4. **Import** — insert approved rows into `contestant_registrations`
+### 1. Parse the CSV and build registration records
+Write a Python script that:
+- Parses the CSV (handling multi-line quoted fields for Performers, Dance Synopsis, School Name, etc.)
+- Maps each row to `contestant_registrations` columns and `custom_field_values` JSONB
 
-### Key parsing challenges the AI solves
-- **Multi-line performers**: `"Asja Baptise\nKaela Marie Nicholas"` → stored as name list in custom fields
-- **Dance style matching**: CSV has `"Modern (Contemporary)"` which needs to match the dropdown value like `"modern_contemporary"` or the label `"Modern (Contemporary)"`
-- **Fuzzy column mapping**: `"Name of Applicant"` → `full_name`, `"Applicant's Email"` → `email`
-- **Category/Level resolution**: `"Semifinal Round"` → level ID, `"Duet"` → category ID
+**Column mapping (CSV → DB):**
 
-### Files to create/update
+| CSV Column | DB Column / custom_field_values key |
+|---|---|
+| Name of Applicant | `full_name` + `spark_applicant_name` |
+| Applicant's Email | `email` + `spark_applicant_email` |
+| Applicant's Phone Number | `phone` + `spark_applicant_phone` |
+| School Name | `spark_school_name` |
+| School's Phone Number | `spark_school_phone` |
+| Level | `cf_1774993358212` → resolved to level UUID `3b8c9863-6938-432c-907e-2b0722e28e13` (Semifinal Round) |
+| Category | `cf_1774990289937` (stored as text value: Solo/Duet/Group/Student Choreography) |
+| Division | `cf_1774990296537` (stored as text: Female/Male/Mixed) |
+| Age Group | `cf_1774990424221` (stored as text: 11-15/16-19/Mixed/Student Choreography) |
+| Performers | `cf_1774990523520` (joined with comma-space) |
+| Dance Class | `cf_1774990613141` → normalized to snake_case option value |
+| Dance Style (conditional) | Appropriate `cf_177499*` field based on Dance Class |
+| Dance Style raw | `cf_1774991076178` (display value) |
+| Choreographer Name | `cf_1775002955538` |
+| Dance Synopsis | `cf_1774991903558` |
+| Links | `cf_1774992869708` (Link to Performance) |
+| Consent | `spark_rules_consent` |
 
-1. **`supabase/functions/parse-registration-csv/index.ts`** (new edge function)
-   - Receives: raw CSV text, form schema fields with options, competition hierarchy (levels, sub-events, categories)
-   - Calls Lovable AI (Gemini Flash) with a structured output tool call
-   - Returns: array of parsed registration objects with mapped field keys and resolved names
+### 2. Delete existing registrations
+Use a migration to delete all 46 current registrations for competition `3a212bca-40f7-481f-ab67-9ce5e5223eb5` (since DELETE requires migration/insert tool).
 
-2. **`src/components/competition/AIUploadDialog.tsx`** (new component)
-   - 3-step wizard: Upload → AI Preview → Import
-   - Step 1: File upload (CSV/XLSX), shows loading spinner while AI processes
-   - Step 2: Preview table showing AI-parsed rows with confidence indicators, ability to fix/exclude rows
-   - Step 3: Confirm and import (reuses same insert logic as BulkUploadDialog)
+### 3. Insert new registrations
+Insert all parsed rows using the insert tool with:
+- `user_id`: `b0b252c9-1dfe-473a-b1f4-b0906f36bc8d` (existing organiser)
+- `competition_id`: `3a212bca-40f7-481f-ab67-9ce5e5223eb5`
+- `status`: `approved`
+- `sort_order`: sequential (0, 1, 2, ...)
+- All custom fields in `custom_field_values` JSONB
 
-3. **`src/components/competition/RegistrationsManager.tsx`** (update)
-   - Add "Upload with AI" button next to "Bulk Upload"
-   - Import and render `AIUploadDialog`
+### 4. Fix build errors (separate)
+Fix the TypeScript errors in edge functions (`e` is of type 'unknown') by adding type assertions in:
+- `notify-registration-status/index.ts`
+- `notify-scoring-events/index.ts`
+- `notify-admin-activity/index.ts`
+- `seed-demo-data/index.ts`
+- `seed-demo-users/index.ts`
+- `send-score-alert/index.ts`
 
-### Edge function design
+## Dance Class → Option Value Mapping
+- "Contemporary Dance" → `contemporary_dances`
+- "Traditional Dance (as taught in...)" → `traditional_folk_dances`
+- "Creative Dance" → `creative_dances`
+- "Recreational/Social Dance" → `recreational/social_dances`
+- "Carnival Character Dance" → `traditional_carnival_or_folklore_character_dances`
+- "Classical Dance" → `classical_dances`
+- "Student Choreography (Cultural form...)" → `student_choreography`
+- "Folklore" / "Traditional Folklore Characters" → `traditional_carnival_or_folklore_character_dances`
 
-The edge function will:
-- Accept `{ csvText, formFields, hierarchy }` 
-- Build a prompt telling the AI about available fields, their types, dropdown options, levels, categories, sub-events
-- Use tool calling for structured output — each row maps to `{ full_name, email, phone, level, category, sub_event, custom_fields: {...} }`
-- Handle the performers column by instructing AI to join multi-line names or store as comma-separated list
-- Match dance style values against actual dropdown options provided in the schema
+## Dance Style → Conditional Field Mapping
+Based on Dance Class, the Dance Style value goes into the corresponding conditional dropdown field. The raw display text also stored in `cf_1774991076178`.
 
-### UI placement
-```text
-[Add Registration] [Bulk Upload] [Upload with AI ✨]
-```
-
-### Technical details
-- Uses `LOVABLE_API_KEY` (already configured) via Lovable AI gateway
-- Model: `google/gemini-3-flash-preview` (fast, good at structured extraction)
-- Batch processing: sends all rows in one request (CSV files typically < 500 rows)
-- Falls back gracefully if AI can't parse a row (marks as "needs review")
-- Reuses `useCompetitionHierarchy` hook from BulkUploadDialog for level/category/sub-event data
-- Reuses same import logic (insert into `contestant_registrations` with `custom_field_values`)
+## Result
+All registrations will be replaced with the updated CSV data, properly mapped to form fields, with performance video links stored in `cf_1774992869708` (Link to Performance).
 
