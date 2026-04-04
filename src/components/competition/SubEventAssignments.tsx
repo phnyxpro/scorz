@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +29,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList, Search } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
@@ -123,6 +126,80 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const accepted = invitations?.filter(i => i.accepted_at) || [];
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addTab, setAddTab] = useState<string>("new");
+  const [importSearch, setImportSearch] = useState("");
+
+  // Fetch staff from other competitions for the "From Other Events" tab
+  const { data: otherStaff } = useQuery({
+    queryKey: ["other_event_staff", competitionId],
+    enabled: showAddModal && addTab === "existing",
+    queryFn: async () => {
+      // Get staff invitations from other competitions
+      const { data, error } = await (supabase
+        .from("staff_invitations" as any)
+        .select("name, email, phone, role, competition_id")
+        .neq("competition_id", competitionId)
+        .order("email") as any);
+      if (error) throw error;
+      return (data || []) as { name: string | null; email: string; phone: string | null; role: string; competition_id: string }[];
+    },
+  });
+
+  // Get competition names for display
+  const otherCompIds = useMemo(() => {
+    if (!otherStaff) return [];
+    return [...new Set(otherStaff.map(s => s.competition_id))];
+  }, [otherStaff]);
+
+  const { data: otherCompetitions } = useQuery({
+    queryKey: ["competition_names", otherCompIds],
+    enabled: otherCompIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("competitions")
+        .select("id, name")
+        .in("id", otherCompIds);
+      return (data || []) as { id: string; name: string }[];
+    },
+  });
+
+  const compNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    otherCompetitions?.forEach(c => { m[c.id] = c.name; });
+    return m;
+  }, [otherCompetitions]);
+
+  // Deduplicate other staff by email+role, filter out already-invited
+  const currentEmails = useMemo(() => new Set((invitations || []).map(i => i.email.toLowerCase())), [invitations]);
+
+  const filteredOtherStaff = useMemo(() => {
+    if (!otherStaff) return [];
+    const seen = new Set<string>();
+    const deduped = otherStaff.filter(s => {
+      const key = `${s.email.toLowerCase()}_${s.role}`;
+      if (seen.has(key) || currentEmails.has(s.email.toLowerCase())) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!importSearch.trim()) return deduped;
+    const q = importSearch.toLowerCase();
+    return deduped.filter(s =>
+      s.email.toLowerCase().includes(q) ||
+      (s.name?.toLowerCase() || "").includes(q) ||
+      (compNameMap[s.competition_id] || "").toLowerCase().includes(q)
+    );
+  }, [otherStaff, importSearch, currentEmails, compNameMap]);
+
+  const handleImportStaff = (staff: { name: string | null; email: string; phone: string | null; role: string }) => {
+    addStaffMember.mutate({
+      name: staff.name || undefined,
+      email: staff.email,
+      phone: staff.phone || undefined,
+      role: staff.role as any,
+      competitionId,
+      competitionName,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -135,62 +212,114 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
       </div>
 
       {/* Add Staff Modal */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showAddModal} onOpenChange={(open) => { setShowAddModal(open); if (!open) { setAddTab("new"); setImportSearch(""); } }}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" /> Add Staff Member
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Name</Label>
-                <Input type="text" placeholder="John Doe" value={staffName} onChange={(e) => setStaffName(e.target.value)} />
+          <Tabs value={addTab} onValueChange={setAddTab}>
+            <TabsList className="w-full">
+              <TabsTrigger value="new" className="flex-1">New</TabsTrigger>
+              <TabsTrigger value="existing" className="flex-1">From Other Events</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="new" className="space-y-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Name</Label>
+                  <Input type="text" placeholder="John Doe" value={staffName} onChange={(e) => setStaffName(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Email Address *</Label>
+                  <Input type="email" placeholder="colleague@example.com" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Phone (optional)</Label>
+                  <Input type="tel" placeholder="+1 234 567 8900" value={staffPhone} onChange={(e) => setStaffPhone(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Role</Label>
+                  <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); if (v !== "organizer") setStaffIsPA(false); }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ASSIGNABLE_ROLES.map((r) => (
+                        <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Email Address *</Label>
-                <Input type="email" placeholder="colleague@example.com" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} />
+              {staffRole === "judge" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="chief-judge-modal" checked={staffIsChief} onCheckedChange={(v) => setStaffIsChief(v === true)} />
+                  <label htmlFor="chief-judge-modal" className="text-sm cursor-pointer flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Designate as Chief Judge
+                  </label>
+                </div>
+              )}
+              {staffRole === "organizer" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="pa-modal" checked={staffIsPA} onCheckedChange={(v) => setStaffIsPA(v === true)} />
+                  <label htmlFor="pa-modal" className="text-sm cursor-pointer flex items-center gap-1.5">
+                    <ClipboardList className="h-3.5 w-3.5 text-accent" /> Designate as Production Assistant
+                  </label>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">An account will be created automatically and they'll receive a notification email with a magic link to sign in.</p>
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => { handleAddStaff(); setShowAddModal(false); }} disabled={!staffEmail || addStaffMember.isPending}>
+                  <UserPlus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Phone (optional)</Label>
-                <Input type="tel" placeholder="+1 234 567 8900" value={staffPhone} onChange={(e) => setStaffPhone(e.target.value)} />
+            </TabsContent>
+
+            <TabsContent value="existing" className="space-y-3 mt-3">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, email, or event..."
+                  className="pl-8 h-9 text-sm"
+                  value={importSearch}
+                  onChange={(e) => setImportSearch(e.target.value)}
+                />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Role</Label>
-                <Select value={staffRole} onValueChange={(v) => { setStaffRole(v); if (v !== "judge") setStaffIsChief(false); if (v !== "organizer") setStaffIsPA(false); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ASSIGNABLE_ROLES.map((r) => (
-                      <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
+              <ScrollArea className="h-[280px]">
+                {filteredOtherStaff.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic text-center py-6">
+                    {otherStaff === undefined ? "Loading staff from other events…" : "No staff found from other events."}
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {filteredOtherStaff.map((s, idx) => (
+                      <div key={`${s.email}-${s.role}-${idx}`} className="flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-card/50 hover:bg-muted/50 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{s.name || s.email}</p>
+                          {s.name && <p className="text-xs text-muted-foreground truncate">{s.email}</p>}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">{s.role}</Badge>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {compNameMap[s.competition_id] || "Other event"}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-2 shrink-0 h-7 text-xs"
+                          disabled={addStaffMember.isPending}
+                          onClick={() => handleImportStaff(s)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add
+                        </Button>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {staffRole === "judge" && (
-              <div className="flex items-center gap-2">
-                <Checkbox id="chief-judge-modal" checked={staffIsChief} onCheckedChange={(v) => setStaffIsChief(v === true)} />
-                <label htmlFor="chief-judge-modal" className="text-sm cursor-pointer flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Designate as Chief Judge
-                </label>
-              </div>
-            )}
-            {staffRole === "organizer" && (
-              <div className="flex items-center gap-2">
-                <Checkbox id="pa-modal" checked={staffIsPA} onCheckedChange={(v) => setStaffIsPA(v === true)} />
-                <label htmlFor="pa-modal" className="text-sm cursor-pointer flex items-center gap-1.5">
-                  <ClipboardList className="h-3.5 w-3.5 text-accent" /> Designate as Production Assistant
-                </label>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">An account will be created automatically and they'll receive a notification email with a magic link to sign in.</p>
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => { handleAddStaff(); setShowAddModal(false); }} disabled={!staffEmail || addStaffMember.isPending}>
-                <UserPlus className="h-3.5 w-3.5 mr-1" /> Add
-              </Button>
-            </div>
-          </div>
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
