@@ -126,6 +126,80 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const accepted = invitations?.filter(i => i.accepted_at) || [];
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addTab, setAddTab] = useState<string>("new");
+  const [importSearch, setImportSearch] = useState("");
+
+  // Fetch staff from other competitions for the "From Other Events" tab
+  const { data: otherStaff } = useQuery({
+    queryKey: ["other_event_staff", competitionId],
+    enabled: showAddModal && addTab === "existing",
+    queryFn: async () => {
+      // Get staff invitations from other competitions
+      const { data, error } = await (supabase
+        .from("staff_invitations" as any)
+        .select("name, email, phone, role, competition_id")
+        .neq("competition_id", competitionId)
+        .order("email") as any);
+      if (error) throw error;
+      return (data || []) as { name: string | null; email: string; phone: string | null; role: string; competition_id: string }[];
+    },
+  });
+
+  // Get competition names for display
+  const otherCompIds = useMemo(() => {
+    if (!otherStaff) return [];
+    return [...new Set(otherStaff.map(s => s.competition_id))];
+  }, [otherStaff]);
+
+  const { data: otherCompetitions } = useQuery({
+    queryKey: ["competition_names", otherCompIds],
+    enabled: otherCompIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("competitions")
+        .select("id, name")
+        .in("id", otherCompIds);
+      return (data || []) as { id: string; name: string }[];
+    },
+  });
+
+  const compNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    otherCompetitions?.forEach(c => { m[c.id] = c.name; });
+    return m;
+  }, [otherCompetitions]);
+
+  // Deduplicate other staff by email+role, filter out already-invited
+  const currentEmails = useMemo(() => new Set((invitations || []).map(i => i.email.toLowerCase())), [invitations]);
+
+  const filteredOtherStaff = useMemo(() => {
+    if (!otherStaff) return [];
+    const seen = new Set<string>();
+    const deduped = otherStaff.filter(s => {
+      const key = `${s.email.toLowerCase()}_${s.role}`;
+      if (seen.has(key) || currentEmails.has(s.email.toLowerCase())) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!importSearch.trim()) return deduped;
+    const q = importSearch.toLowerCase();
+    return deduped.filter(s =>
+      s.email.toLowerCase().includes(q) ||
+      (s.name?.toLowerCase() || "").includes(q) ||
+      (compNameMap[s.competition_id] || "").toLowerCase().includes(q)
+    );
+  }, [otherStaff, importSearch, currentEmails, compNameMap]);
+
+  const handleImportStaff = (staff: { name: string | null; email: string; phone: string | null; role: string }) => {
+    addStaffMember.mutate({
+      name: staff.name || undefined,
+      email: staff.email,
+      phone: staff.phone || undefined,
+      role: staff.role as any,
+      competitionId,
+      competitionName,
+    });
+  };
 
   return (
     <div className="space-y-4">
