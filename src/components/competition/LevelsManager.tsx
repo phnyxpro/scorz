@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown, FolderTree, List, Copy } from "lucide-react";
+import { Plus, Trash2, ChevronDown, MapPin, Clock, Vote, CalendarDays, Pencil, Trophy, Star, Award, ArrowUp, GripVertical, ChevronLeft, ChevronRight, Crown, FolderTree, List, Copy, Import } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
