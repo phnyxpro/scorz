@@ -93,9 +93,11 @@ export default function JudgeScoring() {
 
   const subEvents = useMemo(() => {
     if (!allSubEvents || !myAssignments) return [];
+    // For category levels, show all sub-events (umbrella); otherwise filter by assignment
+    if (isCategoryLevel) return allSubEvents;
     const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
     return allSubEvents.filter((se) => assignedIds.has(se.id));
-  }, [allSubEvents, myAssignments]);
+  }, [allSubEvents, myAssignments, isCategoryLevel]);
 
   const selectedSubEvent = subEvents.find(se => se.id === selectedSubEventId);
   const timerVisible = selectedSubEvent?.timer_visible ?? true;
