@@ -537,44 +537,114 @@ export default function JudgeScoring() {
             </div>
             <ScrollArea className="flex-1 min-h-0">
               <div className="px-2 pb-3 space-y-0.5">
-                {filteredContestants.map((r, idx) => (
-                  <div key={r.id} className="flex items-center gap-1">
-                    {batchEligible.has(r.id) && (
-                      <Checkbox
-                        checked={selectedForBatch.has(r.id)}
-                        onCheckedChange={() => toggleBatchSelect(r.id)}
-                        className="h-3.5 w-3.5 shrink-0 ml-1"
-                      />
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedContestant(r.id);
-                        if (isMobile) setSidebarOpen(false);
-                      }}
-                      className={cn(
-                        "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
-                        selectedContestant === r.id
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-foreground/80 hover:bg-muted/50",
-                        onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                {groupedContestants ? (
+                  /* Grouped view for category-type levels */
+                  groupedContestants.map((group) => {
+                    let runningIdx = 0;
+                    // Calculate the global start index for this group
+                    for (const g of groupedContestants) {
+                      if (g === group) break;
+                      runningIdx += g.contestants.length;
+                    }
+                    return (
+                      <div key={group.category} className="mb-2">
+                        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm px-2 py-1.5 border-b border-border/30 mb-0.5">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                            {group.category}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground ml-1.5">({group.contestants.length})</span>
+                        </div>
+                        {group.contestants.map((r, idx) => {
+                          const globalIdx = runningIdx + idx;
+                          const subtitle = getContestantSubtitle(r);
+                          return (
+                            <div key={r.id} className="flex items-center gap-1">
+                              {batchEligible.has(r.id) && (
+                                <Checkbox
+                                  checked={selectedForBatch.has(r.id)}
+                                  onCheckedChange={() => toggleBatchSelect(r.id)}
+                                  className="h-3.5 w-3.5 shrink-0 ml-1"
+                                />
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedContestant(r.id);
+                                  if (isMobile) setSidebarOpen(false);
+                                }}
+                                className={cn(
+                                  "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                                  selectedContestant === r.id
+                                    ? "bg-primary/10 text-primary font-medium"
+                                    : "text-foreground/80 hover:bg-muted/50",
+                                  onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                                )}
+                              >
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                                  {globalIdx + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <span className="truncate text-xs block">{r.full_name}</span>
+                                  {subtitle && (
+                                    <span className="truncate text-[10px] text-muted-foreground block">{subtitle}</span>
+                                  )}
+                                </div>
+                                {onStageContestant === r.id && (
+                                  <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                                )}
+                                {scoreStatusMap.get(r.id) === "certified" && (
+                                  <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                                )}
+                                {scoreStatusMap.get(r.id) === "scored" && (
+                                  <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* Flat list for sub-event-type levels */
+                  filteredContestants.map((r, idx) => (
+                    <div key={r.id} className="flex items-center gap-1">
+                      {batchEligible.has(r.id) && (
+                        <Checkbox
+                          checked={selectedForBatch.has(r.id)}
+                          onCheckedChange={() => toggleBatchSelect(r.id)}
+                          className="h-3.5 w-3.5 shrink-0 ml-1"
+                        />
                       )}
-                    >
-                      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
-                        {idx + 1}
-                      </span>
-                      <span className="truncate text-xs flex-1">{r.full_name}</span>
-                      {onStageContestant === r.id && (
-                        <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
-                      )}
-                      {scoreStatusMap.get(r.id) === "certified" && (
-                        <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
-                      )}
-                      {scoreStatusMap.get(r.id) === "scored" && (
-                        <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      )}
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        onClick={() => {
+                          setSelectedContestant(r.id);
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                        className={cn(
+                          "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                          selectedContestant === r.id
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-foreground/80 hover:bg-muted/50",
+                          onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                        )}
+                      >
+                        <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate text-xs flex-1">{r.full_name}</span>
+                        {onStageContestant === r.id && (
+                          <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                        )}
+                        {scoreStatusMap.get(r.id) === "certified" && (
+                          <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                        )}
+                        {scoreStatusMap.get(r.id) === "scored" && (
+                          <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        )}
+                      </button>
+                    </div>
+                  ))
+                )}
                 {filteredContestants.length === 0 && (
                   <p className="text-xs text-muted-foreground px-2 py-4 text-center">No contestants</p>
                 )}
