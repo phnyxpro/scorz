@@ -37,6 +37,7 @@ import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
+import { migrateFormConfig, getScorecardFields } from "@/lib/form-builder-types";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
