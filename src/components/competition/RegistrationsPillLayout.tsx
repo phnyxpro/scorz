@@ -80,6 +80,19 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
             );
           })}
         </div>
+        {publicUrl && (
+          <div className="ml-auto flex items-center gap-1.5 shrink-0">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleCopyLink}>
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? "Copied" : "Share Link"}
+            </Button>
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
