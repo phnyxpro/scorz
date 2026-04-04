@@ -30,10 +30,14 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
-        await invite.mutateAsync({ name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName });
+        await invite.mutateAsync({
+            name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName,
+            isProductionAssistant: role === "organizer" ? isProduction : false,
+        });
         setName("");
         setEmail("");
         setPhone("");
+        setIsProduction(false);
     };
 
     return (
