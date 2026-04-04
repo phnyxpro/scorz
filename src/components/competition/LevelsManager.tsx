@@ -440,6 +440,111 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
   const [sourceLevelForCopy, setSourceLevelForCopy] = useState<any>(null);
   const [copying, setCopying] = useState(false);
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const handleImportFromEvent = async (sourceCompId: string, sourceName: string) => {
+    setImporting(true);
+    try {
+      // Fetch levels from source competition
+      const { data: srcLevels, error: levErr } = await supabase
+        .from("competition_levels")
+        .select("*")
+        .eq("competition_id", sourceCompId)
+        .order("sort_order");
+      if (levErr) throw levErr;
+      if (!srcLevels?.length) {
+        toast({ title: "Nothing to import", description: `"${sourceName}" has no levels.`, variant: "destructive" });
+        return;
+      }
+
+      const existingCount = levels?.length || 0;
+
+      for (let li = 0; li < srcLevels.length; li++) {
+        const sl = srcLevels[li];
+        // Create level
+        const { data: newLevel, error: nlErr } = await supabase
+          .from("competition_levels")
+          .insert({
+            competition_id: competitionId,
+            name: sl.name,
+            sort_order: existingCount + li,
+            structure_type: sl.structure_type,
+            is_final_round: sl.is_final_round,
+            advancement_count: sl.advancement_count,
+            special_entries: sl.special_entries,
+            schedule_dates: sl.schedule_dates,
+          })
+          .select()
+          .single();
+        if (nlErr) throw nlErr;
+
+        if (sl.structure_type === "categories") {
+          // Copy categories
+          const { data: srcCats } = await supabase
+            .from("competition_categories")
+            .select("*")
+            .eq("level_id", sl.id)
+            .order("sort_order");
+          if (srcCats?.length) {
+            const idMap = new Map<string, string>();
+            const remaining = [...srcCats].sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0));
+            let passes = 10;
+            const queue = [...remaining];
+            while (queue.length > 0 && passes-- > 0) {
+              const next: typeof queue = [];
+              for (const cat of queue) {
+                const newParent = cat.parent_id ? idMap.get(cat.parent_id) || null : null;
+                if (cat.parent_id && !newParent) { next.push(cat); continue; }
+                const { data: nc } = await supabase
+                  .from("competition_categories")
+                  .insert({ level_id: newLevel.id, parent_id: newParent, name: cat.name, color: cat.color, sort_order: cat.sort_order })
+                  .select().single();
+                if (nc) idMap.set(cat.id, nc.id);
+              }
+              queue.length = 0;
+              queue.push(...next);
+            }
+          }
+        } else {
+          // Copy sub-events
+          const { data: srcSubs } = await supabase
+            .from("sub_events")
+            .select("*")
+            .eq("level_id", sl.id)
+            .order("name");
+          if (srcSubs?.length) {
+            for (const se of srcSubs) {
+              await supabase.from("sub_events").insert({
+                level_id: newLevel.id,
+                name: se.name,
+                location: se.location,
+                is_virtual: se.is_virtual,
+                voting_enabled: se.voting_enabled,
+                use_time_slots: se.use_time_slots,
+                ticketing_type: se.ticketing_type,
+                ticket_price: se.ticket_price,
+                max_tickets: se.max_tickets,
+                timer_visible: se.timer_visible,
+                comments_visible: se.comments_visible,
+                profile_details_visible: se.profile_details_visible,
+                video_visible: se.video_visible,
+              });
+            }
+          }
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+      toast({ title: "Import complete", description: `${srcLevels.length} level(s) imported from "${sourceName}".` });
+      setImportDialogOpen(false);
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleAdd = () => {
     if (!newName.trim()) return;
     create.mutate(
