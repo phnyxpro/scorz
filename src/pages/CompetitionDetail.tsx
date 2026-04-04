@@ -80,14 +80,47 @@ export default function CompetitionDetail() {
     return html;
   };
 
-  const { hasRole, loading: authLoading } = useAuth();
+  const { hasRole, loading: authLoading, user } = useAuth();
   const { data: comp, isLoading } = useCompetition(id);
   const { data: existingCriteria } = useRubricCriteria(id);
   const update = useUpdateCompetition();
   const createCriterion = useCreateRubricCriterion();
   const qc = useQueryClient();
 
+  // Check if current user is a "production organiser" (organizer with is_production_assistant flag)
+  const [isProductionOrganiser, setIsProductionOrganiser] = useState(false);
+  useEffect(() => {
+    if (!user?.id || !id || hasRole("admin")) return;
+    if (!hasRole("organizer")) return;
+    (async () => {
+      // Check if any assignment for this competition marks them as production assistant organiser
+      const { data } = await supabase
+        .from("sub_event_assignments")
+        .select("id, is_production_assistant, sub_event_id")
+        .eq("user_id", user.id)
+        .eq("role", "organizer" as any)
+        .eq("is_production_assistant", true);
+      if (!data?.length) { setIsProductionOrganiser(false); return; }
+      // Verify assignment is for this competition
+      const subIds = data.map((d: any) => d.sub_event_id);
+      const { data: subs } = await supabase
+        .from("sub_events")
+        .select("id, level_id")
+        .in("id", subIds);
+      if (!subs?.length) { setIsProductionOrganiser(false); return; }
+      const levelIds = subs.map((s: any) => s.level_id);
+      const { data: levels } = await supabase
+        .from("competition_levels")
+        .select("id, competition_id")
+        .in("id", levelIds)
+        .eq("competition_id", id!);
+      setIsProductionOrganiser(!!(levels && levels.length > 0));
+    })();
+  }, [user?.id, id, hasRole]);
+
   const canConfigure = hasRole("admin") || hasRole("organizer");
+  // Production organisers can only see: Levels & Events, Guidelines, Registrations, Updates
+  const productionTabs = new Set(["levels", "guidelines", "registrations", "updates"]);
 
   // Competition is locked when active or completed — core fields can't be edited
   const isLocked = comp ? (comp.status === "active" || comp.status === "completed") : false;
