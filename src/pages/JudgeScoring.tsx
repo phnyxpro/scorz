@@ -170,6 +170,57 @@ export default function JudgeScoring() {
     return sorted.filter(r => r.full_name.toLowerCase().includes(q));
   }, [registrations, subEventId, contestantSearch]);
 
+  // For category-type levels, compute grouped contestants by Category field
+  const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
+  const categoryFieldId = useMemo(() => {
+    if (!formConfig || !isCategoryLevel) return null;
+    // Find field labeled "Category" that's on scorecard
+    return formConfig.fields.find(f => f.show_on_scorecard && /^category$/i.test(f.label))?.id || null;
+  }, [formConfig, isCategoryLevel]);
+
+  const divisionFieldId = useMemo(() => {
+    if (!formConfig || !isCategoryLevel) return null;
+    return formConfig.fields.find(f => f.show_on_scorecard && /^division$/i.test(f.label))?.id || null;
+  }, [formConfig, isCategoryLevel]);
+
+  const danceStyleFieldId = useMemo(() => {
+    if (!formConfig || !isCategoryLevel) return null;
+    // Use the generic "Dance Style" field that stores the display value
+    return formConfig.fields.find(f => f.show_on_scorecard && f.label === "Dance Style | Classical")?.id
+      // Fallback: any field whose label starts with "Dance Style"
+      || formConfig.fields.find(f => f.show_on_scorecard && /^dance\s*style/i.test(f.label))?.id
+      || null;
+  }, [formConfig, isCategoryLevel]);
+
+  const groupedContestants = useMemo(() => {
+    if (!isCategoryLevel || !categoryFieldId) return null;
+    const groups: { category: string; contestants: typeof filteredContestants }[] = [];
+    const groupMap = new Map<string, typeof filteredContestants>();
+    for (const r of filteredContestants) {
+      const cfv = (r as any).custom_field_values || {};
+      const cat = String(cfv[categoryFieldId] || "Uncategorised");
+      if (!groupMap.has(cat)) groupMap.set(cat, []);
+      groupMap.get(cat)!.push(r);
+    }
+    for (const [category, contestants] of groupMap) {
+      groups.push({ category, contestants });
+    }
+    return groups;
+  }, [isCategoryLevel, categoryFieldId, filteredContestants]);
+
+  // Helper to get contestant subtitle (dance style + division)
+  const getContestantSubtitle = useCallback((r: any) => {
+    if (!isCategoryLevel) return null;
+    const cfv = r.custom_field_values || {};
+    const parts: string[] = [];
+    // Dance style: check the generic display field (cf_1774991076178) first
+    const danceDisplayId = formConfig?.fields.find(f => f.show_on_scorecard && f.id === "cf_1774991076178")?.id;
+    const style = cfv[danceDisplayId || ""] || (danceStyleFieldId ? cfv[danceStyleFieldId] : null);
+    if (style) parts.push(String(style));
+    if (divisionFieldId && cfv[divisionFieldId]) parts.push(String(cfv[divisionFieldId]));
+    return parts.length ? parts.join(" · ") : null;
+  }, [isCategoryLevel, formConfig, danceStyleFieldId, divisionFieldId]);
+
   // Convert legacy numeric-index criterion_scores to UUID keys
   const normalizeCriterionScores = useCallback((raw: Record<string, number>): Record<string, number> => {
     if (!raw || !rubric?.length) return raw || {};
@@ -486,44 +537,114 @@ export default function JudgeScoring() {
             </div>
             <ScrollArea className="flex-1 min-h-0">
               <div className="px-2 pb-3 space-y-0.5">
-                {filteredContestants.map((r, idx) => (
-                  <div key={r.id} className="flex items-center gap-1">
-                    {batchEligible.has(r.id) && (
-                      <Checkbox
-                        checked={selectedForBatch.has(r.id)}
-                        onCheckedChange={() => toggleBatchSelect(r.id)}
-                        className="h-3.5 w-3.5 shrink-0 ml-1"
-                      />
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedContestant(r.id);
-                        if (isMobile) setSidebarOpen(false);
-                      }}
-                      className={cn(
-                        "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
-                        selectedContestant === r.id
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-foreground/80 hover:bg-muted/50",
-                        onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                {groupedContestants ? (
+                  /* Grouped view for category-type levels */
+                  groupedContestants.map((group) => {
+                    let runningIdx = 0;
+                    // Calculate the global start index for this group
+                    for (const g of groupedContestants) {
+                      if (g === group) break;
+                      runningIdx += g.contestants.length;
+                    }
+                    return (
+                      <div key={group.category} className="mb-2">
+                        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm px-2 py-1.5 border-b border-border/30 mb-0.5">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                            {group.category}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground ml-1.5">({group.contestants.length})</span>
+                        </div>
+                        {group.contestants.map((r, idx) => {
+                          const globalIdx = runningIdx + idx;
+                          const subtitle = getContestantSubtitle(r);
+                          return (
+                            <div key={r.id} className="flex items-center gap-1">
+                              {batchEligible.has(r.id) && (
+                                <Checkbox
+                                  checked={selectedForBatch.has(r.id)}
+                                  onCheckedChange={() => toggleBatchSelect(r.id)}
+                                  className="h-3.5 w-3.5 shrink-0 ml-1"
+                                />
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedContestant(r.id);
+                                  if (isMobile) setSidebarOpen(false);
+                                }}
+                                className={cn(
+                                  "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                                  selectedContestant === r.id
+                                    ? "bg-primary/10 text-primary font-medium"
+                                    : "text-foreground/80 hover:bg-muted/50",
+                                  onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                                )}
+                              >
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                                  {globalIdx + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <span className="truncate text-xs block">{r.full_name}</span>
+                                  {subtitle && (
+                                    <span className="truncate text-[10px] text-muted-foreground block">{subtitle}</span>
+                                  )}
+                                </div>
+                                {onStageContestant === r.id && (
+                                  <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                                )}
+                                {scoreStatusMap.get(r.id) === "certified" && (
+                                  <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                                )}
+                                {scoreStatusMap.get(r.id) === "scored" && (
+                                  <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* Flat list for sub-event-type levels */
+                  filteredContestants.map((r, idx) => (
+                    <div key={r.id} className="flex items-center gap-1">
+                      {batchEligible.has(r.id) && (
+                        <Checkbox
+                          checked={selectedForBatch.has(r.id)}
+                          onCheckedChange={() => toggleBatchSelect(r.id)}
+                          className="h-3.5 w-3.5 shrink-0 ml-1"
+                        />
                       )}
-                    >
-                      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
-                        {idx + 1}
-                      </span>
-                      <span className="truncate text-xs flex-1">{r.full_name}</span>
-                      {onStageContestant === r.id && (
-                        <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
-                      )}
-                      {scoreStatusMap.get(r.id) === "certified" && (
-                        <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
-                      )}
-                      {scoreStatusMap.get(r.id) === "scored" && (
-                        <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      )}
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        onClick={() => {
+                          setSelectedContestant(r.id);
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                        className={cn(
+                          "flex-1 flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors text-sm",
+                          selectedContestant === r.id
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-foreground/80 hover:bg-muted/50",
+                          onStageContestant === r.id && "ring-1 ring-secondary/50 bg-secondary/5"
+                        )}
+                      >
+                        <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate text-xs flex-1">{r.full_name}</span>
+                        {onStageContestant === r.id && (
+                          <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
+                        )}
+                        {scoreStatusMap.get(r.id) === "certified" && (
+                          <CheckCircle className="h-3.5 w-3.5 text-secondary shrink-0" />
+                        )}
+                        {scoreStatusMap.get(r.id) === "scored" && (
+                          <Save className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        )}
+                      </button>
+                    </div>
+                  ))
+                )}
                 {filteredContestants.length === 0 && (
                   <p className="text-xs text-muted-foreground px-2 py-4 text-center">No contestants</p>
                 )}
