@@ -1,18 +1,15 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { User } from "lucide-react";
 import { FormFieldConfig, FormBuilderConfig, getScorecardFields, migrateFormConfig } from "@/lib/form-builder-types";
 
 interface ContestantInfoCardProps {
-  formConfig: any; // raw registration_form_config from competition
+  formConfig: any;
   customFieldValues: Record<string, any>;
 }
 
 /**
- * Accordion card showing contestant's custom field values
+ * Compact info strip showing contestant's custom field values
  * that are flagged as show_on_scorecard in the form config.
- * Used in JudgeScoring and ScoreCard.
+ * Rendered directly below the video embed on the judge scorecard.
  */
 export function ContestantInfoCard({ formConfig, customFieldValues }: ContestantInfoCardProps) {
   const config = migrateFormConfig(formConfig);
@@ -30,30 +27,16 @@ export function ContestantInfoCard({ formConfig, customFieldValues }: Contestant
   if (entries.length === 0) return null;
 
   return (
-    <Card className="border-border/50 bg-card/80">
-      <CardContent className="pt-0 pb-0">
-        <Accordion type="single" collapsible defaultValue="profile-details">
-          <AccordionItem value="profile-details" className="border-b-0">
-            <AccordionTrigger className="py-3 hover:no-underline">
-              <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                Profile Details
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-1 pb-1">
-                {entries.map((e, i) => (
-                  <div key={i} className="flex justify-between items-baseline text-xs">
-                    <span className="text-muted-foreground">{e.label}</span>
-                    <span className="font-medium text-foreground">{e.value}</span>
-                  </div>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </CardContent>
-    </Card>
+    <div className="rounded-lg border border-border/50 bg-card/80 px-4 py-3">
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        {entries.map((e, i) => (
+          <div key={i} className="flex items-baseline gap-1.5 text-xs">
+            <span className="text-muted-foreground whitespace-nowrap">{e.label}:</span>
+            <span className="font-medium text-foreground">{e.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
