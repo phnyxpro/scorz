@@ -21,7 +21,7 @@ export function ContestantInfoCard({ formConfig, customFieldValues }: Contestant
   if (scorecardFields.length === 0 || !customFieldValues) return null;
 
   const entries = scorecardFields
-    .filter(f => customFieldValues[f.id] != null && customFieldValues[f.id] !== "")
+    .filter(f => f.field_type !== "url" && customFieldValues[f.id] != null && customFieldValues[f.id] !== "")
     .map(f => ({
       label: f.label,
       value: String(customFieldValues[f.id]),

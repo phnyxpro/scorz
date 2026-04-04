@@ -37,6 +37,7 @@ import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
 import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
 import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
+import { migrateFormConfig, getScorecardFields } from "@/lib/form-builder-types";
 
 export default function JudgeScoring() {
   const { id: competitionId } = useParams<{ id: string }>();
@@ -65,11 +66,14 @@ export default function JudgeScoring() {
   const [showChatModal, setShowChatModal] = useState(false);
   const unreadCount = useChatUnreadCount(competitionId);
 
-  // Use active scoring config if available
+  // Use active scoring config if available — for category levels, auto-select the umbrella sub-event
   useEffect(() => {
-    if (comp?.active_scoring_level_id && comp?.active_scoring_sub_event_id && !searchParams.get("sub_event")) {
+    if (!comp || searchParams.get("sub_event")) return;
+    if (comp.active_scoring_level_id) {
       setSelectedLevelId(comp.active_scoring_level_id);
-      setSelectedSubEventId(comp.active_scoring_sub_event_id);
+      if (comp.active_scoring_sub_event_id) {
+        setSelectedSubEventId(comp.active_scoring_sub_event_id);
+      }
     }
   }, [comp?.active_scoring_level_id, comp?.active_scoring_sub_event_id, searchParams]);
 
@@ -77,11 +81,22 @@ export default function JudgeScoring() {
 
   const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
 
+  // For category-type levels, auto-select the single umbrella sub-event
+  const isCategoryLevel = selectedLevel?.structure_type === "categories";
+  useEffect(() => {
+    if (isCategoryLevel && allSubEvents?.length && !selectedSubEventId) {
+      const umbrella = allSubEvents[0];
+      if (umbrella) setSelectedSubEventId(umbrella.id);
+    }
+  }, [isCategoryLevel, allSubEvents, selectedSubEventId]);
+
   const subEvents = useMemo(() => {
     if (!allSubEvents || !myAssignments) return [];
+    // For category levels, show all sub-events (umbrella); otherwise filter by assignment
+    if (isCategoryLevel) return allSubEvents;
     const assignedIds = new Set(myAssignments.map((a) => a.sub_event_id));
     return allSubEvents.filter((se) => assignedIds.has(se.id));
-  }, [allSubEvents, myAssignments]);
+  }, [allSubEvents, myAssignments, isCategoryLevel]);
 
   const selectedSubEvent = subEvents.find(se => se.id === selectedSubEventId);
   const timerVisible = selectedSubEvent?.timer_visible ?? true;
@@ -425,18 +440,20 @@ export default function JudgeScoring() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Sub-Event</label>
-            <Select value={selectedSubEventId} onValueChange={(v) => { setSelectedSubEventId(v); setSelectedContestant(""); }}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-event" /></SelectTrigger>
-              <SelectContent>
-                {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                {subEvents.length === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isCategoryLevel && (
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Sub-Event</label>
+              <Select value={selectedSubEventId} onValueChange={(v) => { setSelectedSubEventId(v); setSelectedContestant(""); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-event" /></SelectTrigger>
+                <SelectContent>
+                  {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEvents.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Contestant list */}
@@ -646,6 +663,36 @@ export default function JudgeScoring() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Video link from custom fields */}
+              {(() => {
+                const cfg = migrateFormConfig((comp as any)?.registration_form_config);
+                const urlFields = getScorecardFields(cfg).filter(f => f.field_type === "url");
+                const cfv = (selectedContestantReg as any)?.custom_field_values || {};
+                const videoUrl = urlFields.map(f => cfv[f.id]).find(v => v && String(v).trim());
+                if (!videoUrl) return null;
+                const url = String(videoUrl).trim();
+                const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+                if (ytMatch) {
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-card/80">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                        className="w-full aspect-video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Performance Video"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/50 bg-card/80 text-primary hover:bg-primary/5 transition-colors text-sm">
+                    <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">▶</span>
+                    <span className="truncate">Watch Performance</span>
+                  </a>
+                );
+              })()}
 
               {timerVisible && subEventId && (
                 <ReadOnlyTimer

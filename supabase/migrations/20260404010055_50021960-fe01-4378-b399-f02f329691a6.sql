@@ -1,0 +1,1 @@
+ALTER TABLE contestant_registrations DROP CONSTRAINT IF EXISTS contestant_registrations_email_competition_sub_event_key;
