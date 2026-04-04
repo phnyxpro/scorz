@@ -619,6 +619,10 @@ export function RegistrationsSheetEditor({
                   <Redo2 className="h-4 w-4" />
                 </Button>
               </div>
+              <Button variant="outline" size="sm" onClick={() => { setShowUploadPanel(p => !p); setUploadStep(1); }} className="gap-1">
+                <Upload className="h-4 w-4" /> Upload
+              </Button>
+              <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
               <Button variant="outline" size="sm" onClick={handleAddRow} className="gap-1">
                 <Plus className="h-4 w-4" /> Add Row
               </Button>
@@ -628,6 +632,100 @@ export function RegistrationsSheetEditor({
             </div>
           </div>
         </DialogHeader>
+
+        {/* Upload Wizard Panel */}
+        {showUploadPanel && (
+          <div className="mx-6 mb-2 border border-border rounded-lg bg-muted/30 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-primary" />
+                Upload File — Step {uploadStep} of 3
+              </h3>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowUploadPanel(false); setUploadStep(1); setUploadHeaders([]); setUploadRows([]); setUploadMapping({}); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {uploadStep === 1 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1">
+                    <Upload className="h-4 w-4" /> Choose File (CSV / XLSX)
+                  </Button>
+                </div>
+                {(levels && levels.length > 0) && (
+                  <div className="grid grid-cols-2 gap-3 max-w-lg">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Level (optional)</label>
+                      <Select value={uploadLevelId || "__none__"} onValueChange={v => { setUploadLevelId(v === "__none__" ? "" : v); setUploadSubEventId(""); }}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All levels" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__" className="text-xs">— All —</SelectItem>
+                          {levels.map((l: any) => <SelectItem key={l.id} value={l.id} className="text-xs">{l.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Sub-Event (optional)</label>
+                      <Select value={uploadSubEventId || "__none__"} onValueChange={v => setUploadSubEventId(v === "__none__" ? "" : v)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__" className="text-xs">— None —</SelectItem>
+                          {filteredSubEventsForUpload.map((se: any) => <SelectItem key={se.id} value={se.id} className="text-xs">{se.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">Upload a file first, then map columns in the next step.</p>
+              </div>
+            )}
+
+            {uploadStep === 2 && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Map your file columns to sheet columns. <span className="font-medium text-foreground">{mappedCount}/{uploadHeaders.length}</span> mapped.</p>
+                <ScrollArea className="max-h-[200px] border rounded-md bg-card">
+                  <div className="divide-y divide-border">
+                    {uploadHeaders.map(h => (
+                      <div key={h} className="flex items-center gap-3 px-3 py-1.5">
+                        <span className="text-xs font-mono w-[180px] truncate" title={h}>{h}</span>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <Select value={uploadMapping[h] || "__skip__"} onValueChange={v => setUploadMapping(prev => ({ ...prev, [h]: v === "__skip__" ? "" : v }))}>
+                          <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__skip__" className="text-xs text-muted-foreground">— Skip —</SelectItem>
+                            {columns.map(col => <SelectItem key={col.key} value={col.key} className="text-xs">{col.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {uploadMapping[h] && <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setUploadStep(1)}>Back</Button>
+                  <Button size="sm" onClick={() => setUploadStep(3)} disabled={mappedCount === 0}>Next — Preview</Button>
+                </div>
+              </div>
+            )}
+
+            {uploadStep === 3 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 text-sm">
+                  <span><strong>{uploadRows.length}</strong> rows to import</span>
+                  <span><strong>{mappedCount}</strong> columns mapped</span>
+                  {uploadSubEventId && <span className="text-xs text-muted-foreground">Sub-event: {(subEvents || []).find((se: any) => se.id === uploadSubEventId)?.name || "—"}</span>}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setUploadStep(2)}>Back</Button>
+                  <Button size="sm" onClick={handleUploadMerge} className="gap-1">
+                    <Plus className="h-4 w-4" /> Add {uploadRows.length} Rows to Sheet
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="border border-border rounded-lg shadow-sm bg-card mb-4 min-w-full inline-block align-middle">
