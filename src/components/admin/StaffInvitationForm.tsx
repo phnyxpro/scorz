@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useStaffInvitations, useInviteStaff, useDeleteInvitation } from "@/hooks/useStaffInvitations";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [role, setRole] = useState<AppRole>("judge");
+    const [isProduction, setIsProduction] = useState(false);
     const { data: invitations, isLoading } = useStaffInvitations(competitionId);
     const invite = useInviteStaff();
     const remove = useDeleteInvitation();
@@ -28,10 +30,14 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
-        await invite.mutateAsync({ name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName });
+        await invite.mutateAsync({
+            name: name || undefined, email, phone: phone || undefined, role, competitionId, competitionName,
+            isProductionAssistant: role === "organizer" ? isProduction : false,
+        });
         setName("");
         setEmail("");
         setPhone("");
+        setIsProduction(false);
     };
 
     return (
@@ -78,16 +84,25 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="staff-role">Role</Label>
-                            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                            <Select value={role} onValueChange={(v) => { setRole(v as AppRole); if (v !== "organizer") setIsProduction(false); }}>
                                 <SelectTrigger id="staff-role">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="organizer">Organizer</SelectItem>
                                     <SelectItem value="judge">Judge</SelectItem>
                                     <SelectItem value="tabulator">Tabulator</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+                        {role === "organizer" && (
+                            <div className="flex items-center gap-2 sm:col-span-2">
+                                <Checkbox id="staff-production" checked={isProduction} onCheckedChange={(v) => setIsProduction(v === true)} />
+                                <Label htmlFor="staff-production" className="text-sm cursor-pointer">
+                                    Production Only <span className="text-muted-foreground text-xs">(Limited to Levels, Guidelines, Registrations & Updates)</span>
+                                </Label>
+                            </div>
+                        )}
                         <div className="sm:col-span-2 flex justify-end">
                             <Button type="submit" disabled={invite.isPending || !email}>
                                 <Mail className="h-4 w-4 mr-2" /> Send Invite
@@ -120,9 +135,14 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                         <p className="text-sm font-medium text-foreground">{inv.name || inv.email}</p>
                                         {inv.name && <p className="text-xs text-muted-foreground">{inv.email}</p>}
                                         <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
+                                        <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
                                                 {inv.role}
                                             </Badge>
+                                            {(inv as any).is_production_assistant && inv.role === "organizer" && (
+                                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-accent/50 text-accent-foreground">
+                                                    Production
+                                                </Badge>
+                                            )}
                                             {inv.accepted_at ? (
                                                 <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
                                                     <CheckCircle className="h-2.5 w-2.5" /> Accepted
