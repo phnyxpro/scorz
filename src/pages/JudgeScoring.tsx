@@ -172,54 +172,77 @@ export default function JudgeScoring() {
 
   // For category-type levels, compute grouped contestants by Category field
   const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
-  const categoryFieldId = useMemo(() => {
-    if (!formConfig || !isCategoryLevel) return null;
-    // Find field labeled "Category" that's on scorecard
-    return formConfig.fields.find(f => f.show_on_scorecard && /^category$/i.test(f.label))?.id || null;
+  // Discover hierarchy field IDs dynamically from form config
+  const hierarchyFieldIds = useMemo(() => {
+    if (!formConfig || !isCategoryLevel) return { category: null, subcategories: [] as string[], danceStyleIds: [] as string[] };
+    const catField = formConfig.fields.find(f => f.field_type === "category_selector")?.id || null;
+    // subcategory_selectors in order (Division, Age Group, etc.)
+    const subFields = formConfig.fields
+      .filter(f => f.field_type === "subcategory_selector")
+      .map(f => f.id);
+    // All dance style fields for subtitle display
+    const danceFields = formConfig.fields
+      .filter(f => f.show_on_scorecard && /^dance\s*style/i.test(f.label))
+      .map(f => f.id);
+    return { category: catField, subcategories: subFields, danceStyleIds: danceFields };
   }, [formConfig, isCategoryLevel]);
 
-  const divisionFieldId = useMemo(() => {
-    if (!formConfig || !isCategoryLevel) return null;
-    return formConfig.fields.find(f => f.show_on_scorecard && /^division$/i.test(f.label))?.id || null;
-  }, [formConfig, isCategoryLevel]);
+  const categoryFieldId = hierarchyFieldIds.category;
 
-  const danceStyleFieldId = useMemo(() => {
-    if (!formConfig || !isCategoryLevel) return null;
-    // Use the generic "Dance Style" field that stores the display value
-    return formConfig.fields.find(f => f.show_on_scorecard && f.label === "Dance Style | Classical")?.id
-      // Fallback: any field whose label starts with "Dance Style"
-      || formConfig.fields.find(f => f.show_on_scorecard && /^dance\s*style/i.test(f.label))?.id
-      || null;
-  }, [formConfig, isCategoryLevel]);
+  // Build nested tree: Category → Division → Age Group with contestants at leaves
+  interface ContestantGroup {
+    label: string;
+    depth: number;
+    contestants: typeof filteredContestants;
+    children: ContestantGroup[];
+  }
 
-  const groupedContestants = useMemo(() => {
+  const groupedTree = useMemo((): ContestantGroup[] | null => {
     if (!isCategoryLevel || !categoryFieldId) return null;
-    const groups: { category: string; contestants: typeof filteredContestants }[] = [];
-    const groupMap = new Map<string, typeof filteredContestants>();
-    for (const r of filteredContestants) {
-      const cfv = (r as any).custom_field_values || {};
-      const cat = String(cfv[categoryFieldId] || "Uncategorised");
-      if (!groupMap.has(cat)) groupMap.set(cat, []);
-      groupMap.get(cat)!.push(r);
-    }
-    for (const [category, contestants] of groupMap) {
-      groups.push({ category, contestants });
-    }
-    return groups;
-  }, [isCategoryLevel, categoryFieldId, filteredContestants]);
+    const allFieldIds = [categoryFieldId, ...hierarchyFieldIds.subcategories];
 
-  // Helper to get contestant subtitle (dance style + division)
+    function buildLevel(items: typeof filteredContestants, fieldIdx: number, depth: number): ContestantGroup[] {
+      if (fieldIdx >= allFieldIds.length) return [];
+      const fieldId = allFieldIds[fieldIdx];
+      const buckets = new Map<string, typeof filteredContestants>();
+      for (const r of items) {
+        const cfv = (r as any).custom_field_values || {};
+        const val = String(cfv[fieldId] || "Other");
+        if (!buckets.has(val)) buckets.set(val, []);
+        buckets.get(val)!.push(r);
+      }
+      const groups: ContestantGroup[] = [];
+      for (const [label, members] of buckets) {
+        const children = buildLevel(members, fieldIdx + 1, depth + 1);
+        groups.push({ label, depth, contestants: members, children });
+      }
+      return groups;
+    }
+
+    return buildLevel(filteredContestants, 0, 0);
+  }, [isCategoryLevel, categoryFieldId, hierarchyFieldIds.subcategories, filteredContestants]);
+
+  // Helper to get contestant subtitle (dance name)
   const getContestantSubtitle = useCallback((r: any) => {
     if (!isCategoryLevel) return null;
     const cfv = r.custom_field_values || {};
-    const parts: string[] = [];
-    // Dance style: check the generic display field (cf_1774991076178) first
-    const danceDisplayId = formConfig?.fields.find(f => f.show_on_scorecard && f.id === "cf_1774991076178")?.id;
-    const style = cfv[danceDisplayId || ""] || (danceStyleFieldId ? cfv[danceStyleFieldId] : null);
-    if (style) parts.push(String(style));
-    if (divisionFieldId && cfv[divisionFieldId]) parts.push(String(cfv[divisionFieldId]));
-    return parts.length ? parts.join(" · ") : null;
-  }, [isCategoryLevel, formConfig, danceStyleFieldId, divisionFieldId]);
+    // Find first non-empty dance style value
+    for (const dsId of hierarchyFieldIds.danceStyleIds) {
+      if (cfv[dsId]) return String(cfv[dsId]);
+    }
+    return null;
+  }, [isCategoryLevel, hierarchyFieldIds.danceStyleIds]);
+
+  // Track collapsed state per group path
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroupCollapse = useCallback((path: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
 
   // Convert legacy numeric-index criterion_scores to UUID keys
   const normalizeCriterionScores = useCallback((raw: Record<string, number>): Record<string, number> => {
