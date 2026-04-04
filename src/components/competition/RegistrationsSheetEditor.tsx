@@ -6,8 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Save, X, Trash2, Copy, ClipboardPaste, ArrowUpDown, History, GripVertical, Undo2, Redo2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Save, X, Trash2, Copy, ClipboardPaste, ArrowUpDown, History, GripVertical, Undo2, Redo2, Upload, ChevronDown, ChevronRight, FileSpreadsheet, ArrowRight, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { readXLSXToJson } from "@/lib/export-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
