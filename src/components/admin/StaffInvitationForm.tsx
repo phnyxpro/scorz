@@ -135,9 +135,14 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                                         <p className="text-sm font-medium text-foreground">{inv.name || inv.email}</p>
                                         {inv.name && <p className="text-xs text-muted-foreground">{inv.email}</p>}
                                         <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
+                                        <Badge variant="outline" className="text-[10px] py-0 h-4 uppercase">
                                                 {inv.role}
                                             </Badge>
+                                            {(inv as any).is_production_assistant && inv.role === "organizer" && (
+                                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-accent/50 text-accent-foreground">
+                                                    Production
+                                                </Badge>
+                                            )}
                                             {inv.accepted_at ? (
                                                 <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
                                                     <CheckCircle className="h-2.5 w-2.5" /> Accepted
