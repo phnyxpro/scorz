@@ -6,6 +6,8 @@ import {
   BUILTIN_KEYS,
 } from "@/hooks/useRegistrationForm";
 import type { FormSchema, FormSection, FormField, FieldType, FormFieldOption } from "@/hooks/useRegistrationForm";
+import { ImportFromEventDialog } from "@/components/competition/ImportFromEventDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +27,7 @@ import {
   CheckSquare, AlignLeft, ListOrdered, Upload, PenTool,
   Shield, Layers, CalendarClock, Clock, Repeat, Heading, Pilcrow,
   Palette, DollarSign, Star, ToggleLeft, EyeOff, Minus, FileCheck, FileEdit,
-  Grid3X3,
+  Grid3X3, Import,
 } from "lucide-react";
 
 const FIELD_TYPES: { type: FieldType; label: string; icon: any; category: string }[] = [
@@ -85,7 +87,46 @@ export function RegistrationFormEditor({ competitionId }: Props) {
   const upsertConfig = useUpsertFormConfig();
   const [schema, setSchema] = useState<FormSchema>([]);
   const [dirty, setDirty] = useState(false);
-  const [showAddField, setShowAddField] = useState<string | null>(null);  // section id
+  const [showAddField, setShowAddField] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+
+  const handleImportForm = async (sourceCompId: string, sourceName: string) => {
+    setImportLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("registration_form_config")
+        .eq("id", sourceCompId)
+        .maybeSingle();
+      if (error) throw error;
+      const cfg = data?.registration_form_config as any;
+      let imported: FormSchema | null = null;
+      if (Array.isArray(cfg) && cfg.length > 0 && cfg[0].fields) {
+        imported = cfg as FormSchema;
+      } else if (cfg?.form_schema && Array.isArray(cfg.form_schema)) {
+        imported = cfg.form_schema as FormSchema;
+      }
+      if (!imported?.length) {
+        toast({ title: "Nothing to import", description: `"${sourceName}" has no registration form configured.`, variant: "destructive" });
+        return;
+      }
+      // Regenerate IDs to avoid conflicts
+      const cloned: FormSchema = imported.map(s => ({
+        ...s,
+        id: crypto.randomUUID(),
+        fields: s.fields.map(f => ({ ...f, id: crypto.randomUUID() })),
+      }));
+      setSchema(cloned);
+      setDirty(true);
+      setImportOpen(false);
+      toast({ title: "Form imported", description: `Registration form imported from "${sourceName}". Save to apply.` });
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   // Initialize schema
   useEffect(() => {
@@ -266,6 +307,9 @@ export function RegistrationFormEditor({ competitionId }: Props) {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Import className="h-3.5 w-3.5 mr-1" /> Import
+              </Button>
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
               </Button>
@@ -401,6 +445,16 @@ export function RegistrationFormEditor({ competitionId }: Props) {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <ImportFromEventDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        currentCompetitionId={competitionId}
+        title="Import Registration Form"
+        description="Select an event to copy its registration form configuration into this competition."
+        onSelect={handleImportForm}
+        loading={importLoading}
+      />
     </div>
   );
 }
