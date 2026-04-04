@@ -96,7 +96,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     }
   };
 
-  const updateSubEventSetting = async (subEventId: string, field: 'timer_visible' | 'comments_visible' | 'profile_details_visible', value: boolean) => {
+  const updateSubEventSetting = async (subEventId: string, field: 'timer_visible' | 'comments_visible' | 'profile_details_visible' | 'video_visible', value: boolean) => {
     try {
       setSubEventSettings(prev => ({
         ...prev,
