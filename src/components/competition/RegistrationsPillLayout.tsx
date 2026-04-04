@@ -25,6 +25,7 @@ interface Props {
 
 export function RegistrationsPillLayout({ competitionId }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category>("contestants");
+  const [copied, setCopied] = useState(false);
   const ActiveIcon = categories[activeCategory].icon;
   const keys = Object.keys(categories) as Category[];
   const swipeNav = useCallback((dir: 1 | -1) => {
@@ -35,6 +36,24 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
     });
   }, [keys]);
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
+
+  const { data: comp } = useQuery({
+    queryKey: ["comp-slug", competitionId],
+    queryFn: async () => {
+      const { data } = await supabase.from("competitions").select("slug").eq("id", competitionId).maybeSingle();
+      return data;
+    },
+  });
+
+  const publicUrl = comp?.slug ? `${window.location.origin}/events/${comp.slug}/registrations` : null;
+
+  const handleCopyLink = () => {
+    if (!publicUrl) return;
+    navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    toast({ title: "Link copied", description: "Public registration link copied to clipboard." });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-4">
