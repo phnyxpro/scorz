@@ -768,6 +768,16 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <ImportFromEventDialog
+      open={importDialogOpen}
+      onOpenChange={setImportDialogOpen}
+      currentCompetitionId={competitionId}
+      title="Import Levels & Sub-Events"
+      description="Select an event to copy its entire level structure, sub-events, and category trees into this competition."
+      onSelect={handleImportFromEvent}
+      loading={importing}
+    />
     </>
   );
 }
