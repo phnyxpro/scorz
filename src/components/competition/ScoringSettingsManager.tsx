@@ -40,7 +40,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
 
   const [activeCategory, setActiveCategory] = useState<Category>("active");
   const [scoringMethod, setScoringMethod] = useState<string>("olympic");
-  const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean }>>({});
+  const [subEventSettings, setSubEventSettings] = useState<Record<string, { timer_visible: boolean; comments_visible: boolean; profile_details_visible: boolean; video_visible: boolean }>>({});
 
   // Active scoring state
   const updateActive = useUpdateActiveScoringConfig();
