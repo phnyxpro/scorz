@@ -132,10 +132,10 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: true, sent }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (e) {
+  } catch (e: unknown) {
     console.error("notify-admin-activity error:", e);
     return new Response(
-      JSON.stringify({ error: e.message }),
+      JSON.stringify({ error: (e as Error).message }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
