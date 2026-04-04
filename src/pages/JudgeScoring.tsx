@@ -441,18 +441,20 @@ export default function JudgeScoring() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Sub-Event</label>
-            <Select value={selectedSubEventId} onValueChange={(v) => { setSelectedSubEventId(v); setSelectedContestant(""); }}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-event" /></SelectTrigger>
-              <SelectContent>
-                {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                {subEvents.length === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isCategoryLevel && (
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Sub-Event</label>
+              <Select value={selectedSubEventId} onValueChange={(v) => { setSelectedSubEventId(v); setSelectedContestant(""); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select sub-event" /></SelectTrigger>
+                <SelectContent>
+                  {subEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                  {subEvents.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No assigned sub-events</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Contestant list */}
