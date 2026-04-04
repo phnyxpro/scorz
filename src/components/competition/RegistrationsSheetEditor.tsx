@@ -116,7 +116,7 @@ export function RegistrationsSheetEditor({
               field.key.includes("category") ||
               field.label.toLowerCase().includes("category") ||
               field.label.toLowerCase().includes("division") ||
-              field.label.toLowerCase().includes("age group")
+              field.label.toLowerCase().includes("group")
             ) {
               fieldOptions = categories?.map(c => ({ label: c.name, value: c.id }));
             } else if (field.type === "time_slot_selector") {
