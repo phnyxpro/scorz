@@ -1851,7 +1851,6 @@ export type Database = {
           sort_order: number | null
           status: string | null
           sub_event_id: string | null
-          user_id: string | null
         }
         Insert: {
           age_category?: string | null
@@ -1866,7 +1865,6 @@ export type Database = {
           sort_order?: number | null
           status?: string | null
           sub_event_id?: string | null
-          user_id?: string | null
         }
         Update: {
           age_category?: string | null
@@ -1881,7 +1879,6 @@ export type Database = {
           sort_order?: number | null
           status?: string | null
           sub_event_id?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
