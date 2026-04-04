@@ -400,6 +400,136 @@ export function RegistrationsSheetEditor({
     });
   };
 
+  // ─── Upload Wizard Helpers ───────────────────────────
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  const filteredSubEventsForUpload = useMemo(() => {
+    if (!uploadLevelId) return subEvents || [];
+    return (subEvents || []).filter((se: any) => se.level_id === uploadLevelId);
+  }, [uploadLevelId, subEvents]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      let rows: Record<string, any>[] = [];
+
+      if (file.name.endsWith(".csv")) {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { toast({ title: "Empty file", variant: "destructive" }); return; }
+        const headerLine = lines[0];
+        const headers = parseCSVLine(headerLine);
+        for (let i = 1; i < lines.length; i++) {
+          const vals = parseCSVLine(lines[i]);
+          const obj: Record<string, any> = {};
+          headers.forEach((h, idx) => { obj[h] = vals[idx] || ""; });
+          rows.push(obj);
+        }
+      } else {
+        const buffer = await file.arrayBuffer();
+        rows = await readXLSXToJson(buffer);
+      }
+
+      if (rows.length === 0) { toast({ title: "No data found in file", variant: "destructive" }); return; }
+
+      const headers = Object.keys(rows[0]);
+      setUploadHeaders(headers);
+      setUploadRows(rows);
+
+      // Auto-map columns via fuzzy match
+      const mapping: Record<string, string> = {};
+      headers.forEach(h => {
+        const nh = normalize(h);
+        const matched = columns.find(col => {
+          const nl = normalize(col.label);
+          const nk = normalize(col.key);
+          return nl === nh || nk === nh || nl.includes(nh) || nh.includes(nl);
+        });
+        if (matched) mapping[h] = matched.key;
+      });
+      setUploadMapping(mapping);
+      setUploadStep(2);
+      toast({ title: "File parsed", description: `${rows.length} rows, ${headers.length} columns detected.` });
+    } catch (err: any) {
+      toast({ title: "Failed to parse file", description: err.message, variant: "destructive" });
+    }
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') inQuotes = false;
+        else current += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',') { result.push(current.trim()); current = ""; }
+        else current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const mappedCount = Object.values(uploadMapping).filter(v => v).length;
+
+  const handleUploadMerge = () => {
+    if (uploadRows.length === 0) return;
+    recordChange(data);
+    const maxOrder = data.reduce((max, r) => Math.max(max, r.sort_order || 0), 0);
+
+    const newRows = uploadRows.map((uRow, idx) => {
+      const row: any = {
+        id: null,
+        temp_id: crypto.randomUUID(),
+        user_id: user?.id,
+        full_name: "",
+        email: "",
+        phone: "",
+        age_category: "adult",
+        status: "approved",
+        sub_event_id: uploadSubEventId || null,
+        sort_order: maxOrder + 1 + idx,
+      };
+
+      Object.entries(uploadMapping).forEach(([csvHeader, colKey]) => {
+        if (!colKey) return;
+        const rawValue = String(uRow[csvHeader] ?? "").trim();
+        const col = columns.find(c => c.key === colKey);
+
+        if (col?.type === "select" && col.options) {
+          const matched = col.options.find(
+            (opt: any) => opt.label.toLowerCase() === rawValue.toLowerCase() || String(opt.value).toLowerCase() === rawValue.toLowerCase()
+          );
+          row[colKey] = matched ? matched.value : rawValue;
+        } else {
+          row[colKey] = rawValue;
+        }
+      });
+
+      return row;
+    });
+
+    setData(prev => [...prev, ...newRows]);
+    toast({ title: "Rows imported", description: `${newRows.length} rows added to sheet.` });
+    // Reset upload state
+    setShowUploadPanel(false);
+    setUploadStep(1);
+    setUploadHeaders([]);
+    setUploadRows([]);
+    setUploadMapping({});
+    setUploadSubEventId("");
+    setUploadLevelId("");
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
