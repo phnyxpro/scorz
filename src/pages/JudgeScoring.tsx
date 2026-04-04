@@ -77,19 +77,18 @@ export default function JudgeScoring() {
     }
   }, [comp?.active_scoring_level_id, comp?.active_scoring_sub_event_id, searchParams]);
 
+  if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
+
+  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
+
   // For category-type levels, auto-select the single umbrella sub-event
   const isCategoryLevel = selectedLevel?.structure_type === "categories";
   useEffect(() => {
     if (isCategoryLevel && allSubEvents?.length && !selectedSubEventId) {
-      // Pick the first (and likely only) sub-event for this level
       const umbrella = allSubEvents[0];
       if (umbrella) setSelectedSubEventId(umbrella.id);
     }
   }, [isCategoryLevel, allSubEvents, selectedSubEventId]);
-
-  if (levels?.length && !selectedLevelId) setSelectedLevelId(levels[0].id);
-
-  const { data: allSubEvents } = useSubEvents(selectedLevelId || undefined);
 
   const subEvents = useMemo(() => {
     if (!allSubEvents || !myAssignments) return [];
