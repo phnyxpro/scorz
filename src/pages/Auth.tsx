@@ -149,7 +149,7 @@ export default function Auth() {
     setTimeout(() => setCopiedEmail(null), 1500);
   };
 
-  const isMagicLinkRole = signinRole === "judge" || signinRole === "tabulator";
+  const isMagicLinkRole = signinRole === "judge" || signinRole === "tabulator" || signinRole === "organizer";
 
   return (
     <div className={`${needsFilter ? "auditorium-filter" : ""} min-h-screen flex items-center justify-center bg-background p-4 relative`}>
