@@ -53,7 +53,7 @@ export function ContestantInfoCard({ formConfig, customFieldValues, valueResolve
   if (renderedCards.length === 0) {
     const allEntries = scorecardFields
       .filter(f => f.field_type !== "url" && customFieldValues[f.id] != null && customFieldValues[f.id] !== "")
-      .map(f => ({ label: f.label, value: String(customFieldValues[f.id]) }));
+      .map(f => ({ label: f.label, value: resolve(f, customFieldValues[f.id]) }));
     if (allEntries.length === 0) return null;
     return (
       <div className="rounded-lg border border-border/50 bg-card/80 px-4 py-3">

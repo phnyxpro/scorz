@@ -942,6 +942,7 @@ export default function JudgeScoring() {
                 <ContestantInfoCard
                   formConfig={(comp as any)?.registration_form_config}
                   customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
+                  valueResolver={valueResolver}
                 />
               )}
 
