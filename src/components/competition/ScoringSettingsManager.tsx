@@ -429,3 +429,172 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     </div>
   );
 }
+
+/** Editor for configuring scorecard sub-card layout */
+function ScorecardLayoutEditor({ competitionId }: { competitionId: string }) {
+  const { data: competition } = useCompetition(competitionId);
+  const qc = useQueryClient();
+
+  const formConfig = useMemo(() => {
+    return competition ? migrateFormConfig((competition as any).registration_form_config) : null;
+  }, [competition]);
+
+  const scorecardFields = useMemo(() => {
+    return formConfig ? getScorecardFields(formConfig).filter(f => f.field_type !== "url") : [];
+  }, [formConfig]);
+
+  // Load existing layout or build default
+  const [cards, setCards] = useState<ScorecardCard[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!formConfig) return;
+    const existing = formConfig.scorecard_layout?.cards;
+    if (existing?.length) {
+      setCards(existing);
+    } else if (scorecardFields.length > 0) {
+      // Default: split into 3 cards
+      const third = Math.ceil(scorecardFields.length / 3);
+      setCards([
+        { id: "card1", title: "School & Entry", field_ids: scorecardFields.slice(0, third).map(f => f.id) },
+        { id: "card2", title: "Performance", field_ids: scorecardFields.slice(third, third * 2).map(f => f.id) },
+        { id: "card3", title: "Details", field_ids: scorecardFields.slice(third * 2).map(f => f.id) },
+      ].filter(c => c.field_ids.length > 0));
+    }
+  }, [formConfig, scorecardFields]);
+
+  // Fields not assigned to any card
+  const assignedIds = useMemo(() => new Set(cards.flatMap(c => c.field_ids)), [cards]);
+  const unassigned = useMemo(() => scorecardFields.filter(f => !assignedIds.has(f.id)), [scorecardFields, assignedIds]);
+
+  const fieldLabelMap = useMemo(() => {
+    const m = new Map<string, string>();
+    scorecardFields.forEach(f => m.set(f.id, f.label));
+    return m;
+  }, [scorecardFields]);
+
+  const addCard = () => {
+    setCards(prev => [...prev, { id: `card_${Date.now()}`, title: "New Card", field_ids: [] }]);
+  };
+
+  const removeCard = (cardId: string) => {
+    setCards(prev => prev.filter(c => c.id !== cardId));
+  };
+
+  const updateCardTitle = (cardId: string, title: string) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, title } : c));
+  };
+
+  const addFieldToCard = (cardId: string, fieldId: string) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, field_ids: [...c.field_ids, fieldId] } : c));
+  };
+
+  const removeFieldFromCard = (cardId: string, fieldId: string) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, field_ids: c.field_ids.filter(id => id !== fieldId) } : c));
+  };
+
+  const saveLayout = async () => {
+    if (!competition) return;
+    setSaving(true);
+    try {
+      const currentConfig = (competition as any).registration_form_config || {};
+      const updated = { ...currentConfig, scorecard_layout: { cards } };
+      const { error } = await supabase
+        .from("competitions")
+        .update({ registration_form_config: updated })
+        .eq("id", competitionId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["competition", competitionId] });
+      toast({ title: "Scorecard layout saved" });
+    } catch (e: any) {
+      toast({ title: "Error saving layout", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!formConfig || scorecardFields.length === 0) {
+    return (
+      <div className="py-6 text-center text-muted-foreground">
+        <LayoutGrid className="h-8 w-8 mx-auto mb-3 opacity-40" />
+        <p>No scorecard fields configured. Enable "Show on Scorecard" for fields in the Form Builder.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        Drag fields between cards to control how contestant info appears on the judge scorecard. Each card becomes a column.
+      </p>
+
+      {/* Cards grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {cards.map(card => (
+          <div key={card.id} className="border border-border/40 rounded-lg p-3 bg-card/60 space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                value={card.title}
+                onChange={e => updateCardTitle(card.id, e.target.value)}
+                className="h-7 text-xs font-semibold flex-1"
+              />
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeCard(card.id)}>
+                <Trash2 className="h-3 w-3 text-destructive" />
+              </Button>
+            </div>
+            <div className="space-y-1 min-h-[40px]">
+              {card.field_ids.map(fid => (
+                <div key={fid} className="flex items-center gap-1.5 px-2 py-1 bg-muted/30 rounded text-xs group">
+                  <GripVertical className="h-3 w-3 text-muted-foreground opacity-40" />
+                  <span className="flex-1 truncate">{fieldLabelMap.get(fid) || fid}</span>
+                  <button onClick={() => removeFieldFromCard(card.id, fid)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              ))}
+              {card.field_ids.length === 0 && (
+                <p className="text-[10px] text-muted-foreground/60 text-center py-2">Drop fields here</p>
+              )}
+            </div>
+            {/* Add field dropdown */}
+            {unassigned.length > 0 && (
+              <Select onValueChange={(v) => addFieldToCard(card.id, v)}>
+                <SelectTrigger className="h-7 text-[10px]">
+                  <SelectValue placeholder="+ Add field" />
+                </SelectTrigger>
+                <SelectContent>
+                  {unassigned.map(f => (
+                    <SelectItem key={f.id} value={f.id} className="text-xs">{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Unassigned fields */}
+      {unassigned.length > 0 && (
+        <div className="rounded-lg border border-dashed border-border/50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Unassigned Fields</p>
+          <div className="flex flex-wrap gap-1.5">
+            {unassigned.map(f => (
+              <Badge key={f.id} variant="outline" className="text-xs cursor-default">
+                {f.label}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={addCard} className="gap-1">
+          <Plus className="h-3 w-3" /> Add Card
+        </Button>
+        <Button size="sm" onClick={saveLayout} disabled={saving} className="ml-auto">
+          {saving ? "Saving…" : "Save Layout"}
+        </Button>
+      </div>
+    </div>
+  );
+}
