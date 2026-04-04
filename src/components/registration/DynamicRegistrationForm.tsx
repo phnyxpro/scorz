@@ -1066,7 +1066,7 @@ function CategoryLevelPicker({ parentId, levelId, depth, values, updateValue }: 
   };
 
   // Determine label based on depth
-  const labels = ["Category", "Sub-Category", "Division", "Age Group", "Selection"];
+  const labels = ["Category", "Sub-Category", "Division", "Group", "Selection"];
   const label = labels[depth] || `Level ${depth + 1}`;
 
   return (

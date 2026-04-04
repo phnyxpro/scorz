@@ -239,7 +239,7 @@ export default function JudgeScoring() {
   const hierarchyFieldIds = useMemo(() => {
     if (!formConfig || !isCategoryLevel) return { category: null, subcategories: [] as string[], danceStyleIds: [] as string[] };
     const catField = formConfig.fields.find(f => f.field_type === "category_selector")?.id || null;
-    // subcategory_selectors in order (Division, Age Group, etc.)
+    // subcategory_selectors in order (Division, Group, etc.)
     const subFields = formConfig.fields
       .filter(f => f.field_type === "subcategory_selector")
       .map(f => f.id);
@@ -252,7 +252,7 @@ export default function JudgeScoring() {
 
   const categoryFieldId = hierarchyFieldIds.category;
 
-  // Build nested tree: Category → Division → Age Group with contestants at leaves
+  // Build nested tree: Category → Division → Group with contestants at leaves
   interface ContestantGroup {
     label: string;
     depth: number;
