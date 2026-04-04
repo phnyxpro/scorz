@@ -695,6 +695,9 @@ export function LevelsManager({ competitionId }: { competitionId: string }) {
           <Button size="sm" onClick={handleAdd} disabled={create.isPending || !newName.trim()}>
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Import className="h-4 w-4 mr-1" /> Import
+          </Button>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd}>
           <SortableContext items={levels?.map((l) => l.id) || []} strategy={verticalListSortingStrategy}>
