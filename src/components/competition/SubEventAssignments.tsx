@@ -830,16 +830,15 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          {!inv.accepted_at && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={onDelete}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={onDelete}
+            title="Remove staff member"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
           {isAdmin && onMasquerade && (
             <Button
               variant="ghost"
