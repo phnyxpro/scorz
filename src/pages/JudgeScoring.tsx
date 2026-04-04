@@ -102,6 +102,7 @@ export default function JudgeScoring() {
   const timerVisible = selectedSubEvent?.timer_visible ?? true;
   const commentsVisible = selectedSubEvent?.comments_visible ?? true;
   const profileDetailsVisible = (selectedSubEvent as any)?.profile_details_visible ?? true;
+  const videoVisible = (selectedSubEvent as any)?.video_visible ?? true;
 
   const subEventId = selectedSubEventId;
   useJudgeScoresRealtime(subEventId || undefined);
