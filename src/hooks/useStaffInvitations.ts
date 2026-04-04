@@ -332,6 +332,66 @@ export function useDeleteInvitation() {
 
   return useMutation({
     mutationFn: async ({ id, competitionId }: { id: string; competitionId: string }) => {
+      // Look up the invitation to check if accepted and get details
+      const { data: inv } = await (supabase
+        .from("staff_invitations" as any)
+        .select("email, role, accepted_at")
+        .eq("id", id)
+        .single() as any);
+
+      if (inv?.accepted_at) {
+        // Find the user profile by email to clean up assignments
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("email", inv.email)
+          .maybeSingle();
+
+        if (profile?.user_id) {
+          // Get sub-event IDs from invitation sub-events
+          const { data: ises } = await (supabase
+            .from("staff_invitation_sub_events" as any)
+            .select("sub_event_id")
+            .eq("staff_invitation_id", id) as any);
+
+          const subEventIds = (ises || []).map((i: any) => i.sub_event_id);
+
+          // Remove sub_event_assignments for this user+role in these sub-events
+          if (subEventIds.length > 0) {
+            await (supabase
+              .from("sub_event_assignments" as any)
+              .delete()
+              .eq("user_id", profile.user_id)
+              .eq("role", inv.role)
+              .in("sub_event_id", subEventIds) as any);
+          }
+
+          // Check if user still has other invitations with this role
+          const { data: otherInvs } = await (supabase
+            .from("staff_invitations" as any)
+            .select("id")
+            .eq("email", inv.email)
+            .eq("role", inv.role)
+            .neq("id", id) as any);
+
+          // If no other invitations with this role, remove the user_role
+          if (!otherInvs?.length) {
+            await (supabase
+              .from("user_roles" as any)
+              .delete()
+              .eq("user_id", profile.user_id)
+              .eq("role", inv.role) as any);
+          }
+        }
+      }
+
+      // Delete invitation sub-events first (cascade may not cover it)
+      await (supabase
+        .from("staff_invitation_sub_events" as any)
+        .delete()
+        .eq("staff_invitation_id", id) as any);
+
+      // Delete the invitation itself
       const { error } = await (supabase
         .from("staff_invitations" as any)
         .delete()
@@ -342,6 +402,8 @@ export function useDeleteInvitation() {
     },
     onSuccess: (competitionId) => {
       qc.invalidateQueries({ queryKey: ["staff_invitations", competitionId] });
+      qc.invalidateQueries({ queryKey: ["staff_invitation_sub_events", competitionId] });
+      qc.invalidateQueries({ queryKey: ["sub_event_assignments"] });
       toast({ title: "Staff member removed" });
     },
     onError: (error: any) => {
