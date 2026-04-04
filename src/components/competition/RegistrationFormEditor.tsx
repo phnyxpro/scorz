@@ -6,6 +6,14 @@ import {
   BUILTIN_KEYS,
 } from "@/hooks/useRegistrationForm";
 import type { FormSchema, FormSection, FormField, FieldType, FormFieldOption } from "@/hooks/useRegistrationForm";
+import { ImportFromEventDialog } from "@/components/competition/ImportFromEventDialog";
+import { useRegistrationFormConfig as useSourceFormConfig } from "@/hooks/useRegistrationForm";
+  useRegistrationFormConfig,
+  useUpsertFormConfig,
+  createDefaultFormSchema,
+  BUILTIN_KEYS,
+} from "@/hooks/useRegistrationForm";
+import type { FormSchema, FormSection, FormField, FieldType, FormFieldOption } from "@/hooks/useRegistrationForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
