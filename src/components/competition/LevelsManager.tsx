@@ -795,13 +795,74 @@ function StructureToggle({ level, competitionId }: { level: any; competitionId: 
   const handleClearLayout = async () => {
     setClearing(true);
     try {
+      // Snapshot existing data before deleting so we can undo
+      const [catSnap, seSnap] = await Promise.all([
+        supabase.from("competition_categories").select("*").eq("level_id", level.id),
+        supabase.from("sub_events").select("*").eq("level_id", level.id),
+      ]);
+      const savedCategories = catSnap.data || [];
+      const savedSubEvents = seSnap.data || [];
+
       await supabase.from("competition_categories").delete().eq("level_id", level.id);
       await supabase.from("sub_events").delete().eq("level_id", level.id);
-      
+
       qc.invalidateQueries({ queryKey: ["levels", competitionId] });
       qc.invalidateQueries({ queryKey: ["sub_events", level.id] });
       qc.invalidateQueries({ queryKey: ["competition_categories", level.id] });
-      toast({ title: "Layout cleared", description: "All categories and sub-events for this level have been removed." });
+
+      toast({
+        title: "Layout cleared",
+        description: "Categories and sub-events removed.",
+        action: (savedCategories.length > 0 || savedSubEvents.length > 0) ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={async () => {
+              try {
+                if (savedSubEvents.length > 0) {
+                  await supabase.from("sub_events").insert(savedSubEvents as any);
+                }
+                if (savedCategories.length > 0) {
+                  // Insert in order: parents first (null parent_id), then children
+                  const parents = savedCategories.filter((c: any) => !c.parent_id);
+                  const children = savedCategories.filter((c: any) => c.parent_id);
+                  if (parents.length > 0) await supabase.from("competition_categories").insert(parents as any);
+                  if (children.length > 0) {
+                    // Insert level by level to respect parent FK
+                    const childMap = new Map<string, any[]>();
+                    children.forEach((c: any) => {
+                      const arr = childMap.get(c.parent_id) || [];
+                      arr.push(c);
+                      childMap.set(c.parent_id, arr);
+                    });
+                    // Simple iterative insert — works for shallow trees
+                    let remaining = [...children];
+                    const inserted = new Set(parents.map((p: any) => p.id));
+                    let safety = 10;
+                    while (remaining.length > 0 && safety-- > 0) {
+                      const batch = remaining.filter((c: any) => inserted.has(c.parent_id));
+                      if (batch.length === 0) break;
+                      await supabase.from("competition_categories").insert(batch as any);
+                      batch.forEach((c: any) => inserted.add(c.id));
+                      remaining = remaining.filter((c: any) => !inserted.has(c.id));
+                    }
+                  }
+                }
+                qc.invalidateQueries({ queryKey: ["levels", competitionId] });
+                qc.invalidateQueries({ queryKey: ["sub_events", level.id] });
+                qc.invalidateQueries({ queryKey: ["competition_categories", level.id] });
+                toast({ title: "Layout restored", description: "All categories and sub-events have been restored." });
+              } catch (err: any) {
+                toast({ title: "Undo failed", description: err.message, variant: "destructive" });
+              }
+            }}
+          >
+            Undo
+          </Button>
+        ) : undefined,
+        duration: 10000,
+      });
     } catch(e: any) {
       toast({ title: "Error clearing layout", description: e.message, variant: "destructive" });
     } finally {
