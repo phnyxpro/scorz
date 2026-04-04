@@ -69,6 +69,7 @@ const ContestantRegistrationProfile = lazy(() => import("./pages/ContestantRegis
 const ProductionAssistantDashboard = lazy(() => import("./pages/ProductionAssistantDashboard"));
 const ScoreTablesPage = lazy(() => import("./pages/ScoreTablesPage"));
 const ContestantScoresOverview = lazy(() => import("./pages/ContestantScoresOverview"));
+const PublicRegistrations = lazy(() => import("./pages/PublicRegistrations"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -109,6 +110,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/public-events" element={<PublicEvents />} />
                 <Route path="/events/:id" element={<PublicEventDetail />} />
+                <Route path="/events/:id/registrations" element={<PublicRegistrations />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/help" element={<HelpCenter />} />

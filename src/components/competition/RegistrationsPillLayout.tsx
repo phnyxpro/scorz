@@ -2,10 +2,14 @@ import { useState, useCallback } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Settings, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Settings, FileText, ExternalLink, Copy, Check } from "lucide-react";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { RegistrationSettingsPanel } from "@/components/competition/RegistrationSettingsPanel";
 import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const categories = {
   contestants: { label: "Contestants", icon: Users, description: "View and manage contestant registrations, approvals, and performance order." },
@@ -21,6 +25,7 @@ interface Props {
 
 export function RegistrationsPillLayout({ competitionId }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category>("contestants");
+  const [copied, setCopied] = useState(false);
   const ActiveIcon = categories[activeCategory].icon;
   const keys = Object.keys(categories) as Category[];
   const swipeNav = useCallback((dir: 1 | -1) => {
@@ -32,10 +37,28 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
   }, [keys]);
   const swipeHandlers = useSwipeGesture({ onSwipeLeft: () => swipeNav(1), onSwipeRight: () => swipeNav(-1) });
 
+  const { data: comp } = useQuery({
+    queryKey: ["comp-slug", competitionId],
+    queryFn: async () => {
+      const { data } = await supabase.from("competitions").select("slug").eq("id", competitionId).maybeSingle();
+      return data;
+    },
+  });
+
+  const publicUrl = comp?.slug ? `${window.location.origin}/events/${comp.slug}/registrations` : null;
+
+  const handleCopyLink = () => {
+    if (!publicUrl) return;
+    navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    toast({ title: "Link copied", description: "Public registration link copied to clipboard." });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Category pill bar */}
-      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+      {/* Category pill bar + share link */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
         <div className="flex gap-2 min-w-max">
           {(Object.keys(categories) as Category[]).map((key) => {
             const cat = categories[key];
@@ -57,6 +80,19 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
             );
           })}
         </div>
+        {publicUrl && (
+          <div className="ml-auto flex items-center gap-1.5 shrink-0">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleCopyLink}>
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? "Copied" : "Share Link"}
+            </Button>
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Contestants — rendered directly (not inside a card, it has its own layout) */}
