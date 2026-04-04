@@ -2,10 +2,14 @@ import { useState, useCallback } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Settings, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Settings, FileText, ExternalLink, Copy, Check } from "lucide-react";
 import { RegistrationsManager } from "@/components/competition/RegistrationsManager";
 import { RegistrationSettingsPanel } from "@/components/competition/RegistrationSettingsPanel";
 import { RegistrationFormsInline } from "@/components/competition/RegistrationFormsInline";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const categories = {
   contestants: { label: "Contestants", icon: Users, description: "View and manage contestant registrations, approvals, and performance order." },
