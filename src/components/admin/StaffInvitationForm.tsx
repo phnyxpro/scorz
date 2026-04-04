@@ -84,16 +84,25 @@ export function StaffInvitationForm({ competitionId, competitionName }: StaffInv
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="staff-role">Role</Label>
-                            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                            <Select value={role} onValueChange={(v) => { setRole(v as AppRole); if (v !== "organizer") setIsProduction(false); }}>
                                 <SelectTrigger id="staff-role">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="organizer">Organizer</SelectItem>
                                     <SelectItem value="judge">Judge</SelectItem>
                                     <SelectItem value="tabulator">Tabulator</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+                        {role === "organizer" && (
+                            <div className="flex items-center gap-2 sm:col-span-2">
+                                <Checkbox id="staff-production" checked={isProduction} onCheckedChange={(v) => setIsProduction(v === true)} />
+                                <Label htmlFor="staff-production" className="text-sm cursor-pointer">
+                                    Production Only <span className="text-muted-foreground text-xs">(Limited to Levels, Guidelines, Registrations & Updates)</span>
+                                </Label>
+                            </div>
+                        )}
                         <div className="sm:col-span-2 flex justify-end">
                             <Button type="submit" disabled={invite.isPending || !email}>
                                 <Mail className="h-4 w-4 mr-2" /> Send Invite
