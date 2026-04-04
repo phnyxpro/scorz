@@ -714,6 +714,14 @@ export default function JudgeScoring() {
                 );
               })()}
 
+              {/* Profile details — right below video */}
+              {profileDetailsVisible && selectedContestantReg && (
+                <ContestantInfoCard
+                  formConfig={(comp as any)?.registration_form_config}
+                  customFieldValues={(selectedContestantReg as any)?.custom_field_values || {}}
+                />
+              )}
+
               {timerVisible && subEventId && (
                 <ReadOnlyTimer
                   subEventId={subEventId}
