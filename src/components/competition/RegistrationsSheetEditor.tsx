@@ -643,13 +643,14 @@ function SortableTableRow({
           )}
           {col.type === "select" ? (
             <Select 
-              value={String(row[col.key] || "")} 
-              onValueChange={(v) => handleValueChange(rIdx, col.key, v)}
+              value={String(row[col.key] || "__none__")} 
+              onValueChange={(v) => handleValueChange(rIdx, col.key, v === "__none__" ? "" : v)}
             >
               <SelectTrigger className="h-8 border-transparent bg-transparent hover:bg-muted/50 focus:bg-background focus:border-border text-xs px-2 shadow-none focus:ring-0 transition-none w-full outline-none">
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__" className="text-xs text-muted-foreground">— None —</SelectItem>
                 {col.options?.map(opt => (
                   <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
                 ))}
