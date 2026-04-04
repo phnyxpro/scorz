@@ -57,8 +57,8 @@ export function RegistrationsPillLayout({ competitionId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Category pill bar */}
-      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+      {/* Category pill bar + share link */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
         <div className="flex gap-2 min-w-max">
           {(Object.keys(categories) as Category[]).map((key) => {
             const cat = categories[key];
