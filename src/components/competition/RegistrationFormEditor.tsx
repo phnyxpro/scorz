@@ -307,6 +307,9 @@ export function RegistrationFormEditor({ competitionId }: Props) {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Import className="h-3.5 w-3.5 mr-1" /> Import
+              </Button>
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
               </Button>
