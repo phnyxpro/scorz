@@ -173,6 +173,50 @@ export default function JudgeScoring() {
 
   // For category-type levels, compute grouped contestants by Category field
   const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
+
+  // Fetch categories for the selected level to resolve UUIDs to names
+  const { data: levelCategories } = useQuery({
+    queryKey: ["competition_categories", selectedLevelId],
+    enabled: !!selectedLevelId && isCategoryLevel,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_categories")
+        .select("id, name")
+        .eq("level_id", selectedLevelId);
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+  });
+
+  // Build a value resolver: raw value → human-readable label
+  // Covers: category/subcategory UUIDs, level UUIDs, dropdown/radio option values
+  const valueResolver = useMemo(() => {
+    const map = new Map<string, string>();
+    // Category UUIDs → names
+    for (const cat of levelCategories || []) {
+      map.set(cat.id, cat.name);
+    }
+    // Level UUIDs → names
+    for (const lv of levels || []) {
+      map.set(lv.id, lv.name);
+    }
+    // Dropdown / radio option values → labels
+    if (formConfig) {
+      for (const field of formConfig.fields) {
+        if (field.options?.length) {
+          for (const opt of field.options) {
+            if (opt.value && opt.label && opt.value !== opt.label) {
+              map.set(opt.value, opt.label);
+            }
+          }
+        }
+      }
+    }
+    return map;
+  }, [levelCategories, levels, formConfig]);
+
+  const resolveValue = useCallback((raw: string) => valueResolver.get(raw) || raw, [valueResolver]);
+
   // Discover hierarchy field IDs dynamically from form config
   const hierarchyFieldIds = useMemo(() => {
     if (!formConfig || !isCategoryLevel) return { category: null, subcategories: [] as string[], danceStyleIds: [] as string[] };
@@ -213,15 +257,15 @@ export default function JudgeScoring() {
         buckets.get(val)!.push(r);
       }
       const groups: ContestantGroup[] = [];
-      for (const [label, members] of buckets) {
+      for (const [rawLabel, members] of buckets) {
         const children = buildLevel(members, fieldIdx + 1, depth + 1);
-        groups.push({ label, depth, contestants: members, children });
+        groups.push({ label: resolveValue(rawLabel), depth, contestants: members, children });
       }
       return groups;
     }
 
     return buildLevel(filteredContestants, 0, 0);
-  }, [isCategoryLevel, categoryFieldId, hierarchyFieldIds.subcategories, filteredContestants]);
+  }, [isCategoryLevel, categoryFieldId, hierarchyFieldIds.subcategories, filteredContestants, resolveValue]);
 
   // Helper to get contestant subtitle (dance name)
   const getContestantSubtitle = useCallback((r: any) => {
