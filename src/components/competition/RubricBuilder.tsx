@@ -586,8 +586,51 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
 
     toast({ title: "Rubric saved", description: `${values.criteria.length} criteria saved successfully.` });
   };
+  const handleSaveTemplate = async () => {
+    if (!user?.id || !templateName.trim()) return;
+    const values = form.getValues();
+    const config = {
+      type: "rubric_template",
+      scaleSize,
+      weightMode,
+      useCustomPoints,
+      scaleLabels: values.scaleLabels,
+      criteria: values.criteria.map(({ id, ...rest }) => rest),
+    };
+    const { error } = await supabase.from("form_templates").insert({
+      user_id: user.id,
+      name: templateName.trim(),
+      description: `Rubric template with ${values.criteria.length} criteria`,
+      config,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Template saved", description: `"${templateName}" saved successfully.` });
+      setShowSaveTemplate(false);
+      setTemplateName("");
+      queryClient.invalidateQueries({ queryKey: ["rubric_templates"] });
+    }
+  };
 
-  const scaleLabels = form.watch("scaleLabels");
+  const handleLoadTemplate = (template: any) => {
+    const cfg = template.config;
+    if (cfg.scaleSize) setScaleSize(cfg.scaleSize);
+    if (cfg.weightMode) setWeightMode(cfg.weightMode);
+    if (cfg.useCustomPoints !== undefined) setUseCustomPoints(cfg.useCustomPoints);
+    if (cfg.scaleLabels) form.setValue("scaleLabels", cfg.scaleLabels);
+    if (cfg.criteria) form.setValue("criteria", cfg.criteria);
+    setShowLoadTemplate(false);
+    toast({ title: "Template loaded", description: `"${template.name}" applied to rubric.` });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    await supabase.from("form_templates").delete().eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["rubric_templates"] });
+    toast({ title: "Template deleted" });
+  };
+
+
   const watchedCriteria = form.watch("criteria");
   const totalWeight = (watchedCriteria || []).reduce((sum, c) => sum + (Number(c.weight_percent) || 0), 0);
 
