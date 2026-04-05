@@ -414,6 +414,25 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const [scaleSize, setScaleSize] = useState(5);
   const [weightMode, setWeightMode] = useState<"percent" | "points">(existingWeightMode);
   const [useCustomPoints, setUseCustomPoints] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showLoadTemplate, setShowLoadTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch saved templates
+  const { data: savedTemplates } = useQuery({
+    queryKey: ["rubric_templates", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("form_templates")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      return (data || []).filter((t: any) => t.config?.type === "rubric_template");
+    },
+  });
 
   // Fetch categories for the competition
   const { data: allCategories } = useQuery({
