@@ -37,17 +37,20 @@ function getBandForValue(
   value: number,
   pv: Record<string, number | PointRange>,
   scaleLabels: Record<string, string>,
-): { level: number; label: string; range: string } | null {
-  // Sort scale positions numerically
+  criterion: RubricCriterion,
+): { level: number; label: string; range: string; description: string } | null {
   const positions = Object.keys(pv).map(Number).sort((a, b) => a - b);
   for (const pos of positions) {
     const v = pv[String(pos)];
+    const desc = pos <= 5
+      ? ((criterion as any)[`description_${pos}`] || "")
+      : (criterion.scale_descriptions?.[String(pos)] || "");
     if (typeof v === "object" && v !== null && "min" in v && "max" in v) {
       if (value >= v.min && value <= v.max) {
-        return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v.min}–${v.max}` };
+        return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v.min}–${v.max}`, description: desc };
       }
     } else if (typeof v === "number" && Math.round(value) === v) {
-      return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v}` };
+      return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v}`, description: desc };
     }
   }
   return null;
