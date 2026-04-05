@@ -77,7 +77,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false, 
   }
 
   // Current band for custom points
-  const currentBand = useCustom && value > 0 ? getBandForValue(value, criterion.point_values, labels) : null;
+  const currentBand = useCustom && value > 0 ? getBandForValue(value, criterion.point_values, labels, criterion) : null;
 
   // For non-custom: get the nearest whole-number descriptor
   const nearestDesc = !useCustom && value > 0 ? descriptions[Math.round(value)] : null;
