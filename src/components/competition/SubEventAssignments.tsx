@@ -889,19 +889,36 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               </SelectContent>
             </Select>
           </div>
-          {assignLevelId && (
-            <div className="min-w-[140px]">
-              <label className="text-[10px] text-muted-foreground">Sub-Event</label>
-              <Select onValueChange={(v) => { onAddSubEvent(v); setShowAssign(false); setAssignLevelId(""); }}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sub-event" /></SelectTrigger>
-                <SelectContent>
-                  {subEventsForLevel
-                    ?.filter(se => !assignedSubEventIds.includes(se.id))
-                    .map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {assignLevelId && (() => {
+            const unassigned = subEventsForLevel?.filter(se => !assignedSubEventIds.includes(se.id)) || [];
+            return (
+              <>
+                <div className="min-w-[140px]">
+                  <label className="text-[10px] text-muted-foreground">Sub-Event</label>
+                  <Select onValueChange={(v) => { onAddSubEvent(v); setShowAssign(false); setAssignLevelId(""); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sub-event" /></SelectTrigger>
+                    <SelectContent>
+                      {unassigned.map(se => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {unassigned.length > 1 && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs h-8"
+                    onClick={() => {
+                      unassigned.forEach(se => onAddSubEvent(se.id));
+                      setShowAssign(false);
+                      setAssignLevelId("");
+                    }}
+                  >
+                    Assign All ({unassigned.length})
+                  </Button>
+                )}
+              </>
+            );
+          })()}
           <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => { setShowAssign(false); setAssignLevelId(""); }}>Cancel</Button>
         </div>
       )}
