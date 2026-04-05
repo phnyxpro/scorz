@@ -197,45 +197,27 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
                 <Alert className="border-green-500/50 bg-green-500/10">
                   <Zap className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-700">
-                    <strong>Scoring Active:</strong> {activeLevelName} → {activeSubEventName}
+                    <strong>Scoring Active:</strong> {activeLevelName}
                     <br />
-                    <span className="text-xs">Judges will automatically load this level and sub-event</span>
+                    <span className="text-xs">Judges will automatically load this level and all its sub-events</span>
                   </AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Level</label>
-                  <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!!isActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {levels?.map(level => (
-                        <SelectItem key={level.id} value={level.id}>
-                          {level.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Sub-Event</label>
-                  <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId} disabled={!selectedLevelId || !!isActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sub-event" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeLevelSubEvents?.map(subEvent => (
-                        <SelectItem key={subEvent.id} value={subEvent.id}>
-                          {subEvent.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Level</label>
+                <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!!isActive}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels?.map(level => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex gap-2">
