@@ -7,6 +7,8 @@ export interface RubricCriterion {
   id: string;
   name: string;
   notes?: string | null;
+  point_values?: Record<string, number | { min: number; max: number }>;
+  weight_percent?: number;
 }
 
 interface ScoreCardProps {
