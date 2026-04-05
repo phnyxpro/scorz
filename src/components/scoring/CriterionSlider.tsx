@@ -188,9 +188,14 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false, 
 
       {/* Band indicator for custom points */}
       {useCustom && currentBand && value > 0 && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-medium text-primary">{currentBand.label}</span>
-          <span className="text-muted-foreground font-mono">({currentBand.range} pts)</span>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-medium text-primary">{currentBand.label}</span>
+            <span className="text-muted-foreground font-mono">({currentBand.range} pts)</span>
+          </div>
+          {currentBand.description && (
+            <p className="text-xs text-muted-foreground italic">{currentBand.description}</p>
+          )}
         </div>
       )}
 
