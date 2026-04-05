@@ -512,7 +512,7 @@ export default function TabulatorDashboard() {
       return data;
     },
   });
-  const activeScoringSubEventId = activeComp?.active_scoring_sub_event_id;
+  const activeScoringLevelId = activeComp?.active_scoring_level_id;
   const setActiveScoring = useSetActiveScoring();
 
   const activeSubEvent = overview?.subEvents.find((se) => se.id === activeSubEventId);
