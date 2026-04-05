@@ -45,13 +45,10 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   // Active scoring state
   const updateActive = useUpdateActiveScoringConfig();
   const [selectedLevelId, setSelectedLevelId] = useState(competition?.active_scoring_level_id || "");
-  const [selectedSubEventId, setSelectedSubEventId] = useState(competition?.active_scoring_sub_event_id || "");
-  const { data: activeLevelSubEvents } = useSubEvents(selectedLevelId || undefined);
 
   useEffect(() => {
     setSelectedLevelId(competition?.active_scoring_level_id || "");
-    setSelectedSubEventId(competition?.active_scoring_sub_event_id || "");
-  }, [competition?.active_scoring_level_id, competition?.active_scoring_sub_event_id]);
+  }, [competition?.active_scoring_level_id]);
 
   useEffect(() => {
     if (competition?.scoring_method) {
