@@ -640,7 +640,7 @@ export default function TabulatorDashboard() {
                         levelSortOrder={level.sort_order}
                       />
 
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-between">
                         <Button asChild variant="default" size="sm">
                           <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
                             <Trophy className="h-3.5 w-3.5 mr-1.5" />
@@ -648,6 +648,19 @@ export default function TabulatorDashboard() {
                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Link>
                         </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Active Scoring</span>
+                          <Switch
+                            checked={activeScoringLevelId === level.id}
+                            onCheckedChange={(checked) => {
+                              setActiveScoring.mutate({
+                                competitionId: selectedCompId!,
+                                levelId: checked ? level.id : null,
+                                subEventId: null,
+                              });
+                            }}
+                          />
+                        </div>
                       </div>
 
                       {levelSubEvents.length === 0 ? (
