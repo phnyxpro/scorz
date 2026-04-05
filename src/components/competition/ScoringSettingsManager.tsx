@@ -126,8 +126,8 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   };
 
   const handleActivateScoring = () => {
-    if (!selectedLevelId || !selectedSubEventId) return;
-    updateActive.mutate({ competitionId, levelId: selectedLevelId, subEventId: selectedSubEventId });
+    if (!selectedLevelId) return;
+    updateActive.mutate({ competitionId, levelId: selectedLevelId, subEventId: null });
   };
 
   const handleDeactivateScoring = () => {
