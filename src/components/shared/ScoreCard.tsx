@@ -57,6 +57,16 @@ export function ScoreCard({
   const sectionStyle = { marginBottom: '8px' };
   const labelStyle = { fontWeight: 'bold', display: 'inline-block', minWidth: '80px' };
 
+  const getMaxPoints = (c: RubricCriterion): number | null => {
+    if (!c.point_values) return null;
+    let max = 0;
+    for (const v of Object.values(c.point_values)) {
+      if (typeof v === 'number') max = Math.max(max, v);
+      else if (v && typeof v === 'object' && 'max' in v) max = Math.max(max, v.max);
+    }
+    return max > 0 ? max : null;
+  };
+
   const criteria = rubricCriteria.length > 0
     ? rubricCriteria
     : [{ id: 'creativity', name: 'Creativity' }, { id: 'technique', name: 'Technique' }, { id: 'presentation', name: 'Presentation' }, { id: 'overall', name: 'Overall' }];
