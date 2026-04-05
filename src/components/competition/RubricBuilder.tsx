@@ -406,7 +406,15 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   });
   const categories = allCategories || [];
 
-  const scalePoints = useMemo(() => Array.from({ length: scaleSize }, (_, i) => i + 1), [scaleSize]);
+  const [scaleOrder, setScaleOrder] = useState<number[]>([]);
+  const scalePoints = useMemo(() => {
+    const defaults = Array.from({ length: scaleSize }, (_, i) => i + 1);
+    // Use custom order if it matches the current size
+    if (scaleOrder.length === scaleSize && scaleOrder.every(n => n >= 1 && n <= scaleSize)) {
+      return scaleOrder;
+    }
+    return defaults;
+  }, [scaleSize, scaleOrder]);
 
   const form = useForm<RubricFormValues>({
     resolver: zodResolver(rubricSchema),
