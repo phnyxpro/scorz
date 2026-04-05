@@ -230,7 +230,7 @@ export default function ChiefJudgeDashboard() {
                     <Zap className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-medium">Active Scoring Control</CardTitle>
                   </div>
-                  {comp?.active_scoring_sub_event_id && (
+                  {comp?.active_scoring_level_id && (
                     <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">LIVE</Badge>
                   )}
                 </div>

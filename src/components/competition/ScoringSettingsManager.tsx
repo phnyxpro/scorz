@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useAllSubEvents, useLevels, useCompetition, useSubEvents, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
+import { useAllSubEvents, useLevels, useCompetition, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -45,13 +45,10 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   // Active scoring state
   const updateActive = useUpdateActiveScoringConfig();
   const [selectedLevelId, setSelectedLevelId] = useState(competition?.active_scoring_level_id || "");
-  const [selectedSubEventId, setSelectedSubEventId] = useState(competition?.active_scoring_sub_event_id || "");
-  const { data: activeLevelSubEvents } = useSubEvents(selectedLevelId || undefined);
 
   useEffect(() => {
     setSelectedLevelId(competition?.active_scoring_level_id || "");
-    setSelectedSubEventId(competition?.active_scoring_sub_event_id || "");
-  }, [competition?.active_scoring_level_id, competition?.active_scoring_sub_event_id]);
+  }, [competition?.active_scoring_level_id]);
 
   useEffect(() => {
     if (competition?.scoring_method) {
@@ -129,8 +126,8 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
   };
 
   const handleActivateScoring = () => {
-    if (!selectedLevelId || !selectedSubEventId) return;
-    updateActive.mutate({ competitionId, levelId: selectedLevelId, subEventId: selectedSubEventId });
+    if (!selectedLevelId) return;
+    updateActive.mutate({ competitionId, levelId: selectedLevelId, subEventId: null });
   };
 
   const handleDeactivateScoring = () => {
@@ -158,9 +155,8 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     subEvents: allSubEvents.filter(se => se.level_id === level.id),
   })).filter(group => group.subEvents.length > 0);
 
-  const isActive = competition?.active_scoring_level_id && competition?.active_scoring_sub_event_id;
+  const isActive = !!competition?.active_scoring_level_id;
   const activeLevelName = levels?.find(l => l.id === competition?.active_scoring_level_id)?.name;
-  const activeSubEventName = activeLevelSubEvents?.find(se => se.id === competition?.active_scoring_sub_event_id)?.name;
 
   return (
     <div className="space-y-4">
@@ -201,51 +197,33 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
                 <Alert className="border-green-500/50 bg-green-500/10">
                   <Zap className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-700">
-                    <strong>Scoring Active:</strong> {activeLevelName} → {activeSubEventName}
+                    <strong>Scoring Active:</strong> {activeLevelName}
                     <br />
-                    <span className="text-xs">Judges will automatically load this level and sub-event</span>
+                    <span className="text-xs">Judges will automatically load this level and all its sub-events</span>
                   </AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Level</label>
-                  <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!!isActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {levels?.map(level => (
-                        <SelectItem key={level.id} value={level.id}>
-                          {level.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Sub-Event</label>
-                  <Select value={selectedSubEventId} onValueChange={setSelectedSubEventId} disabled={!selectedLevelId || !!isActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sub-event" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeLevelSubEvents?.map(subEvent => (
-                        <SelectItem key={subEvent.id} value={subEvent.id}>
-                          {subEvent.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Level</label>
+                <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!!isActive}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels?.map(level => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex gap-2">
                 <Button
                   onClick={handleActivateScoring}
-                  disabled={!selectedLevelId || !selectedSubEventId || !!isActive || updateActive.isPending}
+                  disabled={!selectedLevelId || !!isActive || updateActive.isPending}
                   className="flex-1"
                 >
                   {updateActive.isPending ? "Activating..." : "Activate Scoring"}
