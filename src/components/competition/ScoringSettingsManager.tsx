@@ -155,9 +155,8 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
     subEvents: allSubEvents.filter(se => se.level_id === level.id),
   })).filter(group => group.subEvents.length > 0);
 
-  const isActive = competition?.active_scoring_level_id && competition?.active_scoring_sub_event_id;
+  const isActive = !!competition?.active_scoring_level_id;
   const activeLevelName = levels?.find(l => l.id === competition?.active_scoring_level_id)?.name;
-  const activeSubEventName = activeLevelSubEvents?.find(se => se.id === competition?.active_scoring_sub_event_id)?.name;
 
   return (
     <div className="space-y-4">
