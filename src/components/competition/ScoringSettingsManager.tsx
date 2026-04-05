@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useAllSubEvents, useLevels, useCompetition, useSubEvents, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
+import { useAllSubEvents, useLevels, useCompetition, useUpdateActiveScoringConfig } from "@/hooks/useCompetitions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
