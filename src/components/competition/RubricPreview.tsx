@@ -43,7 +43,13 @@ export function RubricPreview({ criteria, scaleLabels, competitionName }: Rubric
     comments: "Sample comment for preview", judge_signature: null,
   };
 
-  const rubricCriteriaForCard = criteria.map((c) => ({ id: c.id, name: c.name, notes: c.notes }));
+  const rubricCriteriaForCard = criteria.map((c) => ({
+    id: c.id,
+    name: c.name,
+    notes: c.notes,
+    point_values: c.point_values,
+    weight_percent: c.weight_percent,
+  }));
 
   if (!criteria.length) return null;
 

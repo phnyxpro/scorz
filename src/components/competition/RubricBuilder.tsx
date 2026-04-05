@@ -16,6 +16,8 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  horizontalListSortingStrategy,
+  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -374,6 +376,26 @@ function SortableAccordionCard({
   );
 }
 
+/* ─── Sortable Scale Column Header ─── */
+function SortableScaleHeader({ scaleNum, label }: { scaleNum: number; label: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `scale-${scaleNum}` });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    cursor: "grab",
+  };
+  return (
+    <TableHead ref={setNodeRef} style={style} className="min-w-[140px] text-center" {...attributes} {...listeners}>
+      <div className="flex items-center justify-center gap-1">
+        <GripVertical className="h-3 w-3 text-muted-foreground rotate-90" />
+        <div className="font-mono text-xs text-primary">{scaleNum}</div>
+      </div>
+      <div className="text-xs text-muted-foreground truncate">{label}</div>
+    </TableHead>
+  );
+}
+
 /* ─── Main Component ─── */
 export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const isMobile = useIsMobile();
@@ -404,7 +426,15 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   });
   const categories = allCategories || [];
 
-  const scalePoints = useMemo(() => Array.from({ length: scaleSize }, (_, i) => i + 1), [scaleSize]);
+  const [scaleOrder, setScaleOrder] = useState<number[]>([]);
+  const scalePoints = useMemo(() => {
+    const defaults = Array.from({ length: scaleSize }, (_, i) => i + 1);
+    // Use custom order if it matches the current size
+    if (scaleOrder.length === scaleSize && scaleOrder.every(n => n >= 1 && n <= scaleSize)) {
+      return scaleOrder;
+    }
+    return defaults;
+  }, [scaleSize, scaleOrder]);
 
   const form = useForm<RubricFormValues>({
     resolver: zodResolver(rubricSchema),
@@ -416,6 +446,10 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const scaleSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   useEffect(() => {
@@ -456,6 +490,17 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
       if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex);
     }
   }, [fields, move]);
+
+  const handleScaleColumnDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = scalePoints.findIndex((n) => `scale-${n}` === active.id);
+      const newIndex = scalePoints.findIndex((n) => `scale-${n}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        setScaleOrder(arrayMove(scalePoints, oldIndex, newIndex));
+      }
+    }
+  }, [scalePoints]);
 
   const handleLoadDefaults = useCallback(() => {
     form.setValue("scaleLabels", DEFAULT_SCALE_LABELS);
@@ -599,12 +644,13 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
                       <TableHead className="w-10" />
                       <TableHead className="w-10">#</TableHead>
                       <TableHead className="min-w-[180px]">Criterion</TableHead>
-                      {scalePoints.map((n) => (
-                        <TableHead key={n} className="min-w-[140px] text-center">
-                          <div className="font-mono text-xs text-primary">{n}</div>
-                          <div className="text-xs text-muted-foreground truncate">{scaleLabels[String(n)] || `Point ${n}`}</div>
-                        </TableHead>
-                      ))}
+                      <DndContext sensors={scaleSensors} collisionDetection={closestCenter} onDragEnd={handleScaleColumnDragEnd}>
+                        <SortableContext items={scalePoints.map(n => `scale-${n}`)} strategy={horizontalListSortingStrategy}>
+                          {scalePoints.map((n) => (
+                            <SortableScaleHeader key={n} scaleNum={n} label={scaleLabels[String(n)] || `Point ${n}`} />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
                       <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>

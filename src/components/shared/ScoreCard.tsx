@@ -7,6 +7,8 @@ export interface RubricCriterion {
   id: string;
   name: string;
   notes?: string | null;
+  point_values?: Record<string, number | { min: number; max: number }>;
+  weight_percent?: number;
 }
 
 interface ScoreCardProps {
@@ -54,6 +56,16 @@ export function ScoreCard({
 
   const sectionStyle = { marginBottom: '8px' };
   const labelStyle = { fontWeight: 'bold', display: 'inline-block', minWidth: '80px' };
+
+  const getMaxPoints = (c: RubricCriterion): number | null => {
+    if (!c.point_values) return null;
+    let max = 0;
+    for (const v of Object.values(c.point_values)) {
+      if (typeof v === 'number') max = Math.max(max, v);
+      else if (v && typeof v === 'object' && 'max' in v) max = Math.max(max, v.max);
+    }
+    return max > 0 ? max : null;
+  };
 
   const criteria = rubricCriteria.length > 0
     ? rubricCriteria
@@ -112,9 +124,14 @@ export function ScoreCard({
       <div style={sectionStyle}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Scoring Criteria:</div>
         <div style={scoreGridStyle}>
-          {criteria.map(c => (
-            <div key={c.id} style={scoreBoxStyle}>{c.name}</div>
-          ))}
+          {criteria.map(c => {
+            const maxPts = getMaxPoints(c);
+            return (
+              <div key={c.id} style={scoreBoxStyle}>
+                {c.name}{maxPts ? ` (/${maxPts})` : ''}
+              </div>
+            );
+          })}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colCount}, 1fr)`, gap: '4px', marginTop: '4px' }}>
           {criteria.map(c => (
