@@ -223,7 +223,7 @@ export function ScoringSettingsManager({ competitionId }: ScoringSettingsManager
               <div className="flex gap-2">
                 <Button
                   onClick={handleActivateScoring}
-                  disabled={!selectedLevelId || !selectedSubEventId || !!isActive || updateActive.isPending}
+                  disabled={!selectedLevelId || !!isActive || updateActive.isPending}
                   className="flex-1"
                 >
                   {updateActive.isPending ? "Activating..." : "Activate Scoring"}
