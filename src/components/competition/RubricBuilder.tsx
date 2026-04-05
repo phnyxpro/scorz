@@ -467,6 +467,17 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
     }
   }, [fields, move]);
 
+  const handleScaleColumnDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = scalePoints.findIndex((n) => `scale-${n}` === active.id);
+      const newIndex = scalePoints.findIndex((n) => `scale-${n}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        setScaleOrder(arrayMove(scalePoints, oldIndex, newIndex));
+      }
+    }
+  }, [scalePoints]);
+
   const handleLoadDefaults = useCallback(() => {
     form.setValue("scaleLabels", DEFAULT_SCALE_LABELS);
     setScaleSize(5);
