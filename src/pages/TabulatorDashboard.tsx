@@ -691,16 +691,6 @@ export default function TabulatorDashboard() {
                                       }>
                                         {se.status}
                                       </Badge>
-                                      <Switch
-                                        checked={activeScoringSubEventId === se.id}
-                                        onCheckedChange={(checked) => {
-                                          setActiveScoring.mutate({
-                                            competitionId: selectedCompId!,
-                                            levelId: checked ? level.id : null,
-                                            subEventId: checked ? se.id : null,
-                                          });
-                                        }}
-                                      />
                                       <Button
                                         size="sm"
                                         variant={isActive ? "secondary" : "default"}
