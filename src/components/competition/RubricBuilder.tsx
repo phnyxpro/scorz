@@ -640,12 +640,13 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
                       <TableHead className="w-10" />
                       <TableHead className="w-10">#</TableHead>
                       <TableHead className="min-w-[180px]">Criterion</TableHead>
-                      {scalePoints.map((n) => (
-                        <TableHead key={n} className="min-w-[140px] text-center">
-                          <div className="font-mono text-xs text-primary">{n}</div>
-                          <div className="text-xs text-muted-foreground truncate">{scaleLabels[String(n)] || `Point ${n}`}</div>
-                        </TableHead>
-                      ))}
+                      <DndContext sensors={scaleSensors} collisionDetection={closestCenter} onDragEnd={handleScaleColumnDragEnd}>
+                        <SortableContext items={scalePoints.map(n => `scale-${n}`)} strategy={horizontalListSortingStrategy}>
+                          {scalePoints.map((n) => (
+                            <SortableScaleHeader key={n} scaleNum={n} label={scaleLabels[String(n)] || `Point ${n}`} />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
                       <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>
