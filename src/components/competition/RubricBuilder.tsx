@@ -448,6 +448,10 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const scaleSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
   useEffect(() => {
     if (existingScaleLabels?.labels) {
       form.setValue("scaleLabels", existingScaleLabels.labels as any);
