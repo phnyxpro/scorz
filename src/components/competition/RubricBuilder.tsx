@@ -645,12 +645,65 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
             <BookOpen className="h-5 w-5 text-secondary" />
             Scoring Rubric
           </CardTitle>
-          <div className="flex gap-2">
-            {fields.length === 0 && (
-              <Button variant="outline" size="sm" onClick={handleLoadDefaults}>
-                <Wand2 className="h-3 w-3 mr-1" /> Load Template
-              </Button>
-            )}
+          <div className="flex gap-2 flex-wrap">
+            {/* Load Template */}
+            <Dialog open={showLoadTemplate} onOpenChange={setShowLoadTemplate}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-3 w-3 mr-1" /> Load Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">Load Rubric Template</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => { handleLoadDefaults(); setShowLoadTemplate(false); }}>
+                    <Wand2 className="h-3 w-3 mr-2" /> Default Poetry Slam Template
+                  </Button>
+                  {(savedTemplates || []).map((t: any) => (
+                    <div key={t.id} className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 justify-start truncate" onClick={() => handleLoadTemplate(t)}>
+                        {t.name}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  {(!savedTemplates || savedTemplates.length === 0) && (
+                    <p className="text-xs text-muted-foreground py-2">No saved templates yet.</p>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Save Template */}
+            <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={fields.length === 0}>
+                  <Upload className="h-3 w-3 mr-1" /> Save Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">Save as Template</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Template name..."
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <Button size="sm" className="w-full" onClick={handleSaveTemplate} disabled={!templateName.trim()}>
+                    <Save className="h-3 w-3 mr-1" /> Save Template
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Save Rubric */}
             <Button size="sm" onClick={form.handleSubmit(onSubmit)} disabled={createCriterion.isPending || updateCriterion.isPending}>
               <Save className="h-3 w-3 mr-1" /> Save Rubric
             </Button>
