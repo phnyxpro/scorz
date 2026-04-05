@@ -14,6 +14,7 @@ import { UpdateNotice } from "@/components/shared/UpdateNotice";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import CompetitionDetail from "./pages/CompetitionDetail";
 
 // Lazy-loaded routes
 const PublicEvents = lazy(() => import("./pages/PublicEvents"));
@@ -25,7 +26,6 @@ const AudienceEvents = lazy(() => import("./pages/AudienceEvents"));
 const MyTickets = lazy(() => import("./pages/MyTickets"));
 const Competitions = lazy(() => import("./pages/Competitions"));
 const CompetitionContestants = lazy(() => import("./pages/CompetitionContestants"));
-const CompetitionDetail = lazy(() => import("./pages/CompetitionDetail"));
 const ContestantRegistration = lazy(() => import("./pages/ContestantRegistration"));
 const JudgeScoring = lazy(() => import("./pages/JudgeScoring"));
 const JudgingHub = lazy(() => import("./pages/JudgingHub"));
