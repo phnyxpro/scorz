@@ -376,6 +376,26 @@ function SortableAccordionCard({
   );
 }
 
+/* ─── Sortable Scale Column Header ─── */
+function SortableScaleHeader({ scaleNum, label }: { scaleNum: number; label: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `scale-${scaleNum}` });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    cursor: "grab",
+  };
+  return (
+    <TableHead ref={setNodeRef} style={style} className="min-w-[140px] text-center" {...attributes} {...listeners}>
+      <div className="flex items-center justify-center gap-1">
+        <GripVertical className="h-3 w-3 text-muted-foreground rotate-90" />
+        <div className="font-mono text-xs text-primary">{scaleNum}</div>
+      </div>
+      <div className="text-xs text-muted-foreground truncate">{label}</div>
+    </TableHead>
+  );
+}
+
 /* ─── Main Component ─── */
 export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const isMobile = useIsMobile();
