@@ -161,14 +161,27 @@ export default function JudgeScoring() {
   const timeLimitSecs = penalties?.[0]?.time_limit_seconds ?? 240;
   const gracePeriodSecs = penalties?.[0]?.grace_period_seconds ?? 15;
 
-  // Filtered contestants for the selected sub-event
+  // For category levels, collect all sub-event IDs in this level so we show all contestants
+  const levelSubEventIds = useMemo(() => {
+    if (!isCategoryLevel || !allSubEvents) return null;
+    return new Set(allSubEvents.map(se => se.id));
+  }, [isCategoryLevel, allSubEvents]);
+
+  // Filtered contestants for the selected sub-event (or entire level for category types)
   const filteredContestants = useMemo(() => {
-    const list = registrations?.filter(r => r.status === "approved" && (!subEventId || r.sub_event_id === subEventId || !r.sub_event_id)) ?? [];
+    const list = registrations?.filter(r => {
+      if (r.status !== "approved") return false;
+      if (!subEventId) return true;
+      // For category levels, show all contestants whose sub_event_id is in this level
+      if (levelSubEventIds) return !r.sub_event_id || levelSubEventIds.has(r.sub_event_id);
+      // For standard levels, filter by the specific sub-event
+      return r.sub_event_id === subEventId || !r.sub_event_id;
+    }) ?? [];
     const sorted = [...list].sort((a, b) => ((a as any).sort_order || 0) - ((b as any).sort_order || 0));
     if (!contestantSearch.trim()) return sorted;
     const q = contestantSearch.toLowerCase();
     return sorted.filter(r => r.full_name.toLowerCase().includes(q));
-  }, [registrations, subEventId, contestantSearch]);
+  }, [registrations, subEventId, levelSubEventIds, contestantSearch]);
 
   // For category-type levels, compute grouped contestants by Category field
   const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
