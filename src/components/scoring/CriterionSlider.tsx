@@ -37,17 +37,20 @@ function getBandForValue(
   value: number,
   pv: Record<string, number | PointRange>,
   scaleLabels: Record<string, string>,
-): { level: number; label: string; range: string } | null {
-  // Sort scale positions numerically
+  criterion: RubricCriterion,
+): { level: number; label: string; range: string; description: string } | null {
   const positions = Object.keys(pv).map(Number).sort((a, b) => a - b);
   for (const pos of positions) {
     const v = pv[String(pos)];
+    const desc = pos <= 5
+      ? ((criterion as any)[`description_${pos}`] || "")
+      : (criterion.scale_descriptions?.[String(pos)] || "");
     if (typeof v === "object" && v !== null && "min" in v && "max" in v) {
       if (value >= v.min && value <= v.max) {
-        return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v.min}–${v.max}` };
+        return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v.min}–${v.max}`, description: desc };
       }
     } else if (typeof v === "number" && Math.round(value) === v) {
-      return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v}` };
+      return { level: pos, label: scaleLabels[String(pos)] || `Level ${pos}`, range: `${v}`, description: desc };
     }
   }
   return null;
@@ -74,7 +77,7 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false, 
   }
 
   // Current band for custom points
-  const currentBand = useCustom && value > 0 ? getBandForValue(value, criterion.point_values, labels) : null;
+  const currentBand = useCustom && value > 0 ? getBandForValue(value, criterion.point_values, labels, criterion) : null;
 
   // For non-custom: get the nearest whole-number descriptor
   const nearestDesc = !useCustom && value > 0 ? descriptions[Math.round(value)] : null;
@@ -185,9 +188,14 @@ export function CriterionSlider({ criterion, value, onChange, disabled = false, 
 
       {/* Band indicator for custom points */}
       {useCustom && currentBand && value > 0 && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-medium text-primary">{currentBand.label}</span>
-          <span className="text-muted-foreground font-mono">({currentBand.range} pts)</span>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-medium text-primary">{currentBand.label}</span>
+            <span className="text-muted-foreground font-mono">({currentBand.range} pts)</span>
+          </div>
+          {currentBand.description && (
+            <p className="text-xs text-muted-foreground italic">{currentBand.description}</p>
+          )}
         </div>
       )}
 

@@ -40,10 +40,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, GripVertical, Wand2, Save, BookOpen, Minus, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Trash2, GripVertical, Wand2, Save, BookOpen, Minus, Star, Download, Upload } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 const criterionSchema = z.object({
   id: z.string().optional(),
@@ -412,6 +414,25 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
   const [scaleSize, setScaleSize] = useState(5);
   const [weightMode, setWeightMode] = useState<"percent" | "points">(existingWeightMode);
   const [useCustomPoints, setUseCustomPoints] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showLoadTemplate, setShowLoadTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch saved templates
+  const { data: savedTemplates } = useQuery({
+    queryKey: ["rubric_templates", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("form_templates")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      return (data || []).filter((t: any) => t.config?.type === "rubric_template");
+    },
+  });
 
   // Fetch categories for the competition
   const { data: allCategories } = useQuery({
@@ -565,6 +586,50 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
 
     toast({ title: "Rubric saved", description: `${values.criteria.length} criteria saved successfully.` });
   };
+  const handleSaveTemplate = async () => {
+    if (!user?.id || !templateName.trim()) return;
+    const values = form.getValues();
+    const config = {
+      type: "rubric_template",
+      scaleSize,
+      weightMode,
+      useCustomPoints,
+      scaleLabels: values.scaleLabels,
+      criteria: values.criteria.map(({ id, ...rest }) => rest),
+    };
+    const { error } = await supabase.from("form_templates").insert({
+      user_id: user.id,
+      name: templateName.trim(),
+      description: `Rubric template with ${values.criteria.length} criteria`,
+      config,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Template saved", description: `"${templateName}" saved successfully.` });
+      setShowSaveTemplate(false);
+      setTemplateName("");
+      queryClient.invalidateQueries({ queryKey: ["rubric_templates"] });
+    }
+  };
+
+  const handleLoadTemplate = (template: any) => {
+    const cfg = template.config;
+    if (cfg.scaleSize) setScaleSize(cfg.scaleSize);
+    if (cfg.weightMode) setWeightMode(cfg.weightMode);
+    if (cfg.useCustomPoints !== undefined) setUseCustomPoints(cfg.useCustomPoints);
+    if (cfg.scaleLabels) form.setValue("scaleLabels", cfg.scaleLabels);
+    if (cfg.criteria) form.setValue("criteria", cfg.criteria);
+    setShowLoadTemplate(false);
+    toast({ title: "Template loaded", description: `"${template.name}" applied to rubric.` });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    await supabase.from("form_templates").delete().eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["rubric_templates"] });
+    toast({ title: "Template deleted" });
+  };
+
 
   const scaleLabels = form.watch("scaleLabels");
   const watchedCriteria = form.watch("criteria");
@@ -580,12 +645,65 @@ export function RubricBuilder({ competitionId }: { competitionId: string }) {
             <BookOpen className="h-5 w-5 text-secondary" />
             Scoring Rubric
           </CardTitle>
-          <div className="flex gap-2">
-            {fields.length === 0 && (
-              <Button variant="outline" size="sm" onClick={handleLoadDefaults}>
-                <Wand2 className="h-3 w-3 mr-1" /> Load Template
-              </Button>
-            )}
+          <div className="flex gap-2 flex-wrap">
+            {/* Load Template */}
+            <Dialog open={showLoadTemplate} onOpenChange={setShowLoadTemplate}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-3 w-3 mr-1" /> Load Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">Load Rubric Template</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => { handleLoadDefaults(); setShowLoadTemplate(false); }}>
+                    <Wand2 className="h-3 w-3 mr-2" /> Default Poetry Slam Template
+                  </Button>
+                  {(savedTemplates || []).map((t: any) => (
+                    <div key={t.id} className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 justify-start truncate" onClick={() => handleLoadTemplate(t)}>
+                        {t.name}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  {(!savedTemplates || savedTemplates.length === 0) && (
+                    <p className="text-xs text-muted-foreground py-2">No saved templates yet.</p>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Save Template */}
+            <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={fields.length === 0}>
+                  <Upload className="h-3 w-3 mr-1" /> Save Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">Save as Template</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Template name..."
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <Button size="sm" className="w-full" onClick={handleSaveTemplate} disabled={!templateName.trim()}>
+                    <Save className="h-3 w-3 mr-1" /> Save Template
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Save Rubric */}
             <Button size="sm" onClick={form.handleSubmit(onSubmit)} disabled={createCriterion.isPending || updateCriterion.isPending}>
               <Save className="h-3 w-3 mr-1" /> Save Rubric
             </Button>
