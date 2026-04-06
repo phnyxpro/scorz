@@ -83,6 +83,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         profiles: profiles || [],
+        allJudgeIds: judgeIds,
       };
     },
   });
