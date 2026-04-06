@@ -351,6 +351,7 @@ export default function CompetitionDetail() {
             {!isProductionOrganiser && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
             {!isProductionOrganiser && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
             <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex-shrink-0">Leaderboard</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
