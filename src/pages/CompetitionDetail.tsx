@@ -23,6 +23,7 @@ import { EventChat } from "@/components/chat/EventChat";
 import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
 import { SpecialAwardsManager } from "@/components/competition/SpecialAwardsManager";
 import { RubricPreview } from "@/components/competition/RubricPreview";
+import { LeaderboardSection } from "@/components/competition/LeaderboardSection";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
@@ -350,6 +351,7 @@ export default function CompetitionDetail() {
             {!isProductionOrganiser && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
             {!isProductionOrganiser && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
             <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex-shrink-0">Leaderboard</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -497,6 +499,10 @@ export default function CompetitionDetail() {
 
           <TabsContent value="updates">
             <UpdatesManager competitionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <LeaderboardSection competitionId={id!} />
           </TabsContent>
           <TabsContent value="branding">
             <BrandingManager competitionId={id!} competition={comp} />
