@@ -120,8 +120,8 @@ export function LeaderboardSection({ competitionId }: Props) {
   const { data, isLoading } = useLeaderboardData(competitionId, levelId);
 
   const judgeUserIds = useMemo(() => {
-    return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
-  }, [data?.scores]);
+    return data?.allJudgeIds || [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
+  }, [data?.allJudgeIds, data?.scores]);
   const profileMap = useStaffDisplayNames(judgeUserIds);
 
   const subEventMap = useMemo(() => {
