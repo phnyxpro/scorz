@@ -61,7 +61,18 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         .select("*")
         .in("sub_event_id", subEventIds);
 
-      const judgeIds = [...new Set((scores || []).map((s: any) => s.judge_id))];
+      // Fetch all judges assigned to this level's sub-events
+      const { data: assignments } = await supabase
+        .from("sub_event_assignments")
+        .select("user_id")
+        .in("sub_event_id", subEventIds)
+        .eq("role", "judge" as any);
+
+      const assignedJudgeIds = new Set((assignments || []).map((a: any) => a.user_id));
+      const scoringJudgeIds = (scores || []).map((s: any) => s.judge_id);
+      for (const jId of scoringJudgeIds) assignedJudgeIds.add(jId);
+      const judgeIds = [...assignedJudgeIds];
+
       const { data: profiles } = judgeIds.length
         ? await supabase.from("profiles").select("user_id, full_name, email").in("user_id", judgeIds)
         : { data: [] as any[] };
@@ -72,6 +83,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         registrations: registrations || [],
         scores: (scores || []) as JudgeScore[],
         profiles: profiles || [],
+        allJudgeIds: judgeIds,
       };
     },
   });
@@ -108,8 +120,8 @@ export function LeaderboardSection({ competitionId }: Props) {
   const { data, isLoading } = useLeaderboardData(competitionId, levelId);
 
   const judgeUserIds = useMemo(() => {
-    return [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
-  }, [data?.scores]);
+    return data?.allJudgeIds || [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
+  }, [data?.allJudgeIds, data?.scores]);
   const profileMap = useStaffDisplayNames(judgeUserIds);
 
   const subEventMap = useMemo(() => {
