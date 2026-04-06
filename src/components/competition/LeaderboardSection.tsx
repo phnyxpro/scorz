@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Trophy, Eye, EyeOff } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Trophy, Eye, EyeOff, ChevronRight } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
+import { migrateFormConfig } from "@/lib/form-builder-types";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 function useLevelsForCompetition(competitionId: string | undefined) {
@@ -20,7 +22,7 @@ function useLevelsForCompetition(competitionId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competition_levels")
-        .select("id, name, sort_order, is_final_round, advancement_count")
+        .select("id, name, sort_order, is_final_round, advancement_count, structure_type")
         .eq("competition_id", competitionId!)
         .order("sort_order");
       if (error) throw error;
@@ -36,7 +38,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
     queryFn: async () => {
       const { data: competition } = await supabase
         .from("competitions")
-        .select("scoring_method")
+        .select("scoring_method, registration_form_config")
         .eq("id", competitionId!)
         .single();
 
@@ -47,11 +49,11 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         .order("event_date");
 
       const subEventIds = (subEvents || []).map((se) => se.id);
-      if (!subEventIds.length) return { scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [] };
+      if (!subEventIds.length) return { scoringMethod: "olympic", subEvents: [], registrations: [], scores: [], profiles: [], allJudgeIds: [], formConfig: null };
 
       const { data: registrations } = await supabase
         .from("contestant_registrations")
-        .select("id, full_name, user_id, sub_event_id")
+        .select("id, full_name, user_id, sub_event_id, custom_field_values")
         .eq("competition_id", competitionId!)
         .in("sub_event_id", subEventIds)
         .eq("status", "approved");
@@ -61,7 +63,6 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         .select("*")
         .in("sub_event_id", subEventIds);
 
-      // Fetch all judges assigned to this level's sub-events
       const { data: assignments } = await supabase
         .from("sub_event_assignments")
         .select("user_id")
@@ -84,7 +85,37 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         scores: (scores || []) as JudgeScore[],
         profiles: profiles || [],
         allJudgeIds: judgeIds,
+        formConfig: (competition as any)?.registration_form_config || null,
       };
+    },
+  });
+}
+
+function useLevelCategories(levelId: string | null, isCategoryLevel: boolean) {
+  return useQuery({
+    queryKey: ["competition_categories_all", levelId],
+    enabled: !!levelId && isCategoryLevel,
+    queryFn: async () => {
+      const { data: topLevel, error: e1 } = await supabase
+        .from("competition_categories")
+        .select("id, name, parent_id")
+        .eq("level_id", levelId!);
+      if (e1) throw e1;
+      if (!topLevel?.length) return [] as { id: string; name: string }[];
+
+      let allCats = [...topLevel];
+      let parentIds = topLevel.map(c => c.id);
+      for (let depth = 0; depth < 3 && parentIds.length > 0; depth++) {
+        const { data: children, error: e2 } = await supabase
+          .from("competition_categories")
+          .select("id, name, parent_id")
+          .in("parent_id", parentIds);
+        if (e2) throw e2;
+        if (!children?.length) break;
+        allCats = [...allCats, ...children];
+        parentIds = children.map(c => c.id);
+      }
+      return allCats as { id: string; name: string }[];
     },
   });
 }
@@ -102,6 +133,26 @@ function getRankBadge(rank: number, isFinalRound: boolean, advancementCount: num
   return null;
 }
 
+interface RowData {
+  regId: string;
+  name: string;
+  userId: string;
+  subEventId: string | null;
+  judgeScores: Record<string, { rawTotal: number; certified: boolean }>;
+  allJudgesRawTotal: number;
+  timePenalty: number;
+  avgFinal: number;
+  durationSeconds: number | null;
+  customFieldValues: Record<string, any>;
+}
+
+interface ContestantGroup {
+  label: string;
+  depth: number;
+  rows: RowData[];
+  children: ContestantGroup[];
+}
+
 interface Props {
   competitionId: string;
 }
@@ -110,14 +161,16 @@ export function LeaderboardSection({ competitionId }: Props) {
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // Auto-select first level
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
   const isFinalRound = selectedLevel?.is_final_round || false;
   const advancementCount = isFinalRound ? null : (selectedLevel?.advancement_count ?? null);
+  const isCategoryLevel = (selectedLevel as any)?.structure_type === "categories";
 
   const { data, isLoading } = useLeaderboardData(competitionId, levelId);
+  const { data: levelCategories } = useLevelCategories(levelId, isCategoryLevel);
 
   const judgeUserIds = useMemo(() => {
     return data?.allJudgeIds || [...new Set((data?.scores || []).map((s) => s.judge_id as string))];
@@ -132,7 +185,26 @@ export function LeaderboardSection({ competitionId }: Props) {
 
   const scoringMethod = data?.scoringMethod || "olympic";
 
-  const rows = useMemo(() => {
+  // Build value resolver for category UUIDs → names
+  const valueResolver = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cat of levelCategories || []) map.set(cat.id, cat.name);
+    return map;
+  }, [levelCategories]);
+  const resolveValue = useCallback((raw: string) => valueResolver.get(raw) || raw, [valueResolver]);
+
+  // Discover hierarchy field IDs from form config
+  const formConfig = useMemo(() => data?.formConfig ? migrateFormConfig(data.formConfig) : null, [data?.formConfig]);
+  const hierarchyFieldIds = useMemo(() => {
+    if (!formConfig || !isCategoryLevel) return { category: null, subcategories: [] as string[] };
+    const catField = formConfig.fields.find(f => f.field_type === "category_selector")?.id || null;
+    const subFields = formConfig.fields
+      .filter(f => f.field_type === "subcategory_selector")
+      .map(f => f.id);
+    return { category: catField, subcategories: subFields };
+  }, [formConfig, isCategoryLevel]);
+
+  const rows = useMemo((): RowData[] => {
     if (!data) return [];
     return (data.registrations || [])
       .map((reg) => {
@@ -158,13 +230,160 @@ export function LeaderboardSection({ competitionId }: Props) {
           timePenalty,
           avgFinal,
           durationSeconds,
+          customFieldValues: (reg as any).custom_field_values || {},
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data, scoringMethod]);
 
+  // Build grouped tree for category levels
+  const groupedTree = useMemo((): ContestantGroup[] | null => {
+    if (!isCategoryLevel || !hierarchyFieldIds.category) return null;
+    const allFieldIds = [hierarchyFieldIds.category, ...hierarchyFieldIds.subcategories];
+
+    function buildLevel(items: RowData[], fieldIdx: number, depth: number): ContestantGroup[] {
+      if (fieldIdx >= allFieldIds.length) return [];
+      const fieldId = allFieldIds[fieldIdx];
+      const buckets = new Map<string, RowData[]>();
+      for (const r of items) {
+        const val = String(r.customFieldValues[fieldId] || "Other");
+        if (!buckets.has(val)) buckets.set(val, []);
+        buckets.get(val)!.push(r);
+      }
+      const groups: ContestantGroup[] = [];
+      for (const [rawLabel, members] of buckets) {
+        const sorted = [...members].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+        const children = buildLevel(sorted, fieldIdx + 1, depth + 1);
+        groups.push({ label: resolveValue(rawLabel), depth, rows: sorted, children });
+      }
+      return groups;
+    }
+
+    return buildLevel(rows, 0, 0);
+  }, [isCategoryLevel, hierarchyFieldIds, rows, resolveValue]);
+
+  const toggleGroupCollapse = useCallback((path: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
   if (levelsLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading levels…</div>;
   if (!levels?.length) return <div className="py-8 text-center text-muted-foreground text-sm">No levels configured yet.</div>;
+
+  const colCount = 4 + judgeUserIds.length + 4; // #, name, sub-event, duration, judges..., total, penalty, final, rank
+
+  // Render a flat table for non-category levels
+  function renderFlatTable(tableRows: RowData[], globalOffset = 0) {
+    return tableRows.map((r, i) => {
+      const rank = globalOffset + i;
+      const advances = !isFinalRound && advancementCount != null && rank < advancementCount;
+      const standby = !isFinalRound && advancementCount != null && (rank === advancementCount || rank === advancementCount + 1);
+      return (
+        <TableRow
+          key={r.regId}
+          className={
+            showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+            : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
+            : showStatusStyling && isFinalRound && rank < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+            : ""
+          }
+        >
+          <TableCell className="font-mono text-muted-foreground text-xs">{rank + 1}</TableCell>
+          <TableCell className="font-medium text-sm">
+            <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors">
+              {r.name}
+            </Link>
+          </TableCell>
+          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+            {subEventMap.get(r.subEventId || "") || "—"}
+          </TableCell>
+          <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
+            {r.durationSeconds != null
+              ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
+              : "—"}
+          </TableCell>
+          {judgeUserIds.map((jId) => {
+            const js = r.judgeScores[jId];
+            return (
+              <TableCell key={jId} className="text-center font-mono text-xs">
+                {js ? (
+                  <span className={js.certified ? "text-foreground" : "text-muted-foreground"}>
+                    {js.rawTotal.toFixed(2)}
+                    {!js.certified && <span className="text-[10px] ml-0.5">*</span>}
+                  </span>
+                ) : "—"}
+              </TableCell>
+            );
+          })}
+          <TableCell className="text-center font-mono font-bold text-xs">{r.allJudgesRawTotal.toFixed(2)}</TableCell>
+          <TableCell className="text-center font-mono text-xs">
+            {r.timePenalty > 0 ? (
+              <span className="text-destructive">-{r.timePenalty.toFixed(2)}</span>
+            ) : (
+              <span className="text-muted-foreground">0</span>
+            )}
+          </TableCell>
+          <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
+          <TableCell className="text-center">
+            <div className="flex items-center justify-center gap-1">
+              <Badge variant={rank === 0 ? "default" : "outline"} className="text-xs font-mono">{rank + 1}</Badge>
+              {showStatusStyling && getRankBadge(rank, isFinalRound, advancementCount)}
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    });
+  }
+
+  // Render grouped rows with collapsible category headers
+  function renderGroupedRows(groups: ContestantGroup[], parentPath = ""): React.ReactNode[] {
+    const elements: React.ReactNode[] = [];
+    for (const group of groups) {
+      const path = parentPath ? `${parentPath}/${group.label}` : group.label;
+      const isCollapsed = collapsedGroups.has(path);
+      const depthColors = [
+        "bg-primary/10 text-primary",
+        "bg-secondary/10 text-secondary-foreground",
+        "bg-muted text-muted-foreground",
+      ];
+      const colorClass = depthColors[group.depth] || depthColors[2];
+      const paddingLeft = group.depth * 16 + 12;
+
+      elements.push(
+        <TableRow
+          key={`group-${path}`}
+          className={`cursor-pointer hover:bg-muted/50 ${colorClass}`}
+          onClick={() => toggleGroupCollapse(path)}
+        >
+          <TableCell colSpan={colCount} className="py-2">
+            <div className="flex items-center gap-2" style={{ paddingLeft }}>
+              <ChevronRight
+                className={`h-4 w-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+              />
+              <span className="font-semibold text-sm">{group.label}</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                {group.rows.length}
+              </Badge>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+
+      if (!isCollapsed) {
+        if (group.children.length > 0) {
+          elements.push(...renderGroupedRows(group.children, path));
+        } else {
+          // Leaf level: render contestant rows ranked within this group
+          elements.push(...renderFlatTable(group.rows));
+        }
+      }
+    }
+    return elements;
+  }
 
   return (
     <div className="space-y-4">
@@ -174,6 +393,7 @@ export function LeaderboardSection({ competitionId }: Props) {
           <Trophy className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-foreground">Leaderboard</h2>
           {isFinalRound && <Badge className="bg-amber-500 text-white text-xs">Final Round</Badge>}
+          {isCategoryLevel && <Badge variant="outline" className="text-[10px]">Category</Badge>}
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -201,7 +421,9 @@ export function LeaderboardSection({ competitionId }: Props) {
             {rows.length} Contestant{rows.length !== 1 ? "s" : ""} • {judgeUserIds.length} Judge{judgeUserIds.length !== 1 ? "s" : ""}
           </CardTitle>
           <CardDescription>
-            Overall ranking across all sub-events in this level.
+            {isCategoryLevel
+              ? "Grouped by category hierarchy. Click a group to expand/collapse."
+              : "Overall ranking across all sub-events in this level."}
             {isFinalRound && (
               <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
                 Final round — Champion placements shown.
@@ -240,64 +462,9 @@ export function LeaderboardSection({ competitionId }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r, i) => {
-                    const advances = !isFinalRound && advancementCount != null && i < advancementCount;
-                    const standby = !isFinalRound && advancementCount != null && (i === advancementCount || i === advancementCount + 1);
-                    return (
-                      <TableRow
-                        key={r.regId}
-                        className={
-                          showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
-                          : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
-                          : showStatusStyling && isFinalRound && i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
-                          : ""
-                        }
-                      >
-                        <TableCell className="font-mono text-muted-foreground text-xs">{i + 1}</TableCell>
-                        <TableCell className="font-medium text-sm">
-                          <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors">
-                            {r.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {subEventMap.get(r.subEventId || "") || "—"}
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
-                          {r.durationSeconds != null
-                            ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
-                            : "—"}
-                        </TableCell>
-                        {judgeUserIds.map((jId) => {
-                          const js = r.judgeScores[jId];
-                          return (
-                            <TableCell key={jId} className="text-center font-mono text-xs">
-                              {js ? (
-                                <span className={js.certified ? "text-foreground" : "text-muted-foreground"}>
-                                  {js.rawTotal.toFixed(2)}
-                                  {!js.certified && <span className="text-[10px] ml-0.5">*</span>}
-                                </span>
-                              ) : "—"}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-mono font-bold text-xs">{r.allJudgesRawTotal.toFixed(2)}</TableCell>
-                        <TableCell className="text-center font-mono text-xs">
-                          {r.timePenalty > 0 ? (
-                            <span className="text-destructive">-{r.timePenalty.toFixed(2)}</span>
-                          ) : (
-                            <span className="text-muted-foreground">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Badge variant={i === 0 ? "default" : "outline"} className="text-xs font-mono">{i + 1}</Badge>
-                            {showStatusStyling && getRankBadge(i, isFinalRound, advancementCount)}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {isCategoryLevel && groupedTree
+                    ? renderGroupedRows(groupedTree)
+                    : renderFlatTable(rows)}
                 </TableBody>
               </Table>
               <p className="text-[10px] text-muted-foreground mt-2">* Uncertified score</p>
