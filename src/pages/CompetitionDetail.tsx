@@ -500,6 +500,10 @@ export default function CompetitionDetail() {
           <TabsContent value="updates">
             <UpdatesManager competitionId={id!} />
           </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <LeaderboardSection competitionId={id!} />
+          </TabsContent>
           <TabsContent value="branding">
             <BrandingManager competitionId={id!} competition={comp} />
           </TabsContent>
