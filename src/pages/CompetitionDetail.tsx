@@ -23,6 +23,7 @@ import { EventChat } from "@/components/chat/EventChat";
 import { EmailBroadcast } from "@/components/chat/EmailBroadcast";
 import { SpecialAwardsManager } from "@/components/competition/SpecialAwardsManager";
 import { RubricPreview } from "@/components/competition/RubricPreview";
+import { LeaderboardSection } from "@/components/competition/LeaderboardSection";
 
 import { BannerUpload } from "@/components/shared/BannerUpload";
 import { DocumentUpload } from "@/components/shared/DocumentUpload";
