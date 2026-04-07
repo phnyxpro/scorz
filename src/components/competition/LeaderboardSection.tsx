@@ -144,6 +144,7 @@ interface RowData {
   userId: string;
   subEventId: string | null;
   judgeScores: Record<string, { rawTotal: number; certified: boolean }>;
+  judgeComments: Record<string, string>;
   allJudgesRawTotal: number;
   timePenalty: number;
   avgFinal: number;
