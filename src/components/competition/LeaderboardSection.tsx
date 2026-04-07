@@ -275,6 +275,15 @@ export function LeaderboardSection({ competitionId }: Props) {
     });
   }, []);
 
+  const toggleRowExpand = useCallback((regId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(regId)) next.delete(regId);
+      else next.add(regId);
+      return next;
+    });
+  }, []);
+
   if (levelsLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading levels…</div>;
   if (!levels?.length) return <div className="py-8 text-center text-muted-foreground text-sm">No levels configured yet.</div>;
 
