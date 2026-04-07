@@ -403,6 +403,35 @@ export function LeaderboardSection({ competitionId }: Props) {
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="lb-status-toggle" />
             <Label htmlFor="lb-status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={rows.length === 0}
+            className="print:hidden"
+            onClick={() => {
+              const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                const row: SheetRow = {
+                  "#": idx + 1,
+                  Contestant: r.name,
+                  "Sub-Event": subEventMap.get(r.subEventId || "") || "",
+                  Duration: r.durationSeconds != null ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.floor(r.durationSeconds % 60)).padStart(2, "0")}` : "",
+                };
+                for (const jId of judgeUserIds) {
+                  const js = r.judgeScores[jId];
+                  row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : "";
+                }
+                row["Total"] = Number(r.allJudgesRawTotal.toFixed(2));
+                row["Penalty"] = Number(r.timePenalty.toFixed(2));
+                row["Final"] = Number(r.avgFinal.toFixed(2));
+                row["Rank"] = idx + 1;
+                return row;
+              });
+              exportGoogleSheets(sheetRows, `Leaderboard_${selectedLevel?.name || "scores"}`);
+            }}
+          >
+            <Sheet className="h-4 w-4 mr-1.5" />
+            Google Sheets
+          </Button>
           <Select value={levelId || ""} onValueChange={(val) => setSelectedLevelId(val)}>
             <SelectTrigger className="w-[200px] h-8 text-sm">
               <SelectValue placeholder="Select level" />
