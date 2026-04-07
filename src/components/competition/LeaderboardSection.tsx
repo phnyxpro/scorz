@@ -6,12 +6,14 @@ import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Trophy, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, Sheet } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
+import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
