@@ -484,11 +484,23 @@ export function LeaderboardSection({ competitionId }: Props) {
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                  const sheetRows: SheetRow[] = rows.map((r, idx) => {
-                    const row: SheetRow = {
-                      "#": idx + 1,
-                      Contestant: r.name,
-                      "Sub-Event": subEventMap.get(r.subEventId || "") || "",
+                    const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                     // Build category path for category-structured events (e.g. "Solo > Female > 9+")
+                     let subEventLabel = subEventMap.get(r.subEventId || "") || "";
+                     if (isCategoryLevel && hierarchyFieldIds.category) {
+                       const allFieldIds = [hierarchyFieldIds.category, ...hierarchyFieldIds.subcategories];
+                       const parts = allFieldIds
+                         .map(fId => {
+                           const raw = r.customFieldValues[fId];
+                           return raw != null ? resolveValue(String(raw)) : null;
+                         })
+                         .filter(Boolean) as string[];
+                       if (parts.length) subEventLabel = parts.join(" > ");
+                     }
+                     const row: SheetRow = {
+                       "#": idx + 1,
+                       Contestant: r.name,
+                       "Sub-Event": subEventLabel,
                       Duration: r.durationSeconds != null ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.floor(r.durationSeconds % 60)).padStart(2, "0")}` : "",
                     };
                     // Add selected profile/registration fields
