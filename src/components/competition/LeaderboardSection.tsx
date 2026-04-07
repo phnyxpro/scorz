@@ -6,12 +6,14 @@ import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Trophy, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, Sheet } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
+import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
@@ -401,6 +403,35 @@ export function LeaderboardSection({ competitionId }: Props) {
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="lb-status-toggle" />
             <Label htmlFor="lb-status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={rows.length === 0}
+            className="print:hidden"
+            onClick={() => {
+              const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                const row: SheetRow = {
+                  "#": idx + 1,
+                  Contestant: r.name,
+                  "Sub-Event": subEventMap.get(r.subEventId || "") || "",
+                  Duration: r.durationSeconds != null ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.floor(r.durationSeconds % 60)).padStart(2, "0")}` : "",
+                };
+                for (const jId of judgeUserIds) {
+                  const js = r.judgeScores[jId];
+                  row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : "";
+                }
+                row["Total"] = Number(r.allJudgesRawTotal.toFixed(2));
+                row["Penalty"] = Number(r.timePenalty.toFixed(2));
+                row["Final"] = Number(r.avgFinal.toFixed(2));
+                row["Rank"] = idx + 1;
+                return row;
+              });
+              exportGoogleSheets(sheetRows, `Leaderboard_${selectedLevel?.name || "scores"}`);
+            }}
+          >
+            <Sheet className="h-4 w-4 mr-1.5" />
+            Google Sheets
+          </Button>
           <Select value={levelId || ""} onValueChange={(val) => setSelectedLevelId(val)}>
             <SelectTrigger className="w-[200px] h-8 text-sm">
               <SelectValue placeholder="Select level" />
