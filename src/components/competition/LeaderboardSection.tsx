@@ -165,6 +165,7 @@ export function LeaderboardSection({ competitionId }: Props) {
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
