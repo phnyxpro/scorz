@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
