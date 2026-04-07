@@ -144,6 +144,7 @@ interface RowData {
   userId: string;
   subEventId: string | null;
   judgeScores: Record<string, { rawTotal: number; certified: boolean }>;
+  judgeComments: Record<string, string>;
   allJudgesRawTotal: number;
   timePenalty: number;
   avgFinal: number;
@@ -235,8 +236,10 @@ export function LeaderboardSection({ competitionId }: Props) {
       .map((reg) => {
         const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
         const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
+        const judgeComments: Record<string, string> = {};
         for (const s of regScores) {
           judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
+          if (s.comments) judgeComments[s.judge_id] = s.comments;
         }
         const certifiedScores = regScores.filter((s) => s.is_certified);
         const rawTotals = certifiedScores.map((s) => s.raw_total);
@@ -251,6 +254,7 @@ export function LeaderboardSection({ competitionId }: Props) {
           userId: reg.user_id,
           subEventId: reg.sub_event_id,
           judgeScores,
+          judgeComments,
           allJudgesRawTotal,
           timePenalty,
           avgFinal,
@@ -377,15 +381,31 @@ export function LeaderboardSection({ competitionId }: Props) {
           </TableCell>
         </TableRow>
       );
-      if (isExpanded && formConfig) {
+      if (isExpanded) {
+        const commentEntries = Object.entries(r.judgeComments);
         elements.push(
           <TableRow key={`${r.regId}-details`} className="bg-muted/30">
-            <TableCell colSpan={colCount} className="py-3 px-6">
-              <ContestantInfoCard
-                formConfig={data?.formConfig}
-                customFieldValues={r.customFieldValues}
-                valueResolver={valueResolver}
-              />
+            <TableCell colSpan={colCount} className="py-3 px-6 space-y-4">
+              {formConfig && (
+                <ContestantInfoCard
+                  formConfig={data?.formConfig}
+                  customFieldValues={r.customFieldValues}
+                  valueResolver={valueResolver}
+                />
+              )}
+              {commentEntries.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Judge Comments</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {commentEntries.map(([jId, comment]) => (
+                      <div key={jId} className="rounded-md border border-border/50 bg-card/60 p-3">
+                        <p className="text-xs font-medium text-foreground mb-1">{profileMap.get(jId) || "Judge"}</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TableCell>
           </TableRow>
         );
