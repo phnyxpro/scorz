@@ -211,6 +211,23 @@ export function LeaderboardSection({ competitionId }: Props) {
     return { category: catField, subcategories: subFields };
   }, [formConfig, isCategoryLevel]);
 
+  // Exportable profile/registration fields from form config
+  const exportableFields = useMemo(() => {
+    if (!formConfig) return [];
+    return formConfig.fields
+      .filter(f => !["category_selector", "subcategory_selector", "signature", "section_header"].includes(f.field_type))
+      .map(f => ({ id: f.id, label: f.label }));
+  }, [formConfig]);
+
+  const toggleExportField = useCallback((fieldId: string) => {
+    setExportFieldIds(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) next.delete(fieldId);
+      else next.add(fieldId);
+      return next;
+    });
+  }, []);
+
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
     return (data.registrations || [])
