@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Trophy, Eye, EyeOff, ChevronRight, Sheet } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
+import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 function useLevelsForCompetition(competitionId: string | undefined) {
@@ -164,6 +165,7 @@ export function LeaderboardSection({ competitionId }: Props) {
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
@@ -273,6 +275,15 @@ export function LeaderboardSection({ competitionId }: Props) {
     });
   }, []);
 
+  const toggleRowExpand = useCallback((regId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(regId)) next.delete(regId);
+      else next.add(regId);
+      return next;
+    });
+  }, []);
+
   if (levelsLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading levels…</div>;
   if (!levels?.length) return <div className="py-8 text-center text-muted-foreground text-sm">No levels configured yet.</div>;
 
@@ -280,23 +291,30 @@ export function LeaderboardSection({ competitionId }: Props) {
 
   // Render a flat table for non-category levels
   function renderFlatTable(tableRows: RowData[], globalOffset = 0) {
-    return tableRows.map((r, i) => {
+    const elements: React.ReactNode[] = [];
+    tableRows.forEach((r, i) => {
       const rank = globalOffset + i;
       const advances = !isFinalRound && advancementCount != null && rank < advancementCount;
       const standby = !isFinalRound && advancementCount != null && (rank === advancementCount || rank === advancementCount + 1);
-      return (
+      const isExpanded = expandedRows.has(r.regId);
+      const rowBg = showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+        : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
+        : showStatusStyling && isFinalRound && rank < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+        : "";
+      elements.push(
         <TableRow
           key={r.regId}
-          className={
-            showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
-            : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
-            : showStatusStyling && isFinalRound && rank < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
-            : ""
-          }
+          className={`${rowBg} cursor-pointer`}
+          onClick={() => toggleRowExpand(r.regId)}
         >
-          <TableCell className="font-mono text-muted-foreground text-xs">{rank + 1}</TableCell>
+          <TableCell className="font-mono text-muted-foreground text-xs">
+            <div className="flex items-center gap-1">
+              <ChevronRight className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+              {rank + 1}
+            </div>
+          </TableCell>
           <TableCell className="font-medium text-sm">
-            <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors">
+            <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors" onClick={(e) => e.stopPropagation()}>
               {r.name}
             </Link>
           </TableCell>
@@ -338,7 +356,21 @@ export function LeaderboardSection({ competitionId }: Props) {
           </TableCell>
         </TableRow>
       );
+      if (isExpanded && formConfig) {
+        elements.push(
+          <TableRow key={`${r.regId}-details`} className="bg-muted/30">
+            <TableCell colSpan={colCount} className="py-3 px-6">
+              <ContestantInfoCard
+                formConfig={data?.formConfig}
+                customFieldValues={r.customFieldValues}
+                valueResolver={valueResolver}
+              />
+            </TableCell>
+          </TableRow>
+        );
+      }
     });
+    return elements;
   }
 
   // Render grouped rows with collapsible category headers
