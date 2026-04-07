@@ -236,8 +236,10 @@ export function LeaderboardSection({ competitionId }: Props) {
       .map((reg) => {
         const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
         const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
+        const judgeComments: Record<string, string> = {};
         for (const s of regScores) {
           judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
+          if (s.comments) judgeComments[s.judge_id] = s.comments;
         }
         const certifiedScores = regScores.filter((s) => s.is_certified);
         const rawTotals = certifiedScores.map((s) => s.raw_total);
@@ -252,6 +254,7 @@ export function LeaderboardSection({ competitionId }: Props) {
           userId: reg.user_id,
           subEventId: reg.sub_event_id,
           judgeScores,
+          judgeComments,
           allJudgesRawTotal,
           timePenalty,
           avgFinal,
