@@ -539,6 +539,12 @@ export function LeaderboardSection({ competitionId }: Props) {
                     row["Penalty"] = Number(r.timePenalty.toFixed(2));
                     row["Final"] = Number(r.avgFinal.toFixed(2));
                     row["Rank"] = idx + 1;
+                    for (const jId of judgeUserIds) {
+                      const comment = r.judgeComments[jId];
+                      if (comment) {
+                        row[`${profileMap.get(jId) || "Judge"} Comments`] = comment;
+                      }
+                    }
                     return row;
                   });
                   exportGoogleSheets(sheetRows, `Leaderboard_${selectedLevel?.name || "scores"}`);
