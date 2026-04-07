@@ -192,12 +192,13 @@ export function LeaderboardSection({ competitionId }: Props) {
 
   const scoringMethod = data?.scoringMethod || "olympic";
 
-  // Build value resolver for category UUIDs → names
+  // Build value resolver for category UUIDs and sub-event UUIDs → names
   const valueResolver = useMemo(() => {
     const map = new Map<string, string>();
     for (const cat of levelCategories || []) map.set(cat.id, cat.name);
+    for (const se of data?.subEvents || []) map.set(se.id, se.name);
     return map;
-  }, [levelCategories]);
+  }, [levelCategories, data?.subEvents]);
   const resolveValue = useCallback((raw: string) => valueResolver.get(raw) || raw, [valueResolver]);
 
   // Discover hierarchy field IDs from form config
