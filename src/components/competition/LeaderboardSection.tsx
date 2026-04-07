@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
@@ -166,6 +168,7 @@ export function LeaderboardSection({ competitionId }: Props) {
   const [showStatusStyling, setShowStatusStyling] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [exportFieldIds, setExportFieldIds] = useState<Set<string>>(new Set());
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
@@ -207,6 +210,23 @@ export function LeaderboardSection({ competitionId }: Props) {
       .map(f => f.id);
     return { category: catField, subcategories: subFields };
   }, [formConfig, isCategoryLevel]);
+
+  // Exportable profile/registration fields from form config
+  const exportableFields = useMemo(() => {
+    if (!formConfig) return [];
+    return formConfig.fields
+      .filter(f => !["category_selector", "subcategory_selector", "signature", "section_header"].includes(f.field_type))
+      .map(f => ({ id: f.id, label: f.label }));
+  }, [formConfig]);
+
+  const toggleExportField = useCallback((fieldId: string) => {
+    setExportFieldIds(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) next.delete(fieldId);
+      else next.add(fieldId);
+      return next;
+    });
+  }, []);
 
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
@@ -435,35 +455,67 @@ export function LeaderboardSection({ competitionId }: Props) {
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="lb-status-toggle" />
             <Label htmlFor="lb-status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={rows.length === 0}
-            className="print:hidden"
-            onClick={() => {
-              const sheetRows: SheetRow[] = rows.map((r, idx) => {
-                const row: SheetRow = {
-                  "#": idx + 1,
-                  Contestant: r.name,
-                  "Sub-Event": subEventMap.get(r.subEventId || "") || "",
-                  Duration: r.durationSeconds != null ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.floor(r.durationSeconds % 60)).padStart(2, "0")}` : "",
-                };
-                for (const jId of judgeUserIds) {
-                  const js = r.judgeScores[jId];
-                  row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : "";
-                }
-                row["Total"] = Number(r.allJudgesRawTotal.toFixed(2));
-                row["Penalty"] = Number(r.timePenalty.toFixed(2));
-                row["Final"] = Number(r.avgFinal.toFixed(2));
-                row["Rank"] = idx + 1;
-                return row;
-              });
-              exportGoogleSheets(sheetRows, `Leaderboard_${selectedLevel?.name || "scores"}`);
-            }}
-          >
-            <Sheet className="h-4 w-4 mr-1.5" />
-            Google Sheets
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" disabled={rows.length === 0} className="print:hidden">
+                <Sheet className="h-4 w-4 mr-1.5" />
+                Google Sheets
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-3">
+              <p className="text-sm font-medium text-foreground mb-2">Include profile columns</p>
+              {exportableFields.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto space-y-1.5 mb-3">
+                  {exportableFields.map((f) => (
+                    <div key={f.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`exp-${f.id}`}
+                        checked={exportFieldIds.has(f.id)}
+                        onCheckedChange={() => toggleExportField(f.id)}
+                      />
+                      <label htmlFor={`exp-${f.id}`} className="text-xs cursor-pointer truncate">{f.label}</label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mb-3">No registration fields available.</p>
+              )}
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                    const row: SheetRow = {
+                      "#": idx + 1,
+                      Contestant: r.name,
+                      "Sub-Event": subEventMap.get(r.subEventId || "") || "",
+                      Duration: r.durationSeconds != null ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.floor(r.durationSeconds % 60)).padStart(2, "0")}` : "",
+                    };
+                    // Add selected profile/registration fields
+                    for (const f of exportableFields) {
+                      if (exportFieldIds.has(f.id)) {
+                        const raw = r.customFieldValues[f.id];
+                        row[f.label] = raw != null ? (valueResolver.get(String(raw)) || String(raw)) : "";
+                      }
+                    }
+                    for (const jId of judgeUserIds) {
+                      const js = r.judgeScores[jId];
+                      row[profileMap.get(jId) || "Judge"] = js ? Number(js.rawTotal.toFixed(2)) : "";
+                    }
+                    row["Total"] = Number(r.allJudgesRawTotal.toFixed(2));
+                    row["Penalty"] = Number(r.timePenalty.toFixed(2));
+                    row["Final"] = Number(r.avgFinal.toFixed(2));
+                    row["Rank"] = idx + 1;
+                    return row;
+                  });
+                  exportGoogleSheets(sheetRows, `Leaderboard_${selectedLevel?.name || "scores"}`);
+                }}
+              >
+                <Sheet className="h-4 w-4 mr-1.5" />
+                Export
+              </Button>
+            </PopoverContent>
+          </Popover>
           <Select value={levelId || ""} onValueChange={(val) => setSelectedLevelId(val)}>
             <SelectTrigger className="w-[200px] h-8 text-sm">
               <SelectValue placeholder="Select level" />
