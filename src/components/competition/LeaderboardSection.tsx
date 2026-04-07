@@ -291,23 +291,30 @@ export function LeaderboardSection({ competitionId }: Props) {
 
   // Render a flat table for non-category levels
   function renderFlatTable(tableRows: RowData[], globalOffset = 0) {
-    return tableRows.map((r, i) => {
+    const elements: React.ReactNode[] = [];
+    tableRows.forEach((r, i) => {
       const rank = globalOffset + i;
       const advances = !isFinalRound && advancementCount != null && rank < advancementCount;
       const standby = !isFinalRound && advancementCount != null && (rank === advancementCount || rank === advancementCount + 1);
-      return (
+      const isExpanded = expandedRows.has(r.regId);
+      const rowBg = showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
+        : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
+        : showStatusStyling && isFinalRound && rank < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
+        : "";
+      elements.push(
         <TableRow
           key={r.regId}
-          className={
-            showStatusStyling && advances ? "bg-emerald-50 dark:bg-emerald-950/20"
-            : showStatusStyling && standby ? "bg-amber-50 dark:bg-amber-950/10"
-            : showStatusStyling && isFinalRound && rank < 3 ? "bg-amber-50/50 dark:bg-amber-950/10"
-            : ""
-          }
+          className={`${rowBg} cursor-pointer`}
+          onClick={() => toggleRowExpand(r.regId)}
         >
-          <TableCell className="font-mono text-muted-foreground text-xs">{rank + 1}</TableCell>
+          <TableCell className="font-mono text-muted-foreground text-xs">
+            <div className="flex items-center gap-1">
+              <ChevronRight className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+              {rank + 1}
+            </div>
+          </TableCell>
           <TableCell className="font-medium text-sm">
-            <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors">
+            <Link to={`/profile/${r.userId}`} className="hover:text-secondary hover:underline transition-colors" onClick={(e) => e.stopPropagation()}>
               {r.name}
             </Link>
           </TableCell>
@@ -349,7 +356,21 @@ export function LeaderboardSection({ competitionId }: Props) {
           </TableCell>
         </TableRow>
       );
+      if (isExpanded && formConfig) {
+        elements.push(
+          <TableRow key={`${r.regId}-details`} className="bg-muted/30">
+            <TableCell colSpan={colCount} className="py-3 px-6">
+              <ContestantInfoCard
+                formConfig={data?.formConfig}
+                customFieldValues={r.customFieldValues}
+                valueResolver={valueResolver}
+              />
+            </TableCell>
+          </TableRow>
+        );
+      }
     });
+    return elements;
   }
 
   // Render grouped rows with collapsible category headers
