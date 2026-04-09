@@ -601,8 +601,9 @@ export function RegistrationsSheetEditor({
       // Format data for Supabase
       const toUpsert = data.map((r, idx) => {
         const { id, temp_id, user_id, full_name, email, phone, age_category, status, sub_event_id, ...custom_field_values } = r;
+        const isRealId = id && !id.startsWith("temp_");
         return {
-          id: id || undefined,
+          id: isRealId ? id : crypto.randomUUID(),
           competition_id: competitionId,
           user_id: user_id || user?.id,
           full_name,
