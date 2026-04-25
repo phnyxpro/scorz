@@ -1,23 +1,26 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaffDisplayNames } from "@/hooks/useStaffDisplayNames";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet, Pencil, Check, X } from "lucide-react";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
 import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
+import { toast } from "sonner";
 import type { JudgeScore } from "@/hooks/useJudgeScores";
 
 function useLevelsForCompetition(competitionId: string | undefined) {
@@ -74,6 +77,11 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         .in("sub_event_id", subEventIds)
         .eq("role", "judge" as any);
 
+      const { data: durationRows } = await supabase
+        .from("performance_durations")
+        .select("contestant_registration_id, sub_event_id, duration_seconds, tabulator_id")
+        .in("sub_event_id", subEventIds);
+
       const assignedJudgeIds = new Set((assignments || []).map((a: any) => a.user_id));
       const scoringJudgeIds = (scores || []).map((s: any) => s.judge_id);
       for (const jId of scoringJudgeIds) assignedJudgeIds.add(jId);
@@ -91,6 +99,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         profiles: profiles || [],
         allJudgeIds: judgeIds,
         formConfig: (competition as any)?.registration_form_config || null,
+        durationRows: (durationRows || []) as { contestant_registration_id: string; sub_event_id: string; duration_seconds: number; tabulator_id: string }[],
       };
     },
   });
@@ -165,11 +174,17 @@ interface Props {
 
 export function LeaderboardSection({ competitionId }: Props) {
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
+  const { user, hasRole } = useAuth();
+  const queryClient = useQueryClient();
+  const canEditDuration = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [exportFieldIds, setExportFieldIds] = useState<Set<string>>(new Set());
+  const [editingDurationRegId, setEditingDurationRegId] = useState<string | null>(null);
+  const [durationDraft, setDurationDraft] = useState<string>("");
+  const [savingDuration, setSavingDuration] = useState(false);
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
@@ -230,6 +245,21 @@ export function LeaderboardSection({ competitionId }: Props) {
     });
   }, []);
 
+  // Manual durations map: prefer the average across tabulator entries per (regId, subEventId)
+  const manualDurationMap = useMemo(() => {
+    const m = new Map<string, number>(); // key: regId, value: avg seconds
+    const grouped = new Map<string, number[]>();
+    for (const d of data?.durationRows || []) {
+      const key = d.contestant_registration_id;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(Number(d.duration_seconds));
+    }
+    for (const [k, arr] of grouped) {
+      if (arr.length > 0) m.set(k, arr.reduce((a, b) => a + b, 0) / arr.length);
+    }
+    return m;
+  }, [data?.durationRows]);
+
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
     return (data.registrations || [])
@@ -246,8 +276,11 @@ export function LeaderboardSection({ competitionId }: Props) {
         const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
         const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
         const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
-        const durations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
-        const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
+        const manual = manualDurationMap.get(reg.id);
+        const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
+        const durationSeconds = manual != null
+          ? manual
+          : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
         return {
           regId: reg.id,
           name: reg.full_name,
@@ -263,7 +296,69 @@ export function LeaderboardSection({ competitionId }: Props) {
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
-  }, [data, scoringMethod]);
+  }, [data, scoringMethod, manualDurationMap]);
+
+  // Parse "m:ss" or seconds into seconds
+  const parseDurationInput = useCallback((input: string): number | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes(":")) {
+      const [m, s] = trimmed.split(":");
+      const mins = parseInt(m, 10);
+      const secs = parseFloat(s);
+      if (isNaN(mins) || isNaN(secs)) return null;
+      return mins * 60 + secs;
+    }
+    const n = parseFloat(trimmed);
+    return isNaN(n) ? null : n;
+  }, []);
+
+  const startEditDuration = useCallback((regId: string, current: number | null) => {
+    setEditingDurationRegId(regId);
+    setDurationDraft(
+      current != null
+        ? `${Math.floor(current / 60)}:${String(Math.round(current % 60)).padStart(2, "0")}`
+        : ""
+    );
+  }, []);
+
+  const cancelEditDuration = useCallback(() => {
+    setEditingDurationRegId(null);
+    setDurationDraft("");
+  }, []);
+
+  const saveDuration = useCallback(async (regId: string, subEventId: string | null) => {
+    if (!user || !subEventId) return;
+    const seconds = parseDurationInput(durationDraft);
+    if (seconds == null || seconds < 0) {
+      toast.error("Enter a valid duration (e.g. 3:45 or 225)");
+      return;
+    }
+    setSavingDuration(true);
+    try {
+      const { error } = await supabase
+        .from("performance_durations")
+        .upsert(
+          {
+            sub_event_id: subEventId,
+            contestant_registration_id: regId,
+            tabulator_id: user.id,
+            duration_seconds: seconds,
+          } as any,
+          { onConflict: "sub_event_id,contestant_registration_id,tabulator_id" }
+        );
+      if (error) throw error;
+      toast.success("Duration saved");
+      setEditingDurationRegId(null);
+      setDurationDraft("");
+      queryClient.invalidateQueries({ queryKey: ["leaderboard_data", competitionId] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save duration");
+    } finally {
+      setSavingDuration(false);
+    }
+  }, [user, durationDraft, parseDurationInput, queryClient, competitionId]);
+
 
   // Build grouped tree for category levels
   const groupedTree = useMemo((): ContestantGroup[] | null => {
@@ -346,10 +441,63 @@ export function LeaderboardSection({ competitionId }: Props) {
           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
             {subEventMap.get(r.subEventId || "") || "—"}
           </TableCell>
-          <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
-            {r.durationSeconds != null
-              ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
-              : "—"}
+          <TableCell
+            className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {editingDurationRegId === r.regId ? (
+              <div className="flex items-center justify-center gap-1">
+                <Input
+                  value={durationDraft}
+                  onChange={(e) => setDurationDraft(e.target.value)}
+                  placeholder="m:ss"
+                  className="h-7 w-20 text-xs font-mono px-1.5"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveDuration(r.regId, r.subEventId);
+                    if (e.key === "Escape") cancelEditDuration();
+                  }}
+                  disabled={savingDuration}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => saveDuration(r.regId, r.subEventId)}
+                  disabled={savingDuration}
+                >
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={cancelEditDuration}
+                  disabled={savingDuration}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5 group">
+                <span>
+                  {r.durationSeconds != null
+                    ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
+                    : "—"}
+                </span>
+                {canEditDuration && r.subEventId && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEditDuration(r.regId, r.durationSeconds)}
+                    title="Edit duration"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            )}
           </TableCell>
           {judgeUserIds.map((jId) => {
             const js = r.judgeScores[jId];
