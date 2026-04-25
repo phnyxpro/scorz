@@ -66,7 +66,7 @@ serve(async (req) => {
         limit: 100,
       });
 
-      const paymentSessions = sessions.data.filter(s => s.mode === "payment");
+      const paymentSessions = sessions.data.filter((s: any) => s.mode === "payment");
       logStep("Found payment sessions", { count: paymentSessions.length });
 
       // Ensure each session has a corresponding credit row
