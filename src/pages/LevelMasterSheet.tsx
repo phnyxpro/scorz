@@ -42,6 +42,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
         .from("sub_events")
         .select("*")
         .eq("level_id", levelId!)
+        .order("sort_order", { ascending: true })
         .order("event_date");
 
       const subEventIds = (subEvents || []).map((se) => se.id);
