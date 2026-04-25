@@ -116,8 +116,9 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("send-ticket-email error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
     return new Response(
-      JSON.stringify({ error: e.message }),
+      JSON.stringify({ error: msg }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
