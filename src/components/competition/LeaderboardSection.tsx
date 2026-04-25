@@ -245,6 +245,21 @@ export function LeaderboardSection({ competitionId }: Props) {
     });
   }, []);
 
+  // Manual durations map: prefer the average across tabulator entries per (regId, subEventId)
+  const manualDurationMap = useMemo(() => {
+    const m = new Map<string, number>(); // key: regId, value: avg seconds
+    const grouped = new Map<string, number[]>();
+    for (const d of data?.durationRows || []) {
+      const key = d.contestant_registration_id;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(Number(d.duration_seconds));
+    }
+    for (const [k, arr] of grouped) {
+      if (arr.length > 0) m.set(k, arr.reduce((a, b) => a + b, 0) / arr.length);
+    }
+    return m;
+  }, [data?.durationRows]);
+
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
     return (data.registrations || [])
@@ -261,8 +276,11 @@ export function LeaderboardSection({ competitionId }: Props) {
         const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
         const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
         const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
-        const durations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
-        const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
+        const manual = manualDurationMap.get(reg.id);
+        const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
+        const durationSeconds = manual != null
+          ? manual
+          : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
         return {
           regId: reg.id,
           name: reg.full_name,
@@ -278,7 +296,69 @@ export function LeaderboardSection({ competitionId }: Props) {
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
-  }, [data, scoringMethod]);
+  }, [data, scoringMethod, manualDurationMap]);
+
+  // Parse "m:ss" or seconds into seconds
+  const parseDurationInput = useCallback((input: string): number | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes(":")) {
+      const [m, s] = trimmed.split(":");
+      const mins = parseInt(m, 10);
+      const secs = parseFloat(s);
+      if (isNaN(mins) || isNaN(secs)) return null;
+      return mins * 60 + secs;
+    }
+    const n = parseFloat(trimmed);
+    return isNaN(n) ? null : n;
+  }, []);
+
+  const startEditDuration = useCallback((regId: string, current: number | null) => {
+    setEditingDurationRegId(regId);
+    setDurationDraft(
+      current != null
+        ? `${Math.floor(current / 60)}:${String(Math.round(current % 60)).padStart(2, "0")}`
+        : ""
+    );
+  }, []);
+
+  const cancelEditDuration = useCallback(() => {
+    setEditingDurationRegId(null);
+    setDurationDraft("");
+  }, []);
+
+  const saveDuration = useCallback(async (regId: string, subEventId: string | null) => {
+    if (!user || !subEventId) return;
+    const seconds = parseDurationInput(durationDraft);
+    if (seconds == null || seconds < 0) {
+      toast.error("Enter a valid duration (e.g. 3:45 or 225)");
+      return;
+    }
+    setSavingDuration(true);
+    try {
+      const { error } = await supabase
+        .from("performance_durations")
+        .upsert(
+          {
+            sub_event_id: subEventId,
+            contestant_registration_id: regId,
+            tabulator_id: user.id,
+            duration_seconds: seconds,
+          } as any,
+          { onConflict: "sub_event_id,contestant_registration_id,tabulator_id" }
+        );
+      if (error) throw error;
+      toast.success("Duration saved");
+      setEditingDurationRegId(null);
+      setDurationDraft("");
+      queryClient.invalidateQueries({ queryKey: ["leaderboard_data", competitionId] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save duration");
+    } finally {
+      setSavingDuration(false);
+    }
+  }, [user, durationDraft, parseDurationInput, queryClient, competitionId]);
+
 
   // Build grouped tree for category levels
   const groupedTree = useMemo((): ContestantGroup[] | null => {
