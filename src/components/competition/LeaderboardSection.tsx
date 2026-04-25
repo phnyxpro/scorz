@@ -77,6 +77,11 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         .in("sub_event_id", subEventIds)
         .eq("role", "judge" as any);
 
+      const { data: durationRows } = await supabase
+        .from("performance_durations")
+        .select("contestant_registration_id, sub_event_id, duration_seconds, tabulator_id")
+        .in("sub_event_id", subEventIds);
+
       const assignedJudgeIds = new Set((assignments || []).map((a: any) => a.user_id));
       const scoringJudgeIds = (scores || []).map((s: any) => s.judge_id);
       for (const jId of scoringJudgeIds) assignedJudgeIds.add(jId);
@@ -94,6 +99,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
         profiles: profiles || [],
         allJudgeIds: judgeIds,
         formConfig: (competition as any)?.registration_form_config || null,
+        durationRows: (durationRows || []) as { contestant_registration_id: string; sub_event_id: string; duration_seconds: number; tabulator_id: string }[],
       };
     },
   });
