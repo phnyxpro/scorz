@@ -157,7 +157,7 @@ export function RichTextEditor({
       TextStyle,
       Placeholder.configure({ placeholder }),
       Image.configure({ inline: false, allowBase64: true }),
-    ],
+    ] as any,
     content,
     editable,
     editorProps: {
