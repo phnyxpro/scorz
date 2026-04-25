@@ -11,6 +11,8 @@ import { EventChat } from "@/components/chat/EventChat";
 import { useChatUnreadCount } from "@/hooks/useEventChat";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
+import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
+import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 
 export default function JudgeDashboard() {
     const { assignedCompetitions, subEventDetails, myAssignments, isLoading } = useStaffView("judge");
@@ -132,9 +134,12 @@ function CompetitionAssignmentSection({ competition, subEventDetails, myAssignme
 
 function SubEventCard({ subEvent, competitionId, isChief }: { subEvent: any, competitionId: string, isChief: boolean }) {
     const { data: registrations } = useRegistrations(competitionId);
+    const { data: specialAwards } = useSpecialAwards(competitionId);
     const contestants = useMemo(() => {
         return (registrations || []).filter((r) => r.sub_event_id === subEvent.id && r.status === "approved");
     }, [registrations, subEvent.id]);
+    const isFinalRound = !!subEvent.level?.is_final_round;
+    const showSpecialAwards = isFinalRound && specialAwards && specialAwards.length > 0 && contestants.length > 0;
 
     return (
         <Card className="border-border/50 bg-card/80 overflow-hidden hover:border-secondary/30 transition-colors">
@@ -196,6 +201,15 @@ function SubEventCard({ subEvent, competitionId, isChief }: { subEvent: any, com
                         </p>
                     )}
                 </div>
+
+                {showSpecialAwards && (
+                    <SpecialAwardsVoting
+                        awards={specialAwards!}
+                        competitionId={competitionId}
+                        subEventId={subEvent.id}
+                        contestants={contestants.map((c) => ({ id: c.id, full_name: c.full_name }))}
+                    />
+                )}
 
                 <div className="flex gap-2">
                     <Button asChild variant="outline" className="flex-1 text-xs" size="sm">

@@ -36,8 +36,6 @@ import { useOfflineCache } from "@/hooks/useOfflineCache";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { ConnectionIndicator } from "@/components/shared/ConnectionIndicator";
-import { SpecialAwardsVoting } from "@/components/competition/SpecialAwardsVoting";
-import { useSpecialAwards } from "@/components/competition/SpecialAwardsManager";
 import { ContestantInfoCard } from "@/components/shared/ContestantInfoCard";
 import { migrateFormConfig, getScorecardFields, getScorecardLayout } from "@/lib/form-builder-types";
 
@@ -59,7 +57,6 @@ export default function JudgeScoring() {
   // Offline support
   const offlineCache = useOfflineCache(competitionId);
   const offlineQueue = useOfflineQueue();
-  const { data: specialAwards } = useSpecialAwards(competitionId);
   const [selectedLevelId, setSelectedLevelId] = useState("");
   const selectedLevel = levels?.find(l => l.id === selectedLevelId) as any;
   const [selectedSubEventId, setSelectedSubEventId] = useState(searchParams.get("sub_event") || "");
@@ -1087,17 +1084,6 @@ export default function JudgeScoring() {
                     <SpeechComments value={comments} onChange={setComments} disabled={isCertified} />
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Special Awards Voting — final rounds only */}
-              {selectedLevel?.is_final_round && specialAwards && specialAwards.length > 0 && (
-                <SpecialAwardsVoting
-                  awards={specialAwards}
-                  competitionId={competitionId!}
-                  subEventId={subEventId}
-                  contestants={filteredContestants.map(r => ({ id: r.id, full_name: r.full_name }))}
-                  disabled={isCertified}
-                />
               )}
 
               {!isCertified && (
