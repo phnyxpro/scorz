@@ -70,7 +70,9 @@ export function useStaffView(role?: StaffRole) {
             const { data, error } = await supabase
                 .from("sub_events")
                 .select("*, level:competition_levels(*)")
-                .in("id", assignedSubEventIds);
+                .in("id", assignedSubEventIds)
+                .order("sort_order", { ascending: true })
+                .order("event_date");
             if (error) throw error;
             return data;
         },

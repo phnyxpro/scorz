@@ -1655,6 +1655,7 @@ export type Database = {
           max_tickets: number | null
           name: string
           profile_details_visible: boolean
+          sort_order: number
           start_time: string | null
           status: string
           ticket_price: number | null
@@ -1679,6 +1680,7 @@ export type Database = {
           max_tickets?: number | null
           name: string
           profile_details_visible?: boolean
+          sort_order?: number
           start_time?: string | null
           status?: string
           ticket_price?: number | null
@@ -1703,6 +1705,7 @@ export type Database = {
           max_tickets?: number | null
           name?: string
           profile_details_visible?: boolean
+          sort_order?: number
           start_time?: string | null
           status?: string
           ticket_price?: number | null
