@@ -441,10 +441,63 @@ export function LeaderboardSection({ competitionId }: Props) {
           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
             {subEventMap.get(r.subEventId || "") || "—"}
           </TableCell>
-          <TableCell className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
-            {r.durationSeconds != null
-              ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
-              : "—"}
+          <TableCell
+            className="text-center font-mono text-xs text-muted-foreground whitespace-nowrap"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {editingDurationRegId === r.regId ? (
+              <div className="flex items-center justify-center gap-1">
+                <Input
+                  value={durationDraft}
+                  onChange={(e) => setDurationDraft(e.target.value)}
+                  placeholder="m:ss"
+                  className="h-7 w-20 text-xs font-mono px-1.5"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveDuration(r.regId, r.subEventId);
+                    if (e.key === "Escape") cancelEditDuration();
+                  }}
+                  disabled={savingDuration}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => saveDuration(r.regId, r.subEventId)}
+                  disabled={savingDuration}
+                >
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={cancelEditDuration}
+                  disabled={savingDuration}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5 group">
+                <span>
+                  {r.durationSeconds != null
+                    ? `${Math.floor(r.durationSeconds / 60)}:${String(Math.round(r.durationSeconds % 60)).padStart(2, "0")}`
+                    : "—"}
+                </span>
+                {canEditDuration && r.subEventId && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEditDuration(r.regId, r.durationSeconds)}
+                    title="Edit duration"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            )}
           </TableCell>
           {judgeUserIds.map((jId) => {
             const js = r.judgeScores[jId];
