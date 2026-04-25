@@ -640,14 +640,23 @@ export default function TabulatorDashboard() {
                         levelSortOrder={level.sort_order}
                       />
 
-                      <div className="flex items-center justify-between">
-                        <Button asChild variant="default" size="sm">
-                          <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
-                            <Trophy className="h-3.5 w-3.5 mr-1.5" />
-                            Level Master Sheet
-                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                          </Link>
-                        </Button>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Button asChild variant="default" size="sm">
+                            <Link to={`/competitions/${selectedCompId}/level-sheet?level=${level.id}`}>
+                              <Trophy className="h-3.5 w-3.5 mr-1.5" />
+                              Level Master Sheet
+                              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/competitions/${selectedCompId}?tab=leaderboard`}>
+                              <Trophy className="h-3.5 w-3.5 mr-1.5" />
+                              Leaderboard
+                              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                            </Link>
+                          </Button>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">Active Scoring</span>
                           <Switch
