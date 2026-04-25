@@ -59,6 +59,7 @@ export function useJudgingOverview(competitionId: string | undefined) {
         .from("sub_events")
         .select("*")
         .in("level_id", levelIds)
+        .order("sort_order", { ascending: true })
         .order("event_date");
       if (se) throw se;
 

@@ -158,6 +158,7 @@ export function useSubEvents(levelId: string | undefined) {
         .from("sub_events")
         .select("*")
         .eq("level_id", levelId!)
+        .order("sort_order", { ascending: true })
         .order("event_date");
       if (error) throw error;
       return data as SubEvent[];
@@ -186,6 +187,7 @@ export function useAllSubEvents(competitionId: string | undefined) {
         .from("sub_events")
         .select("*")
         .in("level_id", levelIds)
+        .order("sort_order", { ascending: true })
         .order("event_date");
 
       if (error) throw error;

@@ -52,8 +52,9 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
 
       const { data: subEvents } = await supabase
         .from("sub_events")
-        .select("id, name")
+        .select("id, name, sort_order")
         .eq("level_id", levelId!)
+        .order("sort_order", { ascending: true })
         .order("event_date");
 
       const subEventIds = (subEvents || []).map((se) => se.id);
