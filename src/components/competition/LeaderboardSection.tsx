@@ -174,11 +174,17 @@ interface Props {
 
 export function LeaderboardSection({ competitionId }: Props) {
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
+  const { user, hasRole } = useAuth();
+  const queryClient = useQueryClient();
+  const canEditDuration = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [exportFieldIds, setExportFieldIds] = useState<Set<string>>(new Set());
+  const [editingDurationRegId, setEditingDurationRegId] = useState<string | null>(null);
+  const [durationDraft, setDurationDraft] = useState<string>("");
+  const [savingDuration, setSavingDuration] = useState(false);
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
