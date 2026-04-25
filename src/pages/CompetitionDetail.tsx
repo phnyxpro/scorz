@@ -340,7 +340,7 @@ export default function CompetitionDetail() {
           </div>
         </div>
 
-        <Tabs defaultValue={isProductionOrganiser ? "levels" : "general"} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
             {!isProductionOrganiser && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
             <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
