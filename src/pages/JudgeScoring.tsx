@@ -797,6 +797,11 @@ export default function JudgeScoring() {
                           {idx + 1}
                         </span>
                         <span className="truncate text-xs flex-1">{r.full_name}</span>
+                        {((r as any).special_entry_type === "standby_1" || (r as any).special_entry_type === "standby_2") && (
+                          <Badge className="bg-amber-500/80 text-white text-[9px] px-1 py-0 h-4 shrink-0">
+                            {(r as any).special_entry_type === "standby_1" ? "SB1" : "SB2"}
+                          </Badge>
+                        )}
                         {onStageContestant === r.id && (
                           <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
                         )}
