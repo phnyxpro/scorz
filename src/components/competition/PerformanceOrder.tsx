@@ -229,20 +229,26 @@ export function PerformanceOrder({ subEventId }: Props) {
               </CardTitle>
               <CardDescription>
                 {visibleContestants.length} contestants{hasStandbys && !showStandbys ? ` (+${contestants.length - visibleContestants.length} standby hidden)` : ""} — drag to reorder
+                {lineupLocked && (
+                  <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">· Locked for tabulation</span>
+                )}
               </CardDescription>
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
               {hasStandbys && (
                 <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-border/50 bg-muted/20">
                   <Switch id="show-standbys" checked={showStandbys} onCheckedChange={toggleShowStandbys} />
                   <Label htmlFor="show-standbys" className="text-xs cursor-pointer">Show standbys</Label>
                 </div>
               )}
-              <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)}>
+              <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)} disabled={lineupLocked}>
                 <Shuffle className="h-3.5 w-3.5 mr-1" /> Randomise Draw
               </Button>
-              <Button size="sm" onClick={assignToSlots} disabled={assigning}>
+              <Button size="sm" onClick={assignToSlots} disabled={assigning || lineupLocked}>
                 <Link className="h-3.5 w-3.5 mr-1" /> Assign to Slots
+              </Button>
+              <Button size="sm" variant={lineupLocked ? "outline" : "default"} onClick={toggleLineupLock}>
+                {lineupLocked ? "Unlock Lineup" : "Lock Lineup"}
               </Button>
             </div>
           </div>
