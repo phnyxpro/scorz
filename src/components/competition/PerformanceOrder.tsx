@@ -56,6 +56,7 @@ export function PerformanceOrder({ subEventId }: Props) {
   const { data: contestants, isLoading } = useApprovedContestants(subEventId);
   const { data: settings } = useSubEventSettings(subEventId);
   const showStandbys = !!settings?.show_standbys;
+  const lineupLocked = !!settings?.lineup_locked;
   const [showConfirm, setShowConfirm] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const qc = useQueryClient();
