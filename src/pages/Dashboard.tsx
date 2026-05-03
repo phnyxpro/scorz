@@ -63,6 +63,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
 interface AssignedCompetition {
   id: string;
   name: string;
+  status: string;
   hasChiefAssignment: boolean;
 }
 
@@ -138,7 +139,7 @@ function useAssignedCompetitions(userId: string | undefined, userEmail: string |
       // Get competition names
       const { data: comps } = await supabase
         .from("competitions")
-        .select("id, name")
+        .select("id, name, status")
         .in("id", compIds);
 
       // Determine which competitions have chief assignments
@@ -153,7 +154,13 @@ function useAssignedCompetitions(userId: string | undefined, userEmail: string |
         }
       }
 
-      setCompetitions((comps || []).map(c => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
+      // Sort: active first, then draft/completed; alphabetical within each
+      const sorted = (comps || []).slice().sort((a: any, b: any) => {
+        const rank = (s: string) => (s === "active" ? 0 : s === "draft" ? 1 : 2);
+        const r = rank(a.status) - rank(b.status);
+        return r !== 0 ? r : a.name.localeCompare(b.name);
+      });
+      setCompetitions(sorted.map((c: any) => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
       setLoading(false);
     })();
   }, [userId, userEmail, isJudgeRole]);
@@ -189,11 +196,17 @@ export default function Dashboard() {
 
   const [selectedCompId, setSelectedCompId] = useState(() => localStorage.getItem(SELECTED_COMP_KEY) || "");
 
-  // Auto-select if only one competition
+  // Auto-select: prefer the user's active assigned competition; fall back to single assignment
   useEffect(() => {
-    if (assignedComps.length === 1 && !selectedCompId) {
-      setSelectedCompId(assignedComps[0].id);
+    if (!assignedComps.length) return;
+    // If a stored selection is no longer in their assignments, drop it
+    if (selectedCompId && !assignedComps.some(c => c.id === selectedCompId)) {
+      setSelectedCompId("");
+      return;
     }
+    if (selectedCompId) return;
+    const active = assignedComps.find(c => c.status === "active");
+    setSelectedCompId(active?.id || assignedComps[0].id);
   }, [assignedComps, selectedCompId]);
 
   // Persist selection
