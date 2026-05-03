@@ -164,6 +164,8 @@ export function PerformanceOrder({ subEventId }: Props) {
       toast({ title: next ? "Lineup locked for tabulation" : "Lineup unlocked" });
     }
   };
+
+  const assignToSlots = async () => {
     if (!visibleContestants || visibleContestants.length === 0) return;
     setAssigning(true);
     try {
