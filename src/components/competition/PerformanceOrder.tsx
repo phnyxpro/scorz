@@ -149,7 +149,21 @@ export function PerformanceOrder({ subEventId }: Props) {
     }
   };
 
-  const assignToSlots = async () => {
+  const toggleLineupLock = async () => {
+    if (!subEventId) return;
+    const next = !lineupLocked;
+    qc.setQueryData(["sub-event-settings", subEventId], { ...(settings || { id: subEventId }), lineup_locked: next, lineup_locked_at: next ? new Date().toISOString() : null });
+    const { error } = await supabase.from("sub_events").update({
+      lineup_locked: next,
+      lineup_locked_at: next ? new Date().toISOString() : null,
+    } as any).eq("id", subEventId);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      qc.invalidateQueries({ queryKey: ["sub-event-settings", subEventId] });
+    } else {
+      toast({ title: next ? "Lineup locked for tabulation" : "Lineup unlocked" });
+    }
+  };
     if (!visibleContestants || visibleContestants.length === 0) return;
     setAssigning(true);
     try {
