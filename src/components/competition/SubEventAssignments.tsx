@@ -31,7 +31,9 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList, Search } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList, Search, KeyRound } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
@@ -63,6 +65,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
   const { data: invitationSubEvents } = useStaffInvitationSubEvents(competitionId);
   const [previewInv, setPreviewInv] = useState<StaffInvitation | null>(null);
   const [editingInv, setEditingInv] = useState<StaffInvitation | null>(null);
+  const [passwordInv, setPasswordInv] = useState<StaffInvitation | null>(null);
 
   const handleMasquerade = async (inv: StaffInvitation) => {
     const { data: profile } = await supabase
@@ -403,6 +406,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
@@ -435,6 +439,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
@@ -466,6 +471,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
@@ -492,6 +498,12 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
           }
         }}
         saving={updateInvitation.isPending}
+      />
+
+      {/* Set Password Dialog (admin) */}
+      <SetPasswordDialog
+        inv={passwordInv}
+        onClose={() => setPasswordInv(null)}
       />
     </div>
   );
@@ -734,9 +746,10 @@ interface StaffRowProps {
   isAdmin?: boolean;
   onMasquerade?: (inv: StaffInvitation) => void;
   onPreviewEmail?: (inv: StaffInvitation) => void;
+  onSetPassword?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail, onSetPassword }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
@@ -850,6 +863,17 @@ function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvit
               <Eye className="h-3.5 w-3.5" /> View as
             </Button>
           )}
+          {isAdmin && onSetPassword && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs gap-1 text-muted-foreground hover:text-primary"
+              onClick={() => onSetPassword(inv)}
+              title={`Set password for ${inv.name || inv.email}`}
+            >
+              <KeyRound className="h-3.5 w-3.5" /> Set password
+            </Button>
+          )}
         </div>
       </div>
 
@@ -949,5 +973,92 @@ function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove:
         <X className="h-2.5 w-2.5" />
       </button>
     </Badge>
+  );
+}
+
+/* ── Set Password Dialog (admin only) ── */
+function SetPasswordDialog({ inv, onClose }: { inv: StaffInvitation | null; onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!inv) {
+      setPassword("");
+      setConfirm("");
+    }
+  }, [inv]);
+
+  const handleSave = async () => {
+    if (!inv) return;
+    if (password.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    if (password !== confirm) {
+      toast({ title: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-set-staff-password", {
+        body: { email: inv.email, password, fullName: inv.name },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: "Password set",
+        description: (data as any)?.created
+          ? `Account created and password set for ${inv.email}`
+          : `Password updated for ${inv.email}`,
+      });
+      onClose();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!inv} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-sm font-mono">Set Password</DialogTitle>
+          <DialogDescription className="text-xs">
+            {inv && (
+              <>Set or reset the sign-in password for <strong>{inv.name || inv.email}</strong> ({inv.email}). If the user does not exist yet, an account will be created with the email confirmed.</>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">New Password</Label>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 6 characters"
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Confirm Password</Label>
+            <PasswordInput
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Re-enter password"
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !password} className="gap-1.5">
+            <KeyRound className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : "Set Password"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
