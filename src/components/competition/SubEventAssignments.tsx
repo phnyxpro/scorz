@@ -499,6 +499,12 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
         }}
         saving={updateInvitation.isPending}
       />
+
+      {/* Set Password Dialog (admin) */}
+      <SetPasswordDialog
+        inv={passwordInv}
+        onClose={() => setPasswordInv(null)}
+      />
     </div>
   );
 }
