@@ -636,6 +636,12 @@ export function LeaderboardSection({ competitionId }: Props) {
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="lb-status-toggle" />
             <Label htmlFor="lb-status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
+          {canToggleStandbys && hasStandbyRows && (
+            <div className="flex items-center gap-1.5">
+              <Switch checked={includeStandbys} onCheckedChange={setIncludeStandbys} id="lb-standby-toggle" />
+              <Label htmlFor="lb-standby-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Include standbys</Label>
+            </div>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" disabled={filteredRows.length === 0} className="print:hidden">
