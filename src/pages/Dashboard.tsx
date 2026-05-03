@@ -196,11 +196,17 @@ export default function Dashboard() {
 
   const [selectedCompId, setSelectedCompId] = useState(() => localStorage.getItem(SELECTED_COMP_KEY) || "");
 
-  // Auto-select if only one competition
+  // Auto-select: prefer the user's active assigned competition; fall back to single assignment
   useEffect(() => {
-    if (assignedComps.length === 1 && !selectedCompId) {
-      setSelectedCompId(assignedComps[0].id);
+    if (!assignedComps.length) return;
+    // If a stored selection is no longer in their assignments, drop it
+    if (selectedCompId && !assignedComps.some(c => c.id === selectedCompId)) {
+      setSelectedCompId("");
+      return;
     }
+    if (selectedCompId) return;
+    const active = assignedComps.find(c => c.status === "active");
+    setSelectedCompId(active?.id || assignedComps[0].id);
   }, [assignedComps, selectedCompId]);
 
   // Persist selection
