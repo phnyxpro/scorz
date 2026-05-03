@@ -560,15 +560,6 @@ export default function JudgeScoring() {
 
   // Restrict judges to competitions they're assigned to
   const isPrivileged = hasRole("admin") || hasRole("organizer");
-  const hasAnyAssignmentInComp = useMemo(() => {
-    if (!myAssignments || !levels) return null; // still loading
-    const levelIds = new Set(levels.map((l: any) => l.id));
-    return myAssignments.some((a: any) => {
-      // myAssignments returns sub_event_id; we need to check if its level is in this competition
-      // We approximate by allSubEvents (loaded for selected level) — but we need a broader check.
-      return true; // see below — refined check
-    });
-  }, [myAssignments, levels]);
 
   // Broader check: are any of the judge's assignments tied to a sub_event whose level belongs to this competition?
   const { data: assignedInComp } = useQuery({
