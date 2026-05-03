@@ -395,8 +395,8 @@ export function LeaderboardSection({ competitionId }: Props) {
       return groups;
     }
 
-    return buildLevel(rows, 0, 0);
-  }, [isCategoryLevel, hierarchyFieldIds, rows, resolveValue]);
+    return buildLevel(filteredRows, 0, 0);
+  }, [isCategoryLevel, hierarchyFieldIds, filteredRows, resolveValue]);
 
   const toggleGroupCollapse = useCallback((path: string) => {
     setCollapsedGroups(prev => {
