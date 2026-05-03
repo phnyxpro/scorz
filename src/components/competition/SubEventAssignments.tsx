@@ -406,6 +406,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
@@ -438,6 +439,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
@@ -469,6 +471,7 @@ export function SubEventAssignments({ competitionId, competitionName }: Props) {
                   isAdmin={isAdmin}
                   onMasquerade={handleMasquerade}
                   onPreviewEmail={isAdmin ? setPreviewInv : undefined}
+                  onSetPassword={isAdmin ? setPasswordInv : undefined}
                 />
               ))}
             </div>
