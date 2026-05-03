@@ -63,6 +63,7 @@ function buildJudgeCards(competitionId: string, hasChiefAssignments: boolean): C
 interface AssignedCompetition {
   id: string;
   name: string;
+  status: string;
   hasChiefAssignment: boolean;
 }
 
