@@ -746,9 +746,10 @@ interface StaffRowProps {
   isAdmin?: boolean;
   onMasquerade?: (inv: StaffInvitation) => void;
   onPreviewEmail?: (inv: StaffInvitation) => void;
+  onSetPassword?: (inv: StaffInvitation) => void;
 }
 
-function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail }: StaffRowProps) {
+function StaffRow({ inv, competitionId, levels, invitationSubEvents, onSendInvite, onAddSubEvent, onRemoveSubEvent, onDelete, onEdit, sendingInvite, isAdmin, onMasquerade, onPreviewEmail, onSetPassword }: StaffRowProps) {
   const [showAssign, setShowAssign] = useState(false);
   const [assignLevelId, setAssignLevelId] = useState("");
   const { data: subEventsForLevel } = useSubEvents(assignLevelId || undefined);
