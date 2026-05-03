@@ -160,6 +160,7 @@ interface RowData {
   avgFinal: number;
   durationSeconds: number | null;
   customFieldValues: Record<string, any>;
+  specialEntryType: string | null;
 }
 
 interface ContestantGroup {
