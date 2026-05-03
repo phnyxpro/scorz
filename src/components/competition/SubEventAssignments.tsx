@@ -31,7 +31,9 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList, Search } from "lucide-react";
+import { UserPlus, X, Users, ShieldCheck, Mail, Trash2, CheckCircle, Clock, AlertTriangle, Send, MapPin, Plus, Eye, Pencil, ClipboardList, Search, KeyRound } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const ASSIGNABLE_ROLES = ["organizer", "judge", "tabulator"] as const;
 
