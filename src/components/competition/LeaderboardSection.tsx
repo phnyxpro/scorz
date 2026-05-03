@@ -62,7 +62,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
 
       const { data: registrations } = await supabase
         .from("contestant_registrations")
-        .select("id, full_name, user_id, sub_event_id, custom_field_values")
+        .select("id, full_name, user_id, sub_event_id, custom_field_values, special_entry_type")
         .eq("competition_id", competitionId!)
         .in("sub_event_id", subEventIds)
         .eq("status", "approved");
@@ -160,6 +160,7 @@ interface RowData {
   avgFinal: number;
   durationSeconds: number | null;
   customFieldValues: Record<string, any>;
+  specialEntryType: string | null;
 }
 
 interface ContestantGroup {
@@ -180,6 +181,8 @@ export function LeaderboardSection({ competitionId }: Props) {
   const canEditDuration = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
+  const [includeStandbys, setIncludeStandbys] = useState(false);
+  const canToggleStandbys = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [exportFieldIds, setExportFieldIds] = useState<Set<string>>(new Set());
@@ -294,10 +297,18 @@ export function LeaderboardSection({ competitionId }: Props) {
           avgFinal,
           durationSeconds,
           customFieldValues: (reg as any).custom_field_values || {},
+          specialEntryType: (reg as any).special_entry_type || null,
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data, scoringMethod, manualDurationMap]);
+
+  const isStandbyType = (t: string | null) => t === "standby_1" || t === "standby_2";
+  const filteredRows = useMemo(
+    () => (includeStandbys ? rows : rows.filter((r) => !isStandbyType(r.specialEntryType))),
+    [rows, includeStandbys]
+  );
+  const hasStandbyRows = rows.some((r) => isStandbyType(r.specialEntryType));
 
   // Parse "m:ss" or seconds into seconds
   const parseDurationInput = useCallback((input: string): number | null => {
@@ -384,8 +395,8 @@ export function LeaderboardSection({ competitionId }: Props) {
       return groups;
     }
 
-    return buildLevel(rows, 0, 0);
-  }, [isCategoryLevel, hierarchyFieldIds, rows, resolveValue]);
+    return buildLevel(filteredRows, 0, 0);
+  }, [isCategoryLevel, hierarchyFieldIds, filteredRows, resolveValue]);
 
   const toggleGroupCollapse = useCallback((path: string) => {
     setCollapsedGroups(prev => {
@@ -625,9 +636,15 @@ export function LeaderboardSection({ competitionId }: Props) {
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="lb-status-toggle" />
             <Label htmlFor="lb-status-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Status</Label>
           </div>
+          {canToggleStandbys && hasStandbyRows && (
+            <div className="flex items-center gap-1.5">
+              <Switch checked={includeStandbys} onCheckedChange={setIncludeStandbys} id="lb-standby-toggle" />
+              <Label htmlFor="lb-standby-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Include standbys</Label>
+            </div>
+          )}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" disabled={rows.length === 0} className="print:hidden">
+              <Button variant="outline" size="sm" disabled={filteredRows.length === 0} className="print:hidden">
                 <Sheet className="h-4 w-4 mr-1.5" />
                 Google Sheets
               </Button>
@@ -654,7 +671,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                    const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                    const sheetRows: SheetRow[] = filteredRows.map((r, idx) => {
                      // Build category path for category-structured events (e.g. "Solo > Female > 9+")
                      let subEventLabel = subEventMap.get(r.subEventId || "") || "";
                      if (isCategoryLevel && hierarchyFieldIds.category) {
@@ -721,7 +738,7 @@ export function LeaderboardSection({ competitionId }: Props) {
       <Card className="border-border/50 bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            {rows.length} Contestant{rows.length !== 1 ? "s" : ""} • {judgeUserIds.length} Judge{judgeUserIds.length !== 1 ? "s" : ""}
+            {filteredRows.length} Contestant{filteredRows.length !== 1 ? "s" : ""} • {judgeUserIds.length} Judge{judgeUserIds.length !== 1 ? "s" : ""}
           </CardTitle>
           <CardDescription>
             {isCategoryLevel
@@ -742,7 +759,7 @@ export function LeaderboardSection({ competitionId }: Props) {
         <CardContent>
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground text-sm">Loading scores…</div>
-          ) : rows.length === 0 ? (
+          ) : filteredRows.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No scores submitted yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -767,7 +784,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                 <TableBody>
                   {isCategoryLevel && groupedTree
                     ? renderGroupedRows(groupedTree)
-                    : renderFlatTable(rows)}
+                    : renderFlatTable(filteredRows)}
                 </TableBody>
               </Table>
               <p className="text-[10px] text-muted-foreground mt-2">* Uncertified score</p>

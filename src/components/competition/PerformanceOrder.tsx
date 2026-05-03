@@ -22,11 +22,11 @@ function useSubEventSettings(subEventId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sub_events")
-        .select("id, show_standbys")
+        .select("id, show_standbys, lineup_locked, lineup_locked_at")
         .eq("id", subEventId!)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; show_standbys: boolean } | null;
+      return data as { id: string; show_standbys: boolean; lineup_locked: boolean; lineup_locked_at: string | null } | null;
     },
   });
 }
@@ -56,6 +56,7 @@ export function PerformanceOrder({ subEventId }: Props) {
   const { data: contestants, isLoading } = useApprovedContestants(subEventId);
   const { data: settings } = useSubEventSettings(subEventId);
   const showStandbys = !!settings?.show_standbys;
+  const lineupLocked = !!settings?.lineup_locked;
   const [showConfirm, setShowConfirm] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const qc = useQueryClient();
@@ -148,6 +149,22 @@ export function PerformanceOrder({ subEventId }: Props) {
     }
   };
 
+  const toggleLineupLock = async () => {
+    if (!subEventId) return;
+    const next = !lineupLocked;
+    qc.setQueryData(["sub-event-settings", subEventId], { ...(settings || { id: subEventId }), lineup_locked: next, lineup_locked_at: next ? new Date().toISOString() : null });
+    const { error } = await supabase.from("sub_events").update({
+      lineup_locked: next,
+      lineup_locked_at: next ? new Date().toISOString() : null,
+    } as any).eq("id", subEventId);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      qc.invalidateQueries({ queryKey: ["sub-event-settings", subEventId] });
+    } else {
+      toast({ title: next ? "Lineup locked for tabulation" : "Lineup unlocked" });
+    }
+  };
+
   const assignToSlots = async () => {
     if (!visibleContestants || visibleContestants.length === 0) return;
     setAssigning(true);
@@ -212,20 +229,26 @@ export function PerformanceOrder({ subEventId }: Props) {
               </CardTitle>
               <CardDescription>
                 {visibleContestants.length} contestants{hasStandbys && !showStandbys ? ` (+${contestants.length - visibleContestants.length} standby hidden)` : ""} — drag to reorder
+                {lineupLocked && (
+                  <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">· Locked for tabulation</span>
+                )}
               </CardDescription>
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
               {hasStandbys && (
                 <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-border/50 bg-muted/20">
                   <Switch id="show-standbys" checked={showStandbys} onCheckedChange={toggleShowStandbys} />
                   <Label htmlFor="show-standbys" className="text-xs cursor-pointer">Show standbys</Label>
                 </div>
               )}
-              <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)}>
+              <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)} disabled={lineupLocked}>
                 <Shuffle className="h-3.5 w-3.5 mr-1" /> Randomise Draw
               </Button>
-              <Button size="sm" onClick={assignToSlots} disabled={assigning}>
+              <Button size="sm" onClick={assignToSlots} disabled={assigning || lineupLocked}>
                 <Link className="h-3.5 w-3.5 mr-1" /> Assign to Slots
+              </Button>
+              <Button size="sm" variant={lineupLocked ? "outline" : "default"} onClick={toggleLineupLock}>
+                {lineupLocked ? "Unlock Lineup" : "Lock Lineup"}
               </Button>
             </div>
           </div>
@@ -237,16 +260,18 @@ export function PerformanceOrder({ subEventId }: Props) {
               return (
                 <div
                   key={c.id}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragEnter={() => handleDragEnter(idx)}
+                  draggable={!lineupLocked}
+                  onDragStart={() => !lineupLocked && handleDragStart(idx)}
+                  onDragEnter={() => !lineupLocked && handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all cursor-grab active:cursor-grabbing select-none",
+                    "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all select-none",
+                    !lineupLocked && "cursor-grab active:cursor-grabbing",
+                    lineupLocked && "cursor-default opacity-90",
                     dragIdx === idx && "opacity-40 border-dashed border-primary/50",
                     overIdx === idx && dragIdx !== idx && "border-primary/40 bg-primary/5",
-                    dragIdx === null && "hover:bg-muted/30",
+                    !lineupLocked && dragIdx === null && "hover:bg-muted/30",
                     sbLabel && "bg-amber-500/5"
                   )}
                 >
