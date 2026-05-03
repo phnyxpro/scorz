@@ -638,7 +638,7 @@ export function LeaderboardSection({ competitionId }: Props) {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" disabled={rows.length === 0} className="print:hidden">
+              <Button variant="outline" size="sm" disabled={filteredRows.length === 0} className="print:hidden">
                 <Sheet className="h-4 w-4 mr-1.5" />
                 Google Sheets
               </Button>
@@ -665,7 +665,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                    const sheetRows: SheetRow[] = rows.map((r, idx) => {
+                    const sheetRows: SheetRow[] = filteredRows.map((r, idx) => {
                      // Build category path for category-structured events (e.g. "Solo > Female > 9+")
                      let subEventLabel = subEventMap.get(r.subEventId || "") || "";
                      if (isCategoryLevel && hierarchyFieldIds.category) {
@@ -732,7 +732,7 @@ export function LeaderboardSection({ competitionId }: Props) {
       <Card className="border-border/50 bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            {rows.length} Contestant{rows.length !== 1 ? "s" : ""} • {judgeUserIds.length} Judge{judgeUserIds.length !== 1 ? "s" : ""}
+            {filteredRows.length} Contestant{filteredRows.length !== 1 ? "s" : ""} • {judgeUserIds.length} Judge{judgeUserIds.length !== 1 ? "s" : ""}
           </CardTitle>
           <CardDescription>
             {isCategoryLevel
@@ -753,7 +753,7 @@ export function LeaderboardSection({ competitionId }: Props) {
         <CardContent>
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground text-sm">Loading scores…</div>
-          ) : rows.length === 0 ? (
+          ) : filteredRows.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No scores submitted yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -778,7 +778,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                 <TableBody>
                   {isCategoryLevel && groupedTree
                     ? renderGroupedRows(groupedTree)
-                    : renderFlatTable(rows)}
+                    : renderFlatTable(filteredRows)}
                 </TableBody>
               </Table>
               <p className="text-[10px] text-muted-foreground mt-2">* Uncertified score</p>
