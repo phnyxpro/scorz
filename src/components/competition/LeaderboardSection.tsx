@@ -181,6 +181,8 @@ export function LeaderboardSection({ competitionId }: Props) {
   const canEditDuration = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [showStatusStyling, setShowStatusStyling] = useState(true);
+  const [includeStandbys, setIncludeStandbys] = useState(false);
+  const canToggleStandbys = hasRole("tabulator") || hasRole("admin") || hasRole("organizer");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [exportFieldIds, setExportFieldIds] = useState<Set<string>>(new Set());
