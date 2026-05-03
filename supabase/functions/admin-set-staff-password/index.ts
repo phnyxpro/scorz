@@ -65,17 +65,14 @@ serve(async (req) => {
       );
     }
 
-    // Find existing user by email
+    // Find existing user by email via profiles (avoids listUsers pagination issues)
     let targetUserId: string | null = null;
-    let page = 1;
-    while (!targetUserId) {
-      const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-      if (listErr) throw listErr;
-      const found = list.users.find((u) => (u.email || "").toLowerCase() === email);
-      if (found) targetUserId = found.id;
-      if (!list.users.length || list.users.length < 200) break;
-      page++;
-    }
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("user_id")
+      .ilike("email", email)
+      .maybeSingle();
+    if (profile?.user_id) targetUserId = profile.user_id as string;
 
     let created = false;
     if (!targetUserId) {
