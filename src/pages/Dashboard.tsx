@@ -139,7 +139,7 @@ function useAssignedCompetitions(userId: string | undefined, userEmail: string |
       // Get competition names
       const { data: comps } = await supabase
         .from("competitions")
-        .select("id, name")
+        .select("id, name, status")
         .in("id", compIds);
 
       // Determine which competitions have chief assignments
@@ -154,7 +154,13 @@ function useAssignedCompetitions(userId: string | undefined, userEmail: string |
         }
       }
 
-      setCompetitions((comps || []).map(c => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
+      // Sort: active first, then draft/completed; alphabetical within each
+      const sorted = (comps || []).slice().sort((a: any, b: any) => {
+        const rank = (s: string) => (s === "active" ? 0 : s === "draft" ? 1 : 2);
+        const r = rank(a.status) - rank(b.status);
+        return r !== 0 ? r : a.name.localeCompare(b.name);
+      });
+      setCompetitions(sorted.map((c: any) => ({ ...c, hasChiefAssignment: compsWithChief.has(c.id) })));
       setLoading(false);
     })();
   }, [userId, userEmail, isJudgeRole]);
