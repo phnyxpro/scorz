@@ -295,6 +295,7 @@ export function LeaderboardSection({ competitionId }: Props) {
           avgFinal,
           durationSeconds,
           customFieldValues: (reg as any).custom_field_values || {},
+          specialEntryType: (reg as any).special_entry_type || null,
         };
       })
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
