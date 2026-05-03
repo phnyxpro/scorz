@@ -1651,6 +1651,9 @@ export type Database = {
           id: string
           is_virtual: boolean
           level_id: string
+          lineup_locked: boolean
+          lineup_locked_at: string | null
+          lineup_locked_by: string | null
           location: string | null
           max_tickets: number | null
           name: string
@@ -1677,6 +1680,9 @@ export type Database = {
           id?: string
           is_virtual?: boolean
           level_id: string
+          lineup_locked?: boolean
+          lineup_locked_at?: string | null
+          lineup_locked_by?: string | null
           location?: string | null
           max_tickets?: number | null
           name: string
@@ -1703,6 +1709,9 @@ export type Database = {
           id?: string
           is_virtual?: boolean
           level_id?: string
+          lineup_locked?: boolean
+          lineup_locked_at?: string | null
+          lineup_locked_by?: string | null
           location?: string | null
           max_tickets?: number | null
           name?: string
