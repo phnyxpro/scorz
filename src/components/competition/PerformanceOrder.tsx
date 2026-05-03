@@ -260,16 +260,18 @@ export function PerformanceOrder({ subEventId }: Props) {
               return (
                 <div
                   key={c.id}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragEnter={() => handleDragEnter(idx)}
+                  draggable={!lineupLocked}
+                  onDragStart={() => !lineupLocked && handleDragStart(idx)}
+                  onDragEnter={() => !lineupLocked && handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all cursor-grab active:cursor-grabbing select-none",
+                    "flex items-center gap-3 px-3 py-2 rounded-md border border-transparent transition-all select-none",
+                    !lineupLocked && "cursor-grab active:cursor-grabbing",
+                    lineupLocked && "cursor-default opacity-90",
                     dragIdx === idx && "opacity-40 border-dashed border-primary/50",
                     overIdx === idx && dragIdx !== idx && "border-primary/40 bg-primary/5",
-                    dragIdx === null && "hover:bg-muted/30",
+                    !lineupLocked && dragIdx === null && "hover:bg-muted/30",
                     sbLabel && "bg-amber-500/5"
                   )}
                 >
