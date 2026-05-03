@@ -303,6 +303,13 @@ export function LeaderboardSection({ competitionId }: Props) {
       .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
   }, [data, scoringMethod, manualDurationMap]);
 
+  const isStandbyType = (t: string | null) => t === "standby_1" || t === "standby_2";
+  const filteredRows = useMemo(
+    () => (includeStandbys ? rows : rows.filter((r) => !isStandbyType(r.specialEntryType))),
+    [rows, includeStandbys]
+  );
+  const hasStandbyRows = rows.some((r) => isStandbyType(r.specialEntryType));
+
   // Parse "m:ss" or seconds into seconds
   const parseDurationInput = useCallback((input: string): number | null => {
     const trimmed = input.trim();
