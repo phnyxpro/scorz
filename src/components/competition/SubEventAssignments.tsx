@@ -975,3 +975,90 @@ function SubEventBadge({ subEventId, onRemove }: { subEventId: string; onRemove:
     </Badge>
   );
 }
+
+/* ── Set Password Dialog (admin only) ── */
+function SetPasswordDialog({ inv, onClose }: { inv: StaffInvitation | null; onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!inv) {
+      setPassword("");
+      setConfirm("");
+    }
+  }, [inv]);
+
+  const handleSave = async () => {
+    if (!inv) return;
+    if (password.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    if (password !== confirm) {
+      toast({ title: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-set-staff-password", {
+        body: { email: inv.email, password, fullName: inv.name },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: "Password set",
+        description: (data as any)?.created
+          ? `Account created and password set for ${inv.email}`
+          : `Password updated for ${inv.email}`,
+      });
+      onClose();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!inv} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-sm font-mono">Set Password</DialogTitle>
+          <DialogDescription className="text-xs">
+            {inv && (
+              <>Set or reset the sign-in password for <strong>{inv.name || inv.email}</strong> ({inv.email}). If the user does not exist yet, an account will be created with the email confirmed.</>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">New Password</Label>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 6 characters"
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Confirm Password</Label>
+            <PasswordInput
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Re-enter password"
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !password} className="gap-1.5">
+            <KeyRound className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : "Set Password"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
