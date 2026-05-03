@@ -22,11 +22,11 @@ function useSubEventSettings(subEventId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sub_events")
-        .select("id, show_standbys")
+        .select("id, show_standbys, lineup_locked, lineup_locked_at")
         .eq("id", subEventId!)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; show_standbys: boolean } | null;
+      return data as { id: string; show_standbys: boolean; lineup_locked: boolean; lineup_locked_at: string | null } | null;
     },
   });
 }
