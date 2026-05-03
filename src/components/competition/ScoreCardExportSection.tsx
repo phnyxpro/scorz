@@ -125,7 +125,11 @@ export function ScoreCardExportSection({ competitionId, competitionName, levels,
 
         {selectedSubEventId && contestants && (
           <ScoreCardExporter
-            contestants={contestants}
+            contestants={
+              (selectedSubEvent as any)?.show_standbys
+                ? contestants
+                : contestants.filter(c => (c as any).special_entry_type !== "standby_1" && (c as any).special_entry_type !== "standby_2")
+            }
             subEventName={selectedSubEvent?.name || ""}
             competitionName={competitionName}
             judgeScores={judgeScores || []}
