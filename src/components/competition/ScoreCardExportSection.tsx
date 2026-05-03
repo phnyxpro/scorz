@@ -13,7 +13,7 @@ interface ScoreCardExportSectionProps {
   competitionId: string;
   competitionName: string;
   levels: { id: string; name: string }[];
-  subEvents: { id: string; name: string; level_id: string; status: string }[];
+  subEvents: { id: string; name: string; level_id: string; status: string; show_standbys?: boolean }[];
 }
 
 export function ScoreCardExportSection({ competitionId, competitionName, levels, subEvents }: ScoreCardExportSectionProps) {
