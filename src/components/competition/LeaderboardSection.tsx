@@ -62,7 +62,7 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
 
       const { data: registrations } = await supabase
         .from("contestant_registrations")
-        .select("id, full_name, user_id, sub_event_id, custom_field_values")
+        .select("id, full_name, user_id, sub_event_id, custom_field_values, special_entry_type")
         .eq("competition_id", competitionId!)
         .in("sub_event_id", subEventIds)
         .eq("status", "approved");
