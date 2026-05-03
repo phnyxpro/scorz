@@ -1,0 +1,1 @@
+ALTER TABLE public.sub_events ADD COLUMN IF NOT EXISTS show_standbys boolean NOT NULL DEFAULT false;

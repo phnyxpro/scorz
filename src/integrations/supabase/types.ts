@@ -1655,6 +1655,7 @@ export type Database = {
           max_tickets: number | null
           name: string
           profile_details_visible: boolean
+          show_standbys: boolean
           sort_order: number
           start_time: string | null
           status: string
@@ -1680,6 +1681,7 @@ export type Database = {
           max_tickets?: number | null
           name: string
           profile_details_visible?: boolean
+          show_standbys?: boolean
           sort_order?: number
           start_time?: string | null
           status?: string
@@ -1705,6 +1707,7 @@ export type Database = {
           max_tickets?: number | null
           name?: string
           profile_details_visible?: boolean
+          show_standbys?: boolean
           sort_order?: number
           start_time?: string | null
           status?: string

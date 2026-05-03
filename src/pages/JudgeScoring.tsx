@@ -165,9 +165,12 @@ export default function JudgeScoring() {
   }, [isCategoryLevel, allSubEvents]);
 
   // Filtered contestants for the selected sub-event (or entire level for category types)
+  const showStandbys = (selectedSubEvent as any)?.show_standbys === true;
   const filteredContestants = useMemo(() => {
     const list = registrations?.filter(r => {
       if (r.status !== "approved") return false;
+      const set = (r as any).special_entry_type;
+      if (!showStandbys && (set === "standby_1" || set === "standby_2")) return false;
       if (!subEventId) return true;
       // For category levels, show all contestants whose sub_event_id is in this level
       if (levelSubEventIds) return !r.sub_event_id || levelSubEventIds.has(r.sub_event_id);
@@ -178,7 +181,7 @@ export default function JudgeScoring() {
     if (!contestantSearch.trim()) return sorted;
     const q = contestantSearch.toLowerCase();
     return sorted.filter(r => r.full_name.toLowerCase().includes(q));
-  }, [registrations, subEventId, levelSubEventIds, contestantSearch]);
+  }, [registrations, subEventId, levelSubEventIds, contestantSearch, showStandbys]);
 
   // For category-type levels, compute grouped contestants by Category field
   const formConfig = useMemo(() => comp ? migrateFormConfig((comp as any).registration_form_config) : null, [comp]);
@@ -794,6 +797,11 @@ export default function JudgeScoring() {
                           {idx + 1}
                         </span>
                         <span className="truncate text-xs flex-1">{r.full_name}</span>
+                        {((r as any).special_entry_type === "standby_1" || (r as any).special_entry_type === "standby_2") && (
+                          <Badge className="bg-amber-500/80 text-white text-[9px] px-1 py-0 h-4 shrink-0">
+                            {(r as any).special_entry_type === "standby_1" ? "SB1" : "SB2"}
+                          </Badge>
+                        )}
                         {onStageContestant === r.id && (
                           <span className="h-2 w-2 rounded-full bg-secondary shrink-0 animate-pulse" />
                         )}
