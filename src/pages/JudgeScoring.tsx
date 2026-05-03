@@ -558,6 +558,51 @@ export default function JudgeScoring() {
 
   const selectedContestantName = filteredContestants.find(r => r.id === selectedContestant)?.full_name;
 
+  // Restrict judges to competitions they're assigned to
+  const isPrivileged = hasRole("admin") || hasRole("organizer");
+  const hasAnyAssignmentInComp = useMemo(() => {
+    if (!myAssignments || !levels) return null; // still loading
+    const levelIds = new Set(levels.map((l: any) => l.id));
+    return myAssignments.some((a: any) => {
+      // myAssignments returns sub_event_id; we need to check if its level is in this competition
+      // We approximate by allSubEvents (loaded for selected level) — but we need a broader check.
+      return true; // see below — refined check
+    });
+  }, [myAssignments, levels]);
+
+  // Broader check: are any of the judge's assignments tied to a sub_event whose level belongs to this competition?
+  const { data: assignedInComp } = useQuery({
+    queryKey: ["judge-assigned-in-comp", competitionId, user?.id],
+    enabled: !!competitionId && !!user?.id && hasRole("judge") && !isPrivileged,
+    queryFn: async () => {
+      const { data: assigns } = await supabase
+        .from("sub_event_assignments")
+        .select("sub_event_id, sub_events!inner(level_id, competition_levels!inner(competition_id))")
+        .eq("user_id", user!.id);
+      const matches = (assigns || []).some((a: any) =>
+        a.sub_events?.competition_levels?.competition_id === competitionId
+      );
+      return matches;
+    },
+  });
+
+  if (hasRole("judge") && !isPrivileged && assignedInComp === false) {
+    return (
+      <Card className="max-w-xl mx-auto mt-12 border-border/50 bg-card/80">
+        <CardContent className="py-12 text-center">
+          <Lock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h2 className="text-lg font-bold mb-1">Not assigned</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            You don't have a judging assignment for this competition.
+          </p>
+          <Button onClick={() => navigate("/judge-dashboard")} variant="outline" size="sm">
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to dashboard
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="flex -mx-3 sm:-mx-6 -mt-4 sm:-mt-6 min-h-[calc(100vh-theme(spacing.14))]">
       {/* Left sidebar / panel */}
