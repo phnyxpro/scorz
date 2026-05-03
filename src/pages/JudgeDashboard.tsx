@@ -50,14 +50,20 @@ export default function JudgeDashboard() {
             </div>
 
             <div className="grid gap-6">
-                {assignedCompetitions.map((comp) => (
-                    <CompetitionAssignmentSection
-                        key={comp.id}
-                        competition={comp}
-                        subEventDetails={subEventDetails?.filter(se => se.level.competition_id === comp.id) || []}
-                        myAssignments={myAssignments || []}
-                    />
-                ))}
+                {[...assignedCompetitions]
+                    .sort((a: any, b: any) => {
+                        const rank = (s: string) => (s === "active" ? 0 : s === "draft" ? 1 : 2);
+                        const r = rank(a.status) - rank(b.status);
+                        return r !== 0 ? r : a.name.localeCompare(b.name);
+                    })
+                    .map((comp) => (
+                        <CompetitionAssignmentSection
+                            key={comp.id}
+                            competition={comp}
+                            subEventDetails={subEventDetails?.filter(se => se.level.competition_id === comp.id) || []}
+                            myAssignments={myAssignments || []}
+                        />
+                    ))}
             </div>
         </div>
     );
