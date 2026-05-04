@@ -349,15 +349,15 @@ export default function CompetitionDetail() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-            {!isProductionOrganiser && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
-            <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
-            <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>
-            {!isProductionOrganiser && <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>}
-            <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
-            {!isProductionOrganiser && <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>}
-            {!isProductionOrganiser && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
-            {!isProductionOrganiser && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
-            <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>}
             <TabsTrigger value="leaderboard" className="flex-shrink-0">Leaderboard</TabsTrigger>
           </TabsList>
 
