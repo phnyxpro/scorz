@@ -96,7 +96,7 @@ export function useCertification(subEventId: string | undefined) {
         .eq("sub_event_id", subEventId!)
         .maybeSingle();
       if (error) throw error;
-      return data as ChiefJudgeCertification | null;
+      return data as unknown as ChiefJudgeCertification | null;
     },
   });
 }
