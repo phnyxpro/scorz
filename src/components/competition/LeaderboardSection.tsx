@@ -283,44 +283,79 @@ export function LeaderboardSection({ competitionId }: Props) {
     return m;
   }, [data?.durationRows]);
 
+  const subEventIdsForCert = useMemo(() => (data?.subEvents || []).map((se) => se.id), [data?.subEvents]);
+  const { data: certifications } = useLevelCertifications(subEventIdsForCert);
+
+  // Map of subEventId -> regId -> finalRank override
+  const overrideMap = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const c of certifications || []) {
+      const inner = new Map<string, number>();
+      for (const o of c.final_placement_order || []) {
+        if (o && o.regId != null && typeof o.rank === "number") inner.set(o.regId, o.rank);
+      }
+      if (inner.size > 0) m.set(c.sub_event_id, inner);
+    }
+    return m;
+  }, [certifications]);
+
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
-    return (data.registrations || [])
-      .map((reg) => {
-        const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
-        const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
-        const judgeComments: Record<string, string> = {};
-        for (const s of regScores) {
-          judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
-          if (s.comments) judgeComments[s.judge_id] = s.comments;
-        }
-        const certifiedScores = regScores.filter((s) => s.is_certified);
-        const rawTotals = certifiedScores.map((s) => s.raw_total);
-        const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
-        const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
-        const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
-        const manual = manualDurationMap.get(reg.id);
-        const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
-        const durationSeconds = manual != null
-          ? manual
-          : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
-        return {
-          regId: reg.id,
-          name: reg.full_name,
-          userId: reg.user_id,
-          subEventId: reg.sub_event_id,
-          judgeScores,
-          judgeComments,
-          allJudgesRawTotal,
-          timePenalty,
-          avgFinal,
-          durationSeconds,
-          customFieldValues: (reg as any).custom_field_values || {},
-          specialEntryType: (reg as any).special_entry_type || null,
-        };
-      })
-      .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
-  }, [data, scoringMethod, manualDurationMap]);
+    const built = (data.registrations || []).map((reg) => {
+      const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
+      const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
+      const judgeComments: Record<string, string> = {};
+      for (const s of regScores) {
+        judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
+        if (s.comments) judgeComments[s.judge_id] = s.comments;
+      }
+      const certifiedScores = regScores.filter((s) => s.is_certified);
+      const rawTotals = certifiedScores.map((s) => s.raw_total);
+      const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
+      const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
+      const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
+      const manual = manualDurationMap.get(reg.id);
+      const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
+      const durationSeconds = manual != null
+        ? manual
+        : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
+      return {
+        regId: reg.id,
+        name: reg.full_name,
+        userId: reg.user_id,
+        subEventId: reg.sub_event_id,
+        judgeScores,
+        judgeComments,
+        allJudgesRawTotal,
+        timePenalty,
+        avgFinal,
+        durationSeconds,
+        customFieldValues: (reg as any).custom_field_values || {},
+        specialEntryType: (reg as any).special_entry_type || null,
+        calculatedRank: 0,
+        finalRank: 0,
+        hasOverride: false,
+      } as RowData;
+    });
+
+    // Calculated ranking (global)
+    const calcSorted = [...built].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+    calcSorted.forEach((r, i) => { r.calculatedRank = i + 1; });
+
+    // Apply overrides per sub-event
+    for (const r of built) {
+      const sub = r.subEventId ? overrideMap.get(r.subEventId) : undefined;
+      const ov = sub?.get(r.regId);
+      if (ov != null) {
+        r.finalRank = ov;
+        r.hasOverride = true;
+      } else {
+        r.finalRank = r.calculatedRank;
+      }
+    }
+
+    return built.sort((a, b) => a.finalRank - b.finalRank || b.avgFinal - a.avgFinal);
+  }, [data, scoringMethod, manualDurationMap, overrideMap]);
 
   const isStandbyType = (t: string | null) => t === "standby_1" || t === "standby_2";
   const filteredRows = useMemo(
