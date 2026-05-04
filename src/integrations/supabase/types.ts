@@ -187,6 +187,9 @@ export type Database = {
           chief_judge_id: string
           chief_judge_signature: string | null
           created_at: string
+          final_order_updated_at: string | null
+          final_order_updated_by: string | null
+          final_placement_order: Json
           id: string
           is_certified: boolean
           penalty_adjustments: Json
@@ -201,6 +204,9 @@ export type Database = {
           chief_judge_id: string
           chief_judge_signature?: string | null
           created_at?: string
+          final_order_updated_at?: string | null
+          final_order_updated_by?: string | null
+          final_placement_order?: Json
           id?: string
           is_certified?: boolean
           penalty_adjustments?: Json
@@ -215,6 +221,9 @@ export type Database = {
           chief_judge_id?: string
           chief_judge_signature?: string | null
           created_at?: string
+          final_order_updated_at?: string | null
+          final_order_updated_by?: string | null
+          final_placement_order?: Json
           id?: string
           is_certified?: boolean
           penalty_adjustments?: Json
@@ -1999,6 +2008,10 @@ export type Database = {
           _level_id?: string
           _sub_event_id?: string
         }
+        Returns: undefined
+      }
+      set_final_placement_order: {
+        Args: { _order: Json; _sub_event_id: string }
         Returns: undefined
       }
       withdraw_contestant: {
