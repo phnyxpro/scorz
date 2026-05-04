@@ -120,6 +120,8 @@ export default function CompetitionDetail() {
   }, [user?.id, id, hasRole]);
 
   const canConfigure = hasRole("admin") || hasRole("organizer");
+  const isTabulatorOnly = !canConfigure && (hasRole("tabulator") || hasRole("chief_judge"));
+  const canAccess = canConfigure || isTabulatorOnly;
   // Production organisers can only see: Levels & Events, Guidelines, Registrations, Updates
   const productionTabs = new Set(["levels", "guidelines", "registrations", "updates"]);
 
@@ -280,12 +282,17 @@ export default function CompetitionDetail() {
   };
 
   useEffect(() => {
-    if (!authLoading && !canConfigure) {
+    if (!authLoading && !canAccess) {
       toast({ title: "Unauthorised", description: "You don't have permission to access this page.", variant: "destructive" });
     }
-  }, [authLoading, canConfigure]);
+  }, [authLoading, canAccess]);
 
-  if (!authLoading && !canConfigure) {
+  // For tabulator-only users, force the leaderboard tab
+  useEffect(() => {
+    if (isTabulatorOnly && activeTab !== "leaderboard") setActiveTab("leaderboard");
+  }, [isTabulatorOnly, activeTab]);
+
+  if (!authLoading && !canAccess) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -342,15 +349,15 @@ export default function CompetitionDetail() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-            {!isProductionOrganiser && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
-            <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>
-            <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>
-            {!isProductionOrganiser && <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>}
-            <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>
-            {!isProductionOrganiser && <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>}
-            {!isProductionOrganiser && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
-            {!isProductionOrganiser && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
-            <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="general" className="flex-shrink-0">General</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="levels" className="flex-shrink-0">Levels & Events</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="guidelines" className="flex-shrink-0">Guidelines</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="scoring" className="flex-shrink-0">Scoring</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="registrations" className="flex-shrink-0">Registrations</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="order" className="flex-shrink-0">Order</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>}
+            {!isProductionOrganiser && !isTabulatorOnly && <TabsTrigger value="sponsors" className="flex-shrink-0">Sponsors</TabsTrigger>}
+            {!isTabulatorOnly && <TabsTrigger value="updates" className="flex-shrink-0">Updates</TabsTrigger>}
             <TabsTrigger value="leaderboard" className="flex-shrink-0">Leaderboard</TabsTrigger>
           </TabsList>
 
