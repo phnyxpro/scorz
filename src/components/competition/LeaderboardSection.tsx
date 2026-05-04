@@ -442,7 +442,7 @@ export function LeaderboardSection({ competitionId }: Props) {
       }
       const groups: ContestantGroup[] = [];
       for (const [rawLabel, members] of buckets) {
-        const sorted = [...members].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+        const sorted = [...members].sort((a, b) => a.finalRank - b.finalRank || b.avgFinal - a.avgFinal);
         const children = buildLevel(sorted, fieldIdx + 1, depth + 1);
         groups.push({ label: resolveValue(rawLabel), depth, rows: sorted, children });
       }
