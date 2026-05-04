@@ -588,8 +588,18 @@ export function LeaderboardSection({ competitionId }: Props) {
           </TableCell>
           <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
           <TableCell className="text-center">
+            <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
+              #{r.calculatedRank}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-center">
             <div className="flex items-center justify-center gap-1">
-              <Badge variant={rank === 0 ? "default" : "outline"} className="text-xs font-mono">{rank + 1}</Badge>
+              <Badge
+                variant={rank === 0 ? "default" : "outline"}
+                className={`text-xs font-mono ${r.hasOverride ? "border-amber-500/60 text-amber-600 dark:text-amber-400" : ""}`}
+              >
+                {rank + 1}
+              </Badge>
               {showStatusStyling && getRankBadge(rank, isFinalRound, advancementCount)}
             </div>
           </TableCell>
