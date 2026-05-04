@@ -15,7 +15,25 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet, Pencil, Check, X } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet, Pencil, Check, X, ListOrdered } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
