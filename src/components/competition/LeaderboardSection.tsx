@@ -106,6 +106,22 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
   });
 }
 
+function useLevelCertifications(subEventIds: string[]) {
+  const key = subEventIds.slice().sort().join(",");
+  return useQuery({
+    queryKey: ["leaderboard_certifications", key],
+    enabled: subEventIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chief_judge_certifications")
+        .select("sub_event_id, final_placement_order, is_certified")
+        .in("sub_event_id", subEventIds);
+      if (error) throw error;
+      return (data || []) as { sub_event_id: string; final_placement_order: { regId: string; rank: number }[]; is_certified: boolean }[];
+    },
+  });
+}
+
 function useLevelCategories(levelId: string | null, isCategoryLevel: boolean) {
   return useQuery({
     queryKey: ["competition_categories_all", levelId],
