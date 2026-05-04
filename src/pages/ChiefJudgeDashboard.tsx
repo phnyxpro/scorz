@@ -91,6 +91,7 @@ export default function ChiefJudgeDashboard() {
   const upsertCert = useUpsertCertification();
   const certifySubEvent = useCertifySubEvent();
   const adjustPenalty = useAdjustPenalty();
+  const setFinalOrder = useSetFinalPlacementOrder();
 
   const isCertified = certification?.is_certified ?? false;
 
