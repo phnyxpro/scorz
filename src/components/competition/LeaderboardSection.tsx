@@ -789,6 +789,24 @@ export function LeaderboardSection({ competitionId }: Props) {
               <Label htmlFor="lb-standby-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Include standbys</Label>
             </div>
           )}
+          {canEditFinalOrder && rowsBySubEvent.size > 0 && (
+            <Select value="" onValueChange={(v) => openFinalOrderEditor(v)}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <ListOrdered className="h-3.5 w-3.5" />
+                  <span>Edit Final Order</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {[...rowsBySubEvent.keys()].map((seId) => (
+                  <SelectItem key={seId} value={seId}>
+                    {subEventMap.get(seId) || "Sub-event"}
+                    {subEventsWithOverride.has(seId) ? " ✎" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" disabled={filteredRows.length === 0} className="print:hidden">
