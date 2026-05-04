@@ -76,7 +76,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
       // Fetch certifications for all sub-events in this level
       const { data: chiefCerts } = await supabase
         .from("chief_judge_certifications")
-        .select("chief_judge_id, is_certified, signed_at")
+        .select("chief_judge_id, is_certified, signed_at, sub_event_id, final_placement_order")
         .in("sub_event_id", subEventIds);
       const { data: tabCerts } = await supabase
         .from("tabulator_certifications")
