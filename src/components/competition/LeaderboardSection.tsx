@@ -473,7 +473,7 @@ export function LeaderboardSection({ competitionId }: Props) {
   if (levelsLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading levels…</div>;
   if (!levels?.length) return <div className="py-8 text-center text-muted-foreground text-sm">No levels configured yet.</div>;
 
-  const colCount = 4 + judgeUserIds.length + 4; // #, name, sub-event, duration, judges..., total, penalty, final, rank
+  const colCount = 4 + judgeUserIds.length + 5; // #, name, sub-event, duration, judges..., total, penalty, final, calc, rank
 
   // Render a flat table for non-category levels
   function renderFlatTable(tableRows: RowData[], globalOffset = 0) {
