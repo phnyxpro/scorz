@@ -143,6 +143,7 @@ export default function LevelMasterSheet() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showStatusStyling, setShowStatusStyling] = useState(true);
+  const [useFinalOrder, setUseFinalOrder] = useState(true);
   const levelId = searchParams.get("level");
 
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
