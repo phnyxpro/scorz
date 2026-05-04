@@ -34,8 +34,38 @@ export interface ChiefJudgeCertification {
   chief_judge_signature: string | null;
   signed_at: string | null;
   is_certified: boolean;
+  final_placement_order: { regId: string; rank: number; calculatedRank?: number; reason?: string }[];
+  final_order_updated_by: string | null;
+  final_order_updated_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Set the manual final placement order for a sub-event (chief / tabulator / admin). */
+export function useSetFinalPlacementOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      sub_event_id,
+      order,
+    }: {
+      sub_event_id: string;
+      order: { regId: string; rank: number; calculatedRank?: number; reason?: string }[];
+    }) => {
+      const { error } = await supabase.rpc("set_final_placement_order" as any, {
+        _sub_event_id: sub_event_id,
+        _order: order as any,
+      });
+      if (error) throw error;
+      return { sub_event_id };
+    },
+    onSuccess: ({ sub_event_id }) => {
+      qc.invalidateQueries({ queryKey: ["certification", sub_event_id] });
+      qc.invalidateQueries({ queryKey: ["leaderboard_certifications"] });
+      toast({ title: "Final order saved" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 }
 
 /** All judge scores for a sub-event (chief_judge / admin only) */
@@ -66,7 +96,7 @@ export function useCertification(subEventId: string | undefined) {
         .eq("sub_event_id", subEventId!)
         .maybeSingle();
       if (error) throw error;
-      return data as ChiefJudgeCertification | null;
+      return data as unknown as ChiefJudgeCertification | null;
     },
   });
 }

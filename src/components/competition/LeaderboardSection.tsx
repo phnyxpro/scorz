@@ -15,7 +15,25 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet, Pencil, Check, X } from "lucide-react";
+import { Trophy, Eye, EyeOff, ChevronRight, ChevronDown, Sheet, Pencil, Check, X, ListOrdered } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { calculateMethodScore } from "@/lib/scoring-methods";
 import { exportGoogleSheets, type SheetRow } from "@/lib/export-utils";
 import { migrateFormConfig } from "@/lib/form-builder-types";
@@ -106,6 +124,22 @@ function useLeaderboardData(competitionId: string | undefined, levelId: string |
   });
 }
 
+function useLevelCertifications(subEventIds: string[]) {
+  const key = subEventIds.slice().sort().join(",");
+  return useQuery({
+    queryKey: ["leaderboard_certifications", key],
+    enabled: subEventIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chief_judge_certifications")
+        .select("sub_event_id, final_placement_order, is_certified")
+        .in("sub_event_id", subEventIds);
+      if (error) throw error;
+      return (data || []) as { sub_event_id: string; final_placement_order: { regId: string; rank: number }[]; is_certified: boolean }[];
+    },
+  });
+}
+
 function useLevelCategories(levelId: string | null, isCategoryLevel: boolean) {
   return useQuery({
     queryKey: ["competition_categories_all", levelId],
@@ -161,6 +195,9 @@ interface RowData {
   durationSeconds: number | null;
   customFieldValues: Record<string, any>;
   specialEntryType: string | null;
+  calculatedRank: number;
+  finalRank: number;
+  hasOverride: boolean;
 }
 
 interface ContestantGroup {
@@ -189,6 +226,10 @@ export function LeaderboardSection({ competitionId }: Props) {
   const [editingDurationRegId, setEditingDurationRegId] = useState<string | null>(null);
   const [durationDraft, setDurationDraft] = useState<string>("");
   const [savingDuration, setSavingDuration] = useState(false);
+  const [editFinalOpen, setEditFinalOpen] = useState<string | null>(null); // sub_event_id being edited
+  const [editFinalOrder, setEditFinalOrder] = useState<string[]>([]);
+  const [savingFinalOrder, setSavingFinalOrder] = useState(false);
+  const canEditFinalOrder = hasRole("tabulator") || hasRole("admin") || hasRole("organizer") || hasRole("chief_judge");
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
@@ -264,44 +305,79 @@ export function LeaderboardSection({ competitionId }: Props) {
     return m;
   }, [data?.durationRows]);
 
+  const subEventIdsForCert = useMemo(() => (data?.subEvents || []).map((se) => se.id), [data?.subEvents]);
+  const { data: certifications } = useLevelCertifications(subEventIdsForCert);
+
+  // Map of subEventId -> regId -> finalRank override
+  const overrideMap = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const c of certifications || []) {
+      const inner = new Map<string, number>();
+      for (const o of c.final_placement_order || []) {
+        if (o && o.regId != null && typeof o.rank === "number") inner.set(o.regId, o.rank);
+      }
+      if (inner.size > 0) m.set(c.sub_event_id, inner);
+    }
+    return m;
+  }, [certifications]);
+
   const rows = useMemo((): RowData[] => {
     if (!data) return [];
-    return (data.registrations || [])
-      .map((reg) => {
-        const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
-        const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
-        const judgeComments: Record<string, string> = {};
-        for (const s of regScores) {
-          judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
-          if (s.comments) judgeComments[s.judge_id] = s.comments;
-        }
-        const certifiedScores = regScores.filter((s) => s.is_certified);
-        const rawTotals = certifiedScores.map((s) => s.raw_total);
-        const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
-        const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
-        const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
-        const manual = manualDurationMap.get(reg.id);
-        const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
-        const durationSeconds = manual != null
-          ? manual
-          : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
-        return {
-          regId: reg.id,
-          name: reg.full_name,
-          userId: reg.user_id,
-          subEventId: reg.sub_event_id,
-          judgeScores,
-          judgeComments,
-          allJudgesRawTotal,
-          timePenalty,
-          avgFinal,
-          durationSeconds,
-          customFieldValues: (reg as any).custom_field_values || {},
-          specialEntryType: (reg as any).special_entry_type || null,
-        };
-      })
-      .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
-  }, [data, scoringMethod, manualDurationMap]);
+    const built = (data.registrations || []).map((reg) => {
+      const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
+      const judgeScores: Record<string, { rawTotal: number; certified: boolean }> = {};
+      const judgeComments: Record<string, string> = {};
+      for (const s of regScores) {
+        judgeScores[s.judge_id] = { rawTotal: s.raw_total, certified: s.is_certified };
+        if (s.comments) judgeComments[s.judge_id] = s.comments;
+      }
+      const certifiedScores = regScores.filter((s) => s.is_certified);
+      const rawTotals = certifiedScores.map((s) => s.raw_total);
+      const timePenalty = certifiedScores.length > 0 ? Math.max(...certifiedScores.map((s) => s.time_penalty)) : 0;
+      const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
+      const avgFinal = certifiedScores.length > 0 ? calculateMethodScore(scoringMethod, rawTotals, timePenalty) : 0;
+      const manual = manualDurationMap.get(reg.id);
+      const judgeDurations = regScores.map((s) => s.performance_duration_seconds).filter((d): d is number => d != null && d > 0);
+      const durationSeconds = manual != null
+        ? manual
+        : (judgeDurations.length > 0 ? Math.max(...judgeDurations) : null);
+      return {
+        regId: reg.id,
+        name: reg.full_name,
+        userId: reg.user_id,
+        subEventId: reg.sub_event_id,
+        judgeScores,
+        judgeComments,
+        allJudgesRawTotal,
+        timePenalty,
+        avgFinal,
+        durationSeconds,
+        customFieldValues: (reg as any).custom_field_values || {},
+        specialEntryType: (reg as any).special_entry_type || null,
+        calculatedRank: 0,
+        finalRank: 0,
+        hasOverride: false,
+      } as RowData;
+    });
+
+    // Calculated ranking (global)
+    const calcSorted = [...built].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+    calcSorted.forEach((r, i) => { r.calculatedRank = i + 1; });
+
+    // Apply overrides per sub-event
+    for (const r of built) {
+      const sub = r.subEventId ? overrideMap.get(r.subEventId) : undefined;
+      const ov = sub?.get(r.regId);
+      if (ov != null) {
+        r.finalRank = ov;
+        r.hasOverride = true;
+      } else {
+        r.finalRank = r.calculatedRank;
+      }
+    }
+
+    return built.sort((a, b) => a.finalRank - b.finalRank || b.avgFinal - a.avgFinal);
+  }, [data, scoringMethod, manualDurationMap, overrideMap]);
 
   const isStandbyType = (t: string | null) => t === "standby_1" || t === "standby_2";
   const filteredRows = useMemo(
@@ -371,6 +447,67 @@ export function LeaderboardSection({ competitionId }: Props) {
     }
   }, [user, durationDraft, parseDurationInput, queryClient, competitionId]);
 
+  // Group rows by sub-event for the Edit Final Order modal
+  const rowsBySubEvent = useMemo(() => {
+    const m = new Map<string, RowData[]>();
+    for (const r of rows) {
+      if (!r.subEventId) continue;
+      if (!m.has(r.subEventId)) m.set(r.subEventId, []);
+      m.get(r.subEventId)!.push(r);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.finalRank - b.finalRank);
+    return m;
+  }, [rows]);
+
+  const openFinalOrderEditor = useCallback((subEventId: string) => {
+    const list = rowsBySubEvent.get(subEventId) || [];
+    setEditFinalOrder(list.map((r) => r.regId));
+    setEditFinalOpen(subEventId);
+  }, [rowsBySubEvent]);
+
+  const saveFinalOrder = useCallback(async () => {
+    if (!editFinalOpen) return;
+    setSavingFinalOrder(true);
+    try {
+      const list = rowsBySubEvent.get(editFinalOpen) || [];
+      const calcMap = new Map(list.map((r) => [r.regId, r.calculatedRank]));
+      const payload = editFinalOrder.map((regId, idx) => ({
+        regId,
+        rank: idx + 1,
+        calculatedRank: calcMap.get(regId) ?? idx + 1,
+      }));
+      const { error } = await supabase.rpc("set_final_placement_order" as any, {
+        _sub_event_id: editFinalOpen,
+        _order: payload as any,
+      });
+      if (error) throw error;
+      toast.success("Final order saved");
+      setEditFinalOpen(null);
+      queryClient.invalidateQueries({ queryKey: ["leaderboard_certifications"] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save final order");
+    } finally {
+      setSavingFinalOrder(false);
+    }
+  }, [editFinalOpen, editFinalOrder, rowsBySubEvent, queryClient]);
+
+  const finalReorderSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const handleFinalDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setEditFinalOrder((prev) => {
+      const oldIdx = prev.indexOf(active.id as string);
+      const newIdx = prev.indexOf(over.id as string);
+      return arrayMove(prev, oldIdx, newIdx);
+    });
+  };
+
+  const subEventsWithOverride = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of rows) if (r.hasOverride && r.subEventId) s.add(r.subEventId);
+    return s;
+  }, [rows]);
+
 
   // Build grouped tree for category levels
   const groupedTree = useMemo((): ContestantGroup[] | null => {
@@ -388,7 +525,7 @@ export function LeaderboardSection({ competitionId }: Props) {
       }
       const groups: ContestantGroup[] = [];
       for (const [rawLabel, members] of buckets) {
-        const sorted = [...members].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+        const sorted = [...members].sort((a, b) => a.finalRank - b.finalRank || b.avgFinal - a.avgFinal);
         const children = buildLevel(sorted, fieldIdx + 1, depth + 1);
         groups.push({ label: resolveValue(rawLabel), depth, rows: sorted, children });
       }
@@ -419,7 +556,7 @@ export function LeaderboardSection({ competitionId }: Props) {
   if (levelsLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading levels…</div>;
   if (!levels?.length) return <div className="py-8 text-center text-muted-foreground text-sm">No levels configured yet.</div>;
 
-  const colCount = 4 + judgeUserIds.length + 4; // #, name, sub-event, duration, judges..., total, penalty, final, rank
+  const colCount = 4 + judgeUserIds.length + 5; // #, name, sub-event, duration, judges..., total, penalty, final, calc, rank
 
   // Render a flat table for non-category levels
   function renderFlatTable(tableRows: RowData[], globalOffset = 0) {
@@ -534,8 +671,18 @@ export function LeaderboardSection({ competitionId }: Props) {
           </TableCell>
           <TableCell className="text-center font-mono font-bold">{r.avgFinal.toFixed(2)}</TableCell>
           <TableCell className="text-center">
+            <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
+              #{r.calculatedRank}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-center">
             <div className="flex items-center justify-center gap-1">
-              <Badge variant={rank === 0 ? "default" : "outline"} className="text-xs font-mono">{rank + 1}</Badge>
+              <Badge
+                variant={rank === 0 ? "default" : "outline"}
+                className={`text-xs font-mono ${r.hasOverride ? "border-amber-500/60 text-amber-600 dark:text-amber-400" : ""}`}
+              >
+                {rank + 1}
+              </Badge>
               {showStatusStyling && getRankBadge(rank, isFinalRound, advancementCount)}
             </div>
           </TableCell>
@@ -641,6 +788,24 @@ export function LeaderboardSection({ competitionId }: Props) {
               <Switch checked={includeStandbys} onCheckedChange={setIncludeStandbys} id="lb-standby-toggle" />
               <Label htmlFor="lb-standby-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Include standbys</Label>
             </div>
+          )}
+          {canEditFinalOrder && rowsBySubEvent.size > 0 && (
+            <Select value="" onValueChange={(v) => openFinalOrderEditor(v)}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <ListOrdered className="h-3.5 w-3.5" />
+                  <span>Edit Final Order</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {[...rowsBySubEvent.keys()].map((seId) => (
+                  <SelectItem key={seId} value={seId}>
+                    {subEventMap.get(seId) || "Sub-event"}
+                    {subEventsWithOverride.has(seId) ? " ✎" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           <Popover>
             <PopoverTrigger asChild>
@@ -778,6 +943,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                     <TableHead className="text-center font-bold text-xs">Total</TableHead>
                     <TableHead className="text-center font-bold text-xs">Penalty</TableHead>
                     <TableHead className="text-center font-bold text-xs">Final</TableHead>
+                    <TableHead className="text-center text-xs">Calc</TableHead>
                     <TableHead className="text-center">Rank</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -792,6 +958,63 @@ export function LeaderboardSection({ competitionId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Final Order Modal */}
+      <Dialog open={!!editFinalOpen} onOpenChange={(o) => !o && setEditFinalOpen(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Final Placement Order</DialogTitle>
+            <DialogDescription>
+              Drag to reorder. Calculated rank stays visible — only the displayed final placement changes.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[55vh]">
+            <DndContext sensors={finalReorderSensors} collisionDetection={closestCenter} onDragEnd={handleFinalDragEnd}>
+              <SortableContext items={editFinalOrder} strategy={verticalListSortingStrategy}>
+                <div className="space-y-1.5 pr-2">
+                  {editFinalOrder.map((regId, idx) => {
+                    const r = rows.find((x) => x.regId === regId);
+                    if (!r) return null;
+                    return (
+                      <FinalOrderRow
+                        key={regId}
+                        regId={regId}
+                        name={r.name}
+                        finalRank={idx + 1}
+                        calculatedRank={r.calculatedRank}
+                        avg={r.avgFinal}
+                      />
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditFinalOpen(null)} disabled={savingFinalOrder}>Cancel</Button>
+            <Button onClick={saveFinalOrder} disabled={savingFinalOrder}>
+              {savingFinalOrder ? "Saving…" : "Save Final Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function FinalOrderRow({ regId, name, finalRank, calculatedRank, avg }: { regId: string; name: string; finalRank: number; calculatedRank: number; avg: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: regId });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 };
+  const moved = finalRank !== calculatedRank;
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 px-2 py-2 border border-border/50 rounded-md bg-card/60">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{finalRank}</div>
+      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{name}</p></div>
+      <Badge variant="outline" className="text-[10px] font-mono">{avg.toFixed(2)}</Badge>
+      <Badge variant="outline" className={`text-[10px] font-mono ${moved ? "border-amber-500/60 text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>Calc #{calculatedRank}</Badge>
     </div>
   );
 }

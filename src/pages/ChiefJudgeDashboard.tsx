@@ -13,7 +13,9 @@ import {
   useCertifySubEvent,
   useAdjustPenalty,
   useCertificationRealtime,
+  useSetFinalPlacementOrder,
 } from "@/hooks/useChiefJudge";
+import { FinalOrderEditor } from "@/components/chief-judge/FinalOrderEditor";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
@@ -89,6 +91,7 @@ export default function ChiefJudgeDashboard() {
   const upsertCert = useUpsertCertification();
   const certifySubEvent = useCertifySubEvent();
   const adjustPenalty = useAdjustPenalty();
+  const setFinalOrder = useSetFinalPlacementOrder();
 
   const isCertified = certification?.is_certified ?? false;
 
@@ -407,6 +410,7 @@ export default function ChiefJudgeDashboard() {
                   <SelectItem value="penalties">Penalty Review</SelectItem>
                   <SelectItem value="infractions">Infractions</SelectItem>
                   <SelectItem value="ties">Tie Breaking</SelectItem>
+                  <SelectItem value="final-order">Final Order</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
@@ -416,6 +420,7 @@ export default function ChiefJudgeDashboard() {
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
+              <TabsTrigger value="final-order">Final Order</TabsTrigger>
             </TabsList>
             )}
 
@@ -477,6 +482,24 @@ export default function ChiefJudgeDashboard() {
                     tie_break_order: tieBreakOrder,
                     tie_break_notes: tieNotes,
                   } as any);
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="final-order">
+              <FinalOrderEditor
+                entries={contestantAverages.map((c, i) => ({
+                  regId: c.regId,
+                  avg: c.avg,
+                  calculatedRank: i + 1,
+                }))}
+                contestantName={contestantName}
+                isLocked={isCertified}
+                savedOrder={(certification?.final_placement_order ?? []) as { regId: string; rank: number }[]}
+                saving={setFinalOrder.isPending}
+                onSave={async (order) => {
+                  if (!selectedSubEventId) return;
+                  await setFinalOrder.mutateAsync({ sub_event_id: selectedSubEventId, order });
                 }}
               />
             </TabsContent>
