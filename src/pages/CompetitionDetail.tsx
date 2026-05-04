@@ -282,14 +282,19 @@ export default function CompetitionDetail() {
   };
 
   useEffect(() => {
-    if (!authLoading && !canConfigure) {
+    if (!authLoading && !canAccess) {
       toast({ title: "Unauthorised", description: "You don't have permission to access this page.", variant: "destructive" });
     }
-  }, [authLoading, canConfigure]);
+  }, [authLoading, canAccess]);
 
-  if (!authLoading && !canConfigure) {
+  if (!authLoading && !canAccess) {
     return <Navigate to="/dashboard" replace />;
   }
+
+  // For tabulator-only users, force the leaderboard tab
+  useEffect(() => {
+    if (isTabulatorOnly && activeTab !== "leaderboard") setActiveTab("leaderboard");
+  }, [isTabulatorOnly, activeTab]);
 
   if (isLoading || authLoading) return <DetailPageSkeleton />;
   if (!comp) return <div className="text-muted-foreground">Competition not found</div>;
