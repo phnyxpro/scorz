@@ -842,6 +842,7 @@ export function LeaderboardSection({ competitionId }: Props) {
                     <TableHead className="text-center font-bold text-xs">Total</TableHead>
                     <TableHead className="text-center font-bold text-xs">Penalty</TableHead>
                     <TableHead className="text-center font-bold text-xs">Final</TableHead>
+                    <TableHead className="text-center text-xs">Calc</TableHead>
                     <TableHead className="text-center">Rank</TableHead>
                   </TableRow>
                 </TableHeader>
