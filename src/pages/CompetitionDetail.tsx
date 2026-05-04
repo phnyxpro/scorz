@@ -287,14 +287,14 @@ export default function CompetitionDetail() {
     }
   }, [authLoading, canAccess]);
 
-  if (!authLoading && !canAccess) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // For tabulator-only users, force the leaderboard tab
   useEffect(() => {
     if (isTabulatorOnly && activeTab !== "leaderboard") setActiveTab("leaderboard");
   }, [isTabulatorOnly, activeTab]);
+
+  if (!authLoading && !canAccess) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (isLoading || authLoading) return <DetailPageSkeleton />;
   if (!comp) return <div className="text-muted-foreground">Competition not found</div>;
