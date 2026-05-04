@@ -226,6 +226,10 @@ export function LeaderboardSection({ competitionId }: Props) {
   const [editingDurationRegId, setEditingDurationRegId] = useState<string | null>(null);
   const [durationDraft, setDurationDraft] = useState<string>("");
   const [savingDuration, setSavingDuration] = useState(false);
+  const [editFinalOpen, setEditFinalOpen] = useState<string | null>(null); // sub_event_id being edited
+  const [editFinalOrder, setEditFinalOrder] = useState<string[]>([]);
+  const [savingFinalOrder, setSavingFinalOrder] = useState(false);
+  const canEditFinalOrder = hasRole("tabulator") || hasRole("admin") || hasRole("organizer") || hasRole("chief_judge");
 
   const levelId = selectedLevelId || levels?.[0]?.id || null;
   const selectedLevel = levels?.find((l) => l.id === levelId);
