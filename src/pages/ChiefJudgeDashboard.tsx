@@ -13,7 +13,9 @@ import {
   useCertifySubEvent,
   useAdjustPenalty,
   useCertificationRealtime,
+  useSetFinalPlacementOrder,
 } from "@/hooks/useChiefJudge";
+import { FinalOrderEditor } from "@/components/chief-judge/FinalOrderEditor";
 import { useJudgeScoresRealtime } from "@/hooks/useJudgeScores";
 import { SignaturePad } from "@/components/registration/SignaturePad";
 import { ActiveScoringManager } from "@/components/competition/ActiveScoringManager";
