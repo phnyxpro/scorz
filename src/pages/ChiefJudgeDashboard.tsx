@@ -485,6 +485,24 @@ export default function ChiefJudgeDashboard() {
                 }}
               />
             </TabsContent>
+
+            <TabsContent value="final-order">
+              <FinalOrderEditor
+                entries={contestantAverages.map((c, i) => ({
+                  regId: c.regId,
+                  avg: c.avg,
+                  calculatedRank: i + 1,
+                }))}
+                contestantName={contestantName}
+                isLocked={isCertified}
+                savedOrder={(certification?.final_placement_order ?? []) as { regId: string; rank: number }[]}
+                saving={setFinalOrder.isPending}
+                onSave={async (order) => {
+                  if (!selectedSubEventId) return;
+                  await setFinalOrder.mutateAsync({ sub_event_id: selectedSubEventId, order });
+                }}
+              />
+            </TabsContent>
           </Tabs>
 
           {/* Final certification */}
