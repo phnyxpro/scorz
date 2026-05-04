@@ -438,6 +438,12 @@ export default function LevelMasterSheet() {
           </div>
         </div>
         <div className="flex items-center gap-3 print:hidden">
+          {hasAnyFinalOrder && (
+            <div className="flex items-center gap-1.5">
+              <Switch checked={useFinalOrder} onCheckedChange={setUseFinalOrder} id="final-order-toggle" />
+              <Label htmlFor="final-order-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Final Order</Label>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             {showStatusStyling ? <Eye className="h-3.5 w-3.5 text-muted-foreground" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="status-toggle" />
