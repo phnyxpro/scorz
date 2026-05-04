@@ -958,6 +958,63 @@ export function LeaderboardSection({ competitionId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Final Order Modal */}
+      <Dialog open={!!editFinalOpen} onOpenChange={(o) => !o && setEditFinalOpen(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Final Placement Order</DialogTitle>
+            <DialogDescription>
+              Drag to reorder. Calculated rank stays visible — only the displayed final placement changes.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[55vh]">
+            <DndContext sensors={finalReorderSensors} collisionDetection={closestCenter} onDragEnd={handleFinalDragEnd}>
+              <SortableContext items={editFinalOrder} strategy={verticalListSortingStrategy}>
+                <div className="space-y-1.5 pr-2">
+                  {editFinalOrder.map((regId, idx) => {
+                    const r = rows.find((x) => x.regId === regId);
+                    if (!r) return null;
+                    return (
+                      <FinalOrderRow
+                        key={regId}
+                        regId={regId}
+                        name={r.name}
+                        finalRank={idx + 1}
+                        calculatedRank={r.calculatedRank}
+                        avg={r.avgFinal}
+                      />
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditFinalOpen(null)} disabled={savingFinalOrder}>Cancel</Button>
+            <Button onClick={saveFinalOrder} disabled={savingFinalOrder}>
+              {savingFinalOrder ? "Saving…" : "Save Final Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function FinalOrderRow({ regId, name, finalRank, calculatedRank, avg }: { regId: string; name: string; finalRank: number; calculatedRank: number; avg: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: regId });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 };
+  const moved = finalRank !== calculatedRank;
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 px-2 py-2 border border-border/50 rounded-md bg-card/60">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{finalRank}</div>
+      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{name}</p></div>
+      <Badge variant="outline" className="text-[10px] font-mono">{avg.toFixed(2)}</Badge>
+      <Badge variant="outline" className={`text-[10px] font-mono ${moved ? "border-amber-500/60 text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>Calc #{calculatedRank}</Badge>
     </div>
   );
 }
