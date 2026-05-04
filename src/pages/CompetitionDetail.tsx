@@ -120,6 +120,8 @@ export default function CompetitionDetail() {
   }, [user?.id, id, hasRole]);
 
   const canConfigure = hasRole("admin") || hasRole("organizer");
+  const isTabulatorOnly = !canConfigure && (hasRole("tabulator") || hasRole("chief_judge"));
+  const canAccess = canConfigure || isTabulatorOnly;
   // Production organisers can only see: Levels & Events, Guidelines, Registrations, Updates
   const productionTabs = new Set(["levels", "guidelines", "registrations", "updates"]);
 
