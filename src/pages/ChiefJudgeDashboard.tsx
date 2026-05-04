@@ -410,6 +410,7 @@ export default function ChiefJudgeDashboard() {
                   <SelectItem value="penalties">Penalty Review</SelectItem>
                   <SelectItem value="infractions">Infractions</SelectItem>
                   <SelectItem value="ties">Tie Breaking</SelectItem>
+                  <SelectItem value="final-order">Final Order</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
@@ -419,6 +420,7 @@ export default function ChiefJudgeDashboard() {
               <TabsTrigger value="penalties">Penalty Review</TabsTrigger>
               <TabsTrigger value="infractions">Infractions</TabsTrigger>
               <TabsTrigger value="ties">Tie Breaking</TabsTrigger>
+              <TabsTrigger value="final-order">Final Order</TabsTrigger>
             </TabsList>
             )}
 
