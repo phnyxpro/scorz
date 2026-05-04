@@ -28,15 +28,23 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
-    // Only chief judges / admins / organizers can trigger this
-    const { data: hasRole } = await supabase.rpc("has_any_role", {
-      _user_id: user.id,
-      _roles: ["admin", "organizer", "chief_judge"],
-    });
-    if (!hasRole) throw new Error("Forbidden");
-
     const { sub_event_id } = await req.json();
     if (!sub_event_id) throw new Error("sub_event_id is required");
+
+    // Authorize: admin/organizer OR the chief judge for this sub-event
+    const { data: hasRole } = await supabase.rpc("has_any_role", {
+      _user_id: user.id,
+      _roles: ["admin", "organizer"],
+    });
+    let allowed = !!hasRole;
+    if (!allowed) {
+      const { data: isChief } = await supabase.rpc("is_chief_for_sub_event", {
+        _user_id: user.id,
+        _sub_event_id: sub_event_id,
+      });
+      allowed = !!isChief;
+    }
+    if (!allowed) throw new Error("Forbidden");
 
     // Get sub-event name
     const { data: subEvent } = await supabase
