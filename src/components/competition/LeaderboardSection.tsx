@@ -177,6 +177,9 @@ interface RowData {
   durationSeconds: number | null;
   customFieldValues: Record<string, any>;
   specialEntryType: string | null;
+  calculatedRank: number;
+  finalRank: number;
+  hasOverride: boolean;
 }
 
 interface ContestantGroup {
