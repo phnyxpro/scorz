@@ -447,6 +447,67 @@ export function LeaderboardSection({ competitionId }: Props) {
     }
   }, [user, durationDraft, parseDurationInput, queryClient, competitionId]);
 
+  // Group rows by sub-event for the Edit Final Order modal
+  const rowsBySubEvent = useMemo(() => {
+    const m = new Map<string, RowData[]>();
+    for (const r of rows) {
+      if (!r.subEventId) continue;
+      if (!m.has(r.subEventId)) m.set(r.subEventId, []);
+      m.get(r.subEventId)!.push(r);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.finalRank - b.finalRank);
+    return m;
+  }, [rows]);
+
+  const openFinalOrderEditor = useCallback((subEventId: string) => {
+    const list = rowsBySubEvent.get(subEventId) || [];
+    setEditFinalOrder(list.map((r) => r.regId));
+    setEditFinalOpen(subEventId);
+  }, [rowsBySubEvent]);
+
+  const saveFinalOrder = useCallback(async () => {
+    if (!editFinalOpen) return;
+    setSavingFinalOrder(true);
+    try {
+      const list = rowsBySubEvent.get(editFinalOpen) || [];
+      const calcMap = new Map(list.map((r) => [r.regId, r.calculatedRank]));
+      const payload = editFinalOrder.map((regId, idx) => ({
+        regId,
+        rank: idx + 1,
+        calculatedRank: calcMap.get(regId) ?? idx + 1,
+      }));
+      const { error } = await supabase.rpc("set_final_placement_order" as any, {
+        _sub_event_id: editFinalOpen,
+        _order: payload as any,
+      });
+      if (error) throw error;
+      toast.success("Final order saved");
+      setEditFinalOpen(null);
+      queryClient.invalidateQueries({ queryKey: ["leaderboard_certifications"] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save final order");
+    } finally {
+      setSavingFinalOrder(false);
+    }
+  }, [editFinalOpen, editFinalOrder, rowsBySubEvent, queryClient]);
+
+  const finalReorderSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const handleFinalDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setEditFinalOrder((prev) => {
+      const oldIdx = prev.indexOf(active.id as string);
+      const newIdx = prev.indexOf(over.id as string);
+      return arrayMove(prev, oldIdx, newIdx);
+    });
+  };
+
+  const subEventsWithOverride = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of rows) if (r.hasOverride && r.subEventId) s.add(r.subEventId);
+    return s;
+  }, [rows]);
+
 
   // Build grouped tree for category levels
   const groupedTree = useMemo((): ContestantGroup[] | null => {
