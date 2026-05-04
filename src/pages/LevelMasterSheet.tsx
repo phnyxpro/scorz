@@ -76,7 +76,7 @@ function useLevelMasterSheet(competitionId: string | undefined, levelId: string 
       // Fetch certifications for all sub-events in this level
       const { data: chiefCerts } = await supabase
         .from("chief_judge_certifications")
-        .select("chief_judge_id, is_certified, signed_at")
+        .select("chief_judge_id, is_certified, signed_at, sub_event_id, final_placement_order")
         .in("sub_event_id", subEventIds);
       const { data: tabCerts } = await supabase
         .from("tabulator_certifications")
@@ -143,6 +143,7 @@ export default function LevelMasterSheet() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showStatusStyling, setShowStatusStyling] = useState(true);
+  const [useFinalOrder, setUseFinalOrder] = useState(true);
   const levelId = searchParams.get("level");
 
   const { data: levels, isLoading: levelsLoading } = useLevelsForCompetition(competitionId);
@@ -184,45 +185,73 @@ export default function LevelMasterSheet() {
 
   const scoringMethod = data?.scoringMethod || "olympic";
 
+  // Map: subEventId -> regId -> finalRank override
+  const finalOrderMap = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const c of (data?.certifications?.chief || []) as any[]) {
+      const inner = new Map<string, number>();
+      for (const o of (c.final_placement_order || []) as { regId: string; rank: number }[]) {
+        inner.set(o.regId, o.rank);
+      }
+      if (inner.size) m.set(c.sub_event_id, inner);
+    }
+    return m;
+  }, [data?.certifications]);
+
+  const hasAnyFinalOrder = finalOrderMap.size > 0;
+
   const rows = useMemo(() => {
     if (!data) return [];
-    return (data.registrations || [])
-      .map((reg) => {
-        const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
-        const judgeScores: Record<string, { rawTotal: number; final: number; certified: boolean }> = {};
-        for (const s of regScores) {
-          judgeScores[s.judge_id] = { rawTotal: s.raw_total, final: s.final_score, certified: s.is_certified };
-        }
-        const certifiedScores = regScores.filter((s) => s.is_certified);
-        const rawTotals = certifiedScores.map((s) => s.raw_total);
-        const timePenalty = certifiedScores.length > 0
-          ? Math.max(...certifiedScores.map((s) => s.time_penalty))
-          : 0;
-        const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
-        const avgFinal = certifiedScores.length > 0
-          ? calculateMethodScore(scoringMethod, rawTotals, timePenalty)
-          : 0;
-        // Get performance duration (use max across judge scores that have it recorded)
-        const durations = regScores
-          .map((s) => s.performance_duration_seconds)
-          .filter((d): d is number => d != null && d > 0);
-        const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
-        return {
-          regId: reg.id,
-          name: reg.full_name,
-          userId: reg.user_id,
-          subEventId: reg.sub_event_id,
-          judgeScores,
-          allJudgesRawTotal,
-          timePenalty,
-          avgFinal,
-          certifiedCount: certifiedScores.length,
-          totalJudges: regScores.length,
-          durationSeconds,
-        };
-      })
-      .sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
-  }, [data, scoringMethod]);
+    const built = (data.registrations || []).map((reg) => {
+      const regScores = data.scores.filter((s) => s.contestant_registration_id === reg.id);
+      const judgeScores: Record<string, { rawTotal: number; final: number; certified: boolean }> = {};
+      for (const s of regScores) {
+        judgeScores[s.judge_id] = { rawTotal: s.raw_total, final: s.final_score, certified: s.is_certified };
+      }
+      const certifiedScores = regScores.filter((s) => s.is_certified);
+      const rawTotals = certifiedScores.map((s) => s.raw_total);
+      const timePenalty = certifiedScores.length > 0
+        ? Math.max(...certifiedScores.map((s) => s.time_penalty))
+        : 0;
+      const allJudgesRawTotal = rawTotals.reduce((a, b) => a + b, 0);
+      const avgFinal = certifiedScores.length > 0
+        ? calculateMethodScore(scoringMethod, rawTotals, timePenalty)
+        : 0;
+      const durations = regScores
+        .map((s) => s.performance_duration_seconds)
+        .filter((d): d is number => d != null && d > 0);
+      const durationSeconds = durations.length > 0 ? Math.max(...durations) : null;
+      return {
+        regId: reg.id,
+        name: reg.full_name,
+        userId: reg.user_id,
+        subEventId: reg.sub_event_id,
+        judgeScores,
+        allJudgesRawTotal,
+        timePenalty,
+        avgFinal,
+        certifiedCount: certifiedScores.length,
+        totalJudges: regScores.length,
+        durationSeconds,
+      };
+    });
+
+    // Calculated order (by score)
+    const calcSorted = [...built].sort((a, b) => b.avgFinal - a.avgFinal || b.allJudgesRawTotal - a.allJudgesRawTotal);
+
+    if (!useFinalOrder || !hasAnyFinalOrder) return calcSorted;
+
+    // Apply final placement override per sub-event; fall back to calculated rank
+    const calcRankByReg = new Map<string, number>();
+    calcSorted.forEach((r, i) => calcRankByReg.set(r.regId, i + 1));
+
+    const withFinal = built.map((r) => {
+      const ov = r.subEventId ? finalOrderMap.get(r.subEventId)?.get(r.regId) : undefined;
+      const finalRank = ov ?? calcRankByReg.get(r.regId) ?? 9999;
+      return { ...r, finalRank };
+    });
+    return withFinal.sort((a, b) => a.finalRank - b.finalRank || b.avgFinal - a.avgFinal);
+  }, [data, scoringMethod, useFinalOrder, hasAnyFinalOrder, finalOrderMap]);
 
   // Build rows for export modal
   const exportModalRows = useMemo(() => {
@@ -409,6 +438,12 @@ export default function LevelMasterSheet() {
           </div>
         </div>
         <div className="flex items-center gap-3 print:hidden">
+          {hasAnyFinalOrder && (
+            <div className="flex items-center gap-1.5">
+              <Switch checked={useFinalOrder} onCheckedChange={setUseFinalOrder} id="final-order-toggle" />
+              <Label htmlFor="final-order-toggle" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Final Order</Label>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             {showStatusStyling ? <Eye className="h-3.5 w-3.5 text-muted-foreground" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
             <Switch checked={showStatusStyling} onCheckedChange={setShowStatusStyling} id="status-toggle" />
