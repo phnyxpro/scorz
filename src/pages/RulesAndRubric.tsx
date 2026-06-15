@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { useCompetition, useRubricCriteria, usePenaltyRules } from "@/hooks/useCompetitions";
 import { PublicRubric } from "@/components/public/PublicRubric";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,7 +67,7 @@ export default function RulesAndRubric() {
             {rulesContent && (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="pt-4">
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rulesContent }} />
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rulesContent) }} />
                 </CardContent>
               </Card>
             )}
@@ -160,7 +161,7 @@ export default function RulesAndRubric() {
             {rubricContent && (
               <Card className="border-border/50 bg-card/80 mb-4">
                 <CardContent className="pt-4">
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rubricContent }} />
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rubricContent) }} />
                 </CardContent>
               </Card>
             )}

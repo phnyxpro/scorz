@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { useCompetition } from "@/hooks/useCompetitions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export default function RulesPage() {
           {rulesContent && (
             <Card className="border-border/50 bg-card/80">
               <CardContent className="pt-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: rulesContent }} />
+                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rulesContent) }} />
               </CardContent>
             </Card>
           )}

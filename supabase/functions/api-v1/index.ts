@@ -101,7 +101,7 @@ serve(async (req) => {
         });
       }
 
-      let query = supabase
+      const query = supabase
         .from("contestant_registrations")
         .select("id, full_name, email, status, age_category, created_at, competition_id, sub_event_id")
         .in("competition_id", compId ? [compId] : ownedIds)
@@ -160,7 +160,7 @@ serve(async (req) => {
         });
       }
 
-      let query = supabase
+      const query = supabase
         .from("judge_scores")
         .select("id, contestant_registration_id, judge_id, final_score, raw_total, time_penalty, is_certified, created_at, sub_event_id")
         .in("sub_event_id", seId ? [seId] : ownedSeIds)

@@ -3,6 +3,7 @@ import { BookOpen, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getArticle, getArticlesByCategory, getCategoryBySlug } from "@/content/help-articles";
 import { markdownToHtml, renderVideoEmbed } from "@/lib/markdown";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 
@@ -99,12 +100,12 @@ export default function HelpArticle() {
           <p className="text-sm text-muted-foreground mb-6">{article.excerpt}</p>
 
           {/* Video section */}
-          <div dangerouslySetInnerHTML={{ __html: videoHtml }} />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(videoHtml, { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling"] }) }} />
 
           {/* Article body */}
           <div
             className="help-article-content"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentHtml) }}
           />
 
           {/* Prev / Next nav */}

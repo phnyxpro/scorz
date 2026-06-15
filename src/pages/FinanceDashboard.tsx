@@ -25,7 +25,7 @@ export default function FinanceDashboard() {
             const paidTickets = (tickets || []).filter(t => t.payment_status === "paid");
             // We don't have ticket price on the ticket row, so join with sub_events
             const subEventIds = [...new Set(paidTickets.map(t => t.sub_event_id))];
-            let ticketPriceMap = new Map<string, number>();
+            const ticketPriceMap = new Map<string, number>();
             if (subEventIds.length > 0) {
                 const { data: subEvents } = await supabase
                     .from("sub_events")

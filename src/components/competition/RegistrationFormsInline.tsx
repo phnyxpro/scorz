@@ -135,7 +135,7 @@ function builderConfigToFormSchema(config: FormBuilderConfig): FormSchema {
     "__contestant_signature": "signature", "__guardian_signature": "signature",
   };
 
-  let schema: FormSchema = sections
+  const schema: FormSchema = sections
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(sec => {
       const sectionFields = enabledFields
