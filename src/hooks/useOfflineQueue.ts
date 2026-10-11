@@ -15,9 +15,22 @@ type MutationType =
 async function executeMutation(type: MutationType, payload: Record<string, unknown>) {
   switch (type) {
     case "upsert_score": {
-      const id = payload.id as string | undefined;
+      let id = payload.id as string | undefined;
+      if (!id) {
+        // Avoid duplicate rows: reuse an existing score for this judge/contestant/sub-event
+        const { data: existing, error: findErr } = await supabase
+          .from("judge_scores")
+          .select("id")
+          .eq("sub_event_id", payload.sub_event_id as string)
+          .eq("judge_id", payload.judge_id as string)
+          .eq("contestant_registration_id", payload.contestant_registration_id as string)
+          .maybeSingle();
+        if (findErr) throw findErr;
+        id = existing?.id;
+      }
       if (id) {
-        const { error } = await supabase.from("judge_scores").update(payload as any).eq("id", id);
+        const { id: _omit, ...rest } = payload as any;
+        const { error } = await supabase.from("judge_scores").update(rest).eq("id", id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("judge_scores").insert(payload as any).select().single();
@@ -125,9 +138,7 @@ export function useOfflineQueue() {
       }
 
       for (const entry of pending) {
-        const key = (entry as any).key ?? (entry as any).id;
-        // The key is the auto-increment IDB key; we need to get it from the cursor
-        // Since idb getAllFromIndex doesn't return keys, we use a workaround
+        const key = entry.key;
         try {
           const { _mutationType, ...payload } = entry.payload as any;
           await executeMutation(_mutationType || entry.mutationType, payload);
