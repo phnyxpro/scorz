@@ -69,7 +69,17 @@ export async function queueMutation(mutationType: string, payload: Record<string
 
 export async function getPendingMutations() {
   const db = await getOfflineDB();
-  return db.getAllFromIndex("offline_mutations", "by-status", "pending");
+  // Out-of-line auto-increment keys are not on the values, so read them via a cursor.
+  const tx = db.transaction("offline_mutations", "readonly");
+  const index = tx.objectStore("offline_mutations").index("by-status");
+  const results: Array<OfflineDBSchema["offline_mutations"]["value"] & { key: number }> = [];
+  let cursor = await index.openCursor("pending");
+  while (cursor) {
+    results.push({ ...cursor.value, key: cursor.primaryKey as number });
+    cursor = await cursor.continue();
+  }
+  await tx.done;
+  return results;
 }
 
 export async function updateMutationStatus(key: number, status: "synced" | "failed", error?: string) {
